@@ -457,6 +457,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
   const [nonWinningTickets, setNonWinningTickets] = useState(0);
   const [openStatsIndex, setOpenStatsIndex] = useState(null);
   const [winnerStats, setWinnerStats] = useState({});
+  const [winnerSelectionTx, setWinnerSelectionTx] = useState(null);
 
   const winnerObj = winners.find(w => w.address.toLowerCase() === connectedAddress?.toLowerCase());
   const shouldShowClaimPrize = !!winnerObj && raffle.isPrized && (raffle.stateNum === 4 || raffle.stateNum === 7);
@@ -466,6 +467,13 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     (raffle.stateNum === 4 || raffle.stateNum === 7) &&
     eligibleForRefund &&
     refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
+
+  // For now, we'll skip the transaction hash fetching due to RPC limitations
+  // The transaction link feature can be implemented later when we have better RPC support
+  useEffect(() => {
+    // Set to null for now - we can implement this feature later
+    setWinnerSelectionTx(null);
+  }, [raffle]);
 
   useEffect(() => {
     const fetchWinners = async () => {
@@ -824,7 +832,21 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
   return (
     <Card className="bg-background">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">Winners</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardTitle className="text-xl">Winners</CardTitle>
+          {winnerSelectionTx && (
+            <a
+              href={getExplorerLink(winnerSelectionTx)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline flex items-center gap-1"
+              title="View winner selection transaction"
+            >
+              <Trophy className="h-4 w-4" />
+              Transaction
+            </a>
+          )}
+        </div>
         <div className="flex gap-2"></div>
       </CardHeader>
       <CardContent className="overflow-y-auto p-2">
