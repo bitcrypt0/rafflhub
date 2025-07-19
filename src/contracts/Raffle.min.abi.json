@@ -65,11 +65,10 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_prizeCollection",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_prizeCollection", "type": "address" },
+      { "internalType": "uint8", "name": "_standard", "type": "uint8" },
+      { "internalType": "uint256", "name": "_prizeTokenId", "type": "uint256" },
+      { "internalType": "uint256", "name": "_amountPerWinner", "type": "uint256" }
     ],
     "name": "setExternalPrize",
     "outputs": [],

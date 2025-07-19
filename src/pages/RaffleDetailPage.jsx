@@ -924,6 +924,12 @@ function getExplorerLink(address, chainIdOverride) {
   return `${baseUrl}/address/${address}`;
 }
 
+// PrizeTypes.Standard enum mapping
+const PRIZE_TYPE_OPTIONS = [
+  { label: 'ERC721', value: 0 },
+  { label: 'ERC1155', value: 1 },
+];
+
 const RaffleDetailPage = () => {
   const { raffleAddress } = useParams();
   const navigate = useNavigate();
@@ -972,6 +978,9 @@ const RaffleDetailPage = () => {
 
   const [showAssignPrizeInput, setShowAssignPrizeInput] = useState(false);
   const [assignPrizeAddress, setAssignPrizeAddress] = useState("");
+  const [assignPrizeStandard, setAssignPrizeStandard] = useState(0);
+  const [assignPrizeTokenId, setAssignPrizeTokenId] = useState("");
+  const [assignPrizeAmountPerWinner, setAssignPrizeAmountPerWinner] = useState("");
   const [assigningPrize, setAssigningPrize] = useState(false);
   const handleAssignPrize = async () => {
     setAssigningPrize(true);
@@ -979,7 +988,22 @@ const RaffleDetailPage = () => {
       const raffleContract = getContractInstance(raffle.address, 'raffle');
       if (!raffleContract) throw new Error('Failed to get raffle contract');
       if (!assignPrizeAddress || assignPrizeAddress.length !== 42) throw new Error('Please enter a valid address');
-      const result = await executeTransaction(() => raffleContract.setExternalPrize(assignPrizeAddress));
+      let tokenId = assignPrizeTokenId;
+      let amountPerWinner = assignPrizeAmountPerWinner;
+      if (assignPrizeStandard === 0) { // ERC721
+        tokenId = 0;
+        amountPerWinner = 1;
+      } else {
+        if (tokenId === "" || amountPerWinner === "") throw new Error('Token ID and Amount Per Winner are required');
+      }
+      const result = await executeTransaction(() =>
+        raffleContract.setExternalPrize(
+          assignPrizeAddress,
+          assignPrizeStandard,
+          tokenId,
+          amountPerWinner
+        )
+      );
       if (result.success) {
         toast.success('Prize assigned successfully!');
         window.location.reload();
@@ -1761,15 +1785,41 @@ const RaffleDetailPage = () => {
                     <div className="flex flex-col sm:flex-row gap-2 items-center">
                       <input
                         type="text"
-                        placeholder="Enter prize collection address"
+                        placeholder="Prize collection address"
                         value={assignPrizeAddress}
                         onChange={e => setAssignPrizeAddress(e.target.value)}
-                        className="px-3 py-2 border border-border rounded-md bg-background w-72 font-mono"
+                        className="px-3 py-2 border border-border rounded-md bg-background w-56 font-mono"
                         disabled={assigningPrize}
+                      />
+                      <select
+                        value={assignPrizeStandard}
+                        onChange={e => setAssignPrizeStandard(Number(e.target.value))}
+                        className="px-3 py-2 border border-border rounded-md bg-black text-white"
+                        disabled={assigningPrize}
+                      >
+                        {PRIZE_TYPE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Prize Token ID"
+                        value={assignPrizeStandard === 0 ? 0 : assignPrizeTokenId}
+                        onChange={e => setAssignPrizeTokenId(e.target.value)}
+                        className="px-3 py-2 border border-border rounded-md bg-background w-32"
+                        disabled={assigningPrize || assignPrizeStandard === 0}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Amount Per Winner"
+                        value={assignPrizeStandard === 0 ? 1 : assignPrizeAmountPerWinner}
+                        onChange={e => setAssignPrizeAmountPerWinner(e.target.value)}
+                        className="px-3 py-2 border border-border rounded-md bg-background w-32"
+                        disabled={assigningPrize || assignPrizeStandard === 0}
                       />
                       <Button
                         onClick={handleAssignPrize}
-                        disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42}
+                        disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42 || assignPrizeTokenId === "" || assignPrizeAmountPerWinner === ""}
                         className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50"
                       >
                         {assigningPrize ? 'Assigning...' : 'Submit'}
