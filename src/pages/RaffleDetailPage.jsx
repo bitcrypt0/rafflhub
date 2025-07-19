@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
@@ -32,7 +32,7 @@ function extractRevertReason(error) {
   return msg;
 }
 
-const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize }) => {
+const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const [quantity, setQuantity] = useState(1);
@@ -125,9 +125,6 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
     const now = Math.floor(Date.now() / 1000);
     const raffleEndTime = raffle.startTime + raffle.duration;
     return (raffle.state === 'Active' && now >= raffleEndTime) ||
-           raffle.state === 'Ended' || 
-           raffle.state === 'Completed' || 
-           raffle.state === 'Drawing' || 
            timeRemaining === 'Ended';
   };
 
@@ -189,7 +186,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   };
 
   const canClaimPrize = () => {
-    if (!address || !raffle.isPrized) return false;
+    if (!address || (!raffle.isPrized && !isExternallyPrized)) return false;
     if (raffle.stateNum !== 4 && raffle.stateNum !== 7) return false;
     if (!winners) return false;
     const winner = winners.find(w => w.address.toLowerCase() === address.toLowerCase());
@@ -318,7 +315,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           <button
             onClick={handleEndRaffle}
             disabled={endingRaffle}
-                className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+            className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
           >
             {endingRaffle ? 'Ending...' : 'End Raffle'}
           </button>
@@ -952,6 +949,7 @@ const RaffleDetailPage = () => {
   const [checkingERC721Approval, setCheckingERC721Approval] = useState(false);
   const [approvingERC721, setApprovingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
+  const [isExternallyPrized, setIsExternallyPrized] = useState(false);
 
   const [showMintInput, setShowMintInput] = useState(false);
   const [mintWinnerAddress, setMintWinnerAddress] = useState("");
@@ -977,6 +975,7 @@ const RaffleDetailPage = () => {
   };
 
   const [showAssignPrizeInput, setShowAssignPrizeInput] = useState(false);
+  const assignPrizeRef = useRef(null);
   const [assignPrizeAddress, setAssignPrizeAddress] = useState("");
   const [assignPrizeStandard, setAssignPrizeStandard] = useState(0);
   const [assignPrizeTokenId, setAssignPrizeTokenId] = useState("");
@@ -1017,6 +1016,20 @@ const RaffleDetailPage = () => {
     }
   };
 
+  // Click-away logic for Assign Prize area
+  useEffect(() => {
+    if (!showAssignPrizeInput) return;
+    function handleClickOutside(event) {
+      if (assignPrizeRef.current && !assignPrizeRef.current.contains(event.target)) {
+        setShowAssignPrizeInput(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAssignPrizeInput]);
+
   useEffect(() => {
     const fetchRaffleData = async () => {
       setLoading(true);
@@ -1033,7 +1046,9 @@ const RaffleDetailPage = () => {
           setLoading(true);
           return;
         }
-        const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice, isRefundableFlag] = await Promise.all([
+        const [
+          name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice, isRefundableFlag, isExternallyPrizedFlag
+        ] = await Promise.all([
           raffleContract.name(),
           raffleContract.creator(),
           raffleContract.startTime(),
@@ -1051,7 +1066,8 @@ const RaffleDetailPage = () => {
           raffleContract.erc20PrizeAmount?.(),
           raffleContract.ethPrizeAmount?.(),
           raffleContract.usesCustomPrice?.(),
-          raffleContract.isRefundable?.()
+          raffleContract.isRefundable?.(),
+          raffleContract.isExternallyPrized?.()
         ]);
 
         let ticketsSold = 0;
@@ -1124,6 +1140,21 @@ const RaffleDetailPage = () => {
         
         setRaffle(raffleData);
         setIsRefundable(isRefundableFlag);
+        setIsExternallyPrized(isExternallyPrizedFlag);
+        // If externally prized, re-query prizeCollection
+        let updatedPrizeCollection = prizeCollection;
+        if (isExternallyPrizedFlag) {
+          try {
+            updatedPrizeCollection = await raffleContract.prizeCollection();
+          } catch (e) {
+            // fallback: keep previous value
+          }
+        }
+        // Update raffle state with latest prizeCollection
+        setRaffle({
+          ...raffleData,
+          prizeCollection: updatedPrizeCollection
+        });
       } catch (error) {
         console.error('Error fetching raffle data:', error);
         toast.error(extractRevertReason(error));
@@ -1712,7 +1743,7 @@ const RaffleDetailPage = () => {
             )}
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              (raffle.isPrized || isMintableERC721) &&
+              ((raffle.isPrized || isMintableERC721) || (!raffle.isPrized && isExternallyPrized)) &&
               raffle.prizeCollection &&
               raffle.prizeCollection !== ethers.constants.AddressZero &&
               (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') &&
@@ -1782,7 +1813,7 @@ const RaffleDetailPage = () => {
                       Assign Prize
                     </Button>
                   ) : (
-                    <div className="flex flex-col sm:flex-row gap-2 items-center">
+                    <div ref={assignPrizeRef} className="flex flex-col sm:flex-row gap-2 items-center bg-background p-2 rounded-md relative z-10">
                       <input
                         type="text"
                         placeholder="Prize collection address"
@@ -1819,7 +1850,7 @@ const RaffleDetailPage = () => {
                       />
                       <Button
                         onClick={handleAssignPrize}
-                        disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42 || assignPrizeTokenId === "" || assignPrizeAmountPerWinner === ""}
+                        disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42 || (assignPrizeStandard !== 0 && (assignPrizeTokenId === "" || assignPrizeAmountPerWinner === ""))}
                         className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50"
                       >
                         {assigningPrize ? 'Assigning...' : 'Submit'}
@@ -1906,6 +1937,8 @@ const RaffleDetailPage = () => {
             mintingToWinner={mintingToWinner}
             handleMintToWinner={handleMintToWinner}
             isEscrowedPrize={isEscrowedPrize}
+            isExternallyPrized={isExternallyPrized}
+            isPrized={raffle.isPrized}
           />
           
           <div className="bg-background border border-border rounded-lg p-6">
@@ -1927,21 +1960,19 @@ const RaffleDetailPage = () => {
                 <span className="text-gray-500 dark:text-gray-400">Ticket Price:</span>
                 <span>{ethers.utils.formatEther(raffle.ticketPrice)} ETH</span>
               </div>
-              {raffle.isPrized && (
-                <>
-                  {raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0) && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
-                      <span>{ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH</span>
-                    </div>
-                  )}
-                  {raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0) && (
-                    <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
-                  )}
-                  {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') && (!raffle.ethPrizeAmount || raffle.ethPrizeAmount.isZero?.() || raffle.ethPrizeAmount === '0') && (
-                <>
+              {raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0) && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+                  <span>{ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH</span>
+                </div>
+              )}
+              {raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0) && (
+                <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
+              )}
+              {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
                     <a
                       href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
                       target="_blank"
@@ -1950,7 +1981,7 @@ const RaffleDetailPage = () => {
                     >
                       {raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}
                     </a>
-                </div>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Collection Type:</span>
                     <span className="font-semibold">
@@ -1965,8 +1996,6 @@ const RaffleDetailPage = () => {
                       })()}
                     </span>
                   </div>
-                </>
-                  )}
                 </>
               )}
             </div>

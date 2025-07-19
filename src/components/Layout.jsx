@@ -55,30 +55,28 @@ const Header = () => {
       if (!provider || !chainId || !SUPPORTED_NETWORKS[chainId]) {
         return;
       }
-      
-      // Don't refetch if we already have raffles
       if (hasFetchedRaffles.current) {
         return;
       }
-      
       try {
-        const raffleManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.RaffleManager;
+        const raffleManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.raffleManager;
+        if (!raffleManagerAddress) {
+          setAllRaffles([]);
+          hasFetchedRaffles.current = true;
+          return;
+        }
         const raffleManagerContract = new ethers.Contract(raffleManagerAddress, contractABIs.raffleManager, provider);
-        
         const registeredRaffles = await raffleManagerContract.getAllRaffles();
-        
         if (!registeredRaffles || registeredRaffles.length === 0) {
           setAllRaffles([]);
           hasFetchedRaffles.current = true;
           return;
         }
-        
         const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
           try {
             if (!provider) {
               return null;
             }
-            
             const raffleContract = new ethers.Contract(raffleAddress, contractABIs.raffle, provider);
             const name = await raffleContract.name();
             return {
@@ -94,7 +92,6 @@ const Header = () => {
         setAllRaffles(validRaffles);
         hasFetchedRaffles.current = true;
       } catch (error) {
-        console.error('Error fetching raffles for search:', error);
         setAllRaffles([]);
         hasFetchedRaffles.current = true;
       }
@@ -153,6 +150,10 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showSearch]);
+
+  useEffect(() => {
+    hasFetchedRaffles.current = false;
+  }, [provider, chainId]);
 
   return (
     <>
