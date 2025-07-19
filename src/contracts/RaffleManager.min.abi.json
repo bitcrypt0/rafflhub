@@ -1,0 +1,47 @@
+[
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "raffle", "type": "address" }
+  ], "name": "RaffleRegistered", "type": "event" },
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "token", "type": "address" },
+    { "indexed": false, "internalType": "bool", "name": "whitelisted", "type": "bool" }
+  ], "name": "ERC20PrizeWhitelisted", "type": "event" },
+  {
+    "inputs": [],
+    "name": "getAllRaffles",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "addERC20Prize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  { "inputs": [], "name": "getAllTicketLimits", "outputs": [
+    { "internalType": "uint256", "name": "minPrized", "type": "uint256" },
+    { "internalType": "uint256", "name": "minNonPrized", "type": "uint256" },
+    { "internalType": "uint256", "name": "max", "type": "uint256" }
+  ], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "getDurationLimits", "outputs": [
+    { "internalType": "uint256", "name": "min", "type": "uint256" },
+    { "internalType": "uint256", "name": "max", "type": "uint256" }
+  ], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "getMaxTicketsPerParticipant", "outputs": [
+    { "internalType": "uint256", "name": "max", "type": "uint256" }
+  ], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "minTicketLimitNonPrized", "outputs": [
+    { "internalType": "uint256", "name": "min", "type": "uint256" }
+  ], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "maxTicketsPerParticipant", "outputs": [
+    { "internalType": "uint256", "name": "max", "type": "uint256" }
+  ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "token", "type": "address" } ], "name": "isERC20PrizeWhitelisted", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "collection", "type": "address" } ], "name": "isInternalCollection", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }
+] 
