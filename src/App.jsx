@@ -12,6 +12,7 @@ import WhitelistRafflePage from './pages/WhitelistRafflePage';
 import NFTPrizedRafflePage from './pages/NFTPrizedRafflePage';
 import TokenGiveawayRafflePage from './pages/TokenGiveawayRafflePage';
 import RafflesByStatePage from './pages/RafflesByStatePage';
+import DocsPage from './pages/DocsPage';
 import './App.css';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
                   <Route path="/nft-prized-raffles" element={<NFTPrizedRafflePage />} />
                   <Route path="/token-giveaway-raffles" element={<TokenGiveawayRafflePage />} />
                   <Route path="/raffles/:state" element={<RafflesByStatePage />} />
+                  <Route path="/docs" element={<DocsPage />} />
                 </Routes>
               </main>
               <Toaster />

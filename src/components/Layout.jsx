@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Wallet, ChevronDown, User, Plus, ListChecks, Gift, Coins, Search } from 'lucide-react';
+import { Moon, Sun, Wallet, ChevronDown, User, Plus, ListChecks, Gift, Coins, Search, Book } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import WalletModal from './wallet/WalletModal';
 import { Link, useNavigate } from 'react-router-dom';
@@ -289,6 +289,14 @@ const Header = () => {
                     </button>
                     {showDropdown && (
                       <div className="absolute right-0 mt-2 w-56 bg-card/90 border border-border rounded-xl shadow-2xl py-2 z-40 backdrop-blur-md ring-1 ring-black/5">
+                        <Link 
+                          to="/docs"
+                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Book className="h-5 w-5" />
+                          Docs
+                        </Link>
                         <Link 
                           to="/profile"
                           className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
