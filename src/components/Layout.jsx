@@ -243,7 +243,7 @@ const Header = () => {
                         )}
                         {!searchLoading && searchResults.length > 0 && (
                           <div
-                            className="bg-card border border-border rounded-md max-h-60 overflow-y-auto shadow-lg custom-search-scrollbar"
+                            className="bg-background bg-white dark:bg-neutral-900 border border-border rounded-md max-h-60 overflow-y-auto shadow-lg custom-search-scrollbar"
                             style={{ overflowX: 'hidden' }}
                           >
                             {searchResults.map(r => (
