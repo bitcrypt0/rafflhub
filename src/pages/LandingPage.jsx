@@ -165,6 +165,7 @@ const RaffleCard = ({ raffle }) => {
   };
 
   const getPrizeType = () => {
+    if (raffle.isExternallyPrized && raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'Collab';
     if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
@@ -342,7 +343,8 @@ const LandingPage = () => {
             stateNum,
             erc20PrizeToken,
             erc20PrizeAmount,
-            ethPrizeAmount
+            ethPrizeAmount,
+            isExternallyPrized
           ] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
@@ -357,7 +359,8 @@ const LandingPage = () => {
             raffleContract.state(),
             raffleContract.erc20PrizeToken(),
             raffleContract.erc20PrizeAmount(),
-            raffleContract.ethPrizeAmount()
+            raffleContract.ethPrizeAmount(),
+            raffleContract.isExternallyPrized?.() // fetch isExternallyPrized
           ]);
           
           // Skip participant count to reduce RPC calls - this was causing too many requests
@@ -386,11 +389,12 @@ const LandingPage = () => {
             winnersCount: winnersCount.toNumber(),
             maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
             isPrized,
-            prizeCollection: !!isPrized ? prizeCollection : null,
+            prizeCollection, // always set actual value
             stateNum: stateNum,
             erc20PrizeToken,
             erc20PrizeAmount,
-            ethPrizeAmount
+            ethPrizeAmount,
+            isExternallyPrized: !!isExternallyPrized // add to object
           };
         } catch (error) {
           console.error(`Error fetching raffle data for ${raffleAddress}:`, error);

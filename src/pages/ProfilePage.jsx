@@ -481,7 +481,8 @@ const ProfilePage = () => {
                       prizeClaimed,
                       refundClaimed,
                       prizeCollection,
-                      isPrizedContract
+                      isPrizedContract,
+                      isExternallyPrized
                     ] = await Promise.all([
                       executeCall(raffleContract.name),
                       executeCall(raffleContract.ticketPrice),
@@ -490,7 +491,8 @@ const ProfilePage = () => {
                       executeCall(raffleContract.prizeClaimed, address),
                       executeCall(raffleContract.refundClaimed, address),
                       executeCall(raffleContract.prizeCollection),
-                      executeCall(raffleContract.isPrized)
+                      executeCall(raffleContract.isPrized),
+                      executeCall(raffleContract.isExternallyPrized)
                     ]);
 
                     const isPrized = !!isPrizedContract.success && isPrizedContract.result;
@@ -515,7 +517,8 @@ const ProfilePage = () => {
                       raffleState: mappedState,
                       prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
                       refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                      isPrized
+                      isPrized,
+                      isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
                     });
                   } catch (error) {
                     console.error('Error fetching ticket details:', error);
@@ -746,14 +749,15 @@ const ProfilePage = () => {
         
         if (raffleContract) {
           try {
-            const [name, startTime, duration, ticketLimit, ticketsSold, state, totalRevenue] = await Promise.all([
+            const [name, startTime, duration, ticketLimit, ticketsSold, state, totalRevenue, isExternallyPrized] = await Promise.all([
               executeCall(raffleContract.name),
               executeCall(raffleContract.startTime),
               executeCall(raffleContract.duration),
               executeCall(raffleContract.ticketLimit),
               executeCall(raffleContract.ticketsSold),
               executeCall(raffleContract.state),
-              executeCall(raffleContract.totalRevenue)
+              executeCall(raffleContract.totalRevenue),
+              executeCall(raffleContract.isExternallyPrized)
             ]);
 
             if (name.success) {
@@ -766,7 +770,8 @@ const ProfilePage = () => {
                 ticketLimit: ticketLimit.success ? ticketLimit.result.toNumber() : 0,
                 ticketsSold: ticketsSold.success ? ticketsSold.result.toNumber() : 0,
                 totalRevenue: totalRevenue.success ? totalRevenue.result : ethers.BigNumber.from(0),
-                state: state.success ? mapRaffleState(state.result) : 'unknown'
+                state: state.success ? mapRaffleState(state.result) : 'unknown',
+                isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
               };
               
               console.log('Successfully fetched raffle data:', raffleData);
@@ -821,7 +826,8 @@ const ProfilePage = () => {
                 prizeClaimed,
                 refundClaimed,
                 prizeCollection,
-                isPrizedContract
+                isPrizedContract,
+                isExternallyPrized
               ] = await Promise.all([
                 executeCall(raffleContract.name),
                 executeCall(raffleContract.ticketPrice),
@@ -830,7 +836,8 @@ const ProfilePage = () => {
                 executeCall(raffleContract.prizeClaimed, address),
                 executeCall(raffleContract.refundClaimed, address),
                 executeCall(raffleContract.prizeCollection),
-                executeCall(raffleContract.isPrized)
+                executeCall(raffleContract.isPrized),
+                executeCall(raffleContract.isExternallyPrized)
               ]);
 
               const isPrized = !!isPrizedContract.success && isPrizedContract.result;
@@ -856,7 +863,8 @@ const ProfilePage = () => {
                   raffleState: mappedState,
                   prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
                   refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                  isPrized
+                  isPrized,
+                  isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
                 });
               }
             } catch (error) {
@@ -1013,6 +1021,14 @@ const ProfilePage = () => {
     { id: 'tickets', label: 'Purchased Tickets', icon: Ticket },
     { id: 'collections', label: 'Creator Dashboard', icon: Settings }
   ];
+
+  const getPrizeType = (raffle) => {
+    if (raffle.isExternallyPrized && raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'Collab';
+    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
+    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
+    if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
+    return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
+  }
 
   return (
     <PageContainer variant="profile" className="pb-16">

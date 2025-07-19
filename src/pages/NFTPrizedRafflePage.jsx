@@ -47,7 +47,7 @@ const NFTPrizedRafflePage = () => {
         try {
           const raffleContract = getContractInstance(raffleAddress, 'raffle');
           if (!raffleContract) return null;
-          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount] = await Promise.all([
+          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, isExternallyPrized] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
             raffleContract.startTime(),
@@ -61,7 +61,8 @@ const NFTPrizedRafflePage = () => {
             raffleContract.state(),
             raffleContract.erc20PrizeToken(),
             raffleContract.erc20PrizeAmount(),
-            raffleContract.ethPrizeAmount()
+            raffleContract.ethPrizeAmount(),
+            raffleContract.isExternallyPrized?.()
           ]);
           let ticketsSold = 0;
           try {
@@ -89,11 +90,12 @@ const NFTPrizedRafflePage = () => {
             winnersCount: winnersCount.toNumber(),
             maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
             isPrized,
-            prizeCollection: !!isPrized ? prizeCollection : null,
+            prizeCollection, // always set actual value
             stateNum,
             erc20PrizeToken,
             erc20PrizeAmount,
-            ethPrizeAmount
+            ethPrizeAmount,
+            isExternallyPrized: !!isExternallyPrized
           };
         } catch {
           return null;
