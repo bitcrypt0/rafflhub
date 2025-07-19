@@ -901,7 +901,7 @@ const WhitelistRaffleForm = () => {
         duration,
         ticketLimit: parseInt(formData.ticketLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        maxTicketsPerParticipant: 1, // Hardcoded to 1 for whitelist raffle
         isPrized: false,
         customTicketPrice: 0,
         erc721Drop: false,
