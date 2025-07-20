@@ -288,7 +288,7 @@ const PrizedRaffleForm = () => {
     // Token-gated fields
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -314,8 +314,10 @@ const PrizedRaffleForm = () => {
       // Token-gated logic
       const holderTokenAddress = tokenGatedEnabled && formData.holderTokenAddress ? formData.holderTokenAddress : ethers.constants.AddressZero;
       const holderTokenStandard = tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
-      const minHolderBalance = tokenGatedEnabled && formData.minHolderBalance ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0;
-      const holderTokenId = tokenGatedEnabled && formData.holderTokenId ? parseInt(formData.holderTokenId) : 0;
+      const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance
+        ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18)
+        : ethers.BigNumber.from(0);
+      const holderTokenId = tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0;
       if (formData.prizeSource === 'new') {
         // New ERC721 collection
         params = {
@@ -348,7 +350,7 @@ const PrizedRaffleForm = () => {
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
-          minHolderBalance,
+          minHolderTokenBalance,
           holderTokenId,
         };
       } else {
@@ -384,7 +386,7 @@ const PrizedRaffleForm = () => {
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
-          minHolderBalance,
+          minHolderTokenBalance,
           holderTokenId,
         };
       }
@@ -420,7 +422,7 @@ const PrizedRaffleForm = () => {
           royaltyPercentage: '',
           holderTokenAddress: '',
           holderTokenStandard: '0',
-          minHolderBalance: '',
+          minHolderTokenBalance: '',
           holderTokenId: '',
         });
         setTokenGatedEnabled(false);
@@ -503,8 +505,8 @@ const PrizedRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
-              value={formData.maxTicketsPerParticipant || ''}
-              onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              value={1}
+              disabled
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
@@ -737,8 +739,8 @@ const PrizedRaffleForm = () => {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
@@ -966,7 +968,7 @@ const WhitelistRaffleForm = () => {
     // Token-gated fields
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -987,7 +989,9 @@ const WhitelistRaffleForm = () => {
       // Token-gated logic
       const holderTokenAddress = tokenGatedEnabled && formData.holderTokenAddress ? formData.holderTokenAddress : ethers.constants.AddressZero;
       const holderTokenStandard = tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
-      const minHolderBalance = tokenGatedEnabled && formData.minHolderBalance ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0;
+      const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance
+        ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18)
+        : ethers.BigNumber.from(0);
       const holderTokenId = tokenGatedEnabled && formData.holderTokenId ? parseInt(formData.holderTokenId) : 0;
       // All prize params are zero/empty for whitelist raffle
       const params = {
@@ -1000,6 +1004,7 @@ const WhitelistRaffleForm = () => {
         isPrized: false,
         customTicketPrice: 0,
         erc721Drop: false,
+        erc1155Drop: false,
         prizeCollection: ethers.constants.AddressZero,
         standard: 0,
         prizeTokenId: 0,
@@ -1014,12 +1019,21 @@ const WhitelistRaffleForm = () => {
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0,
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
-        minHolderBalance,
+        minHolderTokenBalance,
         holderTokenId,
       };
+      // Runtime validation
+      // const undefinedOrEmptyFields = Object.entries(params).filter(([k, v]) => v === undefined || v === '');
+      // if (undefinedOrEmptyFields.length > 0) {
+      //   console.warn('Params contain undefined or empty string values:', undefinedOrEmptyFields);
+      // }
+      // console.log('Params to be sent to createRaffle:', params);
       let result = { success: false };
       try {
         const tx = await contracts.raffleDeployer.createRaffle(params);
@@ -1039,7 +1053,7 @@ const WhitelistRaffleForm = () => {
           maxTicketsPerParticipant: '',
           holderTokenAddress: '',
           holderTokenStandard: '0',
-          minHolderBalance: '',
+          minHolderTokenBalance: '',
           holderTokenId: '',
         });
         setTokenGatedEnabled(false);
@@ -1124,8 +1138,8 @@ const WhitelistRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
-              value={formData.maxTicketsPerParticipant || ''}
-              onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              value={1}
+              disabled
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
@@ -1170,8 +1184,8 @@ const WhitelistRaffleForm = () => {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
@@ -1233,7 +1247,7 @@ const NewERC721DropForm = () => {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -1304,8 +1318,8 @@ const NewERC721DropForm = () => {
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -1330,7 +1344,7 @@ const NewERC721DropForm = () => {
           tokenGatedEnabled: false,
           holderTokenAddress: '',
           holderTokenStandard: '0',
-          minHolderBalance: '',
+          minHolderTokenBalance: '',
           holderTokenId: '',
         });
     } catch (error) {
@@ -1605,8 +1619,8 @@ const NewERC721DropForm = () => {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -1660,7 +1674,7 @@ function ExistingERC721DropForm() {
     // Token-gated fields
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -1683,7 +1697,7 @@ function ExistingERC721DropForm() {
       // Token-gated logic
       const holderTokenAddress = tokenGatedEnabled && formData.holderTokenAddress ? formData.holderTokenAddress : ethers.constants.AddressZero;
       const holderTokenStandard = tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
-      const minHolderBalance = tokenGatedEnabled && formData.minHolderBalance ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0;
+      const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0;
       const holderTokenId = tokenGatedEnabled && formData.holderTokenId ? parseInt(formData.holderTokenId) : 0;
       const params = {
         name: formData.name,
@@ -1713,7 +1727,7 @@ function ExistingERC721DropForm() {
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
-        minHolderBalance,
+        minHolderTokenBalance,
         holderTokenId,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
@@ -1730,7 +1744,7 @@ function ExistingERC721DropForm() {
         ticketPrice: '',
         holderTokenAddress: '',
         holderTokenStandard: '0',
-        minHolderBalance: '',
+        minHolderTokenBalance: '',
         holderTokenId: '',
       });
       setTokenGatedEnabled(false);
@@ -1893,8 +1907,8 @@ function ExistingERC721DropForm() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
@@ -1949,7 +1963,7 @@ function ExistingERC1155DropForm() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -2000,8 +2014,8 @@ function ExistingERC1155DropForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2020,7 +2034,7 @@ function ExistingERC1155DropForm() {
         tokenGatedEnabled: false,
         holderTokenAddress: '',
         holderTokenStandard: '0',
-        minHolderBalance: '',
+        minHolderTokenBalance: '',
         holderTokenId: '',
       });
     } catch (error) {
@@ -2207,8 +2221,8 @@ function ExistingERC1155DropForm() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -2448,7 +2462,7 @@ function LuckySaleERC721Form() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -2516,8 +2530,8 @@ function LuckySaleERC721Form() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2535,7 +2549,7 @@ function LuckySaleERC721Form() {
           tokenGatedEnabled: false,
           holderTokenAddress: '',
           holderTokenStandard: '0',
-          minHolderBalance: '',
+          minHolderTokenBalance: '',
           holderTokenId: '',
         });
     } catch (error) {
@@ -2711,8 +2725,8 @@ function LuckySaleERC721Form() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -2768,7 +2782,7 @@ function LuckySaleERC1155Form() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -2836,8 +2850,8 @@ function LuckySaleERC1155Form() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2856,7 +2870,7 @@ function LuckySaleERC1155Form() {
           tokenGatedEnabled: false,
           holderTokenAddress: '',
           holderTokenStandard: '0',
-          minHolderBalance: '',
+          minHolderTokenBalance: '',
           holderTokenId: '',
         });
     } catch (error) {
@@ -3043,8 +3057,8 @@ function LuckySaleERC1155Form() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -3097,7 +3111,7 @@ function ETHGiveawayForm() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -3147,8 +3161,8 @@ function ETHGiveawayForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       let result = { success: false };
       try {
@@ -3312,8 +3326,8 @@ function ETHGiveawayForm() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -3367,7 +3381,7 @@ function ERC20GiveawayForm() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
   const [whitelistStatus, setWhitelistStatus] = useState(null); // null | true | false
@@ -3459,8 +3473,8 @@ function ERC20GiveawayForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -3635,8 +3649,8 @@ function ERC20GiveawayForm() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
@@ -3790,7 +3804,7 @@ function NewERC1155DropForm() {
     tokenGatedEnabled: false,
     holderTokenAddress: '',
     holderTokenStandard: '0',
-    minHolderBalance: '',
+    minHolderTokenBalance: '',
     holderTokenId: '',
   });
 
@@ -3861,8 +3875,8 @@ function NewERC1155DropForm() {
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -3889,7 +3903,7 @@ function NewERC1155DropForm() {
         tokenGatedEnabled: false,
         holderTokenAddress: '',
         holderTokenStandard: '0',
-        minHolderBalance: '',
+        minHolderTokenBalance: '',
         holderTokenId: '',
       });
     } catch (error) {
@@ -4165,8 +4179,8 @@ function NewERC1155DropForm() {
               <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
               <input
                 type="number"
-                value={formData.minHolderBalance}
-                onChange={e => handleChange('minHolderBalance', e.target.value)}
+                value={formData.minHolderTokenBalance}
+                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
