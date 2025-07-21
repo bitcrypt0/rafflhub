@@ -149,7 +149,7 @@ RaffleManager (Configuration & Management)
 
 ### Core Components
 
-#### 1. RaffleManager
+### 1. RaffleManager
 The central configuration contract that manages:
 - Protocol-wide settings and parameters
 - VRF and Automation subscriptions
@@ -158,15 +158,15 @@ The central configuration contract that manages:
 - Revenue sharing configuration
 
 
-#### 2. RaffleDeployer
+### 2. RaffleDeployer
 Factory contract that deploys individual raffle instances using the minimal proxy pattern (EIP-1167) for gas efficiency.
 
 
-#### 3. NFTFactory
+### 3. NFTFactory
 Factory for deploying prize collection contracts (ERC721 and ERC1155) with standardized features like royalties and metadata support.
 
 
-#### 4. Raffle Contracts
+### 4. Raffle Contracts
 Individual raffle instances that handle:
 - Ticket sales and participant management
 - Winner selection and prize distribution
