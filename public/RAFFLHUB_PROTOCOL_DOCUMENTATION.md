@@ -8,8 +8,7 @@
 5. [Use Cases & Benefits](#use-cases--benefits)
 6. [Technical Specifications](#technical-specifications)
 7. [Security Features](#security-features)
-8. [Integration Guide](#integration-guide)
-9. [FAQ](#faq)
+8. [FAQ](#faq)
 
 
 ## Overview
@@ -25,51 +24,51 @@ Whether you are an NFT artist looking to launch a new collection, an ERC-20 proj
 
 The Rafflhub Protocol is more than just a simple raffle contract; it's a comprehensive ecosystem designed for versatility and security.
 
-🏆 Multi-Prize Support: Create raffles for ERC-721 NFTs, ERC-1155 tokens, ERC-20 tokens, or native coins like ETH, BNB, and MATIC.
+Multi-Prize Support: Create raffles for ERC-721 NFTs, ERC-1155 tokens, ERC-20 tokens, or native coins like ETH, BNB, and MATIC.
 
-🎟️ Token-Gated Access (Optional): Restrict raffle participation to holders of a specific NFT or ERC-20 token, creating exclusive events for your community.
+Token-Gated Access (Optional): Restrict raffle participation to holders of a specific NFT or ERC-20 token, creating exclusive events for your community.
 
-🎭 Delayed Reveal Mechanism: Build anticipation for your NFT prizes with Manual or Scheduled reveals, keeping the final metadata hidden until the perfect moment.
+Delayed Reveal Mechanism: Build anticipation for your NFT prizes with Manual or Scheduled reveals, keeping the final metadata hidden until the perfect moment.
 
-🔒 Provably Fair & Verifiable: Powered by Chainlink VRF v2.5, guaranteeing that winner selection is tamper-proof and transparent to all participants.
+Provably Fair & Verifiable: Powered by Chainlink VRF v2.5, guaranteeing that winner selection is tamper-proof and transparent to all participants.
 
-💸 Sophisticated Revenue & Refund Logic: Intelligent handling of ticket revenue, protocol fees, and robust, automated refunds for deleted or unengaged raffles.
+Sophisticated Revenue & Refund Logic: Intelligent handling of ticket revenue, protocol fees, and robust, automated refunds for deleted or unengaged raffles.
 
-** Gas-Optimized Architecture:** Utilizes the minimal proxy pattern (EIP-1167) to make deploying new raffles incredibly cheap and efficient.
+Gas-Optimized Architecture: Utilizes the minimal proxy pattern (EIP-1167) to make deploying new raffles incredibly cheap and efficient.
 
-Whitelisting & Community Building: Run non-prized raffles to fairly select winners for whitelist spots, airdrops, or exclusive access.
+Whitelisting Campaigns & Community Building: Run non-prized raffles to fairly select winners for whitelist spots, airdrops, or exclusive access.
 
 
 ## Key Protocol Innovations
 
 
-The Rafflhub Protocol introduces several powerful features that set it apart.
+Rafflhub introduces several powerful features that set it apart.
 
 ### Flexible Prize Management
 
 Escrowed Prizes: For high-value, existing assets (like a 1-of-1 NFT or a pool of ETH), the prize is locked in the contract for maximum security.
 
-Mintable Prizes: For new collections, prizes are minted on-demand, saving significant gas costs and providing supply flexibility.
+Mintable Prizes: For new NFT collections, prizes are minted on-demand, saving significant gas costs and providing supply flexibility.
 
 External Prizes: Protocol-native NFT collections and items from external collections can be assigned as prizes to raffles even after creation, offering new utility for existing assets.
 
 ### Provably Fair Winner Selection
 
-Chainlink VRF 2.5: We use the latest version of Chainlink's Verifiable Random Function to ensure that no one—not the creators, not the protocol admins, not even network validators—can tamper with the outcome.
+Chainlink VRF 2.5: We adopted the latest version of Chainlink's Verifiable Random Function to ensure that no one — not raffle creators, not the protocol admins, not even network validators — can tamper with the winner selection process.
 
 On-Chain Verification: Anyone can check the transaction that selected the winners and verify its integrity.
 
 ### Sophisticated Revenue & Refund System
-Delayed Revenue Collection: For raffles using the protocol's default ticket price (aka global ticket price), the protocol cleverly waits until the number of participants exceeds the number of winners before sending revenue. This ensures that if the raffle fails to gain traction, the funds are immediately available for participant refunds.
+Delayed Revenue Collection: For raffles using the protocol's default ticket price (aka global ticket price), the protocol cleverly waits until the number of participants exceeds the number of winners before collecting revenue. This ensures that if the raffle fails to gain traction, the funds are immediately available for refunds to participants.
 
-Automated Unengaged State: If a raffle ends with fewer participants than the number of winners, it automatically enters an Unengaged state, allowing all participants to claim a full refund.
+Automated Unengaged State: If a raffle ends with fewer participants than the number of winners, it automatically transitions into an Unengaged state, allowing all participants to claim a full refund.
 
 
 ### Gamified NFT Sales 
 Rafflhub unlocks a revolutionary new way for NFT holders to sell their assets: Gamified Sales. Instead of a static listing on a marketplace, you can turn the sale of a high-value NFT into an exciting, community-driven event.
 
 The Concept:
-An owner of an existing, valuable NFT (e.g., a 1-of-1 art piece or a rare collectible) wants to sell it for a specific price (e.g., 1 ETH). Instead of listing it, they create a prized raffle and escrow the NFT. They then set a custom ticket price and a ticket limit to match their desired sale price.
+An owner of an existing, valuable NFT (e.g., a 1-of-1 art piece or a rare collectible) wants to sell it for a specific price (e.g., 1 ETH). Instead of listing it on a marketplace, they create an NFT-prized raffle and escrow the NFT. They then set a custom ticket price and a ticket limit to match their desired sale price.
 
 Example:
 
@@ -83,7 +82,7 @@ Raffle Configuration:
 
 1 Winner
 
-The creator lists their NFT in a raffle that, if sold out, nets them their full 1 ETH asking price (minus a small protocol fee). They can also delete the raffle before the duration ends if the raffle doesn't get enough ticket sales.
+The creator lists their NFT in a raffle that, if sold out, nets them their full 1 ETH asking price (minus a small protocol fee). They can also delete the raffle before its duration elapses if the raffle doesn't get enough ticket sales. Once the raffle's duration is elapsed, deletion becomes impossible and the NFT goes to a lucky participant.
 
 Benefits for NFT Sellers (Creators):
 
@@ -103,15 +102,15 @@ Gamified Experience: It transforms the passive act of browsing a marketplace int
 
 
 ### Advanced Feature: Protocol Composability & Cross-Community Collaboration
-The true power of Web3 is composability—the ability for different protocols and assets to interact like Lego blocks to create new, innovative applications. The Rafflhub protocol is built with this principle at its core, primarily through the combination of its Token-Gated and External Prize features.
+The true power of Web3 is composability — the ability for different protocols and assets to interact like Lego blocks to create new, innovative applications. Rafflhub is built with this principle at its core, primarily through the combination of its Token-Gated and External Prize features.
 
 The Concept:
-This feature allows projects and DAOs to create highly specific, collaborative events that reward other communities and strengthen ecosystem partnerships. You can create a raffle where the prize is from Community A, but the entry ticket is holding a token from Community B.
+This feature allows projects and DAOs to create highly specific, collaborative events that reward other communities and strengthen ecosystem partnerships. You can create a raffle where the prize is from Community A, but only accessible to token holders from Community B.
 
 How It Works:
 A creator starts a non-prized raffle, which acts as a blank slate for a fair selection process. They then use two functions to "plug in" the components:
 
-setExternalPrize(): The creator assigns a mintable, protocol-native NFT from their own collection as the prize.
+setExternalPrize(): The creator assigns a supply from their mintable, protocol-native NFT collection as prize(s).
 
 Token-Gated Parameters: The creator sets the participation requirement to be a token or NFT from a completely different, external project.
 
@@ -134,7 +133,8 @@ Powerful Community Collaboration: Forge strong bonds between different projects 
 
 Targeted Marketing: Airdrop prizes or whitelist spots directly to the members of a specific, high-value community you want to attract.
 
-Enhanced Utility: The protocol becomes more than a raffle platform; it becomes a fundamental tool for Web3 community management, marketing, and diplomacy.
+Enhanced Utility: Rafflhub becomes more than a raffle platform; it becomes a fundamental tool for Web3 community management, marketing, and diplomacy.
+
 
 ## Protocol Architecture
 
@@ -155,7 +155,6 @@ The central configuration contract that manages:
 - VRF and Automation subscriptions
 - Access control and operator management
 - Collection approvals and whitelisting (for both NFTs and ERC20 Tokens)
-- Revenue sharing configuration
 
 
 ### 2. RaffleDeployer
@@ -170,7 +169,7 @@ Factory for deploying prize collection contracts (ERC721 and ERC1155) with stand
 Individual raffle instances that handle:
 - Ticket sales and participant management
 - Winner selection and prize distribution
-- State management and lifecycle control
+- Raffle state management and lifecycle control
 
 
 ## Core Contracts
@@ -188,7 +187,7 @@ Individual raffle instances that handle:
 - `setVRFParams()` - Configure Chainlink VRF parameters
 
 **Benefits**:
-- Centralized protocol governance
+- Protocol governance
 - Flexible configuration management
 - Secure access control
 - Transparent parameter updates
@@ -220,7 +219,7 @@ Individual raffle instances that handle:
 - Complete raffle lifecycle management
 - Secure prize distribution
 - Flexible participation rules
-- Automated state transitions
+- Automated raffle state transitions
 
 ### NFTFactory.sol
 **Purpose**: Factory for prize collection deployment
@@ -281,19 +280,19 @@ Individual raffle instances that handle:
 #### Batch Processing
 - Efficient handling of large participant pools
 - Gas-optimized winner selection
-- Resumable processing for failed transactions
+- Resumable processing for failed VRF requests
 
 ### 4. Revenue Management
 
 #### Automatic Distribution
 - Real-time revenue handling during ticket sales
 - Configurable protocol fees
-- Creator revenue sharing options
+- Secure creator revenue handling
 
 #### Refund Mechanisms
-- Refunds for non-winning tickets (minus protocol fee) from raffles with mintable NFT prizes only
+- Refunds for non-winning tickets (minus protocol fee) from custom ticket-priced raffles with mintable NFT prizes only
 - Full refunds for deleted and unengaged raffles
-- Configurable refund percentages
+- Configurable protocol fee percentages
 
 
 ## Use Cases & Benefits
@@ -306,15 +305,15 @@ Individual raffle instances that handle:
 Rafflhub is designed to be your ultimate community engagement toolkit. Here’s how you can leverage the protocol to achieve your project’s goals.
 
 Launch Your NFT Collection
-Forget traditional minting processes. Launch your next ERC-721 or ERC-1155 collection through a dynamic and engaging raffle.
+Enough of the unfair traditional minting processes. Launch your next ERC-721 or ERC-1155 collection through a dynamic and engaging raffle where every participant has access and every entry has equal chance of eventually minting from the collection.
 
 Benefits:
 
-Generate Hype: Use the Delayed Reveal feature to build massive anticipation before your art is unveiled.
-
 Fair Distribution: Let Chainlink's VRF ensure a provably fair distribution, building trust with your community from day one.
 
-Automated Minting: Prizes can be minted on-demand when winners claim them, saving you gas and hassle.
+Winner-only Minting: Prizes can be minted on-demand when winners claim them, saving you gas and hassle.
+
+Creator-inclusive Tokenomics: NFT Collection owners can mint up to 10% of the collection's supply for themselves.
 
 Built-in Royalties: Automatically collect royalties on secondary sales with built-in ERC-2981 support.
 
@@ -374,7 +373,7 @@ Multi-Winner Support: Easily split a prize pool among multiple winners.
 - Transparent ticket purchasing
 - Provably fair onchain winner selection process
 - Clear participation rules
-- Automated prize distribution
+- Direct prize claims
 
 ### 2. Multiple Entry Options
 
@@ -387,7 +386,7 @@ Multi-Winner Support: Easily split a prize pool among multiple winners.
 ### 3. Secure Prize Claims
 
 **Benefits**:
-- Automated prize distribution
+- Direct prize claims
 - Secure claim verification
 - No manual intervention required
 - Transparent claim process
@@ -464,106 +463,6 @@ Multi-Winner Support: Easily split a prize pool among multiple winners.
 - **Retry mechanisms**: Robust handling of failed VRF requests
 
 
-## Integration Guide
-
-### For Developers
-
-### 1. Raffle Creation
-```solidity
-// Deploy a new raffle via RaffleDeployer
-RaffleDeployer deployer = RaffleDeployer(deployerAddress);
-address raffle = deployer.createRaffle(
-    name,
-    startTime,
-    duration,
-    ticketLimit,
-    winnersCount,
-    maxTicketsPerParticipant,
-    isPrized,
-    customTicketPrice,
-    erc721Drop,
-	erc1155Drop,
-    prizeCollection,
-    standard,
-    prizeTokenId,
-    amountPerWinner,
-    collectionName,
-    collectionSymbol,
-    collectionBaseURI,
-    creator,
-    royaltyPercentage,
-    royaltyRecipient,
-    maxSupply,
-    erc20PrizeToken,
-    erc20PrizeAmount,
-    ethPrizeAmount,
-	revealType,
-    unrevealedBaseURI,
-    revealTime,
-	holderTokenAddress: HOLDER_TOKEN_ADDRESS,
-    holderTokenStandard: HOLDER_TOKEN_STANDARD,
-    minHolderTokenBalance: MIN_HOLDER_BALANCE,
-    holderTokenId: HOLDER_TOKEN_ID
-);
-```
-
-### 2. Prize Collection Deployment
-```solidity
-// Deploy prize collections via NFTFactory
-NFTFactory factory = NFTFactory(factoryAddress);
-address collection = factory.createPrizeCollection(
-    PrizeTypes.Standard,
-    name,
-    symbol,
-    baseURI,
-    initialOwner,
-    royaltyPercentage,
-    royaltyRecipient,
-    maxSupply,
-    raffleAddress
-);
-```
-
-### 3. Raffle Participation
-```solidity
-// Purchase tickets in a raffle
-Raffle raffle = Raffle(raffleAddress);
-raffle.purchaseTickets{value: ticketPrice * quantity}(quantity);
-```
-
-### 4. Prize Claiming
-```solidity
-// Claim prizes as a winner
-Raffle raffle = Raffle(raffleAddress);
-raffle.claimPrize();
-```
-
-### For Frontend Integration
-
-### 1. Raffle Discovery
-```javascript
-// Get all raffles from RaffleManager
-const raffleManager = await ethers.getContractAt("RaffleManager", managerAddress);
-const allRaffles = await raffleManager.getAllRaffles();
-```
-
-### 2. Raffle Information
-```javascript
-// Get raffle details
-const raffle = await ethers.getContractAt("Raffle", raffleAddress);
-const name = await raffle.name();
-const startTime = await raffle.startTime();
-const state = await raffle.state();
-const participants = await raffle.participants();
-```
-
-### 3. Ticket Purchase
-```javascript
-// Purchase tickets
-const ticketPrice = await raffle.ticketPrice();
-const tx = await raffle.purchaseTickets(quantity, { value: ticketPrice * quantity });
-await tx.wait();
-```
 
 ## FAQ
 
@@ -587,7 +486,7 @@ A: The protocol uses minimal proxy patterns (EIP-1167) for gas-efficient deploym
 A: Yes, NFTs from external collections can be approved by protocol operators and used as prizes in raffles, subject to approval and verification.
 
 **Q: How are prizes distributed to winners?**
-A: Prizes are automatically distributed when winners call the `claimPrize()` function. The process is secure and requires no manual intervention.
+A: Prizes are distributed when individual winners call the `claimPrize()` function. The process is secure and trustless.
 
 ### Business Questions
 
@@ -606,14 +505,12 @@ A: NFT collections deployed through the protocol support ERC2981 royalty standar
 A: The protocol includes retry mechanisms and fallback procedures to handle VRF failures, ensuring raffles can still complete successfully.
 
 **Q: Can raffles be cancelled or modified by raffle creators?**
-A: Only NFT-prized raffles can be deleted and is only possible when such raffles are in the `Pending` and `Active` states. Participants are eligible to claim 100% of their ticket purchases from deleted raffles.
+A: Only NFT-prized raffles with custom ticket prices can be deleted. Deletion is only possible when such raffles are in the `Pending` and `Active` states. Participants are eligible to claim 100% of their ticket purchases from deleted raffles.
 
 **Q: How is the protocol protected against attacks?**
 A: The protocol implements comprehensive security measures including reentrancy protection, access controls, state validations, and secure prize handling mechanisms.
 
-
-
 ---
 
-*This documentation is maintained by the Rafflhub Protocol team. For technical support or questions, please refer to the official channels or contact the development team.* 
+*This documentation is maintained by the Rafflhub team. For technical support or questions, please refer to the official channels or contact the development team.* 
 
