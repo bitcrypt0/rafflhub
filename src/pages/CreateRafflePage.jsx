@@ -1412,7 +1412,7 @@ const NewERC721DropForm = () => {
             )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2">Winners</label>
             <input
               type="number"
               value={formData.winnersCount || ''}
@@ -1445,26 +1445,6 @@ const NewERC721DropForm = () => {
               onChange={(e) => handleChange('customTicketPrice', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               placeholder="Leave empty to use protocol default"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Prize Token ID</label>
-            <input
-              type="number"
-              value={formData.prizeTokenId || ''}
-              onChange={e => handleChange('prizeTokenId', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Amount Per Winner</label>
-            <input
-              type="number"
-              value={formData.amountPerWinner || ''}
-              onChange={e => handleChange('amountPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
             />
           </div>
         </div>
