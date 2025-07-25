@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Wallet, ChevronDown, User, Plus, ListChecks, Gift, Coins, Search, Book } from 'lucide-react';
+import { Moon, Sun, Wallet, User, Plus, ListChecks, Gift, Coins, Search, Book, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import WalletModal from './wallet/WalletModal';
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,18 +8,22 @@ import { ethers } from 'ethers';
 import { contractABIs } from '../contracts/contractABIs';
 import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from './ui/dropdown-menu';
 
 const Header = () => {
   const { connected, address, formatAddress, disconnect, provider, chainId } = useWallet();
   const { contracts, getContractInstance } = useContract();
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [allRaffles, setAllRaffles] = useState([]);
-  const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
   const [mouseInDropdown, setMouseInDropdown] = useState(false);
@@ -29,9 +33,6 @@ const Header = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
       if (
         showSearch &&
         searchInputRef.current &&
@@ -277,76 +278,19 @@ const Header = () => {
                     )}
                   </div>
                 </div>
-                {/* Network Selector inserted here */}
+                {/* Network Selector first */}
                 <NetworkSelector />
+                {/* Wallet connect/disconnect next */}
                 {connected ? (
-                  <div className="relative" ref={dropdownRef}>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md text-sm font-medium">
+                    <span>{formatAddress(address)}</span>
                     <button
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md text-sm font-medium hover:bg-muted/80 transition-colors"
+                      onClick={disconnect}
+                      title="Disconnect Wallet"
+                      className="hover:bg-destructive/10 rounded-full p-1 transition-colors"
                     >
-                      {formatAddress(address)}
-                      <ChevronDown className="h-5 w-5" />
+                      <LogOut className="h-5 w-5 text-destructive" />
                     </button>
-                    {showDropdown && (
-                      <div className="absolute right-0 mt-2 w-56 bg-card/90 border border-border rounded-xl shadow-2xl py-2 z-40 backdrop-blur-md ring-1 ring-black/5">
-                        <Link 
-                          to="/docs"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <Book className="h-5 w-5" />
-                          Docs
-                        </Link>
-                        <Link 
-                          to="/profile"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <User className="h-5 w-5" />
-                          Profile
-                        </Link>
-                        <Link 
-                          to="/create-raffle"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <Plus className="h-5 w-5" />
-                          Create Raffle
-                        </Link>
-                        <Link
-                          to="/whitelist-raffles"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <ListChecks className="h-5 w-5" />
-                          Whitelist Raffles
-                        </Link>
-                        <Link
-                          to="/nft-prized-raffles"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <Gift className="h-5 w-5" />
-                          NFT Prized Raffles
-                        </Link>
-                        <Link
-                          to="/token-giveaway-raffles"
-                          className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <Coins className="h-5 w-5" />
-                          ETH & Token Giveaways
-                        </Link>
-                        <button
-                          onClick={() => { disconnect(); setShowDropdown(false); }}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-red-100/20 transition-colors rounded-lg"
-                        >
-                          <Wallet className="h-5 w-5" />
-                          Disconnect
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <button
@@ -357,6 +301,46 @@ const Header = () => {
                     <span>Connect Wallet</span>
                   </button>
                 )}
+                {/* New vertical dropdown menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md text-sm font-medium hover:bg-muted/80 transition-colors">
+                      Menu
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-white dark:bg-neutral-900 bg-popover border border-border mt-2 rounded-xl shadow-2xl py-2 z-40 backdrop-blur-md ring-1 ring-black/5 flex flex-col">
+                    <DropdownMenuItem asChild>
+                      <Link to="/docs" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <Book className="h-5 w-5" /> Docs
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <User className="h-5 w-5" /> Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-raffle" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <Plus className="h-5 w-5" /> Create Raffle
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/whitelist-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <ListChecks className="h-5 w-5" /> Whitelist Raffles
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/nft-prized-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <Gift className="h-5 w-5" /> NFT Prized Raffles
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/token-giveaway-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                        <Coins className="h-5 w-5" /> ETH & Token Giveaways
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
