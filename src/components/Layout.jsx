@@ -310,9 +310,14 @@ const Header = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-white dark:bg-neutral-900 bg-popover border border-border mt-2 rounded-xl shadow-2xl py-2 z-40 backdrop-blur-md ring-1 ring-black/5 flex flex-col">
                     <DropdownMenuItem asChild>
-                      <Link to="/docs" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                      <a
+                        href="https://rafflhub.gitbook.io/rafflhub"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
+                      >
                         <Book className="h-5 w-5" /> Docs
-                      </Link>
+                      </a>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">

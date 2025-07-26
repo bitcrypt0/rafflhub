@@ -315,7 +315,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           <button
             onClick={handleEndRaffle}
             disabled={endingRaffle}
-            className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+                className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
           >
             {endingRaffle ? 'Ending...' : 'End Raffle'}
           </button>
@@ -833,7 +833,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     <Card className="bg-background">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          <CardTitle className="text-xl">Winners</CardTitle>
+        <CardTitle className="text-xl">Winners</CardTitle>
           {winnerSelectionTx && (
             <a
               href={getExplorerLink(winnerSelectionTx)}
@@ -1982,19 +1982,19 @@ const RaffleDetailPage = () => {
                 <span className="text-gray-500 dark:text-gray-400">Ticket Price:</span>
                 <span>{ethers.utils.formatEther(raffle.ticketPrice)} ETH</span>
               </div>
-              {raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0) && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
-                  <span>{ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH</span>
-                </div>
-              )}
-              {raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0) && (
-                <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
-              )}
+                  {raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0) && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+                      <span>{ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH</span>
+                    </div>
+                  )}
+                  {raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0) && (
+                    <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
+                  )}
               {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
                 <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
                     <a
                       href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
                       target="_blank"
@@ -2003,7 +2003,7 @@ const RaffleDetailPage = () => {
                     >
                       {raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}
                     </a>
-                  </div>
+                </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Collection Type:</span>
                     <span className="font-semibold">

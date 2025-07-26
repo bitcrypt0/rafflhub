@@ -48,10 +48,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://avalanche-fuji.drpc.org',
     explorer: 'https://testnet.snowscan.xyz',
     contractAddresses: {
-      raffleManager: '0x6DdA50ffF6B7b54Dcc38e3E854Cb7325B3716e97',
-      raffleDeployer: '0x88f678e499FaF03b61BF3643D8BC43173088Cbf8',
-      revenueManager: '0x5E6a9F68804a7968b3aCec0AF8109b0235bf3Cba',
-      nftFactory: '0xEDE78D26920f3A8BC147AB29eAB3e0B8842A8b69'
+      raffleManager: '0xF425Db442318D587f04280956F562C99e52818E3',
+      raffleDeployer: '0xa86aDF75CdE7BA7c23204cdfa095Cd498629091a',
+      revenueManager: '0xd496047e70CEafd89a05C1B63910F10d0180F283',
+      nftFactory: '0x1dF3590f141b6E0992EcE00D65d314Cf5B97D848'
     }
   },
   43114: {
