@@ -117,7 +117,7 @@ function ERC1155DropForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create ERC1155 Collection Raffle</h3>
       </div>
@@ -247,7 +247,7 @@ function ERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -347,6 +347,7 @@ const PrizedRaffleForm = () => {
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
+          mintingOrder: 0,
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
@@ -383,6 +384,7 @@ const PrizedRaffleForm = () => {
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
+          mintingOrder: 0,
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
@@ -439,7 +441,7 @@ const PrizedRaffleForm = () => {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Prized Raffle</h3>
       </div>
@@ -717,7 +719,7 @@ const PrizedRaffleForm = () => {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={tokenGatedEnabled}
               />
@@ -727,7 +729,7 @@ const PrizedRaffleForm = () => {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -741,7 +743,7 @@ const PrizedRaffleForm = () => {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
               />
@@ -753,7 +755,7 @@ const PrizedRaffleForm = () => {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={tokenGatedEnabled}
                 />
@@ -766,7 +768,7 @@ const PrizedRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -863,7 +865,7 @@ const NonPrizedRaffleForm = () => {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Non-Prized Raffle</h3>
       </div>
@@ -941,7 +943,7 @@ const NonPrizedRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1022,6 +1024,7 @@ const WhitelistRaffleForm = () => {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
@@ -1070,7 +1073,7 @@ const WhitelistRaffleForm = () => {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Whitelist Raffle</h3>
       </div>
@@ -1162,7 +1165,7 @@ const WhitelistRaffleForm = () => {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={tokenGatedEnabled}
               />
@@ -1172,7 +1175,7 @@ const WhitelistRaffleForm = () => {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -1186,7 +1189,7 @@ const WhitelistRaffleForm = () => {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
               />
@@ -1198,7 +1201,7 @@ const WhitelistRaffleForm = () => {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={tokenGatedEnabled}
                 />
@@ -1210,7 +1213,7 @@ const WhitelistRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1243,6 +1246,8 @@ const NewERC721DropForm = () => {
     unrevealedBaseURI: '',
     revealTime: '',
     royaltyRecipient: address || '',
+    // Minting order field
+    mintingOrder: '0', // 0 = Linear, 1 = Random
     // 1. Add tokenGatedEnabled and token-gated fields to form state
     tokenGatedEnabled: false,
     holderTokenAddress: '',
@@ -1315,6 +1320,8 @@ const NewERC721DropForm = () => {
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
         revealTime: revealTime,
+        // Minting order
+        mintingOrder: parseInt(formData.mintingOrder),
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -1341,6 +1348,7 @@ const NewERC721DropForm = () => {
           unrevealedBaseURI: '',
           revealTime: '',
           royaltyRecipient: address || '',
+          mintingOrder: '0',
           tokenGatedEnabled: false,
           holderTokenAddress: '',
           holderTokenStandard: '0',
@@ -1357,7 +1365,7 @@ const NewERC721DropForm = () => {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create New ERC721 Collection Raffle</h3>
       </div>
@@ -1535,6 +1543,25 @@ const NewERC721DropForm = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Minting Order</label>
+              <Select
+                value={formData.mintingOrder}
+                onValueChange={value => handleChange('mintingOrder', value)}
+                required
+              >
+                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                  <SelectValue placeholder="Select Minting Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Linear (1, 2, 3, ...)</SelectItem>
+                  <SelectItem value="1">Random (e.g., 57, 12, 98, ...)</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">
+                Linear: Token IDs are minted sequentially. Random: Token IDs are minted in random order.
+              </span>
+            </div>
             {(formData.revealType === '1' || formData.revealType === '2') && (
               <div>
                 <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
@@ -1577,7 +1604,7 @@ const NewERC721DropForm = () => {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -1587,7 +1614,7 @@ const NewERC721DropForm = () => {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -1601,7 +1628,7 @@ const NewERC721DropForm = () => {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -1613,7 +1640,7 @@ const NewERC721DropForm = () => {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -1625,7 +1652,7 @@ const NewERC721DropForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1704,6 +1731,10 @@ function ExistingERC721DropForm() {
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
@@ -1741,7 +1772,7 @@ function ExistingERC721DropForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Raffle (Existing ERC721 Prize)</h3>
       </div>
@@ -1865,7 +1896,7 @@ function ExistingERC721DropForm() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={tokenGatedEnabled}
               />
@@ -1875,7 +1906,7 @@ function ExistingERC721DropForm() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -1889,7 +1920,7 @@ function ExistingERC721DropForm() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={tokenGatedEnabled}
               />
@@ -1901,7 +1932,7 @@ function ExistingERC721DropForm() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={tokenGatedEnabled}
                 />
@@ -1912,7 +1943,7 @@ function ExistingERC721DropForm() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             Create Raffle
           </Button>
@@ -1991,6 +2022,7 @@ function ExistingERC1155DropForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2030,7 +2062,7 @@ function ExistingERC1155DropForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Raffle (Existing ERC1155 Collection)</h3>
       </div>
@@ -2179,7 +2211,7 @@ function ExistingERC1155DropForm() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -2189,7 +2221,7 @@ function ExistingERC1155DropForm() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -2203,7 +2235,7 @@ function ExistingERC1155DropForm() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -2215,7 +2247,7 @@ function ExistingERC1155DropForm() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -2227,7 +2259,7 @@ function ExistingERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2292,7 +2324,7 @@ const CreateRafflePage = () => {
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-sm whitespace-nowrap">Raffle Type</label>
         <select
-          className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+          className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
           value={raffleType}
           onChange={e => setRaffleType(e.target.value)}
         >
@@ -2307,7 +2339,7 @@ const CreateRafflePage = () => {
           <div className="flex flex-col gap-2">
             <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
             <select
-              className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+              className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
               value={nftStandard}
               onChange={e => setNftStandard(e.target.value)}
             >
@@ -2320,7 +2352,7 @@ const CreateRafflePage = () => {
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-sm whitespace-nowrap">ERC721 Source</label>
               <select
-                className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+                className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
                 value={erc721Source}
                 onChange={e => setErc721Source(e.target.value)}
               >
@@ -2334,7 +2366,7 @@ const CreateRafflePage = () => {
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-sm whitespace-nowrap">ERC1155 Source</label>
               <select
-                className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+                className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
                 value={erc1155Source}
                 onChange={e => setErc1155Source(e.target.value)}
               >
@@ -2351,7 +2383,7 @@ const CreateRafflePage = () => {
         <div className="flex flex-col gap-2">
           <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
           <select
-            className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+            className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
             value={nftStandard}
             onChange={e => setNftStandard(e.target.value)}
           >
@@ -2507,6 +2539,7 @@ function LuckySaleERC721Form() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2545,7 +2578,7 @@ function LuckySaleERC721Form() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Lucky Sale (ERC721 Escrowed Prize)</h3>
       </div>
@@ -2683,7 +2716,7 @@ function LuckySaleERC721Form() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -2693,7 +2726,7 @@ function LuckySaleERC721Form() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -2707,7 +2740,7 @@ function LuckySaleERC721Form() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -2719,7 +2752,7 @@ function LuckySaleERC721Form() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -2731,7 +2764,7 @@ function LuckySaleERC721Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2827,6 +2860,7 @@ function LuckySaleERC1155Form() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2866,7 +2900,7 @@ function LuckySaleERC1155Form() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create Lucky Sale (ERC1155 Escrowed Prize)</h3>
       </div>
@@ -3015,7 +3049,7 @@ function LuckySaleERC1155Form() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -3025,7 +3059,7 @@ function LuckySaleERC1155Form() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -3039,7 +3073,7 @@ function LuckySaleERC1155Form() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -3051,7 +3085,7 @@ function LuckySaleERC1155Form() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -3063,7 +3097,7 @@ function LuckySaleERC1155Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -3138,6 +3172,7 @@ function ETHGiveawayForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3176,7 +3211,7 @@ function ETHGiveawayForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Feeling Generous? Now's a great time to give away some ETH!</h3>
       </div>
@@ -3284,7 +3319,7 @@ function ETHGiveawayForm() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -3294,7 +3329,7 @@ function ETHGiveawayForm() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -3308,7 +3343,7 @@ function ETHGiveawayForm() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -3320,7 +3355,7 @@ function ETHGiveawayForm() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -3332,7 +3367,7 @@ function ETHGiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -3450,6 +3485,7 @@ function ERC20GiveawayForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
+        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3479,7 +3515,7 @@ function ERC20GiveawayForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">It's a great day to give out some tokens! 🎁</h3>
       </div>
@@ -3607,7 +3643,7 @@ function ERC20GiveawayForm() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -3617,7 +3653,7 @@ function ERC20GiveawayForm() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -3631,7 +3667,7 @@ function ERC20GiveawayForm() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -3643,7 +3679,7 @@ function ERC20GiveawayForm() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -3655,7 +3691,7 @@ function ERC20GiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -3852,6 +3888,8 @@ function NewERC1155DropForm() {
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
         revealTime: revealTime,
+        // Minting order
+        mintingOrder: 0,
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3896,7 +3934,7 @@ function NewERC1155DropForm() {
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Create New ERC1155 Collection Raffle</h3>
       </div>
@@ -4137,7 +4175,7 @@ function NewERC1155DropForm() {
                 type="text"
                 value={formData.holderTokenAddress}
                 onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required={formData.tokenGatedEnabled}
               />
@@ -4147,7 +4185,7 @@ function NewERC1155DropForm() {
               <select
                 value={formData.holderTokenStandard}
                 onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-black text-white"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
                 required={formData.tokenGatedEnabled}
               >
                 <option value="0">ERC721</option>
@@ -4161,7 +4199,7 @@ function NewERC1155DropForm() {
                 type="number"
                 value={formData.minHolderTokenBalance}
                 onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                 placeholder="Minimum balance required to enter"
                 required={formData.tokenGatedEnabled}
               />
@@ -4173,7 +4211,7 @@ function NewERC1155DropForm() {
                   type="number"
                   value={formData.holderTokenId}
                   onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
                   placeholder="Token ID (for ERC721/1155)"
                   required={formData.tokenGatedEnabled}
                 />
@@ -4185,7 +4223,7 @@ function NewERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>

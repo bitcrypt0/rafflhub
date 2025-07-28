@@ -320,7 +320,8 @@ const MinterApprovalComponent = () => {
             <Button
               onClick={fetchCollection}
               disabled={loading || !collectionAddress || !connected}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!connected ? "Please connect your wallet" : !collectionAddress ? "Please enter a collection address" : "Load collection information"}
             >
               <Search className="h-4 w-4" />
               {loading ? 'Loading...' : 'Load Info'}
@@ -414,36 +415,41 @@ const MinterApprovalComponent = () => {
               <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setMinterApproval(true)}
-                  disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved || isLocked}
-                className="flex-1"
+                disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved || isLocked}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <UserPlus className="h-4 w-4 mr-2" />
                 )}
-                  Set Minter
+                Set Minter
               </Button>
               <Button
                 onClick={() => setMinterApproval(false)}
-                  disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved || isLocked}
-                variant="outline"
-                className="flex-1"
+                disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved || isLocked}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <UserMinus className="h-4 w-4 mr-2" />
                 )}
-                  Remove Minter
+                Remove Minter
               </Button>
             </div>
               
             <Button
               onClick={toggleMinterApprovalLock}
               disabled={loading}
-              variant={isLocked ? "default" : "outline"}
-                className="w-full"
+              className={`w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isLocked
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700'
+                  : 'border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+              }`}
+              title={isLocked ? "Unlock minter approval to allow changes" : "Lock minter approval to prevent changes"}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

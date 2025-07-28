@@ -83,7 +83,7 @@ const ActivityCard = ({ activity }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-xl hover:border-border/80 transition-all duration-300">
       <div className="flex items-start gap-3">
         <div className="mt-1">
           {getActivityIcon()}
@@ -170,17 +170,17 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
     // Use the actual contract state instead of time-based logic
     switch (raffle.state) {
       case 'pending':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span>;
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full text-xs">Pending</span>;
       case 'active':
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>;
+        return <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-xs">Active</span>;
       case 'drawing':
-        return <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">Drawing</span>;
+        return <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs">Drawing</span>;
       case 'completed':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Completed</span>;
+        return <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">Completed</span>;
       case 'ended':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Ended</span>;
+        return <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">Ended</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Unknown</span>;
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">Unknown</span>;
     }
   };
 
@@ -191,7 +191,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold truncate">{raffle.name}</h3>
         {getStatusBadge()}
@@ -215,50 +215,48 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       <div className="flex gap-2">
         <Button
           onClick={() => navigate(`/raffle/${raffle.address}`)}
-          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors text-sm"
+          className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm"
         >
           View
         </Button>
-        {raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 && (
-          <Button
-            onClick={() => onViewRevenue(raffle)}
-            className="px-3 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-md hover:from-green-600 hover:to-teal-700 transition-colors text-sm"
-          >
-            Revenue
-          </Button>
-        )}
-        {canDelete() && (
-          <Button
-            onClick={() => onDelete(raffle)}
-            className="px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
-            title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}
-          >
-            Delete
-          </Button>
-        )}
-        {/* Mint to Winner button for creator */}
-        {raffle.isCreator && (
-          <Button
-            onClick={async () => {
-              try {
-                const raffleContract = getContractInstance(raffle.address, 'raffle');
-                if (!raffleContract) throw new Error('Failed to get raffle contract');
-                const result = await executeTransaction(raffleContract.mintToWinner);
-                if (result.success) {
-                  toast.success('mintToWinner() executed successfully!');
-                  window.location.reload();
-                } else {
-                  throw new Error(result.error);
-                }
-              } catch (err) {
-                toast.error(extractRevertReason(err));
+        <Button
+          onClick={() => onViewRevenue(raffle)}
+          disabled={!raffle.totalRevenue || parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) <= 0}
+          className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title={raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 ? "View revenue details" : "No revenue available"}
+        >
+          Revenue
+        </Button>
+        <Button
+          onClick={() => onDelete(raffle)}
+          disabled={!canDelete()}
+          className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          title={canDelete() ? (raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle") : "Cannot delete: Raffle is not in pending or active state"}
+        >
+          Delete
+        </Button>
+        <Button
+          onClick={async () => {
+            try {
+              const raffleContract = getContractInstance(raffle.address, 'raffle');
+              if (!raffleContract) throw new Error('Failed to get raffle contract');
+              const result = await executeTransaction(raffleContract.mintToWinner);
+              if (result.success) {
+                toast.success('mintToWinner() executed successfully!');
+                window.location.reload();
+              } else {
+                throw new Error(result.error);
               }
-            }}
-            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
-          >
-            Mint to Winner
-          </Button>
-        )}
+            } catch (err) {
+              toast.error(extractRevertReason(err));
+            }
+          }}
+          disabled={!raffle.isCreator}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+          title={raffle.isCreator ? "Mint NFT to winner" : "Only raffle creator can mint to winner"}
+        >
+          Mint to Winner
+        </Button>
       </div>
       
       {/* Show deletion info for raffles with sold tickets */}
@@ -290,7 +288,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   };
   
   return (
-    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold truncate">{ticket.raffleName}</h3>
         <span className="text-sm text-gray-500 dark:text-gray-400">{ticket.quantity} tickets</span>
@@ -298,23 +296,23 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
       
       <div className="space-y-1 text-sm mb-3">
         <div className="flex justify-between">
-          <span className="text-gray-500 dark:text-gray-400">Total Cost:</span>
+          <span className="text-muted-foreground">Total Cost:</span>
           <span>{ethers.utils.formatEther(ticket.totalCost)} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500 dark:text-gray-400">Purchase Date:</span>
+          <span className="text-muted-foreground">Purchase Date:</span>
           <span>{new Date(ticket.purchaseDate * 1000).toLocaleDateString()}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500 dark:text-gray-400">State:</span>
+          <span className="text-muted-foreground">State:</span>
           <span className={`text-xs px-2 py-1 rounded-full ${
-            ticket.raffleState === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-            ticket.raffleState === 'active' ? 'bg-green-100 text-green-800' :
-            ticket.raffleState === 'drawing' ? 'bg-purple-100 text-purple-800' :
-            ticket.raffleState === 'completed' ? 'bg-blue-100 text-blue-800' :
-            ticket.raffleState === 'allPrizesClaimed' ? 'bg-blue-100 text-blue-800' :
-            ticket.raffleState === 'ended' ? 'bg-red-100 text-red-800' :
-            'bg-gray-100 text-gray-800'
+            ticket.raffleState === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+            ticket.raffleState === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+            ticket.raffleState === 'drawing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+            ticket.raffleState === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+            ticket.raffleState === 'allPrizesClaimed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+            ticket.raffleState === 'ended' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
           }`}>
             {ticket.raffleState.charAt(0).toUpperCase() + ticket.raffleState.slice(1)}
           </span>
@@ -322,21 +320,21 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
       </div>
       
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
-          className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors text-sm"
+          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm"
         >
           Visit Raffle Page
-        </button>
-        
-        {canClaimPrize() && (
-          <button
-            onClick={() => onClaimPrize(ticket)}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-md hover:from-green-600 hover:to-emerald-700 transition-colors text-sm"
-          >
-            Claim Prize
-          </button>
-        )}
+        </Button>
+
+        <Button
+          onClick={() => onClaimPrize(ticket)}
+          disabled={!canClaimPrize()}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title={canClaimPrize() ? "Claim your prize" : "Prize not available for claiming"}
+        >
+          Claim Prize
+        </Button>
         
         {canClaimRefund() && (
           <button
@@ -1042,7 +1040,7 @@ const ProfilePage = () => {
               </p>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="mt-4 p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
             <p className="text-sm font-medium">Connected Account:</p>
             <p className="font-mono text-sm">{address}</p>
           </div>
@@ -1052,48 +1050,48 @@ const ProfilePage = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3">
                 <Ticket className="h-8 w-8 text-blue-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Tickets Purchased</p>
+                  <p className="text-sm text-muted-foreground">Tickets Purchased</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3">
                 <Plus className="h-8 w-8 text-green-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Raffles Created</p>
+                  <p className="text-sm text-muted-foreground">Raffles Created</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3">
                 <Trophy className="h-8 w-8 text-yellow-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Prizes Won</p>
+                  <p className="text-sm text-muted-foreground">Prizes Won</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3">
                 <DollarSign className="h-8 w-8 text-emerald-500" />
                 <div>
                   <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">ETH Withdrawn</p>
+                  <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3">
                 <Minus className="h-8 w-8 text-orange-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Refunds Claimed</p>
+                  <p className="text-sm text-muted-foreground">Refunds Claimed</p>
                 </div>
               </div>
             </div>
@@ -1131,7 +1129,7 @@ const ProfilePage = () => {
         {/* Revenue Modal */}
         {showRevenueModal && selectedRaffle && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="bg-card/90 backdrop-blur-md border border-border/50 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
               <h3 className="text-lg font-semibold mb-4">Revenue Details</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">

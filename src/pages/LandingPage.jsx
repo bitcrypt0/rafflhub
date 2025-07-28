@@ -150,18 +150,18 @@ const RaffleCard = ({ raffle }) => {
   const getStatusBadge = () => {
     const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
     const colorMap = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Active': 'bg-green-100 text-green-800',
-      'Ended': 'bg-red-100 text-red-800',
-      'Drawing': 'bg-purple-100 text-purple-800',
-      'Completed': 'bg-blue-100 text-blue-800',
-      'Deleted': 'bg-gray-200 text-gray-800',
-      'Activation Failed': 'bg-red-200 text-red-900',
-      'All Prizes Claimed': 'bg-blue-200 text-blue-900',
-      'Unengaged': 'bg-gray-100 text-gray-800',
-      'Unknown': 'bg-gray-100 text-gray-800'
+      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
+      'All Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
-    return <span className={`px-2 py-1 rounded-full text-xs ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
 
   const getPrizeType = () => {
@@ -183,7 +183,7 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="bg-background border border-border rounded-lg p-4 hover:shadow-lg transition-shadow flex flex-col h-full">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold truncate flex-1 mr-2">{raffle.name}</h3>
         {getStatusBadge()}
@@ -191,38 +191,38 @@ const RaffleCard = ({ raffle }) => {
       
       <div className="space-y-2 mb-4">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Creator:</span>
+          <span className="text-muted-foreground">Creator:</span>
           <span className="font-mono">{raffle.creator?.slice(0, 10)}...</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Ticket Price:</span>
+          <span className="text-muted-foreground">Ticket Price:</span>
           <span>{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
+          <span className="text-muted-foreground">Tickets Sold:</span>
           <span>{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Winners:</span>
+          <span className="text-muted-foreground">Winners:</span>
           <span>{raffle.winnersCount}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">{timeLabel}:</span>
+          <span className="text-muted-foreground">{timeLabel}:</span>
           <span>{timeRemaining}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Type:</span>
+          <span className="text-muted-foreground">Type:</span>
           <span className={`px-2 py-1 rounded-full text-sm`}>{getPrizeType()}</span>
         </div>
         {(getPrizeType() === 'NFT Prize') && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+            <span className="text-muted-foreground">Prize Collection:</span>
             <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
           </div>
         )}
         {(getPrizeType() === 'ERC20' || getPrizeType() === 'ETH') && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+            <span className="text-muted-foreground">Prize Amount:</span>
             <span>{getPrizeAmount()}</span>
           </div>
         )}
@@ -230,7 +230,7 @@ const RaffleCard = ({ raffle }) => {
       
       <Button
         onClick={handleViewRaffle}
-        className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base mt-auto"
+        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 border-0"
       >
         Visit Raffle Page
       </Button>
@@ -252,17 +252,17 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           {title} ({raffles.length})
         </h2>
         <button
-          className="text-blue-600 dark:text-blue-500 underline text-sm font-medium hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+          className="text-primary hover:text-primary/80 underline text-sm font-medium transition-colors"
           onClick={() => navigate(`/raffles/${stateKey}`)}
         >
           View all {title.toLowerCase()}
         </button>
       </div>
-      <div className="bg-background border border-border rounded-lg p-6">
+      <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-sm">
         {raffles.length === 0 ? (
           <div className="text-center py-8">
-            <Icon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500 dark:text-gray-400">No {title.toLowerCase()} at the moment</p>
+            <Icon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">No {title.toLowerCase()} at the moment</p>
           </div>
         ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
@@ -462,15 +462,15 @@ const LandingPage = () => {
       <PageContainer className="py-4">
         <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Connect Your Wallet</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
@@ -482,8 +482,8 @@ const LandingPage = () => {
     return (
       <PageContainer className="py-8">
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-500 dark:text-gray-400">Loading raffles from blockchain...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
         </div>
       </PageContainer>
     );
@@ -495,18 +495,18 @@ const LandingPage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Unable to Load Raffles</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors"
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
           >
             Try Again
           </button>
@@ -526,22 +526,22 @@ const LandingPage = () => {
           height: '100vh',
           zIndex: 0,
           pointerEvents: 'none',
-          background: `radial-gradient(circle at 20% 30%, rgba(120,200,255,0.08) 0%, transparent 60%),
-                      radial-gradient(circle at 80% 20%, rgba(255,120,200,0.07) 0%, transparent 60%),
-                      radial-gradient(circle at 60% 80%, rgba(255,220,120,0.06) 0%, transparent 60%),
-                      linear-gradient(120deg, rgba(120,255,200,0.05) 0%, rgba(255,120,200,0.05) 100%)`
+          background: `radial-gradient(circle at 20% 30%, hsl(var(--primary) / 0.08) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.06) 0%, transparent 60%),
+                      radial-gradient(circle at 60% 80%, hsl(var(--secondary) / 0.05) 0%, transparent 60%),
+                      linear-gradient(120deg, hsl(var(--primary) / 0.03) 0%, hsl(var(--accent) / 0.03) 100%)`
         }}
         aria-hidden="true"
       />
       <PageContainer className="py-4 pb-16" style={{ position: 'relative', zIndex: 1 }}>
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
         </p>
       </div>
 
-      <div className="mt-16">
+      <div className="mt-12">
         <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
         <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
         <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
@@ -551,9 +551,9 @@ const LandingPage = () => {
 
       {raffles.length === 0 && !loading && !error && (
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground">
             There are currently no raffles available on the blockchain. Check back later or create your own!
           </p>
         </div>

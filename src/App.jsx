@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Header } from './components/Layout';
 import { Toaster } from './components/ui/sonner';
 import LandingPage from './pages/LandingPage';
@@ -16,12 +17,8 @@ import RafflesByStatePage from './pages/RafflesByStatePage';
 import './App.css';
 
 function App() {
-  // Always set dark theme
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
-
   return (
+    <ThemeProvider>
       <WalletProvider>
         <ContractProvider>
           <Router>
@@ -46,6 +43,7 @@ function App() {
           </Router>
         </ContractProvider>
       </WalletProvider>
+    </ThemeProvider>
   );
 }
 

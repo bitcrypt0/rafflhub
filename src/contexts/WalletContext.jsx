@@ -31,13 +31,15 @@ export const WalletProvider = ({ children }) => {
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
-      
+
       return () => {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
         window.ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
   }, []);
+
+
 
   useEffect(() => {
     if (chainId && SUPPORTED_NETWORKS[chainId]) {
@@ -78,7 +80,7 @@ export const WalletProvider = ({ children }) => {
     setLoading(true);
     try {
       let provider;
-      
+
       switch (walletType) {
         case 'metamask':
           if (!window.ethereum) {
@@ -87,15 +89,7 @@ export const WalletProvider = ({ children }) => {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           provider = new ethers.providers.Web3Provider(window.ethereum);
           break;
-          
-        case 'walletconnect':
-          // WalletConnect implementation would go here
-          throw new Error('WalletConnect not implemented yet');
-          
-        case 'coinbase':
-          // Coinbase Wallet implementation would go here
-          throw new Error('Coinbase Wallet not implemented yet');
-          
+
         default:
           throw new Error('Unsupported wallet type');
       }

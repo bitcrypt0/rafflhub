@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Wallet, User, Plus, ListChecks, Gift, Coins, Search, Book, LogOut } from 'lucide-react';
+import { Moon, Sun, Waves, Wallet, User, Plus, ListChecks, Gift, Coins, Search, Book, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
-import WalletModal from './wallet/WalletModal';
+import { useTheme } from '../contexts/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -16,10 +16,20 @@ import {
 } from './ui/dropdown-menu';
 
 const Header = () => {
-  const { connected, address, formatAddress, disconnect, provider, chainId } = useWallet();
+  const { connected, address, formatAddress, disconnect, connectWallet, provider, chainId } = useWallet();
   const { contracts, getContractInstance } = useContract();
-  const [showWalletModal, setShowWalletModal] = useState(false);
+  const { theme, cycleTheme, getCurrentTheme } = useTheme();
   const [showSearch, setShowSearch] = useState(false);
+
+  // Handle direct wallet connection
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet('metamask');
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      // You can add toast notification here if needed
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -158,13 +168,13 @@ const Header = () => {
 
   return (
     <>
-      <header className="relative w-full z-50 bg-background border-b border-border">
+      <header className="relative w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="w-full px-0 py-0">
-          <div className="bg-background border-b border-border w-full">
+          <div className="bg-background/80 backdrop-blur-md border-b border-border/50 w-full">
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-3">
-                  <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflhub</span>
+                  <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflhub</span>
                 </Link>
               </div>
               <div className="flex items-center gap-4 w-full justify-end">
@@ -244,7 +254,7 @@ const Header = () => {
                         )}
                         {!searchLoading && searchResults.length > 0 && (
                           <div
-                            className="bg-background bg-white dark:bg-neutral-900 border border-border rounded-md max-h-60 overflow-y-auto shadow-lg custom-search-scrollbar"
+                            className="bg-popover/90 backdrop-blur-md border border-border/50 rounded-xl max-h-60 overflow-y-auto shadow-xl custom-search-scrollbar"
                             style={{ overflowX: 'hidden' }}
                           >
                             {searchResults.map(r => (
@@ -278,7 +288,17 @@ const Header = () => {
                     )}
                   </div>
                 </div>
-                {/* Network Selector first */}
+                {/* Theme Cycle */}
+                <button
+                  onClick={cycleTheme}
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  title={`Current: ${getCurrentTheme().name} - Click to cycle themes`}
+                >
+                  {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
+                  {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
+                  {getCurrentTheme().icon === 'Waves' && <Waves className="h-5 w-5" />}
+                </button>
+                {/* Network Selector */}
                 <NetworkSelector />
                 {/* Wallet connect/disconnect next */}
                 {connected ? (
@@ -294,8 +314,8 @@ const Header = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowWalletModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+                    onClick={handleConnectWallet}
+                    className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm hover:bg-foreground/90 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <Wallet className="h-5 w-5" />
                     <span>Connect Wallet</span>
@@ -308,7 +328,7 @@ const Header = () => {
                       Menu
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-white dark:bg-neutral-900 bg-popover border border-border mt-2 rounded-xl shadow-2xl py-2 z-40 backdrop-blur-md ring-1 ring-black/5 flex flex-col">
+                  <DropdownMenuContent className="w-56 bg-popover/90 backdrop-blur-md border border-border/50 mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">
                     <DropdownMenuItem asChild>
                       <a
                         href="https://rafflhub.gitbook.io/rafflhub"
@@ -351,10 +371,6 @@ const Header = () => {
           </div>
         </div>
       </header>
-      <WalletModal 
-        isOpen={showWalletModal} 
-        onClose={() => setShowWalletModal(false)} 
-      />
     </>
   );
 };

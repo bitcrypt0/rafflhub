@@ -82,7 +82,7 @@ const TokenPreApprovalCard = () => {
         <div>
           <label className="block text-base font-medium mb-2">Prize Type</label>
           <select
-            className="w-full px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+            className="w-full px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
             value={prizeType}
             onChange={e => setPrizeType(e.target.value)}
           >
@@ -90,7 +90,7 @@ const TokenPreApprovalCard = () => {
               <option
                 key={type.value}
                 value={type.value}
-                className="bg-white text-black dark:bg-gray-900 dark:text-white"
+                className="bg-background text-foreground"
               >
                 {type.label}
               </option>

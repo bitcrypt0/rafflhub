@@ -50,7 +50,7 @@ const ProfileTabs = ({
       ) : (
         <div className="space-y-3">
           {activities.slice(0, 10).map((activity, index) => (
-            <div key={index} className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3">
                 <div className="mt-1">
                   {activity.icon}
@@ -102,7 +102,10 @@ const ProfileTabs = ({
           <CardContent className="text-center py-8">
             <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
-            <Button onClick={() => navigate('/create-raffle')}>
+            <Button
+              onClick={() => navigate('/create-raffle')}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+            >
               Create Your First Raffle
             </Button>
           </CardContent>
@@ -138,19 +141,17 @@ const ProfileTabs = ({
                 
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => navigate(`/raffle/${raffle.address}`)}
-                    className="flex-1"
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => onViewRevenue(raffle)}
-                    className="flex-1"
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
                   >
                     <DollarSign className="h-4 w-4 mr-1" />
                     Revenue
@@ -176,7 +177,10 @@ const ProfileTabs = ({
           <CardContent className="text-center py-8">
             <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">You haven't purchased any tickets yet</p>
-            <Button onClick={() => navigate('/')}>
+            <Button
+              onClick={() => navigate('/')}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+            >
               Browse Raffles
             </Button>
           </CardContent>
@@ -322,15 +326,24 @@ const ProfileTabs = ({
             <CardDescription>Manage your raffles</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button onClick={() => navigate('/create-raffle')} className="w-full">
+            <Button
+              onClick={() => navigate('/create-raffle')}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create New Raffle
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            >
               <BarChart3 className="h-4 w-4 mr-2" />
               View Analytics
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            >
               <DollarSign className="h-4 w-4 mr-2" />
               Withdraw Revenue
             </Button>

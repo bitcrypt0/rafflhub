@@ -176,7 +176,7 @@ const RoyaltyAdjustmentComponent = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg">
       <div className="space-y-6">
         {/* Collection Lookup Section */}
         <div className="space-y-4">
@@ -206,8 +206,9 @@ const RoyaltyAdjustmentComponent = () => {
 
           <button
             onClick={loadCollectionInfo}
-            disabled={loadingInfo || !connected}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            disabled={loadingInfo || !connected || !collectionData.address}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
           >
             <Search className="h-4 w-4" />
             {loadingInfo ? 'Loading...' : 'Load Collection Info'}
@@ -241,15 +242,14 @@ const RoyaltyAdjustmentComponent = () => {
                 <span className="ml-2 font-semibold">
                   {isRevealed === null ? 'Unknown' : isRevealed ? 'Revealed' : 'Not Revealed'}
                 </span>
-                {!isRevealed && collectionInfo.isOwner && (
-                  <button
-                    onClick={handleReveal}
-                    disabled={revealing}
-                    className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  >
-                    {revealing ? 'Revealing...' : 'Reveal Collection'}
-                  </button>
-                )}
+                <button
+                  onClick={handleReveal}
+                  disabled={revealing || isRevealed || !collectionInfo.isOwner}
+                  className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  title={!collectionInfo.isOwner ? "Only collection owner can reveal" : isRevealed ? "Collection already revealed" : "Reveal collection"}
+                >
+                  {revealing ? 'Revealing...' : 'Reveal Collection'}
+                </button>
               </div>
             </div>
             
@@ -301,8 +301,9 @@ const RoyaltyAdjustmentComponent = () => {
 
             <button
               onClick={handleUpdateRoyalty}
-              disabled={loading || !connected}
-              className="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner || !royaltyPercentage || !collectionData.royaltyRecipient}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+              title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
               <Settings className="h-4 w-4" />
               {loading ? 'Updating...' : 'Update Royalty Settings'}

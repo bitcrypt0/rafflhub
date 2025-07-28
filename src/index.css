@@ -38,6 +38,7 @@
     line-height: 1.2;
     letter-spacing: 0.02em;
     font-family: 'Raleway', sans-serif;
+    color: hsl(var(--foreground));
   }
   
   h2 {
