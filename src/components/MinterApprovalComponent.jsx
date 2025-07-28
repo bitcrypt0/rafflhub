@@ -444,6 +444,7 @@ const MinterApprovalComponent = () => {
             <Button
               onClick={toggleMinterApprovalLock}
               disabled={loading}
+              variant={isLocked ? "default" : "outline"}
               className={`w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isLocked
                   ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700'
