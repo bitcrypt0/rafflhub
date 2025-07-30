@@ -21,14 +21,24 @@ const TokenGatedSection = ({
   return (
     <>
       {/* Token-Gated Toggle */}
-      <div className={`flex items-center gap-3 ${isMobile ? 'mb-4' : 'mb-2'}`}>
-        <label className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>
-          Enable Token-Gated Access
-        </label>
-        <Switch
-          checked={isEnabled}
-          onCheckedChange={handleToggleChange}
-        />
+      <div className={`${isMobile ? 'p-4 bg-muted/5 rounded-lg border border-border mb-4' : 'mb-2'}`}>
+        <div className={`flex items-center ${isMobile ? 'gap-4' : 'gap-3'}`}>
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={handleToggleChange}
+            size={isMobile ? "mobile" : "default"}
+          />
+          <div className="flex-1">
+            <label className={`font-medium block ${isMobile ? 'text-base mb-1' : 'text-sm'}`}>
+              Enable Token-Gated Access
+            </label>
+            {isMobile && (
+              <p className="text-xs text-muted-foreground">
+                Restrict raffle participation to token holders
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Token-Gated Fields */}

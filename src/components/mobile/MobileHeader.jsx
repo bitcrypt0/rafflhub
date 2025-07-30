@@ -77,21 +77,21 @@ const MobileHeader = () => {
               </SheetTrigger>
               
               <SheetContent side="right" className="w-80 p-0 bg-background">
-                <SheetHeader className="p-4 border-b border-border">
-                  <SheetTitle className="text-left text-foreground">Menu</SheetTitle>
+                <SheetHeader className="p-3 border-b border-border">
+                  <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
                 </SheetHeader>
                 
                 <div className="flex flex-col h-full">
                   {/* Wallet Section */}
-                  <div className="p-4 border-b border-border">
+                  <div className="p-3 border-b border-border">
                     {connected ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <Wallet className="h-4 w-4 text-primary" />
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Wallet className="h-3 w-3 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">Connected</p>
+                            <p className="text-xs font-medium text-foreground">Connected</p>
                             <p className="text-xs text-muted-foreground font-mono truncate">
                               {formatAddress(address)}
                             </p>
@@ -101,7 +101,7 @@ const MobileHeader = () => {
                           variant="outline"
                           size="sm"
                           onClick={disconnect}
-                          className="w-full text-foreground"
+                          className="w-full text-foreground h-8"
                         >
                           Disconnect
                         </Button>
@@ -109,51 +109,51 @@ const MobileHeader = () => {
                     ) : (
                       <Button
                         onClick={handleConnectWallet}
-                        className="w-full bg-foreground text-background hover:bg-foreground/90"
+                        className="w-full bg-foreground text-background hover:bg-foreground/90 h-8"
                       >
-                        <Wallet className="h-4 w-4 mr-2" />
+                        <Wallet className="h-3 w-3 mr-2" />
                         Connect Wallet
                       </Button>
                     )}
                   </div>
 
                   {/* Navigation */}
-                  <nav className="flex-1 p-4">
-                    <div className="space-y-2">
+                  <nav className="flex-1 p-3">
+                    <div className="space-y-1">
                       {navigationItems.map((item) => (
                         <Link
                           key={item.href}
                           to={item.href}
                           onClick={() => setIsDrawerOpen(false)}
-                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-foreground hover:text-foreground"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-foreground hover:text-foreground"
                         >
-                          <span className="text-lg">{item.icon}</span>
-                          <span className="font-medium text-foreground">{item.name}</span>
+                          <span className="text-base">{item.icon}</span>
+                          <span className="text-sm font-medium text-foreground">{item.name}</span>
                         </Link>
                       ))}
                     </div>
                   </nav>
 
                   {/* Settings Section */}
-                  <div className="p-4 border-t border-border space-y-4">
+                  <div className="p-3 border-t border-border space-y-2">
                     {/* Theme Toggle */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">Theme</span>
+                      <span className="text-xs font-medium text-foreground">Theme</span>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={cycleTheme}
-                        className="h-8 w-8 p-0 border-border text-foreground hover:bg-muted"
+                        className="h-7 w-7 p-0 border-border text-foreground hover:bg-muted"
                       >
-                        {getCurrentTheme().icon === 'Sun' && <Sun className="h-4 w-4" />}
-                        {getCurrentTheme().icon === 'Moon' && <Moon className="h-4 w-4" />}
-                        {getCurrentTheme().icon === 'Waves' && <Waves className="h-4 w-4" />}
+                        {getCurrentTheme().icon === 'Sun' && <Sun className="h-3 w-3" />}
+                        {getCurrentTheme().icon === 'Moon' && <Moon className="h-3 w-3" />}
+                        {getCurrentTheme().icon === 'Waves' && <Waves className="h-3 w-3" />}
                       </Button>
                     </div>
 
                     {/* Network Selector */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">Network</span>
+                      <span className="text-xs font-medium text-foreground">Network</span>
                       <NetworkSelector />
                     </div>
                   </div>
