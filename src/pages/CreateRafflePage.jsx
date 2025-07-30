@@ -10,6 +10,8 @@ import { Label } from '../components/ui/label';
 import { toast } from '../components/ui/sonner';
 import { contractABIs } from '../contracts/contractABIs';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
+import TokenGatedSection from '../components/TokenGatedSection';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -702,67 +704,13 @@ const PrizedRaffleForm = () => {
           )}
         </div>
 
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={tokenGatedEnabled}
-            onCheckedChange={e => setTokenGatedEnabled(e)}
-          />
-        </div>
-        {/* Token-Gated Fields */}
-        {tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          tokenGatedEnabled={tokenGatedEnabled}
+          onTokenGatedChange={setTokenGatedEnabled}
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+        />
 
         <div className="flex gap-4">
           <Button
@@ -1148,67 +1096,13 @@ const WhitelistRaffleForm = () => {
             />
           </div>
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={tokenGatedEnabled}
-            onCheckedChange={e => setTokenGatedEnabled(e)}
-          />
-        </div>
-        {/* Token-Gated Fields */}
-        {tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          tokenGatedEnabled={tokenGatedEnabled}
+          onTokenGatedChange={setTokenGatedEnabled}
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1588,66 +1482,12 @@ const NewERC721DropForm = () => {
             )}
           </div>
         </div>
-        {/* 3. Add Switch and conditional rendering of token-gated fields */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1879,67 +1719,13 @@ function ExistingERC721DropForm() {
             required
           />
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={tokenGatedEnabled}
-            onCheckedChange={e => setTokenGatedEnabled(e)}
-          />
-        </div>
-        {/* Token-Gated Fields */}
-        {tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          tokenGatedEnabled={tokenGatedEnabled}
+          onTokenGatedChange={setTokenGatedEnabled}
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2195,66 +1981,12 @@ function ExistingERC1155DropForm() {
             />
           </div>
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2419,33 +2151,50 @@ const CreateRafflePage = () => {
     return null;
   };
 
+  const { isMobile } = useMobileBreakpoints();
+
   if (!connected) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">Connect Your Wallet</h2>
-          <p className="text-muted-foreground">Please connect your wallet to create raffles and deploy collections.</p>
+          <Plus className={`mx-auto mb-4 text-muted-foreground ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
+          <h2 className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>Connect Your Wallet</h2>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
+            Please connect your wallet to create raffles and deploy collections.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6 pb-16">
-      <div className="container mx-auto px-8">
-        <div className="mb-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">
+    <div className="min-h-screen bg-background pb-6">
+      <div className={`${isMobile ? 'px-4' : 'container mx-auto px-8'}`}>
+        {/* Page Header */}
+        <div className={`text-center ${isMobile ? 'mb-6 mt-4' : 'mb-4'}`}>
+          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-2' : 'text-4xl mb-4'}`}>
             Create an on-chain raffle for your community
           </h1>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[315px_1fr] gap-8 max-w-7xl mx-auto mt-16">
-          <div className="lg:col-span-1 flex flex-col gap-6 items-start">
-            <div className="w-full max-w-[315px]">
-            {renderFilterCard()}
+
+        {/* Responsive layout - mobile stacks, desktop uses grid */}
+        <div className={`${isMobile
+          ? 'space-y-6'
+          : 'grid grid-cols-1 lg:grid-cols-[315px_1fr] gap-8 max-w-7xl mx-auto mt-16'
+        }`}>
+
+          {/* Filter Section */}
+          <div className={`${isMobile
+            ? 'w-full'
+            : 'lg:col-span-1 flex flex-col gap-6 items-start'
+          }`}>
+            <div className={`${isMobile ? 'w-full' : 'w-full max-w-[315px]'}`}>
+              {renderFilterCard()}
             </div>
           </div>
-          <div className="lg:col-span-1">
+
+          {/* Form Section */}
+          <div className={`${isMobile ? 'w-full' : 'lg:col-span-1'}`}>
             {renderForm()}
           </div>
         </div>
@@ -2700,66 +2449,12 @@ function LuckySaleERC721Form() {
             required
           />
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -3033,66 +2728,12 @@ function LuckySaleERC1155Form() {
             required
           />
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -3303,66 +2944,12 @@ function ETHGiveawayForm() {
             )}
           </div>
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -3627,66 +3214,12 @@ function ERC20GiveawayForm() {
             )}
           </div>
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -4159,66 +3692,12 @@ function NewERC1155DropForm() {
             )}
           </div>
         </div>
-        {/* Token-Gated Toggle */}
-        <div className="flex items-center gap-2 mb-2">
-          <label className="font-medium">Enable Token-Gated Access</label>
-          <Switch
-            checked={formData.tokenGatedEnabled}
-            onCheckedChange={e => handleChange('tokenGatedEnabled', e)}
-          />
-        </div>
-        {formData.tokenGatedEnabled && (
-          <div className="p-4 border rounded-lg bg-muted/10 mb-4">
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Address</label>
-              <input
-                type="text"
-                value={formData.holderTokenAddress}
-                onChange={e => handleChange('holderTokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Token Standard</label>
-              <select
-                value={formData.holderTokenStandard}
-                onChange={e => handleChange('holderTokenStandard', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-black text-white"
-                required={formData.tokenGatedEnabled}
-              >
-                <option value="0">ERC721</option>
-                <option value="1">ERC1155</option>
-                <option value="2">ERC20</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block text-base font-medium mb-1">Minimum Holder Balance</label>
-              <input
-                type="number"
-                value={formData.minHolderTokenBalance}
-                onChange={e => handleChange('minHolderTokenBalance', e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                placeholder="Minimum balance required to enter"
-                required={formData.tokenGatedEnabled}
-              />
-            </div>
-            {(formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && (
-              <div className="mb-2">
-                <label className="block text-base font-medium mb-1">Token ID</label>
-                <input
-                  type="number"
-                  value={formData.holderTokenId}
-                  onChange={e => handleChange('holderTokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg bg-background"
-                  placeholder="Token ID (for ERC721/1155)"
-                  required={formData.tokenGatedEnabled}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <TokenGatedSection
+          formData={formData}
+          handleChange={handleChange}
+          required={true}
+          useFormDataEnabled={true}
+        />
         <div className="flex gap-4">
           <Button
             type="submit"

@@ -1770,7 +1770,7 @@ const RaffleDetailPage = () => {
   );
 
   return (
-    <PageContainer variant="wide" className="py-8 pb-16">
+    <PageContainer variant="wide" className="py-8">
       <div className="mb-8">
         <button
           onClick={() => navigate('/')}

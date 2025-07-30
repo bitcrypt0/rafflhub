@@ -211,7 +211,7 @@ const WhitelistRafflePage = () => {
   }
 
   return (
-    <PageContainer className="pb-16">
+    <PageContainer className="py-8">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
         <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">

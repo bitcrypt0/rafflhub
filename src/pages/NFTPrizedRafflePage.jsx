@@ -202,7 +202,7 @@ const NFTPrizedRafflePage = () => {
     );
   }
   return (
-    <PageContainer className="pb-16">
+    <PageContainer className="py-8">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

@@ -8,6 +8,8 @@ import { ethers } from 'ethers';
 import { contractABIs } from '../contracts/contractABIs';
 import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import MobileHeader from './mobile/MobileHeader';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,7 +21,13 @@ const Header = () => {
   const { connected, address, formatAddress, disconnect, connectWallet, provider, chainId } = useWallet();
   const { contracts, getContractInstance } = useContract();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
+  const { isMobile } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
+
+  // Use mobile header for mobile devices
+  if (isMobile) {
+    return <MobileHeader />;
+  }
 
   // Handle direct wallet connection
   const handleConnectWallet = async () => {
@@ -309,15 +317,15 @@ const Header = () => {
                       title="Disconnect Wallet"
                       className="hover:bg-destructive/10 rounded-full p-1 transition-colors"
                     >
-                      <LogOut className="h-5 w-5 text-destructive" />
+                      <LogOut className="h-4 w-4 text-destructive" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={handleConnectWallet}
-                    className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm hover:bg-foreground/90 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="flex items-center gap-2 px-3 py-2 bg-foreground text-background rounded-md text-sm hover:bg-foreground/90 transition-colors"
                   >
-                    <Wallet className="h-5 w-5" />
+                    <Wallet className="h-4 w-4" />
                     <span>Connect Wallet</span>
                   </button>
                 )}
@@ -377,28 +385,35 @@ const Header = () => {
 
 export { Header };
 
-// Page Container Component for consistent padding
-export const PageContainer = ({ 
-  children, 
+// Enhanced Page Container Component with desktop-first design and mobile optimization
+export const PageContainer = ({
+  children,
   variant = 'default', // 'default', 'narrow', 'wide', 'profile'
-  className = '' 
+  className = ''
 }) => {
+  const { isMobile } = useMobileBreakpoints();
+
   const getPaddingClasses = () => {
+    // Desktop-first with mobile optimizations
     switch (variant) {
       case 'narrow':
         return 'mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32';
       case 'wide':
         return 'container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20';
       case 'profile':
-        return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
+        return isMobile
+          ? 'mx-auto px-4'
+          : 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
       case 'default':
       default:
-        return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
+        return isMobile
+          ? 'mx-auto px-4'
+          : 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
     }
   };
 
   const baseClasses = getPaddingClasses();
-  
+
   return (
     <div className={`${baseClasses} ${className}`}>
       {children}

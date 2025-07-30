@@ -12,6 +12,7 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -1028,23 +1029,24 @@ const ProfilePage = () => {
     return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
   }
 
+  const { isMobile } = useMobileBreakpoints();
+
   return (
-    <PageContainer variant="profile" className="pb-16">
-      <PageContainer variant="profile" className="py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Profile</h1>
-              <p className="text-muted-foreground">
-                Track activities, manage your raffles, revenue and collections
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
-            <p className="text-sm font-medium">Connected Account:</p>
-            <p className="font-mono text-sm">{address}</p>
+    <PageContainer variant="profile" className={isMobile ? 'py-4' : 'py-8'}>
+      <div className={isMobile ? 'mb-6' : 'mb-8'}>
+        <div className={`${isMobile ? 'mb-4' : 'flex items-center justify-between mb-4'}`}>
+          <div>
+            <h1 className={`font-bold mb-2 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Profile</h1>
+            <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
+              Track activities, manage your raffles, revenue and collections
+            </p>
           </div>
         </div>
+        <div className={`mt-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+          <p className="text-sm font-medium">Connected Account:</p>
+          <p className={`font-mono ${isMobile ? 'text-xs break-all' : 'text-sm'}`}>{address}</p>
+        </div>
+      </div>
 
         {/* Activity Stats */}
         <div className="mb-8">
@@ -1165,7 +1167,6 @@ const ProfilePage = () => {
             </div>
           </div>
         )}
-      </PageContainer>
     </PageContainer>
   );
 };

@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { categorizeRaffles } from '../utils/raffleUtils';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -455,22 +456,25 @@ const LandingPage = () => {
 
   // Categorize raffles by state and duration
   const { pending, active, ended, drawing, completed } = categorizeRaffles(raffles);
+  const { isMobile } = useMobileBreakpoints();
 
   // Show wallet connection prompt if not connected
   if (!connected) {
     return (
       <PageContainer className="py-4">
-        <div className="mb-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <div className={`text-center ${isMobile ? 'mb-6' : 'mb-4'}`}>
+          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+            Fairness and Transparency, On-Chain
+          </h1>
+          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
-        
-        <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold mb-2">Connect Your Wallet</h3>
-          <p className="text-muted-foreground mb-6">
+
+        <div className={`text-center ${isMobile ? 'py-8' : 'py-16'}`}>
+          <Trophy className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
+          <h3 className={`font-semibold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>Connect Your Wallet</h3>
+          <p className={`text-muted-foreground mb-6 ${isMobile ? 'text-sm' : 'text-base'}`}>
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
@@ -533,7 +537,7 @@ const LandingPage = () => {
         }}
         aria-hidden="true"
       />
-      <PageContainer className="py-4 pb-16" style={{ position: 'relative', zIndex: 1 }}>
+      <PageContainer className="py-4" style={{ position: 'relative', zIndex: 1 }}>
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
