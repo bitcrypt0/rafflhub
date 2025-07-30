@@ -5,7 +5,7 @@ import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { Button } from '../ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '../ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '../ui/sheet';
 import NetworkSelector from '../ui/network-selector';
 
 const MobileHeader = () => {
@@ -77,8 +77,12 @@ const MobileHeader = () => {
               </SheetTrigger>
               
               <SheetContent side="right" className="w-80 p-0 bg-background">
-                <SheetHeader className="p-3 border-b border-border">
+                <SheetHeader className="p-3 border-b border-border relative">
                   <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
+                  <SheetClose className="absolute top-3 right-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                    <X className="h-4 w-4 text-foreground" />
+                    <span className="sr-only">Close</span>
+                  </SheetClose>
                 </SheetHeader>
                 
                 <div className="flex flex-col h-full">
@@ -118,7 +122,7 @@ const MobileHeader = () => {
                   </div>
 
                   {/* Navigation */}
-                  <nav className="p-3">
+                  <div className="p-3">
                     <div className="space-y-1">
                       {navigationItems.map((item) => (
                         <Link
@@ -132,10 +136,10 @@ const MobileHeader = () => {
                         </Link>
                       ))}
                     </div>
-                  </nav>
+                  </div>
 
                   {/* Settings Section */}
-                  <div className="p-3 border-t border-border space-y-2 mt-auto">
+                  <div className="p-3 border-t border-border space-y-2">
                     {/* Theme Toggle */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">Theme</span>
