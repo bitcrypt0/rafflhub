@@ -77,12 +77,8 @@ const MobileHeader = () => {
               </SheetTrigger>
               
               <SheetContent side="right" className="w-80 p-0 bg-background">
-                <SheetHeader className="p-3 border-b border-border relative">
+                <SheetHeader className="p-3 border-b border-border">
                   <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
-                  <SheetClose className="absolute top-3 right-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                    <X className="h-4 w-4 text-foreground" />
-                    <span className="sr-only">Close</span>
-                  </SheetClose>
                 </SheetHeader>
                 
                 <div className="flex flex-col h-full">
@@ -159,6 +155,14 @@ const MobileHeader = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">Network</span>
                       <NetworkSelector />
+                    </div>
+
+                    {/* Close Button */}
+                    <div className="pt-2">
+                      <SheetClose className="w-full flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-foreground">
+                        <X className="h-4 w-4" />
+                        <span className="text-sm font-medium">Close Menu</span>
+                      </SheetClose>
                     </div>
                   </div>
                 </div>
