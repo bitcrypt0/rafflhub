@@ -390,38 +390,89 @@ const ProfileTabs = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="activity" className="flex items-center gap-2">
-          <Activity className="h-4 w-4" />
-          Activity
-        </TabsTrigger>
-        <TabsTrigger value="created" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Created
-        </TabsTrigger>
-        <TabsTrigger value="purchased" className="flex items-center gap-2">
-          <Ticket className="h-4 w-4" />
-          Purchased
-        </TabsTrigger>
-        <TabsTrigger value="dashboard" className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4" />
-          Dashboard
-        </TabsTrigger>
-      </TabsList>
+      {isMobile ? (
+        // Mobile: 2x2 grid layout with proper buttons
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
+              activeTab === 'activity'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <Activity className="h-5 w-5" />
+            <span className="text-sm font-medium">Activity</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('created')}
+            className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
+              activeTab === 'created'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <Plus className="h-5 w-5" />
+            <span className="text-sm font-medium">Created</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('purchased')}
+            className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
+              activeTab === 'purchased'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <Ticket className="h-5 w-5" />
+            <span className="text-sm font-medium">Tickets</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
+              activeTab === 'dashboard'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <BarChart3 className="h-5 w-5" />
+            <span className="text-sm font-medium">Dashboard</span>
+          </button>
+        </div>
+      ) : (
+        // Desktop: horizontal tabs
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="activity" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Activity
+          </TabsTrigger>
+          <TabsTrigger value="created" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Created
+          </TabsTrigger>
+          <TabsTrigger value="purchased" className="flex items-center gap-2">
+            <Ticket className="h-4 w-4" />
+            Purchased
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+        </TabsList>
+      )}
 
-      <TabsContent value="activity" className="mt-6">
+      <TabsContent value="activity" className={isMobile ? "mt-4" : "mt-6"}>
         <ActivityTab />
       </TabsContent>
 
-      <TabsContent value="created" className="mt-6">
+      <TabsContent value="created" className={isMobile ? "mt-4" : "mt-6"}>
         <CreatedRafflesTab />
       </TabsContent>
 
-      <TabsContent value="purchased" className="mt-6">
+      <TabsContent value="purchased" className={isMobile ? "mt-4" : "mt-6"}>
         <PurchasedTicketsTab />
       </TabsContent>
 
-      <TabsContent value="dashboard" className="mt-6">
+      <TabsContent value="dashboard" className={isMobile ? "mt-4" : "mt-6"}>
         <CreatorDashboardTab />
       </TabsContent>
     </Tabs>

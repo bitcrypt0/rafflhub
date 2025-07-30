@@ -354,7 +354,8 @@ const ProfilePage = () => {
   const { connected, address, provider, chainId } = useWallet();
   const { contracts, getContractInstance, executeTransaction, executeCall } = useContract();
   const navigate = useNavigate();
-  
+  const { isMobile } = useMobileBreakpoints(); // Move hook to top to fix Rules of Hooks violation
+
   const [activeTab, setActiveTab] = useState('activity');
   const [userActivity, setUserActivity] = useState([]);
   const [createdRaffles, setCreatedRaffles] = useState([]);
@@ -879,12 +880,27 @@ const ProfilePage = () => {
     }
   };
 
-  // Load data when wallet connects
+  // Load data when wallet connects, reset when disconnects
   useEffect(() => {
     if (connected && address) {
       fetchOnChainActivity();
       fetchCreatedRaffles();
       fetchPurchasedTickets();
+    } else {
+      // Reset state when wallet disconnects
+      setUserActivity([]);
+      setCreatedRaffles([]);
+      setPurchasedTickets([]);
+      setLoading(false);
+      setShowRevenueModal(false);
+      setSelectedRaffle(null);
+      setActivityStats({
+        totalTicketsPurchased: 0,
+        totalRafflesCreated: 0,
+        totalPrizesWon: 0,
+        totalRevenueWithdrawn: '0',
+        totalRefundsClaimed: 0
+      });
     }
   }, [connected, address, contracts]);
 
@@ -1028,8 +1044,6 @@ const ProfilePage = () => {
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
     return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
   }
-
-  const { isMobile } = useMobileBreakpoints();
 
   return (
     <PageContainer variant="profile" className={isMobile ? 'py-4' : 'py-8'}>
