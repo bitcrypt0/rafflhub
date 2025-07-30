@@ -118,7 +118,7 @@ const MobileHeader = () => {
                   </div>
 
                   {/* Navigation */}
-                  <nav className="flex-1 p-3">
+                  <nav className="p-3">
                     <div className="space-y-1">
                       {navigationItems.map((item) => (
                         <Link
@@ -135,7 +135,7 @@ const MobileHeader = () => {
                   </nav>
 
                   {/* Settings Section */}
-                  <div className="p-3 border-t border-border space-y-2">
+                  <div className="p-3 border-t border-border space-y-2 mt-auto">
                     {/* Theme Toggle */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">Theme</span>
