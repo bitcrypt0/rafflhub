@@ -1048,57 +1048,59 @@ const ProfilePage = () => {
         </div>
       </div>
 
-        {/* Activity Stats */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <Ticket className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
-                  <p className="text-sm text-muted-foreground">Tickets Purchased</p>
+        {/* Activity Stats - Mobile Optimized */}
+        {!isMobile && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Ticket className="h-8 w-8 text-blue-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
+                    <p className="text-sm text-muted-foreground">Tickets Purchased</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <Plus className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
-                  <p className="text-sm text-muted-foreground">Raffles Created</p>
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Plus className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
+                    <p className="text-sm text-muted-foreground">Raffles Created</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-8 w-8 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
-                  <p className="text-sm text-muted-foreground">Prizes Won</p>
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-8 w-8 text-yellow-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
+                    <p className="text-sm text-muted-foreground">Prizes Won</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
-                  <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
+                    <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <Minus className="h-8 w-8 text-orange-500" />
-                <div>
-                  <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
-                  <p className="text-sm text-muted-foreground">Refunds Claimed</p>
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Minus className="h-8 w-8 text-orange-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
+                    <p className="text-sm text-muted-foreground">Refunds Claimed</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Profile Tabs */}
         {loading ? (

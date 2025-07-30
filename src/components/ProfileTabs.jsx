@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import RoyaltyAdjustmentComponent from './RoyaltyAdjustmentComponent';
 import MinterApprovalComponent from './MinterApprovalComponent';
 import CreatorRevenueWithdrawalComponent from './CreatorRevenueWithdrawalComponent';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const ProfileTabs = ({ 
   activities, 
@@ -32,6 +33,7 @@ const ProfileTabs = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('activity');
+  const { isMobile } = useMobileBreakpoints();
 
   const ActivityTab = () => (
     <div className="space-y-4">
@@ -299,57 +301,60 @@ const ProfileTabs = ({
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest raffle activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {activities.slice(0, 5).map((activity, index) => (
-                <div key={index} className="flex items-center gap-3 text-sm">
-                  {activity.icon}
-                  <span className="flex-1">{activity.description}</span>
-                  <span className="text-muted-foreground">
-                    {new Date(activity.timestamp * 1000).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Hide Quick Actions and Recent Activity on mobile */}
+      {!isMobile && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest raffle activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activities.slice(0, 5).map((activity, index) => (
+                  <div key={index} className="flex items-center gap-3 text-sm">
+                    {activity.icon}
+                    <span className="flex-1">{activity.description}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(activity.timestamp * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage your raffles</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={() => navigate('/create-raffle')}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Raffle
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              View Analytics
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-            >
-              <DollarSign className="h-4 w-4 mr-2" />
-              Withdraw Revenue
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Manage your raffles</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                onClick={() => navigate('/create-raffle')}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Raffle
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Analytics
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Withdraw Revenue
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {/* Management Components */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
