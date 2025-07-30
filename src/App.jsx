@@ -20,7 +20,21 @@ import './App.css';
 
 // App content component to use hooks inside providers
 const AppContent = () => {
-  const { isMobile } = useMobileBreakpoints();
+  const { isMobile, isInitialized } = useMobileBreakpoints();
+
+  // Show loading state while initializing
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl font-bold mb-2" style={{ fontFamily: 'Orbitron, monospace' }}>
+            Rafflhub
+          </div>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">

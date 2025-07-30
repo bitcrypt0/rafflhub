@@ -10,6 +10,7 @@ import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import MobileHeader from './mobile/MobileHeader';
+import MobileErrorBoundary from './mobile/MobileErrorBoundary';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,12 +22,29 @@ const Header = () => {
   const { connected, address, formatAddress, disconnect, connectWallet, provider, chainId } = useWallet();
   const { contracts, getContractInstance } = useContract();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
-  const { isMobile } = useMobileBreakpoints();
+  const { isMobile, isInitialized } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
+
+  // Show loading state while detecting device type to prevent flash
+  if (!isInitialized) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
+        <div className="flex items-center justify-between h-16 px-4">
+          <div className="text-lg font-bold text-foreground" style={{ fontFamily: 'Orbitron, monospace' }}>
+            Rafflhub
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   // Use mobile header for mobile devices
   if (isMobile) {
-    return <MobileHeader />;
+    return (
+      <MobileErrorBoundary>
+        <MobileHeader />
+      </MobileErrorBoundary>
+    );
   }
 
   // Handle direct wallet connection

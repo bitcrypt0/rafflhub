@@ -11,7 +11,7 @@ import NetworkSelector from '../ui/network-selector';
 const MobileHeader = () => {
   const { connected, address, formatAddress, disconnect, connectWallet } = useWallet();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
-  const { isMobile } = useMobileBreakpoints();
+  const { isMobile, isInitialized } = useMobileBreakpoints();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
@@ -23,6 +23,11 @@ const MobileHeader = () => {
       console.error('Failed to connect wallet:', error);
     }
   };
+
+  // Ensure we only render on mobile and when initialized
+  if (!isInitialized || !isMobile) {
+    return null;
+  }
 
   const navigationItems = [
     { name: 'Browse Raffles', href: '/', icon: '🎲' },
