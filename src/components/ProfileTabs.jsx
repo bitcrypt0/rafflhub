@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { 
   Activity, 
   Plus, 
@@ -19,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import RoyaltyAdjustmentComponent from './RoyaltyAdjustmentComponent';
 import MinterApprovalComponent from './MinterApprovalComponent';
 import CreatorRevenueWithdrawalComponent from './CreatorRevenueWithdrawalComponent';
+import CreateNewTokenIDComponent from './CreateNewTokenIDComponent';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const ProfileTabs = ({ 
@@ -90,13 +92,7 @@ const ProfileTabs = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Created Raffles</h3>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{createdRaffles.length} raffles</Badge>
-          <Button onClick={() => navigate('/create-raffle')} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Create New
-          </Button>
-        </div>
+        <Badge variant="outline">{createdRaffles.length} raffles</Badge>
       </div>
 
       {createdRaffles.length === 0 ? (
@@ -246,9 +242,9 @@ const ProfileTabs = ({
   );
 
   const CreatorDashboardTab = () => (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+    <div className={`space-y-6 ${isMobile ? 'w-full overflow-hidden' : ''}`}>
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
+        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Raffles</CardTitle>
             <Plus className="h-4 w-4 text-muted-foreground" />
@@ -261,7 +257,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -274,7 +270,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -287,7 +283,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -301,87 +297,91 @@ const ProfileTabs = ({
         </Card>
       </div>
 
-      {/* Hide Quick Actions and Recent Activity on mobile */}
-      {!isMobile && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest raffle activities</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {activities.slice(0, 5).map((activity, index) => (
-                  <div key={index} className="flex items-center gap-3 text-sm">
-                    {activity.icon}
-                    <span className="flex-1">{activity.description}</span>
-                    <span className="text-muted-foreground">
-                      {new Date(activity.timestamp * 1000).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Manage your raffles</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                onClick={() => navigate('/create-raffle')}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Raffle
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Analytics
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Withdraw Revenue
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      {/* Management Components */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      {/* Management Components - Modal Based */}
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
+        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
           <CardHeader>
-            <CardTitle>Royalty and Reveal Management</CardTitle>
-            <CardDescription>Reveal your collection and manage royalties</CardDescription>
+            <CardTitle className={isMobile ? 'text-base' : ''}>Royalty and Reveal Management</CardTitle>
+            <CardDescription className={isMobile ? 'text-sm' : ''}>Reveal your collection and manage royalties</CardDescription>
           </CardHeader>
-          <CardContent>
-            <RoyaltyAdjustmentComponent />
+          <CardContent className={isMobile ? 'p-4' : ''}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                  Open Royalty Manager
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Royalty and Reveal Management</DialogTitle>
+                </DialogHeader>
+                <RoyaltyAdjustmentComponent />
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
           <CardHeader>
-            <CardTitle>Minter Approval Management</CardTitle>
-            <CardDescription>Manage minter approvals for your collections</CardDescription>
+            <CardTitle className={isMobile ? 'text-base' : ''}>Minter Approval Management</CardTitle>
+            <CardDescription className={isMobile ? 'text-sm' : ''}>Manage minter approvals for your collections</CardDescription>
           </CardHeader>
-          <CardContent>
-            <MinterApprovalComponent />
+          <CardContent className={isMobile ? 'p-4' : ''}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                  Open Minter Manager
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Minter Approval Management</DialogTitle>
+                </DialogHeader>
+                <MinterApprovalComponent />
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
-        <Card className="md:col-span-2">
+        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
           <CardHeader>
-            <CardTitle>Creator Revenue Withdrawal</CardTitle>
-            <CardDescription>Withdraw revenue from your raffles</CardDescription>
+            <CardTitle className={isMobile ? 'text-base' : ''}>Create New Token ID</CardTitle>
+            <CardDescription className={isMobile ? 'text-sm' : ''}>Add new token IDs to existing ERC1155 collections</CardDescription>
           </CardHeader>
-          <CardContent>
-            <CreatorRevenueWithdrawalComponent />
+          <CardContent className={isMobile ? 'p-4' : ''}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                  Open Token Creator
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Token ID</DialogTitle>
+                </DialogHeader>
+                <CreateNewTokenIDComponent />
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
+          <CardHeader>
+            <CardTitle className={isMobile ? 'text-base' : ''}>Creator Revenue Withdrawal</CardTitle>
+            <CardDescription className={isMobile ? 'text-sm' : ''}>Withdraw revenue from your raffles</CardDescription>
+          </CardHeader>
+          <CardContent className={isMobile ? 'p-4' : ''}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                  Open Revenue Manager
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Creator Revenue Withdrawal</DialogTitle>
+                </DialogHeader>
+                <CreatorRevenueWithdrawalComponent />
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>

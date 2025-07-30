@@ -28,6 +28,7 @@ const RaffleCard = ({ raffle }) => {
   const [erc20Symbol, setErc20Symbol] = useState('');
   const { getContractInstance } = useContract();
   const [ticketsSold, setTicketsSold] = useState(null);
+  const [collectionName, setCollectionName] = useState(null);
 
   useEffect(() => {
     let interval;
@@ -148,6 +149,55 @@ const RaffleCard = ({ raffle }) => {
     // Only refetch if address changes
   }, [raffle.address, getContractInstance]);
 
+  // Fetch collection name for NFT prizes
+  useEffect(() => {
+    const fetchCollectionName = async () => {
+      if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
+        setCollectionName(null);
+        return;
+      }
+
+      try {
+        // Try both contract types if standard is undefined
+        let contract = null;
+        let name = null;
+
+        if (typeof raffle.standard !== 'undefined') {
+          // Use standard if available
+          const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+          contract = getContractInstance(raffle.prizeCollection, contractType);
+          if (contract) {
+            name = await contract.name();
+          }
+        } else {
+          // Try ERC721 first, then ERC1155 if that fails
+          try {
+            contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
+            if (contract) {
+              name = await contract.name();
+            }
+          } catch (erc721Error) {
+            try {
+              contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
+              if (contract) {
+                name = await contract.name();
+              }
+            } catch (erc1155Error) {
+              console.warn('Failed to fetch collection name from both ERC721 and ERC1155:', erc721Error, erc1155Error);
+            }
+          }
+        }
+
+        setCollectionName(name);
+      } catch (error) {
+        console.warn('Failed to fetch collection name:', error);
+        setCollectionName(null);
+      }
+    };
+
+    fetchCollectionName();
+  }, [raffle, getContractInstance]);
+
   const getStatusBadge = () => {
     const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
     const colorMap = {
@@ -218,7 +268,9 @@ const RaffleCard = ({ raffle }) => {
         {(getPrizeType() === 'NFT Prize') && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Prize Collection:</span>
-            <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
+            <span className={collectionName ? '' : 'font-mono'}>
+              {collectionName || `${raffle.prizeCollection?.slice(0, 10)}...`}
+            </span>
           </div>
         )}
         {(getPrizeType() === 'ERC20' || getPrizeType() === 'ETH') && (
@@ -345,7 +397,8 @@ const LandingPage = () => {
             erc20PrizeToken,
             erc20PrizeAmount,
             ethPrizeAmount,
-            isExternallyPrized
+            isExternallyPrized,
+            standard
           ] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
@@ -361,7 +414,8 @@ const LandingPage = () => {
             raffleContract.erc20PrizeToken(),
             raffleContract.erc20PrizeAmount(),
             raffleContract.ethPrizeAmount(),
-            raffleContract.isExternallyPrized?.() // fetch isExternallyPrized
+            raffleContract.isExternallyPrized?.(), // fetch isExternallyPrized
+            raffleContract.standard?.() // fetch standard for NFT type detection
           ]);
           
           // Skip participant count to reduce RPC calls - this was causing too many requests
@@ -395,7 +449,8 @@ const LandingPage = () => {
             erc20PrizeToken,
             erc20PrizeAmount,
             ethPrizeAmount,
-            isExternallyPrized: !!isExternallyPrized // add to object
+            isExternallyPrized: !!isExternallyPrized, // add to object
+            standard: standard ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined // add standard for NFT type detection
           };
         } catch (error) {
           console.error(`Error fetching raffle data for ${raffleAddress}:`, error);

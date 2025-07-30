@@ -3,6 +3,7 @@ import { Settings, Search, AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -193,14 +194,18 @@ const RoyaltyAdjustmentComponent = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Collection Type</label>
-              <select
+              <Select
                 value={collectionData.type}
-                onChange={(e) => handleChange('type', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                onValueChange={(value) => handleChange('type', value)}
               >
-                <option value="erc721">ERC721</option>
-                <option value="erc1155">ERC1155</option>
-              </select>
+                <SelectTrigger className="w-full px-3 py-2 border border-border rounded-md bg-background">
+                  <SelectValue placeholder="Select Collection Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="erc721">ERC721</SelectItem>
+                  <SelectItem value="erc1155">ERC1155</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
