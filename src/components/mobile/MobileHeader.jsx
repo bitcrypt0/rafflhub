@@ -24,6 +24,7 @@ const MobileHeader = () => {
   // Search functionality state
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
   // Debounced search using the new service
   useEffect(() => {
@@ -38,6 +39,31 @@ const MobileHeader = () => {
 
     return () => clearTimeout(handler);
   }, [searchTerm, showSearch, search, clearSearch]);
+
+  // Click-away functionality for mobile search
+  useEffect(() => {
+    if (!showSearch) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setShowSearch(false);
+        setSearchTerm('');
+        clearSearch();
+      }
+    };
+
+    // Use both mousedown and touchstart for mobile compatibility
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showSearch, clearSearch]);
 
   const handleConnectWallet = async () => {
     try {
@@ -220,7 +246,10 @@ const MobileHeader = () => {
 
         {/* Mobile Search Bar */}
         {showSearch && (
-          <div className="px-4 pb-3 border-t border-border/50 animate-in slide-in-from-top-2 duration-200">
+          <div
+            ref={searchContainerRef}
+            className="px-4 pb-3 border-t border-border/50 animate-in slide-in-from-top-2 duration-200"
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input

@@ -1055,6 +1055,7 @@ const RaffleDetailPage = () => {
   
   const [raffle, setRaffle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isEscrowedPrize, setIsEscrowedPrize] = useState(false);
   const [withdrawingPrize, setWithdrawingPrize] = useState(false);
@@ -1159,6 +1160,7 @@ const RaffleDetailPage = () => {
   // Memoized fetch function to prevent recreation on every render
   const fetchRaffleData = useCallback(async () => {
       setLoading(true);
+      setError(null); // Clear previous errors
       try {
         if (!stableRaffleAddress) {
           throw new Error('No raffle address provided');
@@ -1285,8 +1287,20 @@ const RaffleDetailPage = () => {
         });
       } catch (error) {
         console.error('Error fetching raffle data:', error);
-        toast.error(extractRevertReason(error));
-        navigate('/');
+
+        // Don't immediately navigate away on mobile - show error state instead
+        const errorMessage = extractRevertReason(error);
+        console.log('Raffle fetch error:', errorMessage);
+
+        // Only show toast error if it's not a network/connection issue
+        if (!errorMessage.toLowerCase().includes('network') &&
+            !errorMessage.toLowerCase().includes('connection') &&
+            !errorMessage.toLowerCase().includes('timeout')) {
+          toast.error(`Failed to load raffle: ${errorMessage}`);
+        }
+
+        // Set error state instead of navigating away immediately
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -1824,6 +1838,35 @@ const RaffleDetailPage = () => {
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading raffle details...</p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Show error state with retry option
+  if (error && !loading) {
+    return (
+      <PageContainer variant="wide" className="py-8">
+        <div className="text-center py-16">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Failed to Load Raffle</h2>
+          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+            {error}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={fetchRaffleData}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-muted text-muted-foreground px-4 py-2 rounded-md hover:bg-muted/80 transition-colors"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </PageContainer>
     );

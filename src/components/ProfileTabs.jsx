@@ -23,10 +23,10 @@ import CreatorRevenueWithdrawalComponent from './CreatorRevenueWithdrawalCompone
 import CreateNewTokenIDComponent from './CreateNewTokenIDComponent';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
-const ProfileTabs = ({ 
-  activities, 
-  createdRaffles, 
-  purchasedTickets, 
+const ProfileTabs = ({
+  activities,
+  createdRaffles,
+  purchasedTickets,
   creatorStats,
   onDeleteRaffle,
   onViewRevenue,
@@ -36,6 +36,22 @@ const ProfileTabs = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
+
+  // Modal state management for mobile
+  const [modals, setModals] = useState({
+    royalty: false,
+    minter: false,
+    tokenCreator: false,
+    revenue: false
+  });
+
+  const openModal = (modalName) => {
+    setModals(prev => ({ ...prev, [modalName]: true }));
+  };
+
+  const closeModal = (modalName) => {
+    setModals(prev => ({ ...prev, [modalName]: false }));
+  };
 
   const ActivityTab = () => (
     <div className="space-y-4">
@@ -306,9 +322,16 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Reveal your collection and manage royalties</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog>
+            <Dialog open={modals.royalty} onOpenChange={(open) => open ? openModal('royalty') : closeModal('royalty')}>
               <DialogTrigger asChild>
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('royalty');
+                  }}
+                >
                   Open Royalty Manager
                 </Button>
               </DialogTrigger>
@@ -327,9 +350,16 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Manage minter approvals for your collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog>
+            <Dialog open={modals.minter} onOpenChange={(open) => open ? openModal('minter') : closeModal('minter')}>
               <DialogTrigger asChild>
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('minter');
+                  }}
+                >
                   Open Minter Manager
                 </Button>
               </DialogTrigger>
@@ -348,9 +378,16 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Add new token IDs to existing ERC1155 collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog>
+            <Dialog open={modals.tokenCreator} onOpenChange={(open) => open ? openModal('tokenCreator') : closeModal('tokenCreator')}>
               <DialogTrigger asChild>
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('tokenCreator');
+                  }}
+                >
                   Open Token Creator
                 </Button>
               </DialogTrigger>
@@ -369,9 +406,16 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Withdraw revenue from your raffles</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog>
+            <Dialog open={modals.revenue} onOpenChange={(open) => open ? openModal('revenue') : closeModal('revenue')}>
               <DialogTrigger asChild>
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('revenue');
+                  }}
+                >
                   Open Revenue Manager
                 </Button>
               </DialogTrigger>
