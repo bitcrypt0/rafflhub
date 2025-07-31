@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { Coins, AlertCircle } from 'lucide-react';
@@ -15,13 +15,17 @@ const TokenGiveawayRafflePage = () => {
   const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchRaffles = React.useCallback(async (isBackground = false) => {
-    if (!connected) {
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableConnected = useMemo(() => connected, [connected]);
+  const stableContracts = useMemo(() => contracts, [contracts]);
+
+  const fetchRaffles = useCallback(async (isBackground = false) => {
+    if (!stableConnected) {
       setRaffles([]);
       setError('Please connect your wallet to view raffles');
       return;
     }
-    if (!contracts.raffleManager) {
+    if (!stableContracts.raffleManager) {
       setError('Contracts not initialized. Please try refreshing the page.');
       return;
     }
@@ -128,7 +132,7 @@ const TokenGiveawayRafflePage = () => {
         setLoading(false);
       }
     }
-  }, [contracts, getContractInstance, connected]);
+  }, [stableContracts, getContractInstance, stableConnected]);
 
   useEffect(() => {
     fetchRaffles();

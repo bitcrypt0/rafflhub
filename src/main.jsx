@@ -12,9 +12,10 @@ if (rootElement) {
   const root = createRoot(rootElement);
   console.log('React root created');
   root.render(
-    <StrictMode>
+    // Temporarily disable StrictMode for debugging
+    // <StrictMode>
       <App />
-    </StrictMode>,
+    // </StrictMode>,
   );
   console.log('React app rendered');
 } else {

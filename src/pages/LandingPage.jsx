@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Clock, Trophy, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
-import { categorizeRaffles } from '../utils/raffleUtils';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useRaffleService } from '../hooks/useRaffleService';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
 import { PageLoading, CardSkeleton } from '../components/ui/loading';
+import FilterSidebar from '../components/FilterSidebar';
+import FilterToggleButton from '../components/FilterToggleButton';
+import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
+import { useRaffleFilters } from '../hooks/useRaffleFilters';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -294,54 +297,15 @@ const RaffleCard = ({ raffle }) => {
   );
 };
 
-const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
-  const navigate = useNavigate();
-  // Reverse for newest first
-  const sortedRaffles = [...raffles].reverse();
-  const displayedRaffles = sortedRaffles.slice(0, 4);
 
-  return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Icon className="h-5 w-5" />
-          {title} ({raffles.length})
-        </h2>
-        <button
-          className="text-primary hover:text-primary/80 underline text-sm font-medium transition-colors"
-          onClick={() => navigate(`/raffles/${stateKey}`)}
-        >
-          View all {title.toLowerCase()}
-        </button>
-      </div>
-      <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-sm">
-        {raffles.length === 0 ? (
-          <div className="text-center py-8">
-            <Icon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">No {title.toLowerCase()} at the moment</p>
-          </div>
-        ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
-        {displayedRaffles.map((raffle) => (
-          <RaffleCard key={raffle.id} raffle={raffle} />
-        ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const LandingPage = () => {
-  console.log('LandingPage component is rendering...'); // Debug log
-
   const { connected } = useWallet();
   const { isMobile } = useMobileBreakpoints();
 
   // Use the new RaffleService hook
   const {
     raffles,
-    categorizedRaffles,
     loading,
     backgroundLoading,
     error,
@@ -353,9 +317,17 @@ const LandingPage = () => {
     maxRaffles: isMobile ? 15 : 25 // Limit based on platform
   });
 
-
-  // Extract categorized raffles from the service
-  const { pending, active, ended, drawing, completed } = categorizedRaffles;
+  // Use filter system
+  const {
+    filters,
+    filteredRaffles,
+    isFilterOpen,
+    hasActiveFilters,
+    updateFilters,
+    clearFilters,
+    toggleFilter,
+    filteredCount
+  } = useRaffleFilters(raffles);
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -414,6 +386,7 @@ const LandingPage = () => {
 
   return (
     <>
+      {/* Background gradient */}
       <div
         style={{
           position: 'fixed',
@@ -430,32 +403,62 @@ const LandingPage = () => {
         }}
         aria-hidden="true"
       />
-      <PageContainer className="py-4" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="mb-4 text-center">
-        <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
-        </p>
-      </div>
 
-      <div className="mt-12">
-        <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
-        <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
-        <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
-        <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
-        <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
-      </div>
+      {/* Filter Sidebar (overlay when open) */}
+      <FilterSidebar
+        isOpen={isFilterOpen}
+        onToggle={toggleFilter}
+        filters={filters}
+        onFiltersChange={updateFilters}
+        raffleCount={filteredCount}
+        allRaffles={raffles}
+      />
 
-      {raffles.length === 0 && !loading && !error && (
-        <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
-          <p className="text-muted-foreground">
-            There are currently no raffles available on the blockchain. Check back later or create your own!
-          </p>
-        </div>
-      )}
-    </PageContainer>
+      {/* Main content - full width */}
+      <div className="min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
+        <PageContainer className="py-4">
+          {/* Header */}
+          <div className={`text-center ${isMobile ? 'mb-6' : 'mb-8'}`}>
+            <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+              Fairness and Transparency, On-Chain
+            </h1>
+            <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
+              Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+            </p>
+          </div>
+
+          {/* Filter toggle button */}
+          <div className="mb-6 flex justify-between items-center">
+            <FilterToggleButton
+              onClick={toggleFilter}
+              hasActiveFilters={hasActiveFilters}
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Clear All Filters
+              </Button>
+            )}
+          </div>
+
+          {/* Filtered raffle grid */}
+          <FilteredRaffleGrid
+            raffles={filteredRaffles}
+            loading={loading}
+            error={error}
+            RaffleCardComponent={RaffleCard}
+            emptyMessage={
+              hasActiveFilters
+                ? "No raffles match your current filters. Try adjusting your filter criteria."
+                : "There are currently no raffles available on the blockchain. Check back later or create your own!"
+            }
+          />
+        </PageContainer>
+      </div>
     </>
   );
 };

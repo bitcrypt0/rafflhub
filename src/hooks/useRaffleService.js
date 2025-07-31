@@ -50,13 +50,27 @@ export const useRaffleService = (options = {}) => {
    * Fetch raffles with proper error handling and loading states
    */
   const fetchRaffles = useCallback(async (isBackground = false) => {
+    console.log('🔍 fetchRaffles called:', {
+      connected: walletContext?.connected,
+      chainId: walletContext?.chainId,
+      isBackground,
+      environment: process.env.NODE_ENV,
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A',
+      isMobile,
+      maxRaffles
+    });
+
     if (!walletContext?.connected) {
+      console.log('❌ Wallet not connected');
       setRaffles([]);
       setError('Please connect your wallet to view raffles');
       return;
     }
 
-    if (!mountedRef.current) return;
+    if (!mountedRef.current) {
+      console.log('❌ Component unmounted');
+      return;
+    }
 
     try {
       if (isBackground) {
@@ -72,22 +86,35 @@ export const useRaffleService = (options = {}) => {
         maxRaffles
       };
 
+      console.log('🚀 Calling raffleService.fetchAllRaffles with options:', fetchOptions);
       const fetchedRaffles = await raffleService.fetchAllRaffles(fetchOptions);
-      
+
+      console.log('✅ fetchAllRaffles completed:', {
+        count: fetchedRaffles?.length || 0,
+        firstRaffle: fetchedRaffles?.[0]?.name || 'N/A'
+      });
+
       if (!mountedRef.current) return;
 
       setRaffles(fetchedRaffles);
       setLastFetch(new Date());
-      
+
       if (fetchedRaffles.length === 0) {
+        console.log('⚠️ No raffles found');
         setError('No raffles found on the blockchain');
       } else {
+        console.log('✅ Raffles set successfully');
         setError(null);
       }
     } catch (err) {
       if (!mountedRef.current) return;
       
-      console.error('Error fetching raffles:', err);
+      console.error('❌ Error fetching raffles:', {
+        error: err.message,
+        stack: err.stack,
+        environment: process.env.NODE_ENV,
+        chainId: walletContext?.chainId
+      });
       
       // Enhanced error handling with specific messages
       let errorMessage = 'Failed to fetch raffles from blockchain';
@@ -110,7 +137,9 @@ export const useRaffleService = (options = {}) => {
       }
     } finally {
       if (!mountedRef.current) return;
-      
+
+      console.log('🏁 fetchRaffles completed, setting loading states');
+
       if (isBackground) {
         setBackgroundLoading(false);
       } else {
@@ -163,8 +192,18 @@ export const useRaffleService = (options = {}) => {
 
   // Auto-fetch on mount and when dependencies change
   useEffect(() => {
+    console.log('🔄 Auto-fetch effect triggered:', {
+      autoFetch,
+      connected: walletContext?.connected,
+      chainId: walletContext?.chainId,
+      environment: process.env.NODE_ENV
+    });
+
     if (autoFetch && walletContext?.connected) {
+      console.log('🚀 Triggering auto-fetch');
       fetchRaffles();
+    } else {
+      console.log('⏸️ Auto-fetch conditions not met');
     }
   }, [autoFetch, walletContext?.connected, walletContext?.chainId, fetchRaffles]);
 

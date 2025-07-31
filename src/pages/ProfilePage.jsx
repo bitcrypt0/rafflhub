@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -356,6 +356,11 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { isMobile } = useMobileBreakpoints(); // Move hook to top to fix Rules of Hooks violation
 
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableConnected = useMemo(() => connected, [connected]);
+  const stableAddress = useMemo(() => address, [address]);
+  const stableContracts = useMemo(() => contracts, [contracts]);
+
   const [activeTab, setActiveTab] = useState('activity');
   const [userActivity, setUserActivity] = useState([]);
   const [createdRaffles, setCreatedRaffles] = useState([]);
@@ -381,9 +386,9 @@ const ProfilePage = () => {
     return msg;
   }
 
-  // Fetch on-chain activity
-  const fetchOnChainActivity = async () => {
-    if (!connected || !address || !provider) return;
+  // Memoized fetch functions to prevent recreation
+  const fetchOnChainActivity = useCallback(async () => {
+    if (!stableConnected || !stableAddress || !provider) return;
 
     setLoading(true);
     try {
@@ -713,11 +718,10 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [stableConnected, stableAddress, provider, stableContracts, getContractInstance, executeCall]);
 
-  // Fetch created raffles
-  const fetchCreatedRaffles = async () => {
-    if (!connected || !address || !contracts.raffleManager) return;
+  const fetchCreatedRaffles = useCallback(async () => {
+    if (!stableConnected || !stableAddress || !stableContracts.raffleManager) return;
 
     try {
       const raffles = [];
@@ -727,16 +731,16 @@ const ProfilePage = () => {
       console.log('Fetching created raffles from block', fromBlock, 'to', currentBlock);
 
       // Get all RaffleCreated events for this user
-      const raffleCreatedFilter = contracts.raffleDeployer.filters.RaffleCreated(null, address);
-      const raffleCreatedEvents = await contracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
+      const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
+      const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
 
-      console.log('Found', raffleCreatedEvents.length, 'RaffleCreated events for user:', address);
+      console.log('Found', raffleCreatedEvents.length, 'RaffleCreated events for user:', stableAddress);
 
       // If no events found, try from an even earlier block
       if (raffleCreatedEvents.length === 0) {
         const earlierFromBlock = Math.max(0, currentBlock - 100000); // Last 100k blocks
         console.log('No raffles found, trying from block', earlierFromBlock);
-        const earlierEvents = await contracts.raffleDeployer.queryFilter(raffleCreatedFilter, earlierFromBlock);
+        const earlierEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, earlierFromBlock);
         console.log('Found', earlierEvents.length, 'raffles from earlier block range');
         raffleCreatedEvents.push(...earlierEvents);
       }
@@ -792,11 +796,10 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error fetching created raffles:', error);
     }
-  };
+  }, [stableConnected, stableAddress, stableContracts, provider, getContractInstance, executeCall]);
 
-  // Fetch purchased tickets
-  const fetchPurchasedTickets = async () => {
-    if (!connected || !address || !contracts.raffleManager) return;
+  const fetchPurchasedTickets = useCallback(async () => {
+    if (!stableConnected || !stableAddress || !stableContracts.raffleManager) return;
 
     try {
       const tickets = [];
@@ -878,11 +881,11 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error fetching purchased tickets:', error);
     }
-  };
+  }, [stableConnected, stableAddress, stableContracts, provider, getContractInstance, executeCall]);
 
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
-    if (connected && address) {
+    if (stableConnected && stableAddress) {
       fetchOnChainActivity();
       fetchCreatedRaffles();
       fetchPurchasedTickets();
@@ -902,7 +905,7 @@ const ProfilePage = () => {
         totalRefundsClaimed: 0
       });
     }
-  }, [connected, address, contracts]);
+  }, [stableConnected, stableAddress, fetchOnChainActivity, fetchCreatedRaffles, fetchPurchasedTickets]);
 
   const handleDeleteRaffle = async (raffle) => {
     let confirmMessage = `Are you sure you want to delete "${raffle.name}"?`;

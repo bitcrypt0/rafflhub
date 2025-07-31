@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
@@ -1151,18 +1151,23 @@ const RaffleDetailPage = () => {
     };
   }, [showAssignPrizeInput]);
 
-  useEffect(() => {
-    const fetchRaffleData = async () => {
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableConnected = useMemo(() => connected, [connected]);
+  const stableAddress = useMemo(() => address, [address]);
+  const stableRaffleAddress = useMemo(() => raffleAddress, [raffleAddress]);
+
+  // Memoized fetch function to prevent recreation on every render
+  const fetchRaffleData = useCallback(async () => {
       setLoading(true);
       try {
-        if (!raffleAddress) {
+        if (!stableRaffleAddress) {
           throw new Error('No raffle address provided');
         }
-        if (!connected || !getContractInstance) {
+        if (!stableConnected || !getContractInstance) {
           setLoading(true);
           return;
         }
-        const raffleContract = getContractInstance(raffleAddress, 'raffle');
+        const raffleContract = getContractInstance(stableRaffleAddress, 'raffle');
         if (!raffleContract) {
           setLoading(true);
           return;
@@ -1285,12 +1290,14 @@ const RaffleDetailPage = () => {
       } finally {
         setLoading(false);
       }
-    };
+  }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress]);
 
-    if (raffleAddress && getContractInstance) {
+  // Effect to trigger fetchRaffleData when dependencies change
+  useEffect(() => {
+    if (stableRaffleAddress && getContractInstance) {
       fetchRaffleData();
     }
-  }, [raffleAddress, getContractInstance, connected, address, navigate]);
+  }, [fetchRaffleData, stableRaffleAddress, getContractInstance]);
 
   // Fetch collection name for raffle detail section
   useEffect(() => {
@@ -1313,57 +1320,62 @@ const RaffleDetailPage = () => {
     fetchRaffleCollectionName();
   }, [raffle, getContractInstance]);
 
+  // Memoize format functions to prevent recreation
+  const formatTime = useCallback((seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    let formatted = '';
+    if (days > 0) formatted += `${days}d `;
+    if (hours > 0 || days > 0) formatted += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
+    formatted += `${secs}s`;
+    return formatted.trim();
+  }, []);
+
+  const formatDuration = useCallback((seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    let formatted = '';
+    if (days > 0) formatted += `${days}d `;
+    if (hours > 0 || days > 0) formatted += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m`;
+    if (!formatted) formatted = '0m';
+    return formatted.trim();
+  }, []);
+
+  const updateTimer = useCallback(() => {
+    if (!raffle) return;
+    const now = Math.floor(Date.now() / 1000);
+    let label = '';
+    let seconds = 0;
+    if ([2,3,4,5,6,7,8].includes(raffle.stateNum)) {
+      label = 'Duration';
+      seconds = raffle.duration;
+      setTimeLabel(label);
+      setTimeValue(formatDuration(seconds));
+      return;
+    }
+    if (now < raffle.startTime) {
+      label = 'Starts In';
+      seconds = raffle.startTime - now;
+    } else {
+      label = 'Ends In';
+      seconds = (raffle.startTime + raffle.duration) - now;
+    }
+    setTimeLabel(label);
+    setTimeValue(seconds > 0 ? formatTime(seconds) : 'Ended');
+  }, [raffle, formatTime, formatDuration]);
+
+  // Timer effect with memoized dependencies
   useEffect(() => {
     if (!raffle) return;
-    let interval;
-    function updateTimer() {
-      const now = Math.floor(Date.now() / 1000);
-      let label = '';
-      let seconds = 0;
-      if ([2,3,4,5,6,7,8].includes(raffle.stateNum)) {
-        label = 'Duration';
-        seconds = raffle.duration;
-        setTimeLabel(label);
-        setTimeValue(formatDuration(seconds));
-        return;
-      }
-      if (now < raffle.startTime) {
-        label = 'Starts In';
-        seconds = raffle.startTime - now;
-        } else {
-        label = 'Ends In';
-        seconds = (raffle.startTime + raffle.duration) - now;
-        }
-      setTimeLabel(label);
-      setTimeValue(seconds > 0 ? formatTime(seconds) : 'Ended');
-    }
-    function formatTime(seconds) {
-      const days = Math.floor(seconds / 86400);
-      const hours = Math.floor((seconds % 86400) / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      let formatted = '';
-      if (days > 0) formatted += `${days}d `;
-      if (hours > 0 || days > 0) formatted += `${hours}h `;
-      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
-      formatted += `${secs}s`;
-      return formatted.trim();
-    }
-    function formatDuration(seconds) {
-      const days = Math.floor(seconds / 86400);
-      const hours = Math.floor((seconds % 86400) / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      let formatted = '';
-      if (days > 0) formatted += `${days}d `;
-      if (hours > 0 || days > 0) formatted += `${hours}h `;
-      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m`;
-      if (!formatted) formatted = '0m';
-      return formatted.trim();
-    }
     updateTimer();
-    interval = setInterval(updateTimer, 1000);
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [raffle]);
+  }, [updateTimer]);
 
   useEffect(() => {
     async function fetchEscrowedPrizeFlag() {

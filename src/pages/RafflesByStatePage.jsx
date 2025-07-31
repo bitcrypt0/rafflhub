@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -23,21 +23,25 @@ const RafflesByStatePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchRaffles = async () => {
-      if (!connected) {
-        setRaffles([]);
-        setError('Please connect your wallet to view raffles');
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableConnected = useMemo(() => connected, [connected]);
+  const stableContracts = useMemo(() => contracts, [contracts]);
+
+  // Memoize fetchRaffles function
+  const fetchRaffles = useCallback(async () => {
+    if (!stableConnected) {
+      setRaffles([]);
+      setError('Please connect your wallet to view raffles');
         return;
       }
-      if (!contracts.raffleManager) {
+      if (!stableContracts.raffleManager) {
         setError('Contracts not initialized. Please try refreshing the page.');
         return;
       }
       setLoading(true);
       setError(null);
       try {
-        const registeredRaffles = await contracts.raffleManager.getAllRaffles();
+        const registeredRaffles = await stableContracts.raffleManager.getAllRaffles();
         if (!registeredRaffles || registeredRaffles.length === 0) {
           setRaffles([]);
           setError('No raffles found on the blockchain');
@@ -157,9 +161,12 @@ const RafflesByStatePage = () => {
       } finally {
         setLoading(false);
       }
-    };
+  }, [stableConnected, stableContracts, getContractInstance, state]);
+
+  // Effect to trigger fetchRaffles when dependencies change
+  useEffect(() => {
     fetchRaffles();
-  }, [connected, contracts, getContractInstance, state]);
+  }, [fetchRaffles]);
 
   const { title, icon: Icon } = stateTitleMap[state] || { title: 'Raffles', icon: Trophy };
 
