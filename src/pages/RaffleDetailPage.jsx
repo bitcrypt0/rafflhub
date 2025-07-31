@@ -245,60 +245,106 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           </div>
 
         {(raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
-          (canClaimPrize() || canClaimRefund()) ? (
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
-              {canClaimPrize() && (
-                <button
-                  onClick={handleClaimPrize}
-                  disabled={claimingPrize || !connected}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-yellow-600 hover:to-orange-700 transition-colors disabled:opacity-50"
-                >
-                  {claimingPrize
-                    ? (isMintableERC721 && !isEscrowedPrize ? 'Minting...' : 'Claiming...')
-                    : (isMintableERC721 && !isEscrowedPrize ? 'Mint Prize' : 'Claim Prize')}
-                </button>
-              )}
-              {canClaimRefund() && (
-                <button
-                  onClick={handleClaimRefund}
-                  disabled={claimingRefund || !connected}
-                  className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50"
-                >
-                  {claimingRefund ? 'Claiming...' : 'Claim Refund'}
-                </button>
-              )}
+          <>
+            {/* Placeholder content to maintain card height on desktop - positioned close to action buttons */}
+            <div className="hidden lg:block space-y-4">
+              <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
+                <div className="text-center text-muted-foreground">
+                  <div className="text-sm font-medium mb-2">Your Participation Summary</div>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="block text-muted-foreground">Tickets Purchased</span>
+                      <span className="font-semibold text-base">{userTickets || 0}</span>
+                    </div>
+                    <div>
+                      <span className="block text-muted-foreground">Total Spent</span>
+                      <span className="font-semibold text-base">
+                        {userTickets > 0 ? `${ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets))} ETH` : '0 ETH'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-8"></div> {/* Spacer to maintain card height and position buttons */}
             </div>
-          ) : (
-            <button
-              disabled
-              className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              Raffle Ended
-            </button>
-          )
+            {(canClaimPrize() || canClaimRefund()) ? (
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                {canClaimPrize() && (
+                  <button
+                    onClick={handleClaimPrize}
+                    disabled={claimingPrize || !connected}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-yellow-600 hover:to-orange-700 transition-colors disabled:opacity-50"
+                  >
+                    {claimingPrize
+                      ? (isMintableERC721 && !isEscrowedPrize ? 'Minting...' : 'Claiming...')
+                      : (isMintableERC721 && !isEscrowedPrize ? 'Mint Prize' : 'Claim Prize')}
+                  </button>
+                )}
+                {canClaimRefund() && (
+                  <button
+                    onClick={handleClaimRefund}
+                    disabled={claimingRefund || !connected}
+                    className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50"
+                  >
+                    {claimingRefund ? 'Claiming...' : 'Claim Refund'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                disabled
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                Raffle Ended
+              </button>
+            )}
+          </>
         ) : (
           <>
+            {/* Placeholder content to maintain card height on desktop for non-active states - positioned close to action buttons */}
+            {!canPurchaseTickets() && (
+              <div className="hidden lg:block space-y-4">
+                <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
+                  <div className="text-center text-muted-foreground">
+                    <div className="text-sm font-medium mb-2">Your Participation Summary</div>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="block text-muted-foreground">Tickets Purchased</span>
+                        <span className="font-semibold text-base">{userTickets || 0}</span>
+                      </div>
+                      <div>
+                        <span className="block text-muted-foreground">Total Spent</span>
+                        <span className="font-semibold text-base">
+                          {userTickets > 0 ? `${ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets))} ETH` : '0 ETH'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-8"></div> {/* Spacer to maintain card height and position buttons */}
+              </div>
+            )}
             {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
-          <button
-            onClick={handleActivateRaffle}
-            disabled={activating}
-            className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {activating ? 'Activating...' : 'Activate Raffle'}
-          </button>
+              <button
+                onClick={handleActivateRaffle}
+                disabled={activating}
+                className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {activating ? 'Activating...' : 'Activate Raffle'}
+              </button>
             ) : raffle.stateNum === 2 && (address?.toLowerCase() === raffle.creator.toLowerCase() || userTickets > 0) ? (
-          <>
-            <button
-              onClick={handleRequestRandomness}
-              disabled={requestingRandomness}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
-            </button>
-            <p className="text-muted-foreground mt-4 text-center text-sm">
-                  The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
-            </p>
-          </>
+              <>
+                <button
+                  onClick={handleRequestRandomness}
+                  disabled={requestingRandomness}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
+                </button>
+                <p className="text-muted-foreground mt-4 text-center text-sm">
+                      The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
+                </p>
+              </>
             ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7) ? (
               <button
                 disabled
@@ -306,50 +352,77 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               >
                 Raffle Ended
               </button>
-        ) : isRaffleEnded() ? (
-          <button
-            onClick={handleEndRaffle}
-            disabled={endingRaffle}
-                className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {endingRaffle ? 'Ending...' : 'End Raffle'}
-          </button>
-        ) : maxPurchasable <= 0 ? (
-          <button
-            disabled
-            className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            Raffle Ended
-          </button>
-        ) : userTickets >= raffle.maxTicketsPerParticipant ? (
-          <button
-            disabled
-            className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            Limit Reached
-          </button>
+            ) : isRaffleEnded() ? (
+              <button
+                onClick={handleEndRaffle}
+                disabled={endingRaffle}
+                    className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {endingRaffle ? 'Ending...' : 'End Raffle'}
+              </button>
+            ) : maxPurchasable <= 0 ? (
+              <button
+                disabled
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                Raffle Ended
+              </button>
+            ) : userTickets >= raffle.maxTicketsPerParticipant ? (
+              <button
+                disabled
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                Limit Reached
+              </button>
         ) : (
             <>
-              <div>
-                <label className="block text-sm font-medium mb-2">Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={raffle.maxTicketsPerParticipant}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Math.min(raffle.maxTicketsPerParticipant, parseInt(e.target.value) || 1)))}
-                  className="w-full px-3 py-2.5 border border-border rounded-md bg-background"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Maximum: {raffle.maxTicketsPerParticipant} tickets
-                </p>
-              </div>
-              <div className="p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Cost:</span>
-                  <span className="text-lg font-bold">{ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(quantity))} ETH</span>
+              {/* Show quantity and cost inputs only when tickets can be purchased */}
+              {canPurchaseTickets() ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={raffle.maxTicketsPerParticipant}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, Math.min(raffle.maxTicketsPerParticipant, parseInt(e.target.value) || 1)))}
+                      className="w-full px-3 py-2.5 border border-border rounded-md bg-background"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Maximum: {raffle.maxTicketsPerParticipant} tickets
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Total Cost:</span>
+                      <span className="text-lg font-bold">{ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(quantity))} ETH</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Placeholder content to maintain card height on desktop */
+                <div className="hidden lg:block space-y-4">
+                  <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
+                    <div className="text-center text-muted-foreground">
+                      <div className="text-sm font-medium mb-2">Your Participation Summary</div>
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="block text-muted-foreground">Tickets Purchased</span>
+                          <span className="font-semibold text-base">{userTickets || 0}</span>
+                        </div>
+                        <div>
+                          <span className="block text-muted-foreground">Total Spent</span>
+                          <span className="font-semibold text-base">
+                            {userTickets > 0 ? `${ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets))} ETH` : '0 ETH'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-12"></div> {/* Spacer to maintain button position */}
                 </div>
-              </div>
+              )}
               <button
                 onClick={handlePurchase}
                 disabled={loading || !connected || !canPurchaseTickets()}
@@ -490,18 +563,18 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
     <div className={`bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
       isCurrentUser ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border hover:border-border/80'
     }`}>
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+      <div className="p-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="flex-shrink-0">
-              <div className={`w-3 h-3 rounded-full ${isCurrentUser ? 'bg-yellow-400' : 'bg-primary'}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${isCurrentUser ? 'bg-yellow-400' : 'bg-primary'}`} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-mono text-sm font-medium break-all" title={winner.address}>
                 {formatAddress(winner.address)}
               </div>
               {isCurrentUser && (
-                <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mt-1">
+                <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mt-0.5">
                   Your Address
                 </div>
               )}
@@ -509,21 +582,21 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
           </div>
           <button
             onClick={() => onToggleExpand(winner, index)}
-            className="flex-shrink-0 p-2 rounded-md hover:bg-muted transition-colors"
+            className="flex-shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors"
             title={isExpanded ? "Hide details" : "View details"}
           >
             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-4 text-sm">
-          <div className="space-y-1">
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-3 text-sm">
+          <div className="space-y-0.5">
             <span className="text-muted-foreground text-xs uppercase tracking-wide">Prize</span>
             <div className="font-medium">{getPrizeInfo()}</div>
           </div>
-          <div className="space-y-1 sm:text-right">
+          <div className="space-y-0.5 sm:text-right">
             <span className="text-muted-foreground text-xs tracking-wide block">Status</span>
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${claimStatus.bgColor} ${claimStatus.color}`}>
+            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${claimStatus.bgColor} ${claimStatus.color}`}>
               {claimStatus.icon === 'green-dot' ? (
                 <div className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400"></div>
               ) : (
@@ -535,32 +608,32 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
         </div>
 
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-border">
+          <div className="mt-3 pt-3 border-t border-border">
             {stats ? (
               stats.error ? (
-                <div className="text-center py-6">
-                  <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <div className="text-center py-4">
+                  <AlertCircle className="h-6 w-6 text-red-500 mx-auto mb-2" />
                   <div className="text-red-500 text-sm font-medium">{stats.error}</div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="text-sm font-medium text-muted-foreground mb-3">Participation Details</div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-1">
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">Participation Details</div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Tickets Purchased</span>
-                      <div className="font-semibold text-lg">{stats.ticketsPurchased}</div>
+                      <div className="font-semibold text-base">{stats.ticketsPurchased}</div>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Winning Tickets</span>
-                      <div className="font-semibold text-lg text-green-600">{stats.winningTickets}</div>
+                      <div className="font-semibold text-base text-green-600">{stats.winningTickets}</div>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Losing Tickets</span>
-                      <div className="font-semibold text-lg text-red-600">{stats.losingTickets}</div>
+                      <div className="font-semibold text-base text-red-600">{stats.losingTickets}</div>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Win Rate</span>
-                      <div className="font-semibold text-lg">
+                      <div className="font-semibold text-base">
                         {stats.ticketsPurchased > 0
                           ? `${((stats.winningTickets / stats.ticketsPurchased) * 100).toFixed(1)}%`
                           : '0%'
@@ -571,8 +644,8 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                 </div>
               )
             ) : (
-              <div className="text-center py-6">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-3"></div>
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto mb-2"></div>
                 <div className="text-sm text-muted-foreground">Loading participation details...</div>
               </div>
             )}
@@ -756,21 +829,23 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
                     {winners.length} winner{winners.length !== 1 ? 's' : ''} selected
                   </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto space-y-3 pr-2">
-                  {winners.map((winner, i) => (
-                    <WinnerCard
-                      key={winner.index}
-                      winner={winner}
-                      index={i}
-                      raffle={raffle}
-                      connectedAddress={connectedAddress}
-                      onToggleExpand={handleToggleExpand}
-                      isExpanded={expandedWinner === i}
-                      stats={winnerStats[winner.address]}
-                      onLoadStats={handleToggleExpand}
-                      collectionName={collectionName}
-                    />
-                  ))}
+                <div className="max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-3 pb-4">
+                    {winners.map((winner, i) => (
+                      <WinnerCard
+                        key={winner.index}
+                        winner={winner}
+                        index={i}
+                        raffle={raffle}
+                        connectedAddress={connectedAddress}
+                        onToggleExpand={handleToggleExpand}
+                        isExpanded={expandedWinner === i}
+                        stats={winnerStats[winner.address]}
+                        onLoadStats={handleToggleExpand}
+                        collectionName={collectionName}
+                      />
+                    ))}
+                  </div>
                 </div>
               </>
             ) : (
@@ -1973,8 +2048,10 @@ const RaffleDetailPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-        <div className="space-y-6 h-full">
+      {/* Perfect 2x2 Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Top Row: TicketPurchaseSection and WinnersSection */}
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
           <TicketPurchaseSection
             raffle={raffle}
             onPurchase={handlePurchaseTickets}
@@ -1999,8 +2076,13 @@ const RaffleDetailPage = () => {
             isExternallyPrized={isExternallyPrized}
             isPrized={raffle.isPrized}
           />
-          
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg">
+
+          <WinnersSection raffle={raffle} isMintableERC721={isMintableERC721} />
+        </div>
+
+        {/* Bottom Row: Raffle Details and PrizeImageCard */}
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg h-full">
             <h3 className="text-lg font-semibold mb-4">Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
@@ -2060,11 +2142,8 @@ const RaffleDetailPage = () => {
               )}
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-6 h-full">
           <PrizeImageCard raffle={raffle} />
-          <WinnersSection raffle={raffle} isMintableERC721={isMintableERC721} />
         </div>
       </div>
     </PageContainer>
