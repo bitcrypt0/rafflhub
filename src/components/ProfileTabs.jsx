@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -49,18 +50,28 @@ const ProfileTabs = ({
   useEffect(() => {
     if (isMobile) {
       const isAnyModalOpen = Object.values(modals).some(Boolean);
-      if (isAnyModalOpen) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = 'unset';
-      }
 
-      // Cleanup on unmount
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
+      if (isAnyModalOpen) {
+        // Store original overflow value
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        // Cleanup function to restore original overflow
+        return () => {
+          document.body.style.overflow = originalOverflow;
+        };
+      }
     }
   }, [modals, isMobile]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (isMobile) {
+        document.body.style.overflow = 'unset';
+      }
+    };
+  }, [isMobile]);
 
   // Custom mobile modal component that avoids Radix UI issues
   const MobileAwareModal = ({
@@ -70,6 +81,27 @@ const ProfileTabs = ({
     title,
     children
   }) => {
+    // Handle backdrop click
+    const handleBackdropClick = (e) => {
+      if (e.target === e.currentTarget) {
+        onOpenChange(false);
+      }
+    };
+
+    // Handle escape key
+    useEffect(() => {
+      if (isOpen && isMobile) {
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            onOpenChange(false);
+          }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+      }
+    }, [isOpen, isMobile, onOpenChange]);
+
     if (isMobile) {
       return (
         <>
@@ -78,23 +110,27 @@ const ProfileTabs = ({
             {trigger}
           </div>
 
-          {/* Custom mobile modal */}
-          {isOpen && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Custom mobile modal - rendered via portal */}
+          {isOpen && createPortal(
+            <div
+              className="fixed inset-0 z-[9999] flex items-end justify-center"
+              onClick={handleBackdropClick}
+            >
               {/* Backdrop */}
-              <div
-                className="absolute inset-0 bg-black/50"
-                onClick={() => onOpenChange(false)}
-              />
+              <div className="absolute inset-0 bg-black/50" />
 
               {/* Modal content */}
-              <div className="relative w-full max-w-lg bg-background rounded-t-xl shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+              <div
+                className="relative w-full bg-background rounded-t-xl shadow-xl animate-in slide-in-from-bottom-2 duration-300 max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
                   <h2 className="text-lg font-semibold">{title}</h2>
                   <button
                     onClick={() => onOpenChange(false)}
                     className="p-2 hover:bg-muted rounded-md transition-colors"
+                    type="button"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -103,11 +139,12 @@ const ProfileTabs = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 max-h-[70vh] overflow-y-auto">
+                <div className="p-4 overflow-y-auto flex-1">
                   {children}
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </>
       );
