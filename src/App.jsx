@@ -7,6 +7,8 @@ import { Header } from './components/Layout';
 import Footer from './components/Footer';
 import { Toaster } from './components/ui/sonner';
 import { useMobileBreakpoints } from './hooks/useMobileBreakpoints';
+import ErrorBoundary from './components/ui/error-boundary';
+import { usePerformanceMonitor } from './components/debug/PerformanceMonitor';
 import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
@@ -21,6 +23,7 @@ import './App.css';
 // App content component to use hooks inside providers
 const AppContent = () => {
   const { isMobile, isInitialized } = useMobileBreakpoints();
+  const { component: performanceMonitor } = usePerformanceMonitor();
 
   // Show loading state while initializing
   if (!isInitialized) {
@@ -55,21 +58,24 @@ const AppContent = () => {
       </main>
       <Footer />
       <Toaster />
+      {performanceMonitor}
     </div>
   );
 };
 
 function App() {
   return (
-    <ThemeProvider>
-      <WalletProvider>
-        <ContractProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </ContractProvider>
-      </WalletProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <WalletProvider>
+          <ContractProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </ContractProvider>
+        </WalletProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

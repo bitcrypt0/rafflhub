@@ -8,6 +8,9 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { categorizeRaffles } from '../utils/raffleUtils';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useRaffleService } from '../hooks/useRaffleService';
+import { NetworkError, LoadingError } from '../components/ui/error-boundary';
+import { PageLoading, CardSkeleton } from '../components/ui/loading';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -331,187 +334,28 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
 
 const LandingPage = () => {
   console.log('LandingPage component is rendering...'); // Debug log
-  
+
   const { connected } = useWallet();
-  const { contracts, getContractInstance, onContractEvent } = useContract();
-  const [raffles, setRaffles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [backgroundLoading, setBackgroundLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Fetch raffles from contracts
-  const fetchRaffles = React.useCallback(async (isBackground = false) => {
-    if (!connected) {
-      setRaffles([]);
-      setError('Please connect your wallet to view raffles');
-      return;
-    }
-    if (!contracts.raffleManager) {
-      setError('Contracts not initialized. Please try refreshing the page.');
-      return;
-    }
-    if (isBackground) {
-      setBackgroundLoading(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      if (!contracts.raffleManager.getAllRaffles) {
-        setError('RaffleManager contract does not support getAllRaffles.');
-        setRaffles([]);
-        return;
-      }
-      const registeredRaffles = await contracts.raffleManager.getAllRaffles();
-      if (!registeredRaffles || registeredRaffles.length === 0) {
-        setRaffles([]);
-        setError('No raffles found on the blockchain');
-        return;
-      }
-      
-      // Limit the number of raffles to fetch to prevent rate limiting
-      const maxRafflesToFetch = 20;
-      const rafflesToFetch = registeredRaffles.slice(0, maxRafflesToFetch);
-      
-      const rafflePromises = rafflesToFetch.map(async (raffleAddress) => {
-        try {
-          const raffleContract = getContractInstance(raffleAddress, 'raffle');
-          if (!raffleContract) {
-            console.error(`Failed to get raffle contract instance for ${raffleAddress}`);
-            return null;
-          }
-          
-          // Batch all the basic raffle data calls
-          const [
-            name,
-            creator,
-            startTime,
-            duration,
-            ticketPrice,
-            ticketLimit,
-            winnersCount,
-            maxTicketsPerParticipant,
-            isPrized,
-            prizeCollection,
-            stateNum,
-            erc20PrizeToken,
-            erc20PrizeAmount,
-            ethPrizeAmount,
-            isExternallyPrized,
-            standard
-          ] = await Promise.all([
-            raffleContract.name(),
-            raffleContract.creator(),
-            raffleContract.startTime(),
-            raffleContract.duration(),
-            raffleContract.ticketPrice(),
-            raffleContract.ticketLimit(),
-            raffleContract.winnersCount(),
-            raffleContract.maxTicketsPerParticipant(),
-            raffleContract.isPrized(),
-            raffleContract.prizeCollection(),
-            raffleContract.state(),
-            raffleContract.erc20PrizeToken(),
-            raffleContract.erc20PrizeAmount(),
-            raffleContract.ethPrizeAmount(),
-            raffleContract.isExternallyPrized?.(), // fetch isExternallyPrized
-            raffleContract.standard?.() // fetch standard for NFT type detection
-          ]);
-          
-          // Skip participant count to reduce RPC calls - this was causing too many requests
-          // We'll show tickets sold as "N/A" or implement a different approach later
-          const ticketsSold = 0; // Temporarily set to 0 to avoid rate limiting
-          
-          let raffleState;
-          if (stateNum === 0) { raffleState = 'pending'; }
-          else if (stateNum === 1) { raffleState = 'active'; }
-          else if (stateNum === 2) { raffleState = 'drawing'; }
-          else if (stateNum === 3) { raffleState = 'completed'; }
-          else if (stateNum === 4) { raffleState = 'completed'; }
-          else if (stateNum === 5) { raffleState = 'ended'; }
-          else { raffleState = 'ended'; }
-          
-          return {
-            id: raffleAddress,
-            name,
-            address: raffleAddress,
-            creator,
-            startTime: startTime.toNumber(),
-            duration: duration.toNumber(),
-            ticketPrice,
-            ticketLimit: ticketLimit.toNumber(),
-            ticketsSold: ticketsSold,
-            winnersCount: winnersCount.toNumber(),
-            maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
-            isPrized,
-            prizeCollection, // always set actual value
-            stateNum: stateNum,
-            erc20PrizeToken,
-            erc20PrizeAmount,
-            ethPrizeAmount,
-            isExternallyPrized: !!isExternallyPrized, // add to object
-            standard: standard ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined // add standard for NFT type detection
-          };
-        } catch (error) {
-          console.error(`Error fetching raffle data for ${raffleAddress}:`, error);
-          return null;
-        }
-      });
-      
-      const raffleData = await Promise.all(rafflePromises);
-      const validRaffles = raffleData.filter(raffle => raffle !== null);
-      setRaffles(validRaffles);
-      if (validRaffles.length === 0) {
-        setError('No valid raffles found on the blockchain');
-      }
-    } catch (error) {
-      console.error('Error fetching raffles:', error);
-      
-      // Check if it's a rate limiting error
-      if (error.message && error.message.includes('Too Many Requests')) {
-        setError('Rate limit exceeded. Please wait a moment and refresh the page, or consider upgrading your RPC provider.');
-      } else {
-      setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
-      }
-      setRaffles([]);
-    } finally {
-      if (isBackground) {
-        setBackgroundLoading(false);
-      } else {
-        setLoading(false);
-      }
-    }
-  }, [contracts, getContractInstance, connected]);
-
-  useEffect(() => {
-    fetchRaffles();
-    // Increase polling interval to 2 minutes to reduce rate limiting
-    const interval = setInterval(() => fetchRaffles(true), 120000);
-    return () => clearInterval(interval);
-  }, [fetchRaffles]);
-
-  // Listen for contract events and refresh in background
-  useEffect(() => {
-    if (!onContractEvent) return;
-    const unsubRaffleCreated = onContractEvent('RaffleCreated', () => {
-      fetchRaffles(true);
-    });
-    const unsubWinnersSelected = onContractEvent('WinnersSelected', () => {
-      fetchRaffles(true);
-    });
-    const unsubPrizeClaimed = onContractEvent('PrizeClaimed', () => {
-      fetchRaffles(true);
-    });
-    return () => {
-      unsubRaffleCreated && unsubRaffleCreated();
-      unsubWinnersSelected && unsubWinnersSelected();
-      unsubPrizeClaimed && unsubPrizeClaimed();
-    };
-  }, [onContractEvent, fetchRaffles]);
-
-  // Categorize raffles by state and duration
-  const { pending, active, ended, drawing, completed } = categorizeRaffles(raffles);
   const { isMobile } = useMobileBreakpoints();
+
+  // Use the new RaffleService hook
+  const {
+    raffles,
+    categorizedRaffles,
+    loading,
+    backgroundLoading,
+    error,
+    refreshRaffles
+  } = useRaffleService({
+    autoFetch: true,
+    enablePolling: true,
+    pollingInterval: 120000, // 2 minutes
+    maxRaffles: isMobile ? 15 : 25 // Limit based on platform
+  });
+
+
+  // Extract categorized raffles from the service
+  const { pending, active, ended, drawing, completed } = categorizedRaffles;
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -539,12 +383,10 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <PageContainer className="py-8">
-        <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
-        </div>
-      </PageContainer>
+      <PageLoading
+        message="Loading raffles from blockchain..."
+        isMobile={isMobile}
+      />
     );
   }
 
@@ -553,23 +395,19 @@ const LandingPage = () => {
     return (
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+            Fairness and Transparency, On-Chain
+          </h1>
+          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
-        
-        <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold mb-2">Unable to Load Raffles</h3>
-          <p className="text-muted-foreground mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            Try Again
-          </button>
-        </div>
+
+        <NetworkError
+          error={{ message: error }}
+          onRetry={refreshRaffles}
+          isMobile={isMobile}
+        />
       </PageContainer>
     );
   }

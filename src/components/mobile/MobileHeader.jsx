@@ -5,103 +5,39 @@ import { ethers } from 'ethers';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
+import { useRaffleSearch } from '../../hooks/useRaffleService';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '../ui/sheet';
 import NetworkSelector from '../ui/network-selector';
-import { SUPPORTED_NETWORKS } from '../../networks';
-import { contractABIs } from '../../contracts/contractABIs';
 
 const MobileHeader = () => {
-  const { connected, address, formatAddress, disconnect, connectWallet, provider, chainId } = useWallet();
+  const { connected, address, formatAddress, disconnect, connectWallet } = useWallet();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
+  // Use the new RaffleSearch hook
+  const { searchResults, searchLoading, search, clearSearch } = useRaffleSearch();
+
   // Search functionality state
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [allRaffles, setAllRaffles] = useState([]);
-  const hasFetchedRaffles = useRef(false);
   const searchInputRef = useRef(null);
 
-  // Fetch all raffles for searching
+  // Debounced search using the new service
   useEffect(() => {
-    const fetchAllRaffles = async () => {
-      if (!provider || !chainId || !SUPPORTED_NETWORKS[chainId]) {
-        return;
-      }
-      if (hasFetchedRaffles.current) {
-        return;
-      }
-      try {
-        const raffleManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.raffleManager;
-        if (!raffleManagerAddress) {
-          setAllRaffles([]);
-          hasFetchedRaffles.current = true;
-          return;
-        }
-        const raffleManagerContract = new ethers.Contract(raffleManagerAddress, contractABIs.raffleManager, provider);
-        const registeredRaffles = await raffleManagerContract.getAllRaffles();
-        if (!registeredRaffles || registeredRaffles.length === 0) {
-          setAllRaffles([]);
-          hasFetchedRaffles.current = true;
-          return;
-        }
-        const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
-          try {
-            if (!provider) {
-              return null;
-            }
-            const raffleContract = new ethers.Contract(raffleAddress, contractABIs.raffle, provider);
-            const name = await raffleContract.name();
-            return {
-              address: raffleAddress,
-              name: name
-            };
-          } catch (error) {
-            return null;
-          }
-        });
-        const raffleData = await Promise.all(rafflePromises);
-        const validRaffles = raffleData.filter(r => r);
-        setAllRaffles(validRaffles);
-        hasFetchedRaffles.current = true;
-      } catch (error) {
-        console.error('Error fetching raffles for search:', error);
-        setAllRaffles([]);
-        hasFetchedRaffles.current = true;
-      }
-    };
-    fetchAllRaffles();
-  }, [provider, chainId]);
-
-  // Reset fetch flag when provider or chainId changes
-  useEffect(() => {
-    hasFetchedRaffles.current = false;
-  }, [provider, chainId]);
-
-  // Debounced search
-  useEffect(() => {
-    if (!showSearch || !searchTerm) {
-      setSearchResults([]);
+    if (!showSearch || !searchTerm?.trim()) {
+      clearSearch();
       return;
     }
-    setSearchLoading(true);
+
     const handler = setTimeout(() => {
-      const term = searchTerm.trim().toLowerCase();
-      const results = allRaffles.filter(r =>
-        (r.name || '').trim().toLowerCase().includes(term) ||
-        (r.address || '').trim().toLowerCase() === term ||
-        (r.address || '').trim().toLowerCase().includes(term)
-      );
-      setSearchResults(results);
-      setSearchLoading(false);
+      search(searchTerm);
     }, 300);
+
     return () => clearTimeout(handler);
-  }, [searchTerm, showSearch, allRaffles]);
+  }, [searchTerm, showSearch, search, clearSearch]);
 
   const handleConnectWallet = async () => {
     try {
@@ -116,7 +52,7 @@ const MobileHeader = () => {
     navigate(`/raffle/${raffleAddress}`);
     setShowSearch(false);
     setSearchTerm('');
-    setSearchResults([]);
+    clearSearch();
   };
 
   const handleSearchToggle = () => {
@@ -124,7 +60,7 @@ const MobileHeader = () => {
     if (showSearch) {
       // Closing search
       setSearchTerm('');
-      setSearchResults([]);
+      clearSearch();
     } else {
       // Opening search - focus input after animation
       setTimeout(() => {
