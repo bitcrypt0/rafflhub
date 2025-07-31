@@ -1165,14 +1165,34 @@ const RaffleDetailPage = () => {
         if (!stableRaffleAddress) {
           throw new Error('No raffle address provided');
         }
-        if (!stableConnected || !getContractInstance) {
-          setLoading(true);
-          return;
+
+        // Wait for wallet connection and contract context to be ready
+        if (!getContractInstance) {
+          throw new Error('Contract context not ready');
         }
-        const raffleContract = getContractInstance(stableRaffleAddress, 'raffle');
-        if (!raffleContract) {
-          setLoading(true);
-          return;
+
+        // Add retry logic for contract instance creation
+        let raffleContract = null;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (!raffleContract && retryCount < maxRetries) {
+          try {
+            raffleContract = getContractInstance(stableRaffleAddress, 'raffle');
+            if (!raffleContract) {
+              throw new Error('Failed to create contract instance');
+            }
+            // Test the contract by calling a simple method
+            await raffleContract.name();
+            break;
+          } catch (error) {
+            retryCount++;
+            if (retryCount >= maxRetries) {
+              throw new Error(`Failed to connect to raffle contract after ${maxRetries} attempts: ${error.message}`);
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
         }
         const [
           name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner

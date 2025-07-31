@@ -45,14 +45,6 @@ const ProfileTabs = ({
     revenue: false
   });
 
-  const openModal = (modalName) => {
-    setModals(prev => ({ ...prev, [modalName]: true }));
-  };
-
-  const closeModal = (modalName) => {
-    setModals(prev => ({ ...prev, [modalName]: false }));
-  };
-
   const ActivityTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -322,15 +314,10 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Reveal your collection and manage royalties</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.royalty} onOpenChange={(open) => open ? openModal('royalty') : closeModal('royalty')}>
+            <Dialog open={modals.royalty} onOpenChange={(open) => setModals(prev => ({ ...prev, royalty: open }))}>
               <DialogTrigger asChild>
                 <Button
                   className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openModal('royalty');
-                  }}
                 >
                   Open Royalty Manager
                 </Button>
@@ -350,15 +337,10 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Manage minter approvals for your collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.minter} onOpenChange={(open) => open ? openModal('minter') : closeModal('minter')}>
+            <Dialog open={modals.minter} onOpenChange={(open) => setModals(prev => ({ ...prev, minter: open }))}>
               <DialogTrigger asChild>
                 <Button
                   className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openModal('minter');
-                  }}
                 >
                   Open Minter Manager
                 </Button>
@@ -378,15 +360,10 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Add new token IDs to existing ERC1155 collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.tokenCreator} onOpenChange={(open) => open ? openModal('tokenCreator') : closeModal('tokenCreator')}>
+            <Dialog open={modals.tokenCreator} onOpenChange={(open) => setModals(prev => ({ ...prev, tokenCreator: open }))}>
               <DialogTrigger asChild>
                 <Button
                   className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openModal('tokenCreator');
-                  }}
                 >
                   Open Token Creator
                 </Button>
@@ -406,15 +383,10 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Withdraw revenue from your raffles</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.revenue} onOpenChange={(open) => open ? openModal('revenue') : closeModal('revenue')}>
+            <Dialog open={modals.revenue} onOpenChange={(open) => setModals(prev => ({ ...prev, revenue: open }))}>
               <DialogTrigger asChild>
                 <Button
                   className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openModal('revenue');
-                  }}
                 >
                   Open Revenue Manager
                 </Button>
