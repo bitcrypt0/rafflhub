@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -44,6 +44,90 @@ const ProfileTabs = ({
     tokenCreator: false,
     revenue: false
   });
+
+  // Lock body scroll when any modal is open on mobile
+  useEffect(() => {
+    if (isMobile) {
+      const isAnyModalOpen = Object.values(modals).some(Boolean);
+      if (isAnyModalOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+
+      // Cleanup on unmount
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [modals, isMobile]);
+
+  // Custom mobile modal component that avoids Radix UI issues
+  const MobileAwareModal = ({
+    isOpen,
+    onOpenChange,
+    trigger,
+    title,
+    children
+  }) => {
+    if (isMobile) {
+      return (
+        <>
+          {/* Trigger button */}
+          <div onClick={() => onOpenChange(true)}>
+            {trigger}
+          </div>
+
+          {/* Custom mobile modal */}
+          {isOpen && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={() => onOpenChange(false)}
+              />
+
+              {/* Modal content */}
+              <div className="relative w-full max-w-lg bg-background rounded-t-xl shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                  <h2 className="text-lg font-semibold">{title}</h2>
+                  <button
+                    onClick={() => onOpenChange(false)}
+                    className="p-2 hover:bg-muted rounded-md transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-4 max-h-[70vh] overflow-y-auto">
+                  {children}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // Desktop: Use regular Dialog
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {children}
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   const ActivityTab = () => (
     <div className="space-y-4">
@@ -314,21 +398,18 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Reveal your collection and manage royalties</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.royalty} onOpenChange={(open) => setModals(prev => ({ ...prev, royalty: open }))}>
-              <DialogTrigger asChild>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                >
+            <MobileAwareModal
+              isOpen={modals.royalty}
+              onOpenChange={(open) => setModals(prev => ({ ...prev, royalty: open }))}
+              title="Royalty and Reveal Management"
+              trigger={
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
                   Open Royalty Manager
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Royalty and Reveal Management</DialogTitle>
-                </DialogHeader>
-                <RoyaltyAdjustmentComponent />
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <RoyaltyAdjustmentComponent />
+            </MobileAwareModal>
           </CardContent>
         </Card>
         <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
@@ -337,21 +418,18 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Manage minter approvals for your collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.minter} onOpenChange={(open) => setModals(prev => ({ ...prev, minter: open }))}>
-              <DialogTrigger asChild>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                >
+            <MobileAwareModal
+              isOpen={modals.minter}
+              onOpenChange={(open) => setModals(prev => ({ ...prev, minter: open }))}
+              title="Minter Approval Management"
+              trigger={
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
                   Open Minter Manager
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Minter Approval Management</DialogTitle>
-                </DialogHeader>
-                <MinterApprovalComponent />
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <MinterApprovalComponent />
+            </MobileAwareModal>
           </CardContent>
         </Card>
         <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
@@ -360,21 +438,18 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Add new token IDs to existing ERC1155 collections</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.tokenCreator} onOpenChange={(open) => setModals(prev => ({ ...prev, tokenCreator: open }))}>
-              <DialogTrigger asChild>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                >
+            <MobileAwareModal
+              isOpen={modals.tokenCreator}
+              onOpenChange={(open) => setModals(prev => ({ ...prev, tokenCreator: open }))}
+              title="Create New Token ID"
+              trigger={
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
                   Open Token Creator
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Token ID</DialogTitle>
-                </DialogHeader>
-                <CreateNewTokenIDComponent />
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <CreateNewTokenIDComponent />
+            </MobileAwareModal>
           </CardContent>
         </Card>
         <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
@@ -383,21 +458,18 @@ const ProfileTabs = ({
             <CardDescription className={isMobile ? 'text-sm' : ''}>Withdraw revenue from your raffles</CardDescription>
           </CardHeader>
           <CardContent className={isMobile ? 'p-4' : ''}>
-            <Dialog open={modals.revenue} onOpenChange={(open) => setModals(prev => ({ ...prev, revenue: open }))}>
-              <DialogTrigger asChild>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                >
+            <MobileAwareModal
+              isOpen={modals.revenue}
+              onOpenChange={(open) => setModals(prev => ({ ...prev, revenue: open }))}
+              title="Creator Revenue Withdrawal"
+              trigger={
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
                   Open Revenue Manager
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Creator Revenue Withdrawal</DialogTitle>
-                </DialogHeader>
-                <CreatorRevenueWithdrawalComponent />
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <CreatorRevenueWithdrawalComponent />
+            </MobileAwareModal>
           </CardContent>
         </Card>
       </div>
