@@ -358,6 +358,89 @@
     @apply text-base leading-relaxed;
   }
 
+  /* Custom mobile checkbox/radio sizing for FilterSidebar */
+  .filter-checkbox-mobile {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-color: transparent !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 3px !important;
+    position: relative !important;
+  }
+
+  /* Checkbox checked state */
+  .filter-checkbox-mobile[type="checkbox"]:checked {
+    background-color: hsl(var(--primary)) !important;
+    border-color: hsl(var(--primary)) !important;
+  }
+
+  .filter-checkbox-mobile[type="checkbox"]:checked::after {
+    content: '✓' !important;
+    position: absolute !important;
+    top: -1px !important;
+    left: 1px !important;
+    color: white !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+  }
+
+  /* Radio checked state */
+  .filter-checkbox-mobile[type="radio"] {
+    border-radius: 50% !important;
+  }
+
+  .filter-checkbox-mobile[type="radio"]:checked {
+    background-color: hsl(var(--primary)) !important;
+    border-color: hsl(var(--primary)) !important;
+  }
+
+  .filter-checkbox-mobile[type="radio"]:checked::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 3px !important;
+    left: 3px !important;
+    width: 6px !important;
+    height: 6px !important;
+    background-color: white !important;
+    border-radius: 50% !important;
+  }
+
+  @media (min-width: 640px) {
+    .filter-checkbox-mobile {
+      width: 16px !important;
+      height: 16px !important;
+      min-width: 16px !important;
+      min-height: 16px !important;
+      max-width: 16px !important;
+      max-height: 16px !important;
+    }
+
+    .filter-checkbox-mobile[type="checkbox"]:checked::after {
+      font-size: 11px !important;
+      top: -1px !important;
+      left: 2px !important;
+    }
+
+    .filter-checkbox-mobile[type="radio"]:checked::after {
+      top: 4px !important;
+      left: 4px !important;
+      width: 6px !important;
+      height: 6px !important;
+    }
+  }
+
   @screen sm {
     .mobile-text {
       @apply text-lg;

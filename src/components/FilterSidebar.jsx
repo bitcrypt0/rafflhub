@@ -145,7 +145,7 @@ const FilterSidebar = ({
                     name={isRaffleType ? category : undefined}
                     checked={isChecked}
                     onChange={(e) => handleFilterChange(category, option.value, e.target.checked)}
-                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-border focus:ring-2 focus:ring-primary"
+                    className="filter-checkbox-mobile rounded border-border focus:ring-2 focus:ring-primary"
                   />
                   <span className="flex-1 text-xs sm:text-sm leading-tight">{option.label}</span>
                   {option.count > 0 && (
