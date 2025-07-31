@@ -117,39 +117,39 @@ const FilterSidebar = ({
       <div key={category} className="border-b border-border/30 last:border-b-0">
         <button
           onClick={() => toggleSection(category)}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+          className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-muted/50 transition-colors"
           disabled={isDisabled}
         >
-          <span className={`font-medium ${isDisabled ? 'text-muted-foreground' : ''}`}>
+          <span className={`text-sm sm:text-base font-medium ${isDisabled ? 'text-muted-foreground' : ''}`}>
             {title}
           </span>
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           )}
         </button>
         
         {isExpanded && !isDisabled && (
-          <div className="px-4 pb-4 space-y-2">
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-1 sm:space-y-2">
             {options.map((option) => {
               const isChecked = filters[category]?.includes(option.value) || false;
-              
+
               return (
                 <label
                   key={option.value}
-                  className="flex items-center space-x-3 cursor-pointer hover:bg-muted/30 p-2 rounded-md transition-colors"
+                  className="flex items-center space-x-2 sm:space-x-3 cursor-pointer hover:bg-muted/30 p-1.5 sm:p-2 rounded-md transition-colors"
                 >
                   <input
                     type={isRaffleType ? "radio" : "checkbox"}
                     name={isRaffleType ? category : undefined}
                     checked={isChecked}
                     onChange={(e) => handleFilterChange(category, option.value, e.target.checked)}
-                    className="rounded border-border focus:ring-2 focus:ring-primary"
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-border focus:ring-2 focus:ring-primary"
                   />
-                  <span className="flex-1 text-sm">{option.label}</span>
+                  <span className="flex-1 text-xs sm:text-sm leading-tight">{option.label}</span>
                   {option.count > 0 && (
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                       {option.count}
                     </span>
                   )}
@@ -160,7 +160,7 @@ const FilterSidebar = ({
         )}
         
         {isDisabled && (
-          <div className="px-4 pb-4">
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <p className="text-xs text-muted-foreground italic">
               Select "Prized" raffle type to enable this filter
             </p>
@@ -185,7 +185,7 @@ const FilterSidebar = ({
         fixed left-0
         top-14 sm:top-16
         h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]
-        w-80 sm:w-96
+        w-72 sm:w-80 md:w-96
         bg-background border-r border-border
         transform transition-transform duration-300 ease-in-out
         z-40
@@ -194,18 +194,18 @@ const FilterSidebar = ({
         ${className}
       `}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-muted/20">
           <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold text-lg">Filter Raffles</h2>
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <h2 className="font-semibold text-base sm:text-lg">Filter Raffles</h2>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearAllFilters}
-                className="text-xs hover:bg-destructive/10 hover:text-destructive"
+                className="text-xs px-2 sm:px-3 h-7 sm:h-8 hover:bg-destructive/10 hover:text-destructive"
               >
                 Clear All
               </Button>
@@ -214,23 +214,23 @@ const FilterSidebar = ({
               variant="ghost"
               size="sm"
               onClick={onToggle}
-              className="hover:bg-muted"
+              className="hover:bg-muted h-7 w-7 sm:h-8 sm:w-8 p-0"
               title="Close filters"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>
 
         {/* Results Count */}
-        <div className="p-4 bg-muted/30">
-          <p className="text-sm text-muted-foreground">
+        <div className="p-3 sm:p-4 bg-muted/30">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{raffleCount}</span> raffles
           </p>
         </div>
 
         {/* Quick Filters */}
-        <div className="p-4 border-b border-border/30">
+        <div className="p-3 sm:p-4 border-b border-border/30">
           <QuickFilters
             onFilterChange={onFiltersChange}
             hasActiveFilters={hasActiveFilters}
