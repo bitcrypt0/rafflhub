@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -52,13 +52,35 @@ const ProfileTabs = ({
       const isAnyModalOpen = Object.values(modals).some(Boolean);
 
       if (isAnyModalOpen) {
-        // Store original overflow value
+        // Store original values
         const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
+        const originalPosition = document.body.style.position;
+        const originalTop = document.body.style.top;
+        const originalWidth = document.body.style.width;
 
-        // Cleanup function to restore original overflow
+        // Prevent scrolling and fix position
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = '0';
+        document.body.style.width = '100%';
+
+        // Prevent zoom on input focus (iOS Safari)
+        const viewport = document.querySelector('meta[name=viewport]');
+        const originalViewport = viewport?.getAttribute('content');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }
+
+        // Cleanup function to restore original values
         return () => {
           document.body.style.overflow = originalOverflow;
+          document.body.style.position = originalPosition;
+          document.body.style.top = originalTop;
+          document.body.style.width = originalWidth;
+
+          if (viewport && originalViewport) {
+            viewport.setAttribute('content', originalViewport);
+          }
         };
       }
     }
@@ -81,9 +103,12 @@ const ProfileTabs = ({
     title,
     children
   }) => {
-    // Handle backdrop click
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+    const modalRef = useRef(null);
+
+    // Handle backdrop click - but not when keyboard is open
     const handleBackdropClick = (e) => {
-      if (e.target === e.currentTarget) {
+      if (e.target === e.currentTarget && !keyboardOpen) {
         onOpenChange(false);
       }
     };
@@ -102,6 +127,35 @@ const ProfileTabs = ({
       }
     }, [isOpen, isMobile, onOpenChange]);
 
+    // Detect mobile keyboard open/close
+    useEffect(() => {
+      if (isOpen && isMobile) {
+        const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+
+        const handleViewportChange = () => {
+          const currentHeight = window.visualViewport?.height || window.innerHeight;
+          const heightDifference = initialViewportHeight - currentHeight;
+
+          // If viewport height decreased by more than 150px, keyboard is likely open
+          setKeyboardOpen(heightDifference > 150);
+        };
+
+        // Use visualViewport API if available (better for mobile)
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', handleViewportChange);
+          return () => {
+            window.visualViewport.removeEventListener('resize', handleViewportChange);
+          };
+        } else {
+          // Fallback to window resize
+          window.addEventListener('resize', handleViewportChange);
+          return () => {
+            window.removeEventListener('resize', handleViewportChange);
+          };
+        }
+      }
+    }, [isOpen, isMobile]);
+
     if (isMobile) {
       return (
         <>
@@ -113,16 +167,33 @@ const ProfileTabs = ({
           {/* Custom mobile modal - rendered via portal */}
           {isOpen && createPortal(
             <div
-              className="fixed inset-0 z-[9999] flex items-end justify-center"
+              className={`fixed inset-0 z-[9999] ${keyboardOpen ? 'items-start pt-4' : 'items-end'} flex justify-center`}
               onClick={handleBackdropClick}
+              style={{
+                // Prevent viewport scaling issues on iOS
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
             >
               {/* Backdrop */}
               <div className="absolute inset-0 bg-black/50" />
 
               {/* Modal content */}
               <div
-                className="relative w-full bg-background rounded-t-xl shadow-xl animate-in slide-in-from-bottom-2 duration-300 max-h-[90vh] flex flex-col"
+                ref={modalRef}
+                className={`relative w-full bg-background shadow-xl duration-300 flex flex-col ${
+                  keyboardOpen
+                    ? 'rounded-xl mx-4 max-h-[calc(100vh-2rem)]'
+                    : 'rounded-t-xl max-h-[90vh] animate-in slide-in-from-bottom-2'
+                }`}
                 onClick={(e) => e.stopPropagation()}
+                style={{
+                  // Ensure modal stays in view when keyboard opens
+                  maxHeight: keyboardOpen ? 'calc(100vh - 2rem)' : '90vh',
+                }}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
@@ -139,7 +210,7 @@ const ProfileTabs = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 overflow-y-auto flex-1">
+                <div className="p-4 overflow-y-auto flex-1 mobile-modal-content" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {children}
                 </div>
               </div>
