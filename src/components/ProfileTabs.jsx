@@ -49,6 +49,7 @@ const ProfileTabs = ({
   // Mobile expandable card state (only one can be expanded at a time)
   const [expandedCard, setExpandedCard] = useState(null);
   const [loadingCard, setLoadingCard] = useState(null);
+  const [inputFocused, setInputFocused] = useState(false);
 
   // Toggle expandable card (mobile)
   const toggleExpandableCard = async (cardKey) => {
@@ -78,6 +79,35 @@ const ProfileTabs = ({
     }
   };
 
+  // Handle card header click with input focus protection
+  const handleCardHeaderClick = (e, cardKey) => {
+    // Don't toggle if an input is currently focused
+    if (inputFocused) {
+      console.log('Card header click blocked: input is focused');
+      return;
+    }
+
+    // Don't toggle if clicking on an input or interactive element
+    const target = e.target;
+    const isInteractiveElement = target.tagName === 'INPUT' ||
+                                target.tagName === 'TEXTAREA' ||
+                                target.tagName === 'BUTTON' ||
+                                target.tagName === 'SELECT' ||
+                                target.closest('input') ||
+                                target.closest('textarea') ||
+                                target.closest('button') ||
+                                target.closest('[data-radix-select-trigger]') ||
+                                target.closest('[role="combobox"]');
+
+    if (isInteractiveElement) {
+      console.log('Card header click blocked: interactive element');
+      return;
+    }
+
+    console.log('Toggling card:', cardKey);
+    toggleExpandableCard(cardKey);
+  };
+
   // Mobile-aware component wrapper
   const MobileAwareComponent = ({
     cardKey,
@@ -94,7 +124,7 @@ const ProfileTabs = ({
         <Card className="overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:shadow-md">
           <CardHeader
             className="expandable-card-header"
-            onClick={() => toggleExpandableCard(cardKey)}
+            onClick={(e) => handleCardHeaderClick(e, cardKey)}
             onKeyDown={(e) => handleCardKeyDown(e, cardKey)}
             tabIndex={0}
             role="button"
@@ -160,7 +190,28 @@ const ProfileTabs = ({
             <CardContent className="pt-0 pb-6">
               <div className="border-t border-border pt-4">
                 {isExpanded && (
-                  <div className="mobile-modal-content">
+                  <div
+                    className="mobile-modal-content"
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onFocusCapture={(e) => {
+                      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        console.log('Input focused, preventing card interactions');
+                        setInputFocused(true);
+                      }
+                    }}
+                    onBlurCapture={(e) => {
+                      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        console.log('Input blurred, allowing card interactions');
+                        // Delay to prevent immediate card toggle
+                        setTimeout(() => setInputFocused(false), 100);
+                      }
+                    }}
+                  >
                     {children}
                   </div>
                 )}
@@ -217,6 +268,35 @@ const ProfileTabs = ({
       }
     }
   }, [modals, isMobile]);
+
+  // Global focus management for Android input protection
+  useEffect(() => {
+    if (isMobile) {
+      const handleGlobalFocusIn = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          console.log('Global focus in: input focused');
+          setInputFocused(true);
+        }
+      };
+
+      const handleGlobalFocusOut = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          console.log('Global focus out: input blurred');
+          // Longer delay for Android
+          setTimeout(() => setInputFocused(false), 300);
+        }
+      };
+
+      // Add global listeners with capture for better Android support
+      document.addEventListener('focusin', handleGlobalFocusIn, true);
+      document.addEventListener('focusout', handleGlobalFocusOut, true);
+
+      return () => {
+        document.removeEventListener('focusin', handleGlobalFocusIn, true);
+        document.removeEventListener('focusout', handleGlobalFocusOut, true);
+      };
+    }
+  }, [isMobile]);
 
   // Cleanup on component unmount
   useEffect(() => {
@@ -455,9 +535,14 @@ const ProfileTabs = ({
                   <div className="flex items-center gap-2">
                     {/* Debug info for development */}
                     {process.env.NODE_ENV === 'development' && (
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        KB: {keyboardOpen ? 'Open' : 'Closed'}
-                      </span>
+                      <div className="flex gap-1">
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          Input: {inputFocused ? 'Focused' : 'Not Focused'}
+                        </span>
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          Card: {isExpanded ? 'Expanded' : 'Collapsed'}
+                        </span>
+                      </div>
                     )}
                     <button
                       onClick={() => onOpenChange(false)}

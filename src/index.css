@@ -578,6 +578,31 @@
       color: hsl(var(--foreground)) !important;
       width: 100% !important;
       box-sizing: border-box !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      pointer-events: auto !important;
+    }
+
+    /* Prevent parent elements from interfering with input focus */
+    .expandable-card-content input:focus,
+    .expandable-card-content textarea:focus,
+    .expandable-card-content select:focus,
+    .expandable-card-content [data-radix-select-trigger]:focus {
+      outline: 2px solid hsl(var(--primary)) !important;
+      outline-offset: 2px !important;
+      border-color: hsl(var(--primary)) !important;
+      z-index: 10 !important;
+      position: relative !important;
+    }
+
+    /* Ensure input containers don't interfere */
+    .expandable-card-content .grid,
+    .expandable-card-content .space-y-4,
+    .expandable-card-content .space-y-6,
+    .expandable-card-content div {
+      pointer-events: auto !important;
     }
 
     /* Fix labels in expandable cards */
