@@ -5,7 +5,7 @@ import { useContract } from '../contexts/ContractContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
+
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -309,13 +309,14 @@ const MinterApprovalComponent = () => {
         <div className="space-y-2">
           <Label htmlFor="collection-address">Collection Contract Address</Label>
           <div className="flex gap-2">
-            <Input
+            <input
               id="collection-address"
               type="text"
               placeholder="0x..."
               value={collectionAddress}
               onChange={(e) => setCollectionAddress(e.target.value)}
               disabled={loading || !connected}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
             />
             <Button
               onClick={fetchCollection}
@@ -373,13 +374,14 @@ const MinterApprovalComponent = () => {
           <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
             <div className="space-y-2">
               <Label htmlFor="minter">Minter Address</Label>
-              <Input
+              <input
                 id="minter"
                 type="text"
                 placeholder="0x..."
                 value={minterAddress}
                 onChange={(e) => setMinterAddress(e.target.value)}
                 disabled={loading}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               />
               {minterAddress && !validateAddress(minterAddress) && (
                 <p className="text-sm text-red-600">Invalid Ethereum address</p>

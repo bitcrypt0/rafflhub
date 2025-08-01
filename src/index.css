@@ -543,6 +543,23 @@
     border-style: revert !important;
   }
 
+  /* Override UI Input component focus styles specifically */
+  .mobile-utility-page-content input[data-slot="input"]:focus-visible,
+  .mobile-modal-content input[data-slot="input"]:focus-visible,
+  .mobile-utility-page-content input[data-slot="input"]:focus,
+  .mobile-modal-content input[data-slot="input"]:focus {
+    /* Remove ALL Tailwind focus styles from UI Input component */
+    border-color: revert !important;
+    box-shadow: revert !important;
+    outline: revert !important;
+    /* Specifically target Tailwind ring utilities */
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+    --tw-ring-offset-shadow: none !important;
+    --tw-ring-offset-width: 0px !important;
+    --tw-ring-width: 0px !important;
+  }
+
   /* Mobile-specific optimizations */
   @media (max-width: 640px) {
     /* Prevent viewport resize issues on Android */
