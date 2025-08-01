@@ -523,53 +523,12 @@
     }
   }
 
-  /* Mobile expandable card animations */
+  /* Mobile utility content styling - match CreateRafflePage approach */
   @media (max-width: 640px) {
-    /* Smooth height transitions for expandable cards */
-    .expandable-card-content {
-      transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-      overflow: hidden;
-    }
-
-    .expandable-card-content.expanded {
-      max-height: 1000px;
-      opacity: 1;
-    }
-
-    .expandable-card-content.collapsed {
-      max-height: 0;
-      opacity: 0;
-    }
-
-    /* Expandable card header hover effects */
-    .expandable-card-header {
-      transition: background-color 0.2s ease-in-out;
-      cursor: pointer;
-    }
-
-    .expandable-card-header:hover {
-      background-color: hsl(var(--muted) / 0.5);
-    }
-
-    /* Chevron rotation animation */
-    .expandable-chevron {
-      transition: transform 0.2s ease-in-out;
-    }
-
-    .expandable-chevron.rotated {
-      transform: rotate(180deg);
-    }
-
-    /* Ensure proper spacing in expanded content */
-    .expandable-card-content .mobile-modal-content {
-      padding: 0 !important;
-    }
-
-    /* Simple form elements styling for expandable cards - match CreateRafflePage */
-    .expandable-card-content input,
-    .expandable-card-content textarea,
-    .expandable-card-content select,
-    .expandable-card-content [data-radix-select-trigger] {
+    .mobile-utility-content input,
+    .mobile-utility-content textarea,
+    .mobile-utility-content select,
+    .mobile-utility-content [data-radix-select-trigger] {
       font-size: 16px !important;
       padding: 12px !important;
       border-radius: 8px !important;
@@ -578,42 +537,40 @@
       color: hsl(var(--foreground)) !important;
     }
 
-    /* Simple focus styles */
-    .expandable-card-content input:focus,
-    .expandable-card-content textarea:focus,
-    .expandable-card-content select:focus {
+    /* Clean focus styles */
+    .mobile-utility-content input:focus,
+    .mobile-utility-content textarea:focus,
+    .mobile-utility-content select:focus {
       outline: 2px solid hsl(var(--primary)) !important;
       border-color: hsl(var(--primary)) !important;
     }
 
-    /* Fix labels in expandable cards */
-    .expandable-card-content label {
+    /* Ensure labels are visible */
+    .mobile-utility-content label {
       color: hsl(var(--foreground)) !important;
       font-weight: 500 !important;
       margin-bottom: 8px !important;
       display: block !important;
     }
 
-    /* Fix buttons in expandable cards */
-    .expandable-card-content button {
+    /* Button styling */
+    .mobile-utility-content button {
       font-size: 16px !important;
       padding: 12px 16px !important;
       border-radius: 8px !important;
       min-height: 44px !important;
-      touch-action: manipulation !important;
     }
 
-    /* Fix select dropdowns in expandable cards */
-    .expandable-card-content [data-radix-select-content] {
-      z-index: 10002 !important;
-      position: fixed !important;
+    /* Select dropdown styling */
+    .mobile-utility-content [data-radix-select-content] {
+      z-index: 10000 !important;
       background-color: hsl(var(--background)) !important;
       border: 1px solid hsl(var(--border)) !important;
       border-radius: 8px !important;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
 
-    .expandable-card-content [data-radix-select-item] {
+    .mobile-utility-content [data-radix-select-item] {
       padding: 12px !important;
       font-size: 16px !important;
       min-height: 44px !important;

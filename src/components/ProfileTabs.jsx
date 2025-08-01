@@ -38,7 +38,7 @@ const ProfileTabs = ({
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
 
-  // State management for mobile expandable cards and desktop modals
+  // State management for desktop modals only
   const [modals, setModals] = useState({
     royalty: false,
     minter: false,
@@ -46,100 +46,91 @@ const ProfileTabs = ({
     revenue: false
   });
 
-  // Mobile expandable card state (only one can be expanded at a time)
-  const [expandedCard, setExpandedCard] = useState(null);
+  // Mobile-specific state: active utility tab
+  const [activeUtilityTab, setActiveUtilityTab] = useState('royalty');
 
-  // Toggle expandable card (mobile) - simplified
-  const toggleExpandableCard = (cardKey) => {
-    setExpandedCard(prev => prev === cardKey ? null : cardKey);
-  };
-
-  // Simple keyboard navigation for expandable cards
-  const handleCardKeyDown = (e, cardKey) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleExpandableCard(cardKey);
+  // Mobile utility components data
+  const utilityComponents = [
+    {
+      key: 'royalty',
+      title: 'Royalty & Reveal',
+      description: 'Manage royalties and reveal collections',
+      icon: '👑',
+      component: <RoyaltyAdjustmentComponent />
+    },
+    {
+      key: 'minter',
+      title: 'Minter Approval',
+      description: 'Manage minter approvals',
+      icon: '🔑',
+      component: <MinterApprovalComponent />
+    },
+    {
+      key: 'tokenCreator',
+      title: 'Create Token ID',
+      description: 'Add new token IDs to ERC1155 collections',
+      icon: '🆕',
+      component: <CreateNewTokenIDComponent />
+    },
+    {
+      key: 'revenue',
+      title: 'Revenue Withdrawal',
+      description: 'Withdraw revenue from raffles',
+      icon: '💰',
+      component: <CreatorRevenueWithdrawalComponent />
     }
-    if (e.key === 'Escape' && expandedCard === cardKey) {
-      setExpandedCard(null);
-    }
-  };
+  ];
 
-  // Mobile-aware component wrapper
-  const MobileAwareComponent = ({
-    cardKey,
+  // Mobile utility tab selector
+  const renderMobileUtilityTabs = () => (
+    <div className="space-y-4">
+      {/* Tab Navigation */}
+      <div className="grid grid-cols-2 gap-2">
+        {utilityComponents.map((utility) => (
+          <button
+            key={utility.key}
+            onClick={() => setActiveUtilityTab(utility.key)}
+            className={`p-3 rounded-lg border transition-all duration-200 ${
+              activeUtilityTab === utility.key
+                ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-lg">{utility.icon}</span>
+              <span className="text-xs font-medium text-center leading-tight">
+                {utility.title}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Active Component */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">
+            {utilityComponents.find(u => u.key === activeUtilityTab)?.title}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {utilityComponents.find(u => u.key === activeUtilityTab)?.description}
+          </p>
+        </div>
+        <div className="mobile-utility-content">
+          {utilityComponents.find(u => u.key === activeUtilityTab)?.component}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Desktop modal component (unchanged)
+  const DesktopModalComponent = ({
+    modalKey,
     title,
     description,
     children,
     buttonText = "Open"
   }) => {
-    if (isMobile) {
-      const isExpanded = expandedCard === cardKey;
-
-      return (
-        <Card className="overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:shadow-md">
-          <CardHeader
-            className="expandable-card-header cursor-pointer"
-            onClick={() => toggleExpandableCard(cardKey)}
-            onKeyDown={(e) => handleCardKeyDown(e, cardKey)}
-            tabIndex={0}
-            role="button"
-            aria-expanded={isExpanded}
-            aria-controls={`card-content-${cardKey}`}
-            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title}`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
-                  {title}
-                </CardTitle>
-                <CardDescription className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  {description}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2 ml-4">
-                <span className="text-sm font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  {isExpanded ? 'Collapse' : 'Expand'}
-                </span>
-                <svg
-                  className={`w-5 h-5 expandable-chevron ${isExpanded ? 'rotated' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  style={{ color: 'hsl(var(--muted-foreground))' }}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </CardHeader>
-
-          <div
-            id={`card-content-${cardKey}`}
-            className={`expandable-card-content ${isExpanded ? 'expanded' : 'collapsed'}`}
-            style={{
-              maxHeight: isExpanded ? '1000px' : '0px',
-              opacity: isExpanded ? 1 : 0,
-              transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out'
-            }}
-            aria-hidden={!isExpanded}
-          >
-            <CardContent className="pt-0 pb-6">
-              <div className="border-t border-border pt-4">
-                {isExpanded && (
-                  <div className="mobile-modal-content">
-                    {children}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </div>
-        </Card>
-      );
-    }
-
-    // Desktop: Use existing modal system
-    const modalKey = cardKey;
     const isOpen = modals[modalKey];
     const onOpenChange = (open) => setModals(prev => ({ ...prev, [modalKey]: open }));
 
@@ -149,7 +140,7 @@ const ProfileTabs = ({
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
-        <CardContent className={isMobile ? 'p-4' : ''}>
+        <CardContent>
           <MobileAwareModal
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -767,41 +758,50 @@ const ProfileTabs = ({
       </div>
 
 
-      {/* Management Components - Modal Based */}
-      <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
-        <MobileAwareComponent
-          cardKey="royalty"
-          title="Royalty and Reveal Management"
-          description="Reveal your collection and manage royalties"
-          buttonText="Open Royalty Manager"
-        >
-          <RoyaltyAdjustmentComponent />
-        </MobileAwareComponent>
-        <MobileAwareComponent
-          cardKey="minter"
-          title="Minter Approval Management"
-          description="Manage minter approvals for your collections"
-          buttonText="Open Minter Manager"
-        >
-          <MinterApprovalComponent />
-        </MobileAwareComponent>
-        <MobileAwareComponent
-          cardKey="tokenCreator"
-          title="Create New Token ID"
-          description="Add new token IDs to existing ERC1155 collections"
-          buttonText="Open Token Creator"
-        >
-          <CreateNewTokenIDComponent />
-        </MobileAwareComponent>
-        <MobileAwareComponent
-          cardKey="revenue"
-          title="Creator Revenue Withdrawal"
-          description="Withdraw revenue from your raffles"
-          buttonText="Open Revenue Manager"
-        >
-          <CreatorRevenueWithdrawalComponent />
-        </MobileAwareComponent>
-      </div>
+      {/* Management Components - Platform Aware */}
+      {isMobile ? (
+        /* Mobile: Tab-based utility interface */
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Creator Utilities</h3>
+          {renderMobileUtilityTabs()}
+        </div>
+      ) : (
+        /* Desktop: Modal-based interface */
+        <div className="grid gap-4 md:grid-cols-2">
+          <DesktopModalComponent
+            modalKey="royalty"
+            title="Royalty and Reveal Management"
+            description="Reveal your collection and manage royalties"
+            buttonText="Open Royalty Manager"
+          >
+            <RoyaltyAdjustmentComponent />
+          </DesktopModalComponent>
+          <DesktopModalComponent
+            modalKey="minter"
+            title="Minter Approval Management"
+            description="Manage minter approvals for your collections"
+            buttonText="Open Minter Manager"
+          >
+            <MinterApprovalComponent />
+          </DesktopModalComponent>
+          <DesktopModalComponent
+            modalKey="tokenCreator"
+            title="Create New Token ID"
+            description="Add new token IDs to existing ERC1155 collections"
+            buttonText="Open Token Creator"
+          >
+            <CreateNewTokenIDComponent />
+          </DesktopModalComponent>
+          <DesktopModalComponent
+            modalKey="revenue"
+            title="Creator Revenue Withdrawal"
+            description="Withdraw revenue from your raffles"
+            buttonText="Open Revenue Manager"
+          >
+            <CreatorRevenueWithdrawalComponent />
+          </DesktopModalComponent>
+        </div>
+      )}
     </div>
   );
 
