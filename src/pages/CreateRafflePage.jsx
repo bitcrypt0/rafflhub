@@ -2104,37 +2104,71 @@ const CreateRafflePage = () => {
           </h1>
         </div>
 
-        {/* Filter Button and Form Section - Side by Side */}
+        {/* Filter Button and Form Section - Responsive Layout */}
         <div className={`max-w-7xl mx-auto ${isMobile ? 'mt-6' : 'mt-16'}`}>
-          <div className="flex gap-2 items-start">
-            {/* Filter Toggle Button - positioned beside forms */}
-            <div className="flex-shrink-0">
-              <Button
-                variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
-                onClick={() => setIsFilterOpen(true)}
-                className={`flex items-center gap-2 ${
-                  raffleType !== 'Whitelist/Allowlist'
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : ''
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                <span className="font-medium">
-                  {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
-                </span>
-                {raffleType !== 'Whitelist/Allowlist' && (
-                  <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
-                    Active
+          {isMobile ? (
+            /* Mobile: Stacked Layout */
+            <div className="space-y-4">
+              {/* Filter Toggle Button - above form on mobile */}
+              <div className="flex justify-start">
+                <Button
+                  variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
+                  onClick={() => setIsFilterOpen(true)}
+                  className={`flex items-center gap-2 ${
+                    raffleType !== 'Whitelist/Allowlist'
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : ''
+                  }`}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="font-medium">
+                    {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
                   </span>
-                )}
-              </Button>
-            </div>
+                  {raffleType !== 'Whitelist/Allowlist' && (
+                    <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </Button>
+              </div>
 
-            {/* Form Section */}
-            <div className="flex-1">
-              {renderForm()}
+              {/* Form Section */}
+              <div className="w-full">
+                {renderForm()}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Desktop: Side by Side Layout */
+            <div className="flex gap-2 items-start">
+              {/* Filter Toggle Button - positioned beside forms */}
+              <div className="flex-shrink-0">
+                <Button
+                  variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
+                  onClick={() => setIsFilterOpen(true)}
+                  className={`flex items-center gap-2 ${
+                    raffleType !== 'Whitelist/Allowlist'
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : ''
+                  }`}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="font-medium">
+                    {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
+                  </span>
+                  {raffleType !== 'Whitelist/Allowlist' && (
+                    <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </Button>
+              </div>
+
+              {/* Form Section */}
+              <div className="flex-1">
+                {renderForm()}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SideFilterBar */}

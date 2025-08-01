@@ -120,7 +120,7 @@ const CreateRaffleSideFilterBar = ({
                     name={category}
                     checked={isChecked}
                     onChange={() => onChange(option.value)}
-                    className="mt-1 h-4 w-4 text-primary border-0 focus:ring-0 focus:outline-none"
+                    className="mt-1 h-4 w-4 text-primary bg-background border-border rounded-full focus:ring-2 focus:ring-primary focus:ring-offset-0"
                   />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs sm:text-sm font-medium leading-tight">{option.label}</span>
