@@ -34,7 +34,7 @@ function extractRevertReason(error) {
   return msg;
 }
 
-const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized }) => {
+const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const [quantity, setQuantity] = useState(1);
@@ -219,28 +219,28 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
             <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
-              <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
+              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
             </div>
             <div>
               <span className="text-muted-foreground">Remaining tickets:</span>
-              <p className="font-semibold text-lg">{raffle.ticketLimit - raffle.ticketsSold}</p>
+              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.ticketLimit - raffle.ticketsSold}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Your tickets:</span>
-            <p className="font-semibold text-lg">{userTickets || 0}</p>
+            <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{userTickets || 0}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Winning Chance:</span>
-            <p className="font-semibold text-lg">{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
+            <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Max per user:</span>
-              <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
+              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.maxTicketsPerParticipant}</p>
             </div>
             {canClaimRefund && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Your Refundable Amount:</span>
-                <p className="font-semibold text-lg">{ethers.utils.formatEther(refundableAmount)} ETH</p>
+                <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{ethers.utils.formatEther(refundableAmount)} ETH</p>
               </div>
             )}
           <div></div>
@@ -398,7 +398,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                   <div className="p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total Cost:</span>
-                      <span className="text-lg font-bold">{ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(quantity))} ETH</span>
+                      <span className={`font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>{ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(quantity))} ETH</span>
                     </div>
                   </div>
                 </>
@@ -2132,6 +2132,7 @@ const RaffleDetailPage = () => {
             isEscrowedPrize={isEscrowedPrize}
             isExternallyPrized={isExternallyPrized}
             isPrized={raffle.isPrized}
+            isMobile={isMobile}
           />
 
           <WinnersSection raffle={raffle} isMintableERC721={isMintableERC721} isMobile={isMobile} />
