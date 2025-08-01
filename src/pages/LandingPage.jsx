@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
+import { useCollabDetection } from '../contexts/CollabDetectionContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
@@ -33,6 +34,7 @@ const RaffleCard = ({ raffle }) => {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [erc20Symbol, setErc20Symbol] = useState('');
   const { getContractInstance } = useContract();
+  const { updateCollabStatus, setCollabLoading, getCollabStatus } = useCollabDetection();
   const [ticketsSold, setTicketsSold] = useState(null);
   const [collectionName, setCollectionName] = useState(null);
 
@@ -204,6 +206,78 @@ const RaffleCard = ({ raffle }) => {
     fetchCollectionName();
   }, [raffle, getContractInstance]);
 
+  // Check for collab status with holderTokenAddress
+  useEffect(() => {
+    let isMounted = true;
+    const checkCollabStatus = async () => {
+      // Check if we already have a result
+      const existingResult = getCollabStatus(raffle.address);
+      if (existingResult !== undefined) {
+        return; // Already determined
+      }
+
+      // Set loading state
+      setCollabLoading(raffle.address, true);
+
+      // Check holderTokenAddress first (needed for both types)
+      let hasHolderToken = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries && isMounted) {
+        try {
+          const raffleContract = getContractInstance(raffle.address, 'raffle');
+          if (!raffleContract) {
+            throw new Error('Failed to get contract instance');
+          }
+
+          const holderTokenAddr = await raffleContract.holderTokenAddress();
+          hasHolderToken = holderTokenAddr && holderTokenAddr !== ethers.constants.AddressZero;
+          break; // Success, exit retry loop
+
+        } catch (error) {
+          retryCount++;
+          console.warn(`Collab check attempt ${retryCount} failed for ${raffle.address}:`, error.message);
+
+          if (retryCount >= maxRetries) {
+            // After max retries, assume no holder token
+            hasHolderToken = false;
+          } else {
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
+      }
+
+      if (!isMounted) return;
+
+      // Determine collab type based on priority logic
+      let collabType;
+      if (raffle.isExternallyPrized) {
+        // NFT Collab takes precedence (regardless of holderTokenAddress)
+        collabType = 'nft_collab';
+      } else if (hasHolderToken) {
+        // Whitelist Collab only if not externally prized
+        collabType = 'whitelist_collab';
+      } else {
+        // Not a collab
+        collabType = 'not_collab';
+      }
+
+      updateCollabStatus(raffle.address, collabType);
+    };
+
+    if (raffle.address && getContractInstance) {
+      checkCollabStatus();
+    } else {
+      updateCollabStatus(raffle.address, 'not_collab');
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
+
   const getStatusBadge = () => {
     const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
     const colorMap = {
@@ -222,7 +296,13 @@ const RaffleCard = ({ raffle }) => {
   };
 
   const getPrizeType = () => {
-    if (raffle.isExternallyPrized && raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'Collab';
+    // Use async-determined collab status from context
+    const collabStatus = getCollabStatus(raffle.address);
+    if (collabStatus === 'nft_collab') return 'NFT Collab';
+    if (collabStatus === 'whitelist_collab') return 'Whitelist Collab';
+    if (collabStatus === undefined) return 'Checking...'; // Still determining collab status
+
+    // Continue with other prize types
     if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';

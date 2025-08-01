@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { 
-  applyFilters, 
-  getDefaultFilters, 
-  areFiltersEmpty 
+import {
+  applyFilters,
+  getDefaultFilters,
+  areFiltersEmpty
 } from '../utils/filterUtils';
+import { useCollabDetection } from '../contexts/CollabDetectionContext';
 
 /**
  * Custom hook for managing raffle filters
@@ -11,17 +12,38 @@ import {
  * @returns {Object} - Filter state and methods
  */
 export const useRaffleFilters = (raffles = []) => {
+  const { filterByEnhancedType } = useCollabDetection();
+
   // Filter state
   const [filters, setFilters] = useState(getDefaultFilters());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Apply filters to raffles
+  // Apply filters to raffles using enhanced detection for raffle types
   const filteredRaffles = useMemo(() => {
     if (areFiltersEmpty(filters)) {
       return raffles;
     }
-    return applyFilters(raffles, filters);
-  }, [raffles, filters]);
+
+    // Use enhanced filtering for raffle types, standard filtering for others
+    let filtered = raffles;
+
+    // Apply enhanced raffle type filtering first
+    if (filters.raffleType && filters.raffleType.length > 0) {
+      filtered = filterByEnhancedType(filtered, filters.raffleType);
+    }
+
+    // Apply other filters using standard logic
+    const otherFilters = {
+      ...filters,
+      raffleType: [] // Remove raffle type since we handled it above
+    };
+
+    if (!areFiltersEmpty(otherFilters)) {
+      filtered = applyFilters(filtered, otherFilters);
+    }
+
+    return filtered;
+  }, [raffles, filters, filterByEnhancedType]);
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {

@@ -219,7 +219,10 @@ class RaffleService {
         erc20PrizeToken = await raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero);
         erc20PrizeAmount = await raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0));
         ethPrizeAmount = await raffleContract.ethPrizeAmount?.().catch(() => ethers.BigNumber.from(0));
-        isExternallyPrized = await raffleContract.isExternallyPrized?.().catch(() => false);
+        isExternallyPrized = await raffleContract.isExternallyPrized?.().catch((err) => {
+          console.warn(`isExternallyPrized failed for ${raffleAddress}:`, err.message);
+          return false;
+        });
         standard = await raffleContract.standard?.().catch(() => undefined);
       } else {
         // Parallel calls on desktop

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { countRafflesByFilters } from '../utils/filterUtils';
+import { useCollabDetection } from '../contexts/CollabDetectionContext';
 import QuickFilters from './QuickFilters';
 
 // Mobile-specific CSS for input sizing
@@ -31,6 +32,8 @@ const FilterSidebar = ({
   allRaffles = [], // All raffles for counting
   className = ""
 }) => {
+  const { countEnhancedRaffleTypes } = useCollabDetection();
+
   // Expanded sections state
   const [expandedSections, setExpandedSections] = useState({
     raffleState: true,
@@ -39,8 +42,16 @@ const FilterSidebar = ({
     prizeStandard: true
   });
 
-  // Calculate counts for filter options
-  const raffleCounts = useMemo(() => countRafflesByFilters(allRaffles), [allRaffles]);
+  // Calculate counts for filter options using enhanced detection
+  const raffleCounts = useMemo(() => {
+    const standardCounts = countRafflesByFilters(allRaffles);
+    const enhancedRaffleTypeCounts = countEnhancedRaffleTypes(allRaffles);
+
+    return {
+      ...standardCounts,
+      raffleType: enhancedRaffleTypeCounts
+    };
+  }, [allRaffles, countEnhancedRaffleTypes]);
 
   // Filter options with dynamic counts
   const filterOptions = useMemo(() => ({
@@ -56,14 +67,15 @@ const FilterSidebar = ({
       { value: 'unengaged', label: 'Unengaged', count: raffleCounts.raffleState.unengaged || 0 }
     ],
     raffleType: [
-      { value: 'non_prized', label: 'Non-Prized (Whitelist)', count: raffleCounts.raffleType.non_prized || 0 },
-      { value: 'prized', label: 'Prized', count: raffleCounts.raffleType.prized || 0 }
+      { value: 'non_prized', label: 'Whitelist', count: raffleCounts.raffleType.non_prized || 0 },
+      { value: 'prized', label: 'Prized', count: raffleCounts.raffleType.prized || 0 },
+      { value: 'nft_collab', label: 'NFT Collab', count: raffleCounts.raffleType.nft_collab || 0 },
+      { value: 'whitelist_collab', label: 'Whitelist Collab', count: raffleCounts.raffleType.whitelist_collab || 0 }
     ],
     prizeType: [
       { value: 'nft', label: 'NFT', count: raffleCounts.prizeType.nft || 0 },
       { value: 'erc20', label: 'ERC20 Token', count: raffleCounts.prizeType.erc20 || 0 },
       { value: 'eth', label: 'ETH', count: raffleCounts.prizeType.eth || 0 },
-      { value: 'collab', label: 'Collaboration', count: raffleCounts.prizeType.collab || 0 },
       { value: 'token_giveaway', label: 'Token Giveaway', count: raffleCounts.prizeType.token_giveaway || 0 }
     ],
     prizeStandard: [

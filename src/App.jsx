@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { CollabDetectionProvider } from './contexts/CollabDetectionContext';
 import { Header } from './components/Layout';
 import Footer from './components/Footer';
 import { Toaster } from './components/ui/sonner';
@@ -73,9 +74,11 @@ function App() {
       <ThemeProvider>
         <WalletProvider>
           <ContractProvider>
-            <Router>
-              <AppContent />
-            </Router>
+            <CollabDetectionProvider>
+              <Router>
+                <AppContent />
+              </Router>
+            </CollabDetectionProvider>
           </ContractProvider>
         </WalletProvider>
       </ThemeProvider>

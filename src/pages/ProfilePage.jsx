@@ -1041,7 +1041,9 @@ const ProfilePage = () => {
   ];
 
   const getPrizeType = (raffle) => {
-    if (raffle.isExternallyPrized && raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'Collab';
+    // Note: This is a simplified version. Full collab detection requires async holderTokenAddress() check
+    // For now, only detecting NFT Collab via isExternallyPrized until async enhancement is implemented
+    if (raffle.isExternallyPrized) return 'NFT Collab';
     if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';

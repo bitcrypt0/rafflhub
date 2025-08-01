@@ -25,11 +25,26 @@ export const getRaffleState = (stateNum) => {
 };
 
 /**
- * Determine raffle type (prized vs non-prized)
+ * Determine raffle type (prized vs non-prized vs collab types)
  * @param {Object} raffle - Raffle object
- * @returns {string} - 'prized' or 'non_prized'
+ * @returns {string} - 'prized', 'non_prized', 'nft_collab', or 'whitelist_collab'
+ *
+ * Collab type priority:
+ * 1. NFT Collab: isExternallyPrized returns true (takes precedence)
+ * 2. Whitelist Collab: only holderTokenAddress returns valid address (async check in RaffleCard)
+ *
+ * Note: This synchronous version can only detect NFT Collab via isExternallyPrized.
+ * RaffleCard component implements the complete async detection for both types.
  */
 export const getRaffleType = (raffle) => {
+  // Check for NFT collaboration via isExternallyPrized (immediate check)
+  if (raffle.isExternallyPrized) {
+    return 'nft_collab';
+  }
+
+  // Note: Cannot check holderTokenAddress synchronously here
+  // Whitelist collab raffles will be missed in this synchronous version
+
   return raffle.isPrized ? 'prized' : 'non_prized';
 };
 
@@ -40,11 +55,6 @@ export const getRaffleType = (raffle) => {
  */
 export const getPrizeType = (raffle) => {
   if (!raffle.isPrized) return null;
-  
-  // Check for external collaboration
-  if (raffle.isExternallyPrized && raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
-    return 'collab';
-  }
   
   // Check for ETH prize
   if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) {
@@ -190,7 +200,7 @@ export const countRafflesByFilters = (raffles) => {
     // Count by state
     const state = getRaffleState(raffle.stateNum);
     counts.raffleState[state] = (counts.raffleState[state] || 0) + 1;
-    
+
     // Count by type
     const type = getRaffleType(raffle);
     counts.raffleType[type] = (counts.raffleType[type] || 0) + 1;
@@ -209,7 +219,7 @@ export const countRafflesByFilters = (raffles) => {
       });
     }
   });
-  
+
   return counts;
 };
 
