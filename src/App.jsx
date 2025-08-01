@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
@@ -9,6 +9,7 @@ import { Toaster } from './components/ui/sonner';
 import { useMobileBreakpoints } from './hooks/useMobileBreakpoints';
 import ErrorBoundary from './components/ui/error-boundary';
 import { usePerformanceMonitor } from './components/debug/PerformanceMonitor';
+import { initAndroidKeyboardFix, cleanupAndroidKeyboardFix } from './utils/androidKeyboardFix';
 import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
@@ -24,6 +25,15 @@ import './App.css';
 const AppContent = () => {
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const { component: performanceMonitor } = usePerformanceMonitor();
+
+  // Initialize Android keyboard fix
+  useEffect(() => {
+    initAndroidKeyboardFix();
+
+    return () => {
+      cleanupAndroidKeyboardFix();
+    };
+  }, []);
 
   // Show loading state while initializing
   if (!isInitialized) {

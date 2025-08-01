@@ -523,8 +523,32 @@
     }
   }
 
-  /* Mobile utility page styling */
+  /* Mobile utility page styling with Android keyboard fix */
   @media (max-width: 640px) {
+    /* Prevent viewport resize issues on Android */
+    html {
+      height: 100vh;
+      height: -webkit-fill-available;
+      /* Prevent zoom on input focus */
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      /* Prevent rubber band scrolling on iOS/Android */
+      overscroll-behavior: none;
+    }
+
+    /* Prevent viewport jumping when keyboard appears */
+    .mobile-utility-page-content {
+      /* Use fixed positioning to prevent reflow */
+      position: relative;
+      /* Ensure content doesn't resize with keyboard */
+      min-height: calc(100vh - 120px); /* Account for header */
+    }
+
     .mobile-utility-page-content input,
     .mobile-utility-page-content textarea,
     .mobile-utility-page-content select,
@@ -536,6 +560,9 @@
       background-color: hsl(var(--background)) !important;
       color: hsl(var(--foreground)) !important;
       min-height: 44px !important;
+      /* Android keyboard focus retention */
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
 
     .mobile-utility-page-content input:focus,
