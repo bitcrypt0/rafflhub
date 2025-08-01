@@ -29,10 +29,11 @@
   }
 
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     /* Better box sizing */
     box-sizing: border-box;
+    /* Let browser handle focus outlines naturally */
   }
 
   /* Touch targets - only apply on mobile/touch devices */
@@ -49,24 +50,7 @@
     }
   }
 
-  /* Mobile-optimized focus states */
-  button:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible {
-    outline: 2px solid hsl(var(--ring));
-    outline-offset: 2px;
-    /* Larger focus ring on mobile */
-  }
-
-  @media (max-width: 767px) {
-    button:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible {
-      outline-width: 3px;
-    }
-  }
+  /* Let browser handle focus naturally - no custom overrides */
   
   /* Increase font sizes for better legibility */
   h1 {
@@ -405,15 +389,7 @@
       user-select: text !important;
     }
 
-    /* Focus styles for mobile inputs */
-    .mobile-modal-content input:focus,
-    .mobile-modal-content textarea:focus,
-    .mobile-modal-content select:focus,
-    .mobile-modal-content [data-radix-select-trigger]:focus {
-      outline: none !important;
-      border-color: hsl(var(--primary)) !important;
-      box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2) !important;
-    }
+    /* Remove all custom focus styles - let browser handle naturally */
 
     /* Fix label visibility in all themes with maximum specificity */
     .mobile-modal-content label,
@@ -523,7 +499,51 @@
     }
   }
 
-  /* Mobile utility page styling with Android keyboard fix */
+  /* ProfileTabs utility styling - clean focus behavior for all platforms */
+
+  /* Desktop and Mobile: Clean input styling for ProfileTabs */
+  .mobile-utility-page-content input,
+  .mobile-utility-page-content textarea,
+  .mobile-utility-page-content select,
+  .mobile-utility-page-content [data-radix-select-trigger],
+  .mobile-modal-content input,
+  .mobile-modal-content textarea,
+  .mobile-modal-content select,
+  .mobile-modal-content [data-radix-select-trigger] {
+    /* Exact CreateRafflePage styling for all platforms */
+    width: 100% !important;
+    padding: 0.625rem 0.75rem !important; /* py-2.5 px-3 */
+    font-size: 1rem !important; /* text-base */
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 0.5rem !important; /* rounded-lg */
+    background-color: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+    /* Remove ALL custom focus/outline overrides - let browser handle naturally */
+    outline: revert !important;
+    box-shadow: revert !important;
+    border-color: revert !important;
+    /* Explicitly prevent double borders */
+    transition: none !important;
+  }
+
+  /* Ensure no focus-related styling conflicts */
+  .mobile-utility-page-content input:focus,
+  .mobile-utility-page-content textarea:focus,
+  .mobile-utility-page-content select:focus,
+  .mobile-utility-page-content [data-radix-select-trigger]:focus,
+  .mobile-modal-content input:focus,
+  .mobile-modal-content textarea:focus,
+  .mobile-modal-content select:focus,
+  .mobile-modal-content [data-radix-select-trigger]:focus {
+    /* Completely reset focus styles to browser defaults */
+    outline: revert !important;
+    box-shadow: revert !important;
+    border-color: revert !important;
+    border-width: revert !important;
+    border-style: revert !important;
+  }
+
+  /* Mobile-specific optimizations */
   @media (max-width: 640px) {
     /* Prevent viewport resize issues on Android */
     html {
@@ -549,29 +569,24 @@
       min-height: calc(100vh - 120px); /* Account for header */
     }
 
+    /* Mobile-specific optimizations for ProfileTabs inputs */
     .mobile-utility-page-content input,
     .mobile-utility-page-content textarea,
     .mobile-utility-page-content select,
-    .mobile-utility-page-content [data-radix-select-trigger] {
-      font-size: 16px !important;
-      padding: 12px !important;
-      border-radius: 8px !important;
-      border: 1px solid hsl(var(--border)) !important;
-      background-color: hsl(var(--background)) !important;
-      color: hsl(var(--foreground)) !important;
+    .mobile-utility-page-content [data-radix-select-trigger],
+    .mobile-modal-content input,
+    .mobile-modal-content textarea,
+    .mobile-modal-content select,
+    .mobile-modal-content [data-radix-select-trigger] {
+      /* Android keyboard optimization */
       min-height: 44px !important;
-      /* Android keyboard focus retention */
       -webkit-user-select: text !important;
       user-select: text !important;
+      /* Prevent zoom on iOS */
+      font-size: 16px !important;
     }
 
-    .mobile-utility-page-content input:focus,
-    .mobile-utility-page-content textarea:focus,
-    .mobile-utility-page-content select:focus,
-    .mobile-utility-page-content [data-radix-select-trigger]:focus {
-      outline: 2px solid hsl(var(--primary)) !important;
-      border-color: hsl(var(--primary)) !important;
-    }
+    /* No custom focus styles - use browser defaults like CreateRafflePage */
 
     .mobile-utility-page-content label {
       color: hsl(var(--foreground)) !important;
