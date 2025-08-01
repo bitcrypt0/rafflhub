@@ -905,6 +905,7 @@ const NonPrizedRaffleForm = () => {
 const WhitelistRaffleForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   const limits = useRaffleLimits(contracts, false);
   const [loading, setLoading] = useState(false);
   // Add token-gated state
@@ -2193,6 +2194,7 @@ const CreateRafflePage = () => {
 function LuckySaleERC721Form() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -2315,12 +2317,12 @@ function LuckySaleERC721Form() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Lucky Sale (ERC721 Escrowed Prize)</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Create Lucky Sale (ERC721 Escrowed Prize)</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -2330,7 +2332,7 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Prize Collection Address</label>
             <input
               type="text"
               value={formData.collectionAddress || ''}
@@ -2738,6 +2740,7 @@ function LuckySaleERC1155Form() {
 function ETHGiveawayForm() {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -2840,12 +2843,12 @@ function ETHGiveawayForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Feeling Generous? Now's a great time to give away some ETH!</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Feeling Generous? Now's a great time to give away some ETH!</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -2954,6 +2957,7 @@ function ETHGiveawayForm() {
 function ERC20GiveawayForm() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -3090,7 +3094,7 @@ function ERC20GiveawayForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">It's a great day to give out some tokens! 🎁</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>It's a great day to give out some tokens! 🎁</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

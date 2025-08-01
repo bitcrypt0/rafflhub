@@ -2073,19 +2073,19 @@ const RaffleDetailPage = () => {
       <div className="mb-8 p-6 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
           <div>
-            <p className="text-2xl font-bold">{raffle.ticketsSold}</p>
+            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketsSold}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Tickets Sold</p>
           </div>
           <div>
-            <p className="text-2xl font-bold">{raffle.ticketLimit}</p>
+            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketLimit}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Total Tickets</p>
           </div>
           <div>
-            <p className="text-2xl font-bold">{raffle.winnersCount}</p>
+            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.winnersCount}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Winners</p>
           </div>
           <div>
-            <p className="text-2xl font-bold">{timeValue}</p>
+            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{timeValue}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{timeLabel}</p>
           </div>
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
@@ -2140,7 +2140,7 @@ const RaffleDetailPage = () => {
         {/* Bottom Row: Raffle Details and PrizeImageCard */}
         <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg h-full">
-            <h3 className="text-lg font-semibold mb-4">Raffle Details</h3>
+            <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Contract Address:</span>

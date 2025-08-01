@@ -286,6 +286,39 @@
     line-height: 1.1;
     letter-spacing: 0.02em;
   }
+
+  /* Mobile-responsive typography overrides */
+  @media (max-width: 640px) {
+    .text-4xl {
+      font-size: 1.25rem; /* 20px */
+      line-height: 1.2;
+    }
+
+    .text-3xl {
+      font-size: 1.125rem; /* 18px */
+      line-height: 1.3;
+    }
+
+    .text-2xl {
+      font-size: 1.125rem; /* 18px */
+      line-height: 1.3;
+    }
+
+    .text-xl {
+      font-size: 1rem; /* 16px */
+      line-height: 1.4;
+    }
+
+    /* Form labels optimized for mobile */
+    label, .form-label {
+      font-size: 0.875rem; /* 14px */
+    }
+
+    /* Card titles optimized for mobile */
+    .card-title, [class*="card-title"] {
+      font-size: 1rem; /* 16px */
+    }
+  }
   
   /* Ensure all page headers use Raleway */
   .page-header, .page-title, .section-header, .section-title {

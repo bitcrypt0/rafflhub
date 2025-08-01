@@ -43,7 +43,7 @@ export const PageLoading = ({
   return (
     <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       <div className="text-center space-y-4 px-4">
-        <div className="text-2xl font-bold mb-2" style={{ fontFamily: 'Orbitron, monospace' }}>
+        <div className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontFamily: 'Orbitron, monospace' }}>
           Rafflhub
         </div>
         

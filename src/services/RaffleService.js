@@ -173,13 +173,16 @@ class RaffleService {
       'getAllRaffles'
     );
 
+    // Reverse the order to get newest raffles first (newest deployed contracts have higher indices)
+    const sortedAddresses = (addresses || []).slice().reverse();
+
     // Cache the result
     this.cache.set(cacheKey, {
-      data: addresses || [],
+      data: sortedAddresses,
       timestamp: Date.now()
     });
 
-    return addresses || [];
+    return sortedAddresses;
   }
 
   /**

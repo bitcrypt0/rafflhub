@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Waves, Wallet, User, Plus, ListChecks, Gift, Coins, Search, Book, LogOut } from 'lucide-react';
+import { Moon, Sun, Waves, Wallet, User, Plus, Search, Book, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -375,21 +375,7 @@ const Header = () => {
                         <Plus className="h-5 w-5" /> Create Raffle
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/whitelist-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
-                        <ListChecks className="h-5 w-5" /> Whitelist Raffles
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/nft-prized-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
-                        <Gift className="h-5 w-5" /> NFT Prized Raffles
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/token-giveaway-raffles" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
-                        <Coins className="h-5 w-5" /> ETH & Token Giveaways
-                      </Link>
-                    </DropdownMenuItem>
+
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

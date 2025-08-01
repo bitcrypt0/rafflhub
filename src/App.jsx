@@ -14,10 +14,7 @@ import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
-import WhitelistRafflePage from './pages/WhitelistRafflePage';
-import NFTPrizedRafflePage from './pages/NFTPrizedRafflePage';
-import TokenGiveawayRafflePage from './pages/TokenGiveawayRafflePage';
-import RafflesByStatePage from './pages/RafflesByStatePage';
+
 
 import './App.css';
 
@@ -60,10 +57,7 @@ const AppContent = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-          <Route path="/whitelist-raffles" element={<WhitelistRafflePage />} />
-          <Route path="/nft-prized-raffles" element={<NFTPrizedRafflePage />} />
-          <Route path="/token-giveaway-raffles" element={<TokenGiveawayRafflePage />} />
-          <Route path="/raffles/:state" element={<RafflesByStatePage />} />
+
         </Routes>
       </main>
       <Footer />

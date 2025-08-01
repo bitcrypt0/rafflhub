@@ -106,15 +106,15 @@ export const getPrizeStandards = (raffle) => {
 };
 
 /**
- * Apply filters to raffles array
+ * Apply filters to raffles array and maintain newest-first order
  * @param {Array} raffles - Array of raffle objects
  * @param {Object} filters - Filter object with categories
- * @returns {Array} - Filtered raffles array
+ * @returns {Array} - Filtered raffles array sorted newest first
  */
 export const applyFilters = (raffles, filters) => {
   if (!raffles || raffles.length === 0) return [];
-  
-  return raffles.filter(raffle => {
+
+  const filteredRaffles = raffles.filter(raffle => {
     // Filter by raffle state
     if (filters.raffleState && filters.raffleState.length > 0) {
       const raffleState = getRaffleState(raffle.stateNum);
@@ -155,9 +155,13 @@ export const applyFilters = (raffles, filters) => {
         return false;
       }
     }
-    
+
     return true;
   });
+
+  // Maintain newest-first order (raffles are already sorted newest-first from RaffleService)
+  // No additional sorting needed as the original order is preserved
+  return filteredRaffles;
 };
 
 /**
