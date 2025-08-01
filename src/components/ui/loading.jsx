@@ -33,15 +33,15 @@ export const LoadingSpinner = ({
 /**
  * Full page loading component
  */
-export const PageLoading = ({ 
-  message = 'Loading...', 
+export const PageLoading = ({
+  message = 'Loading...',
   isMobile = false,
   showProgress = false,
   progress = 0,
   maxProgress = 100
 }) => {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       <div className="text-center space-y-4 px-4">
         <div className="text-2xl font-bold mb-2" style={{ fontFamily: 'Orbitron, monospace' }}>
           Rafflhub

@@ -9,6 +9,8 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
+import { PageLoading } from '../components/ui/loading';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -401,27 +403,8 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                   </div>
                 </>
               ) : (
-                /* Placeholder content to maintain card height on desktop */
-                <div className="hidden lg:block space-y-4">
-                  <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
-                    <div className="text-center text-muted-foreground">
-                      <div className="text-sm font-medium mb-2">Your Participation Summary</div>
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className="block text-muted-foreground">Tickets Purchased</span>
-                          <span className="font-semibold text-base">{userTickets || 0}</span>
-                        </div>
-                        <div>
-                          <span className="block text-muted-foreground">Total Spent</span>
-                          <span className="font-semibold text-base">
-                            {userTickets > 0 ? `${ethers.utils.formatEther(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets))} ETH` : '0 ETH'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-12"></div> {/* Spacer to maintain button position */}
-                </div>
+                /* Spacer to maintain card height when tickets can't be purchased */
+                <div className="hidden lg:block h-32"></div>
               )}
               <button
                 onClick={handlePurchase}
@@ -1052,6 +1035,7 @@ const RaffleDetailPage = () => {
   const navigate = useNavigate();
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   
   const [raffle, setRaffle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1854,12 +1838,10 @@ const RaffleDetailPage = () => {
 
   if (loading) {
     return (
-      <PageContainer variant="wide" className="py-8">
-        <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading raffle details...</p>
-        </div>
-      </PageContainer>
+      <PageLoading
+        message="Loading raffle details..."
+        isMobile={isMobile}
+      />
     );
   }
 

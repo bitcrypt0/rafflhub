@@ -33,16 +33,16 @@ const CreateRaffleSideFilterBar = ({
 
   // Filter options (from existing FILTERS constant)
   const raffleTypeOptions = [
-    { value: 'Whitelist/Allowlist', label: 'Whitelist/Allowlist', description: 'Access control raffles' },
-    { value: 'NFTDrop', label: 'NFT Drop', description: 'NFT collection raffles' },
-    { value: 'Lucky Sale/NFT Giveaway', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales' },
-    { value: 'ETH Giveaway', label: 'ETH Giveaway', description: 'Ethereum prize raffles' },
-    { value: 'ERC20 Token Giveaway', label: 'ERC20 Token Giveaway', description: 'Token prize raffles' }
+    { value: 'Whitelist/Allowlist', label: 'Whitelist/Allowlist', description: 'Whitelist Campaigns' },
+    { value: 'NFTDrop', label: 'NFT Drop', description: 'Raffles with Mintable NFT Prizes' },
+    { value: 'Lucky Sale/NFT Giveaway', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales/NFT Giveaways' },
+    { value: 'ETH Giveaway', label: 'ETH Giveaway', description: 'Native Coin Giveaways' },
+    { value: 'ERC20 Token Giveaway', label: 'ERC20 Token Giveaway', description: 'Token Giveaways' }
   ];
 
   const nftStandardOptions = [
-    { value: 'ERC721', label: 'ERC721', description: 'Single NFT standard' },
-    { value: 'ERC1155', label: 'ERC1155', description: 'Multi-token standard' }
+    { value: 'ERC721', label: 'ERC721' },
+    { value: 'ERC1155', label: 'ERC1155' }
   ];
 
   const erc721SourceOptions = [
@@ -120,7 +120,7 @@ const CreateRaffleSideFilterBar = ({
                     name={category}
                     checked={isChecked}
                     onChange={() => onChange(option.value)}
-                    className="mt-1 h-4 w-4 text-primary bg-background border-border rounded-full focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                    className={`mt-1 h-4 w-4 text-primary bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative ${isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-2 after:h-2 after:bg-white after:rounded-full' : ''}`}
                   />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs sm:text-sm font-medium leading-tight">{option.label}</span>
@@ -147,10 +147,10 @@ const CreateRaffleSideFilterBar = ({
 
   return (
     <>
-      {/* Backdrop Overlay (like LandingPage) */}
+      {/* Backdrop Overlay (full viewport) */}
       {isOpen && (
         <div
-          className="fixed inset-0 top-14 sm:top-16 bg-black/50 z-30"
+          className="fixed inset-0 bg-black/50 z-30"
           onClick={onToggle}
         />
       )}
