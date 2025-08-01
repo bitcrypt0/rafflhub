@@ -64,7 +64,7 @@ const ProfileTabs = ({
         document.body.style.top = '0';
         document.body.style.width = '100%';
 
-        // Prevent zoom on input focus (iOS Safari) - but allow keyboard
+        // Aggressive viewport and scroll management for Android
         const viewport = document.querySelector('meta[name=viewport]');
         const originalViewport = viewport?.getAttribute('content');
         if (viewport) {
@@ -75,12 +75,34 @@ const ProfileTabs = ({
         const scrollY = window.scrollY;
         document.body.style.top = `-${scrollY}px`;
 
+        // Additional Android-specific fixes
+        document.documentElement.style.overflow = 'hidden';
+        document.documentElement.style.height = '100%';
+
+        // Prevent touch events on body
+        const preventBodyTouch = (e) => {
+          if (!modalRef.current?.contains(e.target)) {
+            e.preventDefault();
+          }
+        };
+
+        document.body.addEventListener('touchstart', preventBodyTouch, { passive: false });
+        document.body.addEventListener('touchmove', preventBodyTouch, { passive: false });
+
         // Cleanup function to restore original values
         return () => {
           document.body.style.overflow = originalOverflow;
           document.body.style.position = originalPosition;
           document.body.style.top = originalTop;
           document.body.style.width = originalWidth;
+
+          // Restore document element styles
+          document.documentElement.style.overflow = '';
+          document.documentElement.style.height = '';
+
+          // Remove touch event listeners
+          document.body.removeEventListener('touchstart', preventBodyTouch);
+          document.body.removeEventListener('touchmove', preventBodyTouch);
 
           // Restore scroll position
           const scrollY = document.body.style.top;
@@ -116,22 +138,43 @@ const ProfileTabs = ({
     const [keyboardOpen, setKeyboardOpen] = useState(false);
     const modalRef = useRef(null);
 
-    // Handle backdrop click - but not when keyboard is open or interacting with inputs
+    // Completely disable backdrop interaction when keyboard is open or inputs are focused
     const handleBackdropClick = (e) => {
-      // Don't close if clicking on inputs, selects, or when keyboard is open
-      if (keyboardOpen) return;
+      console.log('Backdrop click:', { keyboardOpen, target: e.target.tagName });
 
+      // Never close if keyboard is open
+      if (keyboardOpen) {
+        console.log('Backdrop click blocked: keyboard open');
+        return;
+      }
+
+      // Check if any input in the modal has focus
+      const activeElement = document.activeElement;
+      if (activeElement && modalRef.current?.contains(activeElement)) {
+        console.log('Backdrop click blocked: input has focus');
+        return;
+      }
+
+      // Check if clicking on any interactive element
       const target = e.target;
       if (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
           target.tagName === 'SELECT' ||
+          target.tagName === 'BUTTON' ||
           target.closest('[role="combobox"]') ||
           target.closest('[data-radix-select-trigger]') ||
-          target.closest('[data-radix-select-content]')) {
+          target.closest('[data-radix-select-content]') ||
+          target.closest('[data-radix-select-item]') ||
+          target.closest('button') ||
+          target.closest('input') ||
+          target.closest('textarea')) {
+        console.log('Backdrop click blocked: interactive element');
         return;
       }
 
+      // Only close if clicking directly on backdrop
       if (e.target === e.currentTarget) {
+        console.log('Closing modal via backdrop');
         onOpenChange(false);
       }
     };
@@ -150,67 +193,120 @@ const ProfileTabs = ({
       }
     }, [isOpen, isMobile, onOpenChange]);
 
-    // Detect mobile keyboard open/close and input focus
+    // Android-specific keyboard detection and input focus handling
     useEffect(() => {
       if (isOpen && isMobile) {
         const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+        const initialWindowHeight = window.innerHeight;
         let focusTimeout;
+        let blurTimeout;
 
+        // More aggressive keyboard detection for Android
         const handleViewportChange = () => {
           const currentHeight = window.visualViewport?.height || window.innerHeight;
-          const heightDifference = initialViewportHeight - currentHeight;
+          const windowHeight = window.innerHeight;
 
-          // If viewport height decreased by more than 150px, keyboard is likely open
-          const isKeyboardOpen = heightDifference > 150;
+          // Check both visual viewport and window height changes
+          const viewportDiff = initialViewportHeight - currentHeight;
+          const windowDiff = initialWindowHeight - windowHeight;
+          const maxDiff = Math.max(viewportDiff, windowDiff);
+
+          // Lower threshold for Android (100px instead of 150px)
+          const isKeyboardOpen = maxDiff > 100;
+          console.log('Keyboard detection:', { viewportDiff, windowDiff, maxDiff, isKeyboardOpen });
           setKeyboardOpen(isKeyboardOpen);
         };
 
-        // Handle input focus events to detect keyboard
+        // Aggressive input focus handling for Android
         const handleFocusIn = (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            // Delay setting keyboard open to allow for viewport changes
+          console.log('Focus in:', e.target.tagName, e.target.type);
+          if (e.target.tagName === 'INPUT' ||
+              e.target.tagName === 'TEXTAREA' ||
+              e.target.hasAttribute('contenteditable') ||
+              e.target.closest('[data-radix-select-trigger]')) {
+
+            // Clear any pending blur timeout
+            if (blurTimeout) {
+              clearTimeout(blurTimeout);
+              blurTimeout = null;
+            }
+
+            // Immediately set keyboard open for Android
+            setKeyboardOpen(true);
+
+            // Also set with delay as backup
             focusTimeout = setTimeout(() => {
               setKeyboardOpen(true);
-            }, 100);
+            }, 50);
           }
         };
 
         const handleFocusOut = (e) => {
+          console.log('Focus out:', e.target.tagName);
           if (focusTimeout) {
             clearTimeout(focusTimeout);
+            focusTimeout = null;
           }
-          // Don't immediately close keyboard state, wait for viewport change
-          setTimeout(() => {
-            const currentHeight = window.visualViewport?.height || window.innerHeight;
-            const heightDifference = initialViewportHeight - currentHeight;
-            if (heightDifference <= 150) {
-              setKeyboardOpen(false);
+
+          // Delay closing keyboard state to prevent flicker
+          blurTimeout = setTimeout(() => {
+            // Check if another input has focus
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (
+              activeElement.tagName === 'INPUT' ||
+              activeElement.tagName === 'TEXTAREA' ||
+              activeElement.hasAttribute('contenteditable') ||
+              activeElement.closest('[data-radix-select-trigger]')
+            );
+
+            if (!isInputFocused) {
+              // Double-check with viewport
+              const currentHeight = window.visualViewport?.height || window.innerHeight;
+              const windowHeight = window.innerHeight;
+              const viewportDiff = initialViewportHeight - currentHeight;
+              const windowDiff = initialWindowHeight - windowHeight;
+              const maxDiff = Math.max(viewportDiff, windowDiff);
+
+              if (maxDiff <= 100) {
+                setKeyboardOpen(false);
+              }
             }
-          }, 300);
+          }, 500); // Longer delay for Android
         };
 
-        // Use visualViewport API if available (better for mobile)
+        // Multiple event listeners for better Android support
         if (window.visualViewport) {
           window.visualViewport.addEventListener('resize', handleViewportChange);
-        } else {
-          // Fallback to window resize
-          window.addEventListener('resize', handleViewportChange);
         }
+        window.addEventListener('resize', handleViewportChange);
+        window.addEventListener('orientationchange', handleViewportChange);
 
-        // Add focus event listeners
-        document.addEventListener('focusin', handleFocusIn);
-        document.addEventListener('focusout', handleFocusOut);
+        // Focus event listeners with capture for better Android support
+        document.addEventListener('focusin', handleFocusIn, true);
+        document.addEventListener('focusout', handleFocusOut, true);
+
+        // Additional Android-specific events
+        document.addEventListener('touchstart', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            console.log('Touch start on input');
+            setKeyboardOpen(true);
+          }
+        }, true);
 
         return () => {
           if (window.visualViewport) {
             window.visualViewport.removeEventListener('resize', handleViewportChange);
-          } else {
-            window.removeEventListener('resize', handleViewportChange);
           }
-          document.removeEventListener('focusin', handleFocusIn);
-          document.removeEventListener('focusout', handleFocusOut);
+          window.removeEventListener('resize', handleViewportChange);
+          window.removeEventListener('orientationchange', handleViewportChange);
+          document.removeEventListener('focusin', handleFocusIn, true);
+          document.removeEventListener('focusout', handleFocusOut, true);
+
           if (focusTimeout) {
             clearTimeout(focusTimeout);
+          }
+          if (blurTimeout) {
+            clearTimeout(blurTimeout);
           }
         };
       }
@@ -257,16 +353,24 @@ const ProfileTabs = ({
               >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
-                  <h2 className="text-lg font-semibold">{title}</h2>
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="p-2 hover:bg-muted rounded-md transition-colors"
-                    type="button"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <h2 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{title}</h2>
+                  <div className="flex items-center gap-2">
+                    {/* Debug info for development */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <span className="text-xs bg-muted px-2 py-1 rounded">
+                        KB: {keyboardOpen ? 'Open' : 'Closed'}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onOpenChange(false)}
+                      className="p-2 hover:bg-muted rounded-md transition-colors"
+                      type="button"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Content */}
@@ -278,13 +382,36 @@ const ProfileTabs = ({
                     position: 'relative',
                     zIndex: 1
                   }}
-                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => {
+                    console.log('Content touch start:', e.target.tagName);
+                    e.stopPropagation();
+
+                    // If touching an input, ensure keyboard state is set
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                      setKeyboardOpen(true);
+                    }
+                  }}
                   onTouchMove={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    console.log('Content click:', e.target.tagName);
+                    e.stopPropagation();
+                  }}
+                  onPointerDown={(e) => {
+                    console.log('Content pointer down:', e.target.tagName);
+                    e.stopPropagation();
+                  }}
                 >
                   {/* Wrap children in a provider that ensures Select portals work */}
-                  <div style={{ position: 'relative', zIndex: 'auto' }}>
+                  <div
+                    style={{ position: 'relative', zIndex: 'auto' }}
+                    onFocus={(e) => {
+                      console.log('Content focus:', e.target.tagName);
+                      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        setKeyboardOpen(true);
+                      }
+                    }}
+                  >
                     {children}
                   </div>
                 </div>

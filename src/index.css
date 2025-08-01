@@ -415,42 +415,111 @@
       box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2) !important;
     }
 
-    /* Fix label visibility in all themes */
-    .mobile-modal-content label {
+    /* Fix label visibility in all themes with maximum specificity */
+    .mobile-modal-content label,
+    .mobile-modal-content .block.text-sm.font-medium,
+    .mobile-modal-content span.text-sm.font-medium,
+    .mobile-modal-content div label,
+    .mobile-modal-content * label {
       color: hsl(var(--foreground)) !important;
       font-weight: 500 !important;
+      opacity: 1 !important;
     }
 
-    /* Fix muted text visibility */
-    .mobile-modal-content .text-muted-foreground {
-      color: hsl(var(--muted-foreground)) !important;
-      opacity: 0.8 !important;
+    /* Fix muted text visibility with maximum specificity */
+    .mobile-modal-content .text-muted-foreground,
+    .mobile-modal-content span.text-muted-foreground,
+    .mobile-modal-content div.text-muted-foreground,
+    .mobile-modal-content * .text-muted-foreground {
+      color: hsl(var(--foreground)) !important;
+      opacity: 0.7 !important;
     }
 
-    /* Improve select dropdown visibility */
+    /* Force all text in modal to be visible */
+    .mobile-modal-content,
+    .mobile-modal-content * {
+      color: hsl(var(--foreground)) !important;
+    }
+
+    /* Specific overrides for common text classes */
+    .mobile-modal-content .text-sm,
+    .mobile-modal-content .text-base,
+    .mobile-modal-content .text-lg,
+    .mobile-modal-content h1,
+    .mobile-modal-content h2,
+    .mobile-modal-content h3,
+    .mobile-modal-content h4,
+    .mobile-modal-content h5,
+    .mobile-modal-content h6,
+    .mobile-modal-content p,
+    .mobile-modal-content span,
+    .mobile-modal-content div {
+      color: hsl(var(--foreground)) !important;
+    }
+
+    /* Improve select dropdown visibility and touch handling */
     .mobile-modal-content [data-radix-select-content] {
       background-color: hsl(var(--background)) !important;
       border: 1px solid hsl(var(--border)) !important;
       border-radius: 8px !important;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
       z-index: 10000 !important;
+      position: fixed !important;
+      max-height: 200px !important;
+      overflow-y: auto !important;
     }
 
     .mobile-modal-content [data-radix-select-item] {
       color: hsl(var(--foreground)) !important;
       padding: 12px !important;
       font-size: 16px !important;
+      min-height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      cursor: pointer !important;
+      touch-action: manipulation !important;
     }
 
-    .mobile-modal-content [data-radix-select-item]:hover {
+    .mobile-modal-content [data-radix-select-item]:hover,
+    .mobile-modal-content [data-radix-select-item]:focus,
+    .mobile-modal-content [data-radix-select-item][data-highlighted] {
       background-color: hsl(var(--muted)) !important;
+      outline: none !important;
     }
 
-    /* Prevent modal close on select interactions */
+    /* Aggressive touch handling for select components */
     .mobile-modal-content [data-radix-select-trigger],
     .mobile-modal-content [data-radix-select-content],
-    .mobile-modal-content [data-radix-select-item] {
+    .mobile-modal-content [data-radix-select-item],
+    .mobile-modal-content [data-radix-select-viewport] {
       pointer-events: auto !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+    }
+
+    /* Make select trigger more touch-friendly */
+    .mobile-modal-content [data-radix-select-trigger] {
+      min-height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      cursor: pointer !important;
+    }
+
+    /* Ensure select content is always visible */
+    [data-radix-select-content] {
+      z-index: 10001 !important;
+      position: fixed !important;
+    }
+
+    /* Override any conflicting styles */
+    .mobile-modal-content select,
+    .mobile-modal-content [role="combobox"] {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      background-image: none !important;
     }
   }
 
