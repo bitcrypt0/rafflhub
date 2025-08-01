@@ -103,11 +103,7 @@ const MobileHeader = () => {
   }
 
   const navigationItems = [
-    { name: 'Browse Raffles', href: '/', icon: '🎲' },
     { name: 'Create Raffle', href: '/create-raffle', icon: '➕' },
-    { name: 'Whitelist Raffles', href: '/whitelist-raffles', icon: '📋' },
-    { name: 'NFT Raffles', href: '/nft-prized-raffles', icon: '🎨' },
-    { name: 'Token Giveaways', href: '/token-giveaway-raffles', icon: '💰' },
     { name: 'Profile', href: '/profile', icon: '👤' }
   ];
 

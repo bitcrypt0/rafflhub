@@ -37,6 +37,7 @@ function extractRevertReason(error) {
 const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
+  const { isMobile } = useMobileBreakpoints();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [userTickets, setUserTickets] = useState(0);
@@ -914,7 +915,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     <Card className="bg-background">
       <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3 px-6">
         <div className="flex items-center gap-3">
-        <CardTitle className="text-xl">Winners</CardTitle>
+        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'}`}>Winners</CardTitle>
           {winnerSelectionTx && (
             <a
               href={getExplorerLink(winnerSelectionTx)}
@@ -1851,7 +1852,7 @@ const RaffleDetailPage = () => {
       <PageContainer variant="wide" className="py-8">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Failed to Load Raffle</h2>
+          <h2 className={`font-semibold mb-2 ${isMobile ? 'text-lg' : 'text-2xl'}`}>Failed to Load Raffle</h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
             {error}
           </p>
@@ -1879,7 +1880,7 @@ const RaffleDetailPage = () => {
       <PageContainer variant="wide" className="py-8">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Raffle Not Found</h2>
+          <h2 className={`font-semibold mb-2 ${isMobile ? 'text-lg' : 'text-2xl'}`}>Raffle Not Found</h2>
           <p className="text-muted-foreground mb-4">
             The raffle you're looking for doesn't exist or has been removed.
           </p>
@@ -1914,7 +1915,7 @@ const RaffleDetailPage = () => {
         
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{raffle.name}</h1>
+            <h1 className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-3xl'}`}>{raffle.name}</h1>
             <p className="text-muted-foreground">
               Created by {raffle.creator.slice(0, 10)}...{raffle.creator.slice(-8)}
             </p>
@@ -2144,7 +2145,7 @@ const RaffleDetailPage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Contract Address:</span>
-                <span className="font-mono">{raffle.address.slice(0, 10)}...{raffle.address.slice(-8)}</span>
+                <span className="font-mono">{isMobile ? `${raffle.address.slice(0, 8)}...${raffle.address.slice(-6)}` : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Start Time:</span>
