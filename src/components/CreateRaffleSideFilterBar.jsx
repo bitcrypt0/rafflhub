@@ -120,7 +120,7 @@ const CreateRaffleSideFilterBar = ({
                     name={category}
                     checked={isChecked}
                     onChange={() => onChange(option.value)}
-                    className={`mt-1 h-4 w-4 text-primary bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative ${isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-2 after:h-2 after:bg-white after:rounded-full' : ''}`}
+                    className={`mt-1 h-3 w-3 sm:h-4 sm:w-4 text-primary bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative ${isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-1 after:h-1 sm:after:w-1.5 sm:after:h-1.5 after:bg-white after:rounded-full' : ''}`}
                   />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs sm:text-sm font-medium leading-tight">{option.label}</span>

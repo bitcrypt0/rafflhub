@@ -145,7 +145,7 @@ const FilterSidebar = ({
                     name={isRaffleType ? category : undefined}
                     checked={isChecked}
                     onChange={(e) => handleFilterChange(category, option.value, e.target.checked)}
-                    className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 ${isRaffleType ? 'rounded-full' : 'rounded'} focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative ${isRaffleType && isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 sm:after:w-2 sm:after:h-2 after:bg-white after:rounded-full' : ''}`}
+                    className={`h-3 w-3 sm:h-4 sm:w-4 text-primary ${isRaffleType ? 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative' : 'bg-background border-border rounded focus:ring-1 focus:ring-primary focus:ring-offset-0'} ${isRaffleType && isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-1 after:h-1 sm:after:w-1.5 sm:after:h-1.5 after:bg-white after:rounded-full' : ''}`}
                   />
                   <span className="flex-1 text-xs sm:text-sm leading-tight">{option.label}</span>
                   {option.count > 0 && (
