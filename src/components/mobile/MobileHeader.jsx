@@ -40,7 +40,7 @@ const MobileHeader = () => {
     return () => clearTimeout(handler);
   }, [searchTerm, showSearch, search, clearSearch]);
 
-  // Click-away functionality for mobile search
+  // Click-away functionality for mobile search - using only mousedown to avoid touch conflicts
   useEffect(() => {
     if (!showSearch) return;
 
@@ -55,13 +55,11 @@ const MobileHeader = () => {
       }
     };
 
-    // Use both mousedown and touchstart for mobile compatibility
+    // Only use mousedown - touchstart interferes with input focus on Android
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showSearch, clearSearch]);
 
