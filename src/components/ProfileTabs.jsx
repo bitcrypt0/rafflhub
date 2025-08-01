@@ -38,7 +38,7 @@ const ProfileTabs = ({
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
 
-  // Modal state management for mobile
+  // State management for mobile expandable cards and desktop modals
   const [modals, setModals] = useState({
     royalty: false,
     minter: false,
@@ -46,73 +46,173 @@ const ProfileTabs = ({
     revenue: false
   });
 
-  // Lock body scroll when any modal is open on mobile
-  useEffect(() => {
+  // Mobile expandable card state (only one can be expanded at a time)
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [loadingCard, setLoadingCard] = useState(null);
+
+  // Toggle expandable card (mobile)
+  const toggleExpandableCard = async (cardKey) => {
+    if (expandedCard === cardKey) {
+      // Collapsing
+      setExpandedCard(null);
+    } else {
+      // Expanding
+      setLoadingCard(cardKey);
+
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      setExpandedCard(cardKey);
+      setLoadingCard(null);
+    }
+  };
+
+  // Handle keyboard navigation for expandable cards
+  const handleCardKeyDown = (e, cardKey) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleExpandableCard(cardKey);
+    }
+    if (e.key === 'Escape' && expandedCard === cardKey) {
+      setExpandedCard(null);
+    }
+  };
+
+  // Mobile-aware component wrapper
+  const MobileAwareComponent = ({
+    cardKey,
+    title,
+    description,
+    children,
+    buttonText = "Open"
+  }) => {
     if (isMobile) {
+      const isExpanded = expandedCard === cardKey;
+      const isLoading = loadingCard === cardKey;
+
+      return (
+        <Card className="overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:shadow-md">
+          <CardHeader
+            className="expandable-card-header"
+            onClick={() => toggleExpandableCard(cardKey)}
+            onKeyDown={(e) => handleCardKeyDown(e, cardKey)}
+            tabIndex={0}
+            role="button"
+            aria-expanded={isExpanded}
+            aria-controls={`card-content-${cardKey}`}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                  {title}
+                </CardTitle>
+                <CardDescription className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                  {description}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                {isLoading ? (
+                  <>
+                    <span className="text-sm font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                      Loading...
+                    </span>
+                    <svg
+                      className="w-5 h-5 animate-spin"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: 'hsl(var(--muted-foreground))' }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                      {isExpanded ? 'Collapse' : 'Expand'}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 expandable-chevron ${isExpanded ? 'rotated' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: 'hsl(var(--muted-foreground))' }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+
+          <div
+            id={`card-content-${cardKey}`}
+            className={`expandable-card-content ${isExpanded ? 'expanded' : 'collapsed'}`}
+            style={{
+              maxHeight: isExpanded ? '1000px' : '0px',
+              opacity: isExpanded ? 1 : 0,
+              transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out'
+            }}
+            aria-hidden={!isExpanded}
+          >
+            <CardContent className="pt-0 pb-6">
+              <div className="border-t border-border pt-4">
+                {isExpanded && (
+                  <div className="mobile-modal-content">
+                    {children}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </div>
+        </Card>
+      );
+    }
+
+    // Desktop: Use existing modal system
+    const modalKey = cardKey;
+    const isOpen = modals[modalKey];
+    const onOpenChange = (open) => setModals(prev => ({ ...prev, [modalKey]: open }));
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className={isMobile ? 'p-4' : ''}>
+          <MobileAwareModal
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            title={title}
+            trigger={
+              <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
+                {buttonText}
+              </Button>
+            }
+          >
+            {children}
+          </MobileAwareModal>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Lock body scroll when any modal is open on desktop only
+  useEffect(() => {
+    if (!isMobile) {
       const isAnyModalOpen = Object.values(modals).some(Boolean);
 
       if (isAnyModalOpen) {
-        // Store original values
+        // Store original overflow value
         const originalOverflow = document.body.style.overflow;
-        const originalPosition = document.body.style.position;
-        const originalTop = document.body.style.top;
-        const originalWidth = document.body.style.width;
-
-        // Prevent scrolling and fix position
         document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = '0';
-        document.body.style.width = '100%';
 
-        // Aggressive viewport and scroll management for Android
-        const viewport = document.querySelector('meta[name=viewport]');
-        const originalViewport = viewport?.getAttribute('content');
-        if (viewport) {
-          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-        }
-
-        // Prevent body from moving when keyboard opens
-        const scrollY = window.scrollY;
-        document.body.style.top = `-${scrollY}px`;
-
-        // Additional Android-specific fixes
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = '100%';
-
-        // Prevent touch events on body
-        const preventBodyTouch = (e) => {
-          if (!modalRef.current?.contains(e.target)) {
-            e.preventDefault();
-          }
-        };
-
-        document.body.addEventListener('touchstart', preventBodyTouch, { passive: false });
-        document.body.addEventListener('touchmove', preventBodyTouch, { passive: false });
-
-        // Cleanup function to restore original values
+        // Cleanup function to restore original overflow
         return () => {
           document.body.style.overflow = originalOverflow;
-          document.body.style.position = originalPosition;
-          document.body.style.top = originalTop;
-          document.body.style.width = originalWidth;
-
-          // Restore document element styles
-          document.documentElement.style.overflow = '';
-          document.documentElement.style.height = '';
-
-          // Remove touch event listeners
-          document.body.removeEventListener('touchstart', preventBodyTouch);
-          document.body.removeEventListener('touchmove', preventBodyTouch);
-
-          // Restore scroll position
-          const scrollY = document.body.style.top;
-          if (scrollY) {
-            window.scrollTo(0, parseInt(scrollY || '0') * -1);
-          }
-
-          if (viewport && originalViewport) {
-            viewport.setAttribute('content', originalViewport);
-          }
         };
       }
     }
@@ -121,11 +221,9 @@ const ProfileTabs = ({
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
-      if (isMobile) {
-        document.body.style.overflow = 'unset';
-      }
+      document.body.style.overflow = 'unset';
     };
-  }, [isMobile]);
+  }, []);
 
   // Custom mobile modal component that avoids Radix UI issues
   const MobileAwareModal = ({
@@ -702,86 +800,38 @@ const ProfileTabs = ({
 
       {/* Management Components - Modal Based */}
       <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
-        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-base' : ''}>Royalty and Reveal Management</CardTitle>
-            <CardDescription className={isMobile ? 'text-sm' : ''}>Reveal your collection and manage royalties</CardDescription>
-          </CardHeader>
-          <CardContent className={isMobile ? 'p-4' : ''}>
-            <MobileAwareModal
-              isOpen={modals.royalty}
-              onOpenChange={(open) => setModals(prev => ({ ...prev, royalty: open }))}
-              title="Royalty and Reveal Management"
-              trigger={
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                  Open Royalty Manager
-                </Button>
-              }
-            >
-              <RoyaltyAdjustmentComponent />
-            </MobileAwareModal>
-          </CardContent>
-        </Card>
-        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-base' : ''}>Minter Approval Management</CardTitle>
-            <CardDescription className={isMobile ? 'text-sm' : ''}>Manage minter approvals for your collections</CardDescription>
-          </CardHeader>
-          <CardContent className={isMobile ? 'p-4' : ''}>
-            <MobileAwareModal
-              isOpen={modals.minter}
-              onOpenChange={(open) => setModals(prev => ({ ...prev, minter: open }))}
-              title="Minter Approval Management"
-              trigger={
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                  Open Minter Manager
-                </Button>
-              }
-            >
-              <MinterApprovalComponent />
-            </MobileAwareModal>
-          </CardContent>
-        </Card>
-        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-base' : ''}>Create New Token ID</CardTitle>
-            <CardDescription className={isMobile ? 'text-sm' : ''}>Add new token IDs to existing ERC1155 collections</CardDescription>
-          </CardHeader>
-          <CardContent className={isMobile ? 'p-4' : ''}>
-            <MobileAwareModal
-              isOpen={modals.tokenCreator}
-              onOpenChange={(open) => setModals(prev => ({ ...prev, tokenCreator: open }))}
-              title="Create New Token ID"
-              trigger={
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                  Open Token Creator
-                </Button>
-              }
-            >
-              <CreateNewTokenIDComponent />
-            </MobileAwareModal>
-          </CardContent>
-        </Card>
-        <Card className={`${isMobile ? 'w-full overflow-hidden' : ''}`}>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-base' : ''}>Creator Revenue Withdrawal</CardTitle>
-            <CardDescription className={isMobile ? 'text-sm' : ''}>Withdraw revenue from your raffles</CardDescription>
-          </CardHeader>
-          <CardContent className={isMobile ? 'p-4' : ''}>
-            <MobileAwareModal
-              isOpen={modals.revenue}
-              onOpenChange={(open) => setModals(prev => ({ ...prev, revenue: open }))}
-              title="Creator Revenue Withdrawal"
-              trigger={
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                  Open Revenue Manager
-                </Button>
-              }
-            >
-              <CreatorRevenueWithdrawalComponent />
-            </MobileAwareModal>
-          </CardContent>
-        </Card>
+        <MobileAwareComponent
+          cardKey="royalty"
+          title="Royalty and Reveal Management"
+          description="Reveal your collection and manage royalties"
+          buttonText="Open Royalty Manager"
+        >
+          <RoyaltyAdjustmentComponent />
+        </MobileAwareComponent>
+        <MobileAwareComponent
+          cardKey="minter"
+          title="Minter Approval Management"
+          description="Manage minter approvals for your collections"
+          buttonText="Open Minter Manager"
+        >
+          <MinterApprovalComponent />
+        </MobileAwareComponent>
+        <MobileAwareComponent
+          cardKey="tokenCreator"
+          title="Create New Token ID"
+          description="Add new token IDs to existing ERC1155 collections"
+          buttonText="Open Token Creator"
+        >
+          <CreateNewTokenIDComponent />
+        </MobileAwareComponent>
+        <MobileAwareComponent
+          cardKey="revenue"
+          title="Creator Revenue Withdrawal"
+          description="Withdraw revenue from your raffles"
+          buttonText="Open Revenue Manager"
+        >
+          <CreatorRevenueWithdrawalComponent />
+        </MobileAwareComponent>
       </div>
     </div>
   );
