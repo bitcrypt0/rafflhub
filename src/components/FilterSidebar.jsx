@@ -4,6 +4,20 @@ import { Button } from './ui/button';
 import { countRafflesByFilters } from '../utils/filterUtils';
 import QuickFilters from './QuickFilters';
 
+// Mobile-specific CSS for input sizing
+const mobileInputStyles = `
+  @media (max-width: 640px) {
+    .mobile-checkbox-radio {
+      width: 12px !important;
+      height: 12px !important;
+      min-width: 12px !important;
+      min-height: 12px !important;
+      max-width: 12px !important;
+      max-height: 12px !important;
+    }
+  }
+`;
+
 /**
  * FilterSidebar Component
  * Vertical filter panel for raffle filtering on LandingPage
@@ -145,7 +159,27 @@ const FilterSidebar = ({
                     name={isRaffleType ? category : undefined}
                     checked={isChecked}
                     onChange={(e) => handleFilterChange(category, option.value, e.target.checked)}
-                    className={`h-3 w-3 sm:h-4 sm:w-4 text-primary ${isRaffleType ? 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative' : 'bg-background border-border rounded focus:ring-1 focus:ring-primary focus:ring-offset-0'} ${isRaffleType && isChecked ? 'after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-1 after:h-1 sm:after:w-1.5 sm:after:h-1.5 after:bg-white after:rounded-full' : ''}`}
+                    className={`mobile-checkbox-radio ${isRaffleType ?
+                      // Radio button styling
+                      'h-3 w-3 sm:h-4 sm:w-4 text-primary bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-0 focus:outline-none checked:bg-primary checked:border-primary appearance-none relative' +
+                      (isChecked ? ' after:content-[""] after:absolute after:top-1/2 after:left-1/2 after:transform after:-translate-x-1/2 after:-translate-y-1/2 after:w-1 after:h-1 sm:after:w-1.5 sm:after:h-1.5 after:bg-white after:rounded-full' : '')
+                      :
+                      // Checkbox styling - mobile specific
+                      'h-3 w-3 sm:h-4 sm:w-4 text-primary accent-primary bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-primary focus:ring-offset-0 checked:bg-primary checked:border-primary'
+                    }`}
+                    style={!isRaffleType ? {
+                      // Force mobile checkbox styling
+                      minHeight: '12px',
+                      minWidth: '12px',
+                      maxHeight: '12px',
+                      maxWidth: '12px'
+                    } : {
+                      // Force mobile radio button styling
+                      minHeight: '12px',
+                      minWidth: '12px',
+                      maxHeight: '12px',
+                      maxWidth: '12px'
+                    }}
                   />
                   <span className="flex-1 text-xs sm:text-sm leading-tight">{option.label}</span>
                   {option.count > 0 && (
@@ -172,6 +206,9 @@ const FilterSidebar = ({
 
   return (
     <>
+      {/* Mobile-specific styles */}
+      <style dangerouslySetInnerHTML={{ __html: mobileInputStyles }} />
+
       {/* Backdrop Overlay */}
       {isOpen && (
         <div
