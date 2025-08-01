@@ -64,12 +64,16 @@ const ProfileTabs = ({
         document.body.style.top = '0';
         document.body.style.width = '100%';
 
-        // Prevent zoom on input focus (iOS Safari)
+        // Prevent zoom on input focus (iOS Safari) - but allow keyboard
         const viewport = document.querySelector('meta[name=viewport]');
         const originalViewport = viewport?.getAttribute('content');
         if (viewport) {
-          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
         }
+
+        // Prevent body from moving when keyboard opens
+        const scrollY = window.scrollY;
+        document.body.style.top = `-${scrollY}px`;
 
         // Cleanup function to restore original values
         return () => {
@@ -77,6 +81,12 @@ const ProfileTabs = ({
           document.body.style.position = originalPosition;
           document.body.style.top = originalTop;
           document.body.style.width = originalWidth;
+
+          // Restore scroll position
+          const scrollY = document.body.style.top;
+          if (scrollY) {
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+          }
 
           if (viewport && originalViewport) {
             viewport.setAttribute('content', originalViewport);
@@ -106,9 +116,22 @@ const ProfileTabs = ({
     const [keyboardOpen, setKeyboardOpen] = useState(false);
     const modalRef = useRef(null);
 
-    // Handle backdrop click - but not when keyboard is open
+    // Handle backdrop click - but not when keyboard is open or interacting with inputs
     const handleBackdropClick = (e) => {
-      if (e.target === e.currentTarget && !keyboardOpen) {
+      // Don't close if clicking on inputs, selects, or when keyboard is open
+      if (keyboardOpen) return;
+
+      const target = e.target;
+      if (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.closest('[role="combobox"]') ||
+          target.closest('[data-radix-select-trigger]') ||
+          target.closest('[data-radix-select-content]')) {
+        return;
+      }
+
+      if (e.target === e.currentTarget) {
         onOpenChange(false);
       }
     };
@@ -127,32 +150,69 @@ const ProfileTabs = ({
       }
     }, [isOpen, isMobile, onOpenChange]);
 
-    // Detect mobile keyboard open/close
+    // Detect mobile keyboard open/close and input focus
     useEffect(() => {
       if (isOpen && isMobile) {
         const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+        let focusTimeout;
 
         const handleViewportChange = () => {
           const currentHeight = window.visualViewport?.height || window.innerHeight;
           const heightDifference = initialViewportHeight - currentHeight;
 
           // If viewport height decreased by more than 150px, keyboard is likely open
-          setKeyboardOpen(heightDifference > 150);
+          const isKeyboardOpen = heightDifference > 150;
+          setKeyboardOpen(isKeyboardOpen);
+        };
+
+        // Handle input focus events to detect keyboard
+        const handleFocusIn = (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            // Delay setting keyboard open to allow for viewport changes
+            focusTimeout = setTimeout(() => {
+              setKeyboardOpen(true);
+            }, 100);
+          }
+        };
+
+        const handleFocusOut = (e) => {
+          if (focusTimeout) {
+            clearTimeout(focusTimeout);
+          }
+          // Don't immediately close keyboard state, wait for viewport change
+          setTimeout(() => {
+            const currentHeight = window.visualViewport?.height || window.innerHeight;
+            const heightDifference = initialViewportHeight - currentHeight;
+            if (heightDifference <= 150) {
+              setKeyboardOpen(false);
+            }
+          }, 300);
         };
 
         // Use visualViewport API if available (better for mobile)
         if (window.visualViewport) {
           window.visualViewport.addEventListener('resize', handleViewportChange);
-          return () => {
-            window.visualViewport.removeEventListener('resize', handleViewportChange);
-          };
         } else {
           // Fallback to window resize
           window.addEventListener('resize', handleViewportChange);
-          return () => {
-            window.removeEventListener('resize', handleViewportChange);
-          };
         }
+
+        // Add focus event listeners
+        document.addEventListener('focusin', handleFocusIn);
+        document.addEventListener('focusout', handleFocusOut);
+
+        return () => {
+          if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', handleViewportChange);
+          } else {
+            window.removeEventListener('resize', handleViewportChange);
+          }
+          document.removeEventListener('focusin', handleFocusIn);
+          document.removeEventListener('focusout', handleFocusOut);
+          if (focusTimeout) {
+            clearTimeout(focusTimeout);
+          }
+        };
       }
     }, [isOpen, isMobile]);
 
@@ -210,8 +270,23 @@ const ProfileTabs = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 overflow-y-auto flex-1 mobile-modal-content" style={{ WebkitOverflowScrolling: 'touch' }}>
-                  {children}
+                <div
+                  className="p-4 overflow-y-auto flex-1 mobile-modal-content"
+                  style={{
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y', // Allow vertical scrolling but prevent other gestures
+                    position: 'relative',
+                    zIndex: 1
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Wrap children in a provider that ensures Select portals work */}
+                  <div style={{ position: 'relative', zIndex: 'auto' }}>
+                    {children}
+                  </div>
                 </div>
               </div>
             </div>,

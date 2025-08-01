@@ -391,7 +391,8 @@
     /* Improve touch behavior in modals */
     .mobile-modal-content input,
     .mobile-modal-content textarea,
-    .mobile-modal-content select {
+    .mobile-modal-content select,
+    .mobile-modal-content [data-radix-select-trigger] {
       font-size: 16px !important;
       padding: 12px !important;
       border-radius: 8px !important;
@@ -400,15 +401,56 @@
       color: hsl(var(--foreground)) !important;
       -webkit-appearance: none !important;
       -webkit-tap-highlight-color: transparent !important;
+      touch-action: manipulation !important;
+      user-select: text !important;
     }
 
     /* Focus styles for mobile inputs */
     .mobile-modal-content input:focus,
     .mobile-modal-content textarea:focus,
-    .mobile-modal-content select:focus {
+    .mobile-modal-content select:focus,
+    .mobile-modal-content [data-radix-select-trigger]:focus {
       outline: none !important;
       border-color: hsl(var(--primary)) !important;
       box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2) !important;
+    }
+
+    /* Fix label visibility in all themes */
+    .mobile-modal-content label {
+      color: hsl(var(--foreground)) !important;
+      font-weight: 500 !important;
+    }
+
+    /* Fix muted text visibility */
+    .mobile-modal-content .text-muted-foreground {
+      color: hsl(var(--muted-foreground)) !important;
+      opacity: 0.8 !important;
+    }
+
+    /* Improve select dropdown visibility */
+    .mobile-modal-content [data-radix-select-content] {
+      background-color: hsl(var(--background)) !important;
+      border: 1px solid hsl(var(--border)) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+      z-index: 10000 !important;
+    }
+
+    .mobile-modal-content [data-radix-select-item] {
+      color: hsl(var(--foreground)) !important;
+      padding: 12px !important;
+      font-size: 16px !important;
+    }
+
+    .mobile-modal-content [data-radix-select-item]:hover {
+      background-color: hsl(var(--muted)) !important;
+    }
+
+    /* Prevent modal close on select interactions */
+    .mobile-modal-content [data-radix-select-trigger],
+    .mobile-modal-content [data-radix-select-content],
+    .mobile-modal-content [data-radix-select-item] {
+      pointer-events: auto !important;
     }
   }
 
