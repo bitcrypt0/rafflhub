@@ -388,11 +388,11 @@
       border-radius: 0;
     }
 
-    /* Clean mobile input styling - no touch interference */
-    .mobile-utility-content input,
-    .mobile-utility-content textarea,
-    .mobile-utility-content select,
-    .mobile-utility-content [data-radix-select-trigger] {
+    /* Improve touch behavior in modals */
+    .mobile-modal-content input,
+    .mobile-modal-content textarea,
+    .mobile-modal-content select,
+    .mobile-modal-content [data-radix-select-trigger] {
       font-size: 16px !important;
       padding: 12px !important;
       border-radius: 8px !important;
@@ -400,25 +400,27 @@
       background-color: hsl(var(--background)) !important;
       color: hsl(var(--foreground)) !important;
       -webkit-appearance: none !important;
-      /* Remove touch-action and user-select that might interfere */
+      -webkit-tap-highlight-color: transparent !important;
+      touch-action: manipulation !important;
+      user-select: text !important;
     }
 
     /* Focus styles for mobile inputs */
-    .mobile-utility-content input:focus,
-    .mobile-utility-content textarea:focus,
-    .mobile-utility-content select:focus,
-    .mobile-utility-content [data-radix-select-trigger]:focus {
+    .mobile-modal-content input:focus,
+    .mobile-modal-content textarea:focus,
+    .mobile-modal-content select:focus,
+    .mobile-modal-content [data-radix-select-trigger]:focus {
       outline: none !important;
       border-color: hsl(var(--primary)) !important;
       box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2) !important;
     }
 
     /* Fix label visibility in all themes with maximum specificity */
-    .mobile-utility-content label,
-    .mobile-utility-content .block.text-sm.font-medium,
-    .mobile-utility-content span.text-sm.font-medium,
-    .mobile-utility-content div label,
-    .mobile-utility-content * label {
+    .mobile-modal-content label,
+    .mobile-modal-content .block.text-sm.font-medium,
+    .mobile-modal-content span.text-sm.font-medium,
+    .mobile-modal-content div label,
+    .mobile-modal-content * label {
       color: hsl(var(--foreground)) !important;
       font-weight: 500 !important;
       opacity: 1 !important;
@@ -455,8 +457,8 @@
       color: hsl(var(--foreground)) !important;
     }
 
-    /* Improve select dropdown visibility */
-    .mobile-utility-content [data-radix-select-content] {
+    /* Improve select dropdown visibility and touch handling */
+    .mobile-modal-content [data-radix-select-content] {
       background-color: hsl(var(--background)) !important;
       border: 1px solid hsl(var(--border)) !important;
       border-radius: 8px !important;
@@ -467,7 +469,7 @@
       overflow-y: auto !important;
     }
 
-    .mobile-utility-content [data-radix-select-item] {
+    .mobile-modal-content [data-radix-select-item] {
       color: hsl(var(--foreground)) !important;
       padding: 12px !important;
       font-size: 16px !important;
@@ -475,27 +477,29 @@
       display: flex !important;
       align-items: center !important;
       cursor: pointer !important;
-      /* Remove touch-action that might interfere */
+      touch-action: manipulation !important;
     }
 
-    .mobile-utility-content [data-radix-select-item]:hover,
-    .mobile-utility-content [data-radix-select-item]:focus,
-    .mobile-utility-content [data-radix-select-item][data-highlighted] {
+    .mobile-modal-content [data-radix-select-item]:hover,
+    .mobile-modal-content [data-radix-select-item]:focus,
+    .mobile-modal-content [data-radix-select-item][data-highlighted] {
       background-color: hsl(var(--muted)) !important;
       outline: none !important;
     }
 
-    /* Clean select component styling - no touch interference */
-    .mobile-utility-content [data-radix-select-trigger],
-    .mobile-utility-content [data-radix-select-content],
-    .mobile-utility-content [data-radix-select-item],
-    .mobile-utility-content [data-radix-select-viewport] {
-      /* Remove all touch-action and user-select properties that might interfere */
+    /* Aggressive touch handling for select components */
+    .mobile-modal-content [data-radix-select-trigger],
+    .mobile-modal-content [data-radix-select-content],
+    .mobile-modal-content [data-radix-select-item],
+    .mobile-modal-content [data-radix-select-viewport] {
+      pointer-events: auto !important;
+      touch-action: manipulation !important;
       -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
     }
 
-    /* Make select trigger touch-friendly */
-    .mobile-utility-content [data-radix-select-trigger] {
+    /* Make select trigger more touch-friendly */
+    .mobile-modal-content [data-radix-select-trigger] {
       min-height: 44px !important;
       display: flex !important;
       align-items: center !important;
@@ -511,53 +515,52 @@
     }
 
     /* Override any conflicting styles */
-    .mobile-utility-content select,
-    .mobile-utility-content [role="combobox"] {
+    .mobile-modal-content select,
+    .mobile-modal-content [role="combobox"] {
       -webkit-appearance: none !important;
       appearance: none !important;
       background-image: none !important;
     }
   }
 
-  /* Ensure mobile inputs work like CreateRafflePage */
+  /* Mobile utility page styling */
   @media (max-width: 640px) {
-    /* Remove any potential interference - let components use their natural styling */
-    .mobile-utility-content input,
-    .mobile-utility-content textarea,
-    .mobile-utility-content select,
-    .mobile-utility-content [data-radix-select-trigger] {
-      /* Minimal styling - let the component classes take precedence */
-      -webkit-user-select: text;
-      -webkit-touch-callout: default;
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
+    .mobile-utility-page-content input,
+    .mobile-utility-page-content textarea,
+    .mobile-utility-page-content select,
+    .mobile-utility-page-content [data-radix-select-trigger] {
+      font-size: 16px !important;
+      padding: 12px !important;
+      border-radius: 8px !important;
+      border: 1px solid hsl(var(--border)) !important;
+      background-color: hsl(var(--background)) !important;
+      color: hsl(var(--foreground)) !important;
+      min-height: 44px !important;
     }
 
-    /* Clean focus styles */
-    .mobile-utility-content input:focus,
-    .mobile-utility-content textarea:focus,
-    .mobile-utility-content select:focus {
+    .mobile-utility-page-content input:focus,
+    .mobile-utility-page-content textarea:focus,
+    .mobile-utility-page-content select:focus,
+    .mobile-utility-page-content [data-radix-select-trigger]:focus {
       outline: 2px solid hsl(var(--primary)) !important;
       border-color: hsl(var(--primary)) !important;
     }
 
-    /* Ensure labels are visible */
-    .mobile-utility-content label {
+    .mobile-utility-page-content label {
       color: hsl(var(--foreground)) !important;
       font-weight: 500 !important;
       margin-bottom: 8px !important;
       display: block !important;
     }
 
-    /* Button styling */
-    .mobile-utility-content button {
+    .mobile-utility-page-content button {
       font-size: 16px !important;
       padding: 12px 16px !important;
       border-radius: 8px !important;
       min-height: 44px !important;
     }
 
-    /* Select dropdown styling */
-    .mobile-utility-content [data-radix-select-content] {
+    .mobile-utility-page-content [data-radix-select-content] {
       z-index: 10000 !important;
       background-color: hsl(var(--background)) !important;
       border: 1px solid hsl(var(--border)) !important;
@@ -565,7 +568,7 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
 
-    .mobile-utility-content [data-radix-select-item] {
+    .mobile-utility-page-content [data-radix-select-item] {
       padding: 12px !important;
       font-size: 16px !important;
       min-height: 44px !important;

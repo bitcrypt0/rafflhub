@@ -148,7 +148,7 @@ const CreateNewTokenIDComponent = () => {
               type="text"
               value={collectionData.address}
               onChange={(e) => handleChange('address', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
               placeholder="0x..."
             />
           </div>
@@ -199,7 +199,7 @@ const CreateNewTokenIDComponent = () => {
                   min="0"
                   value={collectionData.tokenId}
                   onChange={(e) => handleChange('tokenId', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
                   placeholder="0"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -214,7 +214,7 @@ const CreateNewTokenIDComponent = () => {
                   min="1"
                   value={collectionData.maxSupply}
                   onChange={(e) => handleChange('maxSupply', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
                   placeholder="100"
                 />
                 <p className="text-xs text-muted-foreground mt-1">

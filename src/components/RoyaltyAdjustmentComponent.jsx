@@ -188,7 +188,7 @@ const RoyaltyAdjustmentComponent = () => {
                 type="text"
                 value={collectionData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 placeholder="0x..."
               />
             </div>
@@ -286,7 +286,7 @@ const RoyaltyAdjustmentComponent = () => {
                   step="0.01"
                   value={collectionData.royaltyPercentage}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   placeholder="2.5"
                 />
               </div>
@@ -298,7 +298,7 @@ const RoyaltyAdjustmentComponent = () => {
                   type="text"
                   value={collectionData.royaltyRecipient}
                   onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   placeholder="0x..."
                 />
               </div>
