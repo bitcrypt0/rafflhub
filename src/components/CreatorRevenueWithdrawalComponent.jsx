@@ -195,7 +195,7 @@ const CreatorRevenueWithdrawalComponent = () => {
                 type="text"
                 value={raffleData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
-                className="flex-1 px-3 py-2 border border-border rounded-md bg-background"
+                className="flex-1 px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                 placeholder="0x..."
               />
               <button

@@ -519,22 +519,17 @@
     }
   }
 
-  /* Mobile utility content styling - match CreateRafflePage approach */
+  /* Ensure mobile inputs work like CreateRafflePage */
   @media (max-width: 640px) {
+    /* Remove any potential interference - let components use their natural styling */
     .mobile-utility-content input,
     .mobile-utility-content textarea,
     .mobile-utility-content select,
     .mobile-utility-content [data-radix-select-trigger] {
-      font-size: 16px !important;
-      padding: 12px !important;
-      border-radius: 8px !important;
-      border: 1px solid hsl(var(--border)) !important;
-      background-color: hsl(var(--background)) !important;
-      color: hsl(var(--foreground)) !important;
-      /* Android-specific fixes */
-      -webkit-user-select: text !important;
-      -webkit-touch-callout: default !important;
-      -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+      /* Minimal styling - let the component classes take precedence */
+      -webkit-user-select: text;
+      -webkit-touch-callout: default;
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
     }
 
     /* Clean focus styles */
