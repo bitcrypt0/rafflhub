@@ -155,7 +155,7 @@ const CreateNewTokenIDComponent = () => {
 
           <button
             onClick={loadCollectionInfo}
-            disabled={loadingInfo || !connected || !collectionData.address}
+            disabled={loadingInfo || !connected}
             className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${isMobile ? 'text-sm' : ''}`}
             title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
           >
@@ -225,7 +225,7 @@ const CreateNewTokenIDComponent = () => {
 
             <button
               onClick={handleCreateNewToken}
-              disabled={loading || !connected || !collectionInfo.isOwner || !collectionData.tokenId || !collectionData.maxSupply}
+              disabled={loading || !connected || !collectionInfo.isOwner}
               className={`w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm ${isMobile ? 'text-sm' : ''}`}
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can create new tokens" : !collectionData.tokenId || !collectionData.maxSupply ? "Please fill in all required fields" : "Create new token ID"}
             >

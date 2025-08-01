@@ -200,7 +200,7 @@ const CreatorRevenueWithdrawalComponent = () => {
               />
               <button
                 onClick={() => loadRaffleInfo(raffleData.address)}
-                disabled={loadingInfo || !connected || !raffleData.address}
+                disabled={loadingInfo || !connected}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please enter a raffle address" : "Load raffle information"}
               >
@@ -297,7 +297,7 @@ const CreatorRevenueWithdrawalComponent = () => {
         <div className="space-y-4">
           <button
             onClick={handleWithdrawRevenue}
-            disabled={loading || !connected || !canWithdraw || !raffleData.address || raffleData.raffleState === 'unknown'}
+            disabled={loading || !connected || !canWithdraw}
             className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
             title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isCreator ? "Only raffle creator can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${raffleData.revenueAmount} ETH`}
           >

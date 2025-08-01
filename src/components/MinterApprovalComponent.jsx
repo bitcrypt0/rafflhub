@@ -320,7 +320,7 @@ const MinterApprovalComponent = () => {
             />
             <Button
               onClick={fetchCollection}
-              disabled={loading || !collectionAddress || !connected}
+              disabled={loading}
               className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={!connected ? "Please connect your wallet" : !collectionAddress ? "Please enter a collection address" : "Load collection information"}
             >
@@ -417,7 +417,7 @@ const MinterApprovalComponent = () => {
               <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setMinterApproval(true)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved || isLocked}
+                disabled={loading || isApproved || isLocked}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
               >
@@ -430,7 +430,7 @@ const MinterApprovalComponent = () => {
               </Button>
               <Button
                 onClick={() => setMinterApproval(false)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved || isLocked}
+                disabled={loading || !isApproved || isLocked}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
               >

@@ -211,7 +211,7 @@ const RoyaltyAdjustmentComponent = () => {
 
           <button
             onClick={loadCollectionInfo}
-            disabled={loadingInfo || !connected || !collectionData.address}
+            disabled={loadingInfo || !connected}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
           >
@@ -306,7 +306,7 @@ const RoyaltyAdjustmentComponent = () => {
 
             <button
               onClick={handleUpdateRoyalty}
-              disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner || !royaltyPercentage || !collectionData.royaltyRecipient}
+              disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner}
               className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
               title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
