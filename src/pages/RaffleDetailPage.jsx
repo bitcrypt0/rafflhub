@@ -37,7 +37,6 @@ function extractRevertReason(error) {
 const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
-  const { isMobile } = useMobileBreakpoints();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [userTickets, setUserTickets] = useState(0);
@@ -2145,7 +2144,12 @@ const RaffleDetailPage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Contract Address:</span>
-                <span className="font-mono">{isMobile ? `${raffle.address.slice(0, 8)}...${raffle.address.slice(-6)}` : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`}</span>
+                <span className="font-mono">
+                  {isMobile
+                    ? `${raffle.address.slice(0, 8)}...${raffle.address.slice(-6)}`
+                    : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`
+                  }
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Start Time:</span>
