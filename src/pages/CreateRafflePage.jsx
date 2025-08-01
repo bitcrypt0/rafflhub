@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, AlertCircle, Gift, Coins } from 'lucide-react';
+import { Plus, Package, AlertCircle, Gift, Coins, Filter } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -12,6 +12,7 @@ import { contractABIs } from '../contracts/contractABIs';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import TokenGatedSection from '../components/TokenGatedSection';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import CreateRaffleSideFilterBar from '../components/CreateRaffleSideFilterBar';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -2027,6 +2028,9 @@ const CreateRafflePage = () => {
   // Track collection address for existing ERC721
   const [existingCollectionAddress, setExistingCollectionAddress] = useState('');
 
+  // SideFilterBar state
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   // Query allowExisting721 if needed
   useEffect(() => {
     const fetchAllowExisting = async () => {
@@ -2049,84 +2053,7 @@ const CreateRafflePage = () => {
     }
   }, [raffleType, nftStandard, erc721Source]);
 
-  // --- Dropdown Filter Card UI ---
-  const renderFilterCard = () => (
-    <div className="flex flex-col gap-4 p-6 bg-card border border-border rounded-xl min-h-0">
-      {/* Raffle Type */}
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-sm whitespace-nowrap">Raffle Type</label>
-        <select
-          className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-          value={raffleType}
-          onChange={e => setRaffleType(e.target.value)}
-        >
-          {FILTERS.raffleType.map(type => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
-      </div>
-      {/* NFTDrop subfilters */}
-      {raffleType === 'NFTDrop' && (
-        <>
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
-            <select
-              className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-              value={nftStandard}
-              onChange={e => setNftStandard(e.target.value)}
-            >
-              {FILTERS.nftStandard.map(std => (
-                <option key={std} value={std}>{std}</option>
-              ))}
-            </select>
-          </div>
-          {nftStandard === 'ERC721' && (
-            <div className="flex flex-col gap-2">
-              <label className="font-semibold text-sm whitespace-nowrap">ERC721 Source</label>
-              <select
-                className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-                value={erc721Source}
-                onChange={e => setErc721Source(e.target.value)}
-              >
-                {FILTERS.erc721Source.map(src => (
-                  <option key={src} value={src}>{src}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {nftStandard === 'ERC1155' && (
-            <div className="flex flex-col gap-2">
-              <label className="font-semibold text-sm whitespace-nowrap">ERC1155 Source</label>
-              <select
-                className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-                value={erc1155Source}
-                onChange={e => setErc1155Source(e.target.value)}
-              >
-                {FILTERS.erc1155Source.map(src => (
-                  <option key={src} value={src}>{src}</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </>
-      )}
-      {/* Lucky Sale subfilters */}
-      {raffleType === 'Lucky Sale/NFT Giveaway' && (
-        <div className="flex flex-col gap-2">
-          <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
-          <select
-            className="px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
-            value={nftStandard}
-            onChange={e => setNftStandard(e.target.value)}
-          >
-            {FILTERS.nftStandard.map(std => (
-              <option key={std} value={std}>{std}</option>
-            ))}
-          </select>
-        </div>
-      )}
-    </div>
-  );
+
 
   // --- Main Form Rendering Logic ---
   const renderForm = () => {
@@ -2177,27 +2104,52 @@ const CreateRafflePage = () => {
           </h1>
         </div>
 
-        {/* Responsive layout - mobile stacks, desktop uses grid */}
-        <div className={`${isMobile
-          ? 'space-y-6'
-          : 'grid grid-cols-1 lg:grid-cols-[315px_1fr] gap-8 max-w-7xl mx-auto mt-16'
-        }`}>
+        {/* Filter Button and Form Section - Side by Side */}
+        <div className={`max-w-7xl mx-auto ${isMobile ? 'mt-6' : 'mt-16'}`}>
+          <div className="flex gap-2 items-start">
+            {/* Filter Toggle Button - positioned beside forms */}
+            <div className="flex-shrink-0">
+              <Button
+                variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
+                onClick={() => setIsFilterOpen(true)}
+                className={`flex items-center gap-2 ${
+                  raffleType !== 'Whitelist/Allowlist'
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : ''
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                <span className="font-medium">
+                  {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
+                </span>
+                {raffleType !== 'Whitelist/Allowlist' && (
+                  <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
+                    Active
+                  </span>
+                )}
+              </Button>
+            </div>
 
-          {/* Filter Section */}
-          <div className={`${isMobile
-            ? 'w-full'
-            : 'lg:col-span-1 flex flex-col gap-6 items-start'
-          }`}>
-            <div className={`${isMobile ? 'w-full' : 'w-full max-w-[315px]'}`}>
-              {renderFilterCard()}
+            {/* Form Section */}
+            <div className="flex-1">
+              {renderForm()}
             </div>
           </div>
-
-          {/* Form Section */}
-          <div className={`${isMobile ? 'w-full' : 'lg:col-span-1'}`}>
-            {renderForm()}
-          </div>
         </div>
+
+        {/* SideFilterBar */}
+        <CreateRaffleSideFilterBar
+          isOpen={isFilterOpen}
+          onToggle={() => setIsFilterOpen(!isFilterOpen)}
+          raffleType={raffleType}
+          setRaffleType={setRaffleType}
+          nftStandard={nftStandard}
+          setNftStandard={setNftStandard}
+          erc721Source={erc721Source}
+          setErc721Source={setErc721Source}
+          erc1155Source={erc1155Source}
+          setErc1155Source={setErc1155Source}
+        />
       </div>
     </div>
   );
