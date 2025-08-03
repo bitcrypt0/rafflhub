@@ -92,10 +92,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://sepolia.infura.io',
     explorer: 'https://sepolia.etherscan.io',
     contractAddresses: {
-      raffleManager: '0xaC8c8918341C0a5109DDE9c4b60474f6ED67d2F5',
-      raffleDeployer: '0x37bEC9f70074C1220a86389F5A3185b264295132',
-      revenueManager: '0x950CC9324A4228810DBd70A55c1199d002Ec0D6D',
-      nftFactory: '0x56C7Fd7bc0FB7bdF409dD295Abd926060A19FeB0'
+      raffleManager: '0x330132F2aEb2643bCAC64C073EDA8a17075434e6',
+      raffleDeployer: '0x155D0E31A9Ea3A591926622BA862fFFe90450488',
+      revenueManager: '0xD88bf9b03ECE7aaDd40Be883461e988DbeD56db9',
+      nftFactory: '0xe6e7C91ed1240b6F7CE2f9c3A5af441ad4DC2D7A'
     }
   },
   11155420: {
