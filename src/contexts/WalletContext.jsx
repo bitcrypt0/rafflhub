@@ -20,6 +20,8 @@ export const WalletProvider = ({ children }) => {
   const [chainId, setChainId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [networkInfo, setNetworkInfo] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // Check if wallet is already connected on page load
   useEffect(() => {
@@ -55,10 +57,15 @@ export const WalletProvider = ({ children }) => {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
           await connectWallet('metamask');
+        } else {
+          setIsInitialized(true);
         }
       } catch (error) {
         console.error('Error checking connection:', error);
+        setIsInitialized(true);
       }
+    } else {
+      setIsInitialized(true);
     }
   };
 
@@ -71,9 +78,25 @@ export const WalletProvider = ({ children }) => {
   };
 
   const handleChainChanged = (chainId) => {
+    console.log('Chain changed to:', chainId);
+    setIsReconnecting(true);
     setChainId(parseInt(chainId, 16));
-    // Reload the page to reset the dapp state
-    window.location.reload();
+
+    // Instead of reloading, gracefully reconnect
+    setTimeout(async () => {
+      try {
+        if (window.ethereum) {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            await connectWallet('metamask');
+          }
+        }
+      } catch (error) {
+        console.error('Error reconnecting after chain change:', error);
+      } finally {
+        setIsReconnecting(false);
+      }
+    }, 1000);
   };
 
   const connectWallet = async (walletType) => {
@@ -103,6 +126,7 @@ export const WalletProvider = ({ children }) => {
       setAddress(address);
       setChainId(network.chainId);
       setConnected(true);
+      setIsInitialized(true);
 
       // Store connection preference
       localStorage.setItem('walletConnected', walletType);
@@ -121,6 +145,7 @@ export const WalletProvider = ({ children }) => {
     setAddress('');
     setConnected(false);
     setChainId(null);
+    setIsInitialized(true); // Keep initialized state
     localStorage.removeItem('walletConnected');
   };
 
@@ -179,6 +204,8 @@ export const WalletProvider = ({ children }) => {
     connected,
     chainId,
     loading,
+    isInitialized,
+    isReconnecting,
     connectWallet,
     disconnect,
     switchNetwork,

@@ -4,6 +4,7 @@ import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from './WalletContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
+import { safeContractCall, getPlatformConfig } from '../utils/contractCallUtils';
 
 const ContractContext = createContext();
 
@@ -16,17 +17,20 @@ export const useContract = () => {
 };
 
 export const ContractProvider = ({ children }) => {
-  const { signer, provider, connected, chainId } = useWallet();
+  const { signer, provider, connected, chainId, isInitialized, isReconnecting } = useWallet();
   const [contracts, setContracts] = useState({});
+  const [isContractsReady, setIsContractsReady] = useState(false);
 
   // Initialize contracts when wallet is connected and addresses are available
   useEffect(() => {
-    if (connected && signer) {
+    if (connected && signer && isInitialized && !isReconnecting) {
       initializeContracts();
+      setIsContractsReady(true);
     } else {
       setContracts({});
+      setIsContractsReady(false);
     }
-  }, [connected, signer]);
+  }, [connected, signer, isInitialized, isReconnecting]);
 
   const initializeContracts = () => {
     const newContracts = {};
@@ -71,14 +75,29 @@ export const ContractProvider = ({ children }) => {
     }
   };
 
-  // Create contract instance for a specific address
+  // Create contract instance for a specific address with better error handling
   const getContractInstance = (address, abiType) => {
-    if (!address || !signer) return null;
-    
+    if (!address) {
+      console.warn('No address provided for contract instance');
+      return null;
+    }
+
+    if (!signer && !provider) {
+      console.warn('No signer or provider available for contract instance');
+      return null;
+    }
+
+    if (!contractABIs[abiType]) {
+      console.error(`ABI not found for type: ${abiType}`);
+      return null;
+    }
+
     try {
-      return new ethers.Contract(address, contractABIs[abiType], signer);
+      // Use signer if available, otherwise fall back to provider for read-only operations
+      const signerOrProvider = signer || provider;
+      return new ethers.Contract(address, contractABIs[abiType], signerOrProvider);
     } catch (error) {
-      console.error('Error creating contract instance:', error);
+      console.error(`Error creating contract instance for ${abiType}:`, error);
       return null;
     }
   };
@@ -103,20 +122,43 @@ export const ContractProvider = ({ children }) => {
     }
   };
 
-  // Helper function to handle contract calls (view functions)
-  const executeCall = async (contractMethod, ...args) => {
+  // Helper function to handle contract calls (view functions) with robust error handling
+  const executeCall = async (contractMethod, methodName = 'unknown', ...args) => {
+    const platformConfig = getPlatformConfig();
+
     try {
-      const result = await contractMethod(...args);
-      return { success: true, result };
+      const result = await safeContractCall(
+        () => contractMethod(...args),
+        methodName,
+        {
+          timeout: platformConfig.timeout,
+          retries: platformConfig.retries,
+          required: false
+        }
+      );
+
+      if (result.success) {
+        return { success: true, result: result.result };
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       let message = 'Contract call failed';
-      if (error?.reason) {
+
+      // Handle "missing revert data" errors specifically
+      if (error.message.includes('missing revert data') ||
+          error.message.includes('call exception') ||
+          error.code === 'CALL_EXCEPTION') {
+        message = 'Network connectivity issue - please try again';
+      } else if (error?.reason) {
         message = error.reason;
       } else if (error?.data?.message) {
         message = error.data.message;
       } else if (error?.message) {
         message = error.message;
       }
+
+      console.warn(`Contract call failed for ${methodName}:`, message);
       toast.error(message, { duration: 4000 });
       return { success: false, error: message };
     }
@@ -185,6 +227,7 @@ export const ContractProvider = ({ children }) => {
     executeTransaction,
     executeCall,
     onContractEvent,
+    isContractsReady,
   };
 
   return (

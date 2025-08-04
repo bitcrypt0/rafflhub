@@ -5,6 +5,19 @@ import { useMobileBreakpoints } from './useMobileBreakpoints';
 import raffleService from '../services/RaffleService';
 
 /**
+ * Hook for managing raffle state updates without page reloads
+ */
+export const useRaffleStateManager = () => {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  return { refreshTrigger, triggerRefresh };
+};
+
+/**
  * React hook for using the RaffleService with proper lifecycle management
  */
 export const useRaffleService = (options = {}) => {

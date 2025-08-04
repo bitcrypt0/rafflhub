@@ -11,6 +11,15 @@ import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
 import { PageLoading } from '../components/ui/loading';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useRaffleStateManager } from '../hooks/useRaffleService';
+import {
+  batchContractCalls,
+  safeContractCall,
+  getPlatformConfig,
+  getBrowserInfo,
+  hasContractMethod,
+  createSafeMethod
+} from '../utils/contractCallUtils';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -34,7 +43,7 @@ function extractRevertReason(error) {
   return msg;
 }
 
-const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile }) => {
+const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const [quantity, setQuantity] = useState(1);
@@ -138,7 +147,10 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
       const result = await executeTransaction(raffleContract.activate);
       if (result.success) {
         toast.success('Raffle activated successfully!');
-        window.location.reload();
+        // Trigger state refresh instead of page reload
+        if (onStateChange) {
+          onStateChange();
+        }
       } else {
         throw new Error(result.error);
       }
@@ -157,7 +169,10 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
       const result = await executeTransaction(raffleContract.requestRandomWords);
       if (result.success) {
         toast.success('Randomness requested successfully!');
-        window.location.reload();
+        // Trigger state refresh instead of page reload
+        if (onStateChange) {
+          onStateChange();
+        }
       } else {
         throw new Error(result.error);
       }
@@ -176,7 +191,10 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
       const result = await executeTransaction(raffleContract.endRaffle);
       if (result.success) {
         toast.success('Raffle ended successfully!');
-        window.location.reload();
+        // Trigger state refresh instead of page reload
+        if (onStateChange) {
+          onStateChange();
+        }
       } else {
         throw new Error(result.error);
       }
@@ -1033,9 +1051,10 @@ const PRIZE_TYPE_OPTIONS = [
 const RaffleDetailPage = () => {
   const { raffleAddress } = useParams();
   const navigate = useNavigate();
-  const { connected, address } = useWallet();
-  const { getContractInstance, executeTransaction } = useContract();
+  const { connected, address, provider, isInitialized, isReconnecting } = useWallet();
+  const { getContractInstance, executeTransaction, isContractsReady } = useContract();
   const { isMobile } = useMobileBreakpoints();
+  const { refreshTrigger, triggerRefresh } = useRaffleStateManager();
   
   const [raffle, setRaffle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1150,58 +1169,74 @@ const RaffleDetailPage = () => {
           throw new Error('No raffle address provided');
         }
 
-        // Wait for wallet connection and contract context to be ready
+        // Wait for wallet initialization and contract context to be ready
+        if (!isInitialized || isReconnecting) {
+          throw new Error('Wallet is initializing, please wait...');
+        }
+
         if (!getContractInstance) {
           throw new Error('Contract context not ready');
         }
 
-        // Add retry logic for contract instance creation
-        let raffleContract = null;
-        let retryCount = 0;
-        const maxRetries = 3;
+        // Get browser-specific configuration
+        const platformConfig = getPlatformConfig();
+        const browserInfo = getBrowserInfo();
 
-        while (!raffleContract && retryCount < maxRetries) {
-          try {
-            raffleContract = getContractInstance(stableRaffleAddress, 'raffle');
-            if (!raffleContract) {
-              throw new Error('Failed to create contract instance');
-            }
-            // Test the contract by calling a simple method
-            await raffleContract.name();
-            break;
-          } catch (error) {
-            retryCount++;
-            if (retryCount >= maxRetries) {
-              throw new Error(`Failed to connect to raffle contract after ${maxRetries} attempts: ${error.message}`);
-            }
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          }
+        console.log(`🌐 Loading raffle on ${browserInfo.name} ${browserInfo.version} (Mobile: ${platformConfig.isMobile})`);
+
+        // Create contract instance with improved error handling
+        const raffleContract = getContractInstance(stableRaffleAddress, 'raffle');
+        if (!raffleContract) {
+          throw new Error('Failed to create contract instance - no signer/provider available');
         }
+
+        // Test contract connectivity with safe call
+        const connectivityTest = await safeContractCall(
+          () => raffleContract.name(),
+          'name',
+          {
+            timeout: platformConfig.timeout,
+            retries: platformConfig.retries,
+            required: true
+          }
+        );
+
+        if (!connectivityTest.success) {
+          throw new Error(`Contract connectivity test failed: ${connectivityTest.error}`);
+        }
+        // Define contract calls with fallback values for robust execution
+        const contractCalls = [
+          { method: () => raffleContract.name(), name: 'name', required: true, fallback: 'Unknown Raffle' },
+          { method: () => raffleContract.creator(), name: 'creator', required: true, fallback: ethers.constants.AddressZero },
+          { method: () => raffleContract.startTime(), name: 'startTime', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.duration(), name: 'duration', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.ticketPrice(), name: 'ticketPrice', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.ticketLimit(), name: 'ticketLimit', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.winnersCount(), name: 'winnersCount', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.maxTicketsPerParticipant(), name: 'maxTicketsPerParticipant', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.isPrized(), name: 'isPrized', required: true, fallback: false },
+          { method: () => raffleContract.prizeCollection(), name: 'prizeCollection', required: true, fallback: ethers.constants.AddressZero },
+          { method: () => raffleContract.prizeTokenId(), name: 'prizeTokenId', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.standard(), name: 'standard', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => raffleContract.state(), name: 'state', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: createSafeMethod(raffleContract, 'erc20PrizeToken', ethers.constants.AddressZero), name: 'erc20PrizeToken', required: false, fallback: ethers.constants.AddressZero },
+          { method: createSafeMethod(raffleContract, 'erc20PrizeAmount', ethers.BigNumber.from(0)), name: 'erc20PrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
+          { method: createSafeMethod(raffleContract, 'ethPrizeAmount', ethers.BigNumber.from(0)), name: 'ethPrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
+          { method: createSafeMethod(raffleContract, 'usesCustomPrice', false), name: 'usesCustomPrice', required: false, fallback: false },
+          { method: createSafeMethod(raffleContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
+          { method: createSafeMethod(raffleContract, 'isExternallyPrized', false), name: 'isExternallyPrized', required: false, fallback: false },
+          { method: createSafeMethod(raffleContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) }
+        ];
+
+        // Execute contract calls using browser-optimized batch processing
         const [
           name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner
-        ] = await Promise.all([
-          raffleContract.name(),
-          raffleContract.creator(),
-          raffleContract.startTime(),
-          raffleContract.duration(),
-          raffleContract.ticketPrice(),
-          raffleContract.ticketLimit(),
-          raffleContract.winnersCount(),
-          raffleContract.maxTicketsPerParticipant(),
-          raffleContract.isPrized(),
-          raffleContract.prizeCollection(),
-          raffleContract.prizeTokenId(),
-          raffleContract.standard(),
-          raffleContract.state(),
-          raffleContract.erc20PrizeToken?.(),
-          raffleContract.erc20PrizeAmount?.(),
-          raffleContract.ethPrizeAmount?.(),
-          raffleContract.usesCustomPrice?.(),
-          raffleContract.isRefundable?.(),
-          raffleContract.isExternallyPrized?.(),
-          raffleContract.amountPerWinner?.()
-        ]);
+        ] = await batchContractCalls(contractCalls, {
+          timeout: platformConfig.timeout,
+          useSequential: platformConfig.useSequential,
+          batchSize: platformConfig.batchSize,
+          delayBetweenCalls: platformConfig.delayBetweenCalls
+        });
 
         let ticketsSold = 0;
         try {
@@ -1308,14 +1343,14 @@ const RaffleDetailPage = () => {
       } finally {
         setLoading(false);
       }
-  }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress]);
+  }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress, isInitialized, isReconnecting, refreshTrigger]);
 
   // Effect to trigger fetchRaffleData when dependencies change
   useEffect(() => {
-    if (stableRaffleAddress && getContractInstance) {
+    if (stableRaffleAddress && getContractInstance && isInitialized && !isReconnecting) {
       fetchRaffleData();
     }
-  }, [fetchRaffleData, stableRaffleAddress, getContractInstance]);
+  }, [fetchRaffleData, stableRaffleAddress, getContractInstance, isInitialized, isReconnecting, refreshTrigger]);
 
   // Fetch collection name for raffle detail section
   useEffect(() => {
@@ -1595,7 +1630,8 @@ const RaffleDetailPage = () => {
 
     if (result.success) {
       toast.success(`Successfully purchased ${quantity} ticket${quantity > 1 ? 's' : ''}!`);
-      window.location.reload();
+      // Trigger state refresh instead of page reload
+      triggerRefresh();
     } else {
       throw new Error(result.error);
     }
@@ -1825,7 +1861,8 @@ const RaffleDetailPage = () => {
       const result = await executeTransaction(raffleContract.claimRefund);
       if (result.success) {
         toast.success('Successfully claimed your refund!');
-        window.location.reload();
+        // Trigger state refresh instead of page reload
+        triggerRefresh();
       } else {
         throw new Error(result.error);
       }
@@ -1836,24 +1873,32 @@ const RaffleDetailPage = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isReconnecting) {
     return (
       <PageLoading
-        message="Loading raffle details..."
+        message={isReconnecting ? "Reconnecting wallet..." : "Loading raffle details..."}
         isMobile={isMobile}
       />
     );
   }
 
   // Show error state with retry option
-  if (error && !loading) {
+  if (error && !loading && !isReconnecting) {
+    const isWalletError = error.toLowerCase().includes('wallet') ||
+                         error.toLowerCase().includes('signer') ||
+                         error.toLowerCase().includes('initializing');
     return (
       <PageContainer variant="wide" className="py-8">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h2 className={isMobile ? "text-lg font-semibold mb-2" : "text-2xl font-semibold mb-2"}>Failed to Load Raffle</h2>
+          <h2 className={isMobile ? "text-lg font-semibold mb-2" : "text-2xl font-semibold mb-2"}>
+            {isWalletError ? "Wallet Connection Issue" : "Failed to Load Raffle"}
+          </h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            {error}
+            {isWalletError ?
+              "Please ensure your wallet is connected and try again." :
+              error
+            }
           </p>
           <div className="flex gap-4 justify-center">
             <button
@@ -2133,6 +2178,7 @@ const RaffleDetailPage = () => {
             isExternallyPrized={isExternallyPrized}
             isPrized={raffle.isPrized}
             isMobile={isMobile}
+            onStateChange={triggerRefresh}
           />
 
           <WinnersSection raffle={raffle} isMintableERC721={isMintableERC721} isMobile={isMobile} />

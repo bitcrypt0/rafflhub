@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from './button';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
+import { getBrowserInfo } from '../../utils/contractCallUtils';
 
 /**
  * Enhanced Error Boundary with mobile-specific handling
@@ -9,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './card';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      retryCount: 0
+      retryCount: 0,
+      browserInfo: null
     };
   }
 
@@ -22,19 +24,31 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    const browserInfo = getBrowserInfo();
+
     this.setState({
       error,
-      errorInfo
+      errorInfo,
+      browserInfo
     });
 
-    // Log error for debugging
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    // Enhanced logging with browser information
+    console.group('🚨 Error Boundary Caught Error');
+    console.log('Browser:', browserInfo);
+    console.log('Error:', error);
+    console.log('Error Info:', errorInfo);
+    console.groupEnd();
+
     // Report to error tracking service if available
     if (window.gtag) {
       window.gtag('event', 'exception', {
         description: error.toString(),
-        fatal: false
+        fatal: false,
+        custom_parameters: {
+          browser: browserInfo.name,
+          browser_version: browserInfo.version,
+          is_mobile: browserInfo.isMobile
+        }
       });
     }
   }
@@ -52,10 +66,64 @@ class ErrorBoundary extends React.Component {
     window.location.href = '/';
   };
 
+  getBrowserSpecificErrorInfo = () => {
+    const { error, browserInfo } = this.state;
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+
+    // Check for browser-specific issues
+    if (errorMessage.includes('missing revert data') ||
+        errorMessage.includes('call exception') ||
+        errorMessage.includes('CALL_EXCEPTION')) {
+      return {
+        title: 'Network Connection Issue',
+        message: `Your browser (${browserInfo?.name || 'unknown'}) is experiencing connectivity issues with the blockchain network.`,
+        suggestions: [
+          'Check your internet connection',
+          'Try refreshing the page',
+          'Switch to a different network and back',
+          browserInfo?.name === 'firefox' ? 'Firefox may need extra time - please be patient' : 'Try using Chrome for better compatibility'
+        ]
+      };
+    }
+
+    if (errorMessage.includes('MetaMask') || errorMessage.includes('wallet')) {
+      return {
+        title: 'Wallet Connection Issue',
+        message: 'There was a problem connecting to your wallet.',
+        suggestions: [
+          'Make sure MetaMask is installed and unlocked',
+          'Try disconnecting and reconnecting your wallet',
+          'Refresh the page and try again'
+        ]
+      };
+    }
+
+    // Browser-specific recommendations
+    const suggestions = ['Refresh the page and try again'];
+    if (browserInfo?.name === 'firefox') {
+      suggestions.push('Firefox users may experience slower loading - please be patient');
+    } else if (browserInfo?.name === 'safari') {
+      suggestions.push('Safari users should ensure they have the latest version');
+    } else if (browserInfo?.name === 'edge') {
+      suggestions.push('Edge users may need to clear browser cache');
+    }
+
+    if (browserInfo?.isMobile) {
+      suggestions.push('Mobile users: ensure stable internet connection');
+    }
+
+    return {
+      title: 'Something went wrong',
+      message: 'An unexpected error occurred while loading the application.',
+      suggestions
+    };
+  };
+
   render() {
     if (this.state.hasError) {
       const { isMobile = false, fallbackComponent } = this.props;
-      const { error, retryCount } = this.state;
+      const { error, retryCount, browserInfo } = this.state;
+      const errorInfo = this.getBrowserSpecificErrorInfo();
 
       // Use custom fallback if provided
       if (fallbackComponent) {
@@ -69,12 +137,24 @@ class ErrorBoundary extends React.Component {
             <Card className="w-full max-w-md">
               <CardHeader className="text-center">
                 <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <CardTitle className="text-lg">Something went wrong</CardTitle>
+                <CardTitle className="text-lg">{errorInfo.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground text-center">
-                  The app encountered an unexpected error. This might be due to network issues or a temporary problem.
+                  {errorInfo.message}
                 </p>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Try these solutions:</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    {errorInfo.suggestions.map((suggestion, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{suggestion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 
                 {retryCount < 3 && (
                   <Button 
