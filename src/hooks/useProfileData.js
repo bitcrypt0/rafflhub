@@ -145,22 +145,29 @@ export const useProfileData = () => {
               for (const ticketEvent of ticketEvents) {
                 const block = await provider.getBlock(ticketEvent.blockNumber);
                 try {
-                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
-                  const ticketPrice = await executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0));
+                  // Use desktop approach for contract calls
+                  const nameResult = await executeCall(raffleContract.name);
+                  const ticketPriceResult = await executeCall(raffleContract.ticketPrice);
+
+                  const raffleName = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
+                  const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
+
+                  const quantity = ticketEvent.args.quantity.toNumber();
+                  const totalCost = ticketPrice.mul ? ticketPrice.mul(ticketEvent.args.quantity) : ethers.BigNumber.from(0);
 
                   activities.push({
                     id: `ticket-${ticketEvent.transactionHash}`,
                     type: 'ticket_purchase',
                     raffleAddress,
                     raffleName,
-                    quantity: ticketEvent.args.quantity.toNumber(),
-                    amount: ethers.utils.formatEther(ticketPrice.mul(ticketEvent.args.quantity)),
+                    quantity: quantity,
+                    amount: ethers.utils.formatEther(totalCost),
                     timestamp: block.timestamp * 1000,
                     blockNumber: ticketEvent.blockNumber,
                     transactionHash: ticketEvent.transactionHash
                   });
 
-                  totalTicketsPurchased += ticketEvent.args.quantity.toNumber();
+                  totalTicketsPurchased += quantity;
                 } catch (error) {
                   console.error('Mobile: Error processing ticket event:', error);
                 }
@@ -274,7 +281,7 @@ export const useProfileData = () => {
       console.error('Error fetching on-chain activity:', error);
       toast.error('Failed to load activity data');
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
+  }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, stableContracts.raffleManager, stableContracts.revenueManager, executeCall, getContractInstance, mapRaffleState]);
 
   // Fetch created raffles (matches desktop implementation)
   const fetchCreatedRaffles = useCallback(async () => {
@@ -304,19 +311,30 @@ export const useProfileData = () => {
             const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
             if (!raffleContract) continue;
-            const [name, ticketPrice, ticketLimit, participantsCount, startTime, duration, state] = await Promise.all([
-              executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`),
-              executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'ticketLimit', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'getParticipantsCount', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'state', []).catch(() => 0)
+
+            // Use desktop approach for contract calls
+            const [nameResult, ticketPriceResult, ticketLimitResult, participantsCountResult, startTimeResult, durationResult, stateResult] = await Promise.all([
+              executeCall(raffleContract.name),
+              executeCall(raffleContract.ticketPrice),
+              executeCall(raffleContract.ticketLimit),
+              executeCall(raffleContract.getParticipantsCount),
+              executeCall(raffleContract.startTime),
+              executeCall(raffleContract.duration),
+              executeCall(raffleContract.state)
             ]);
+
+            const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
+            const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
+            const ticketLimit = ticketLimitResult.success ? ticketLimitResult.result : ethers.BigNumber.from(0);
+            const participantsCount = participantsCountResult.success ? participantsCountResult.result : ethers.BigNumber.from(0);
+            const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
+            const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
+            const state = stateResult.success ? stateResult.result : 0;
 
             // Calculate end time and tickets sold
             const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
             const ticketsSold = participantsCount;
+            const revenue = ticketPrice.mul ? ticketPrice.mul(ticketsSold) : ethers.BigNumber.from(0);
 
             raffles.push({
               address: raffleAddress,
@@ -326,7 +344,7 @@ export const useProfileData = () => {
               ticketsSold: ticketsSold.toString(),
               endTime: endTime,
               state: mapRaffleState(state),
-              revenue: ethers.utils.formatEther(ticketPrice.mul(ticketsSold))
+              revenue: ethers.utils.formatEther(revenue)
             });
           } catch (error) {
             console.error(`Mobile: Error processing created raffle ${raffleAddress}:`, error);
@@ -341,7 +359,7 @@ export const useProfileData = () => {
       console.error('Error fetching created raffles:', error);
       toast.error('Failed to load created raffles');
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
+  }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, executeCall, getContractInstance, mapRaffleState]);
 
   // Fetch purchased tickets (matches desktop implementation)
   const fetchPurchasedTickets = useCallback(async () => {
@@ -372,26 +390,35 @@ export const useProfileData = () => {
 
             if (!raffleContract) continue;
 
-            const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
+            // Use desktop approach for contract calls
+            const userTicketCountResult = await executeCall(raffleContract.ticketsPurchased, stableAddress);
+            const userTicketCount = userTicketCountResult.success ? userTicketCountResult.result : ethers.BigNumber.from(0);
 
             if (userTicketCount.gt(0)) {
-              const [name, ticketPrice, state, startTime, duration] = await Promise.all([
-                executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`),
-                executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-                executeCall(raffleContract, 'state', []).catch(() => 0),
-                executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
-                executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0))
+              const [nameResult, ticketPriceResult, stateResult, startTimeResult, durationResult] = await Promise.all([
+                executeCall(raffleContract.name),
+                executeCall(raffleContract.ticketPrice),
+                executeCall(raffleContract.state),
+                executeCall(raffleContract.startTime),
+                executeCall(raffleContract.duration)
               ]);
 
-              // Calculate end time
+              const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
+              const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
+              const state = stateResult.success ? stateResult.result : 0;
+              const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
+              const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
+
+              // Calculate end time and total spent
               const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
+              const totalSpent = ticketPrice.mul ? ticketPrice.mul(userTicketCount) : ethers.BigNumber.from(0);
 
               tickets.push({
                 address: raffleAddress,
                 name,
                 ticketCount: userTicketCount.toNumber(),
                 ticketPrice: ethers.utils.formatEther(ticketPrice),
-                totalSpent: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
+                totalSpent: ethers.utils.formatEther(totalSpent),
                 state: mapRaffleState(state),
                 endTime: endTime,
                 tickets: Array.from({length: userTicketCount.toNumber()}, (_, i) => i.toString())
@@ -410,7 +437,7 @@ export const useProfileData = () => {
       console.error('Error fetching purchased tickets:', error);
       toast.error('Failed to load purchased tickets');
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
+  }, [stableConnected, stableAddress, provider, stableContracts.raffleManager, executeCall, getContractInstance, mapRaffleState]);
 
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
