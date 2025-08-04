@@ -37,7 +37,8 @@ const MobileProfilePage = () => {
   // Auto-close functionality when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (gridRef.current && !gridRef.current.contains(event.target)) {
+      // Only close if we have an active tab and the click is outside the grid
+      if (activeTab && gridRef.current && !gridRef.current.contains(event.target)) {
         setActiveTab(null); // Close all tabs when clicking outside
       }
     };
@@ -49,7 +50,7 @@ const MobileProfilePage = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, []);
+  }, [activeTab]); // Add activeTab as dependency
 
   // Reset active tab when returning to page (fixes disappearing components)
   useEffect(() => {

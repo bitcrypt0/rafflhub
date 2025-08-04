@@ -62,6 +62,7 @@ export const useProfileData = () => {
   // Fetch on-chain activity (matches desktop implementation)
   const fetchOnChainActivity = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider) {
+      console.log('Mobile: Missing requirements:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
       return;
     }
 
@@ -70,6 +71,12 @@ export const useProfileData = () => {
       let totalTicketsPurchased = 0;
       let totalPrizesWon = 0;
       let totalRefundsClaimed = 0;
+
+      console.log('Mobile: Available contracts:', {
+        raffleDeployer: !!stableContracts.raffleDeployer,
+        raffleManager: !!stableContracts.raffleManager,
+        revenueManager: !!stableContracts.revenueManager
+      });
 
       const currentBlock = await provider.getBlockNumber();
       const fromBlock = Math.max(0, currentBlock - 50000); // Last 50k blocks
@@ -269,29 +276,36 @@ export const useProfileData = () => {
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
 
-  // Fetch created raffles
+  // Fetch created raffles (matches desktop implementation)
   const fetchCreatedRaffles = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !provider || !stableContracts.raffleFactory) {
+    if (!stableConnected || !stableAddress || !provider) {
+      console.log('Mobile: Missing requirements for fetchCreatedRaffles:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
       return;
     }
 
     try {
       const raffles = [];
-      const raffleCount = await executeCall(stableContracts.raffleFactory, 'getRaffleCount', []);
-      const raffleCountNum = parseInt(raffleCount.toString());
 
-      for (let i = 0; i < Math.min(raffleCountNum, 50); i++) {
-        try {
-          const raffleAddress = await executeCall(stableContracts.raffleFactory, 'raffles', [i]);
-          const raffleContract = getContractInstance('raffle', raffleAddress);
+      // Use same approach as desktop - get RaffleCreated events from raffleDeployer
+      if (stableContracts.raffleDeployer) {
+        const currentBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 50000);
 
-          if (!raffleContract) continue;
+        console.log('Mobile: Fetching created raffles from RaffleDeployer');
 
-          const creator = await executeCall(raffleContract, 'creator', []).catch(() => '');
-          
-          if (creator.toLowerCase() === stableAddress.toLowerCase()) {
+        const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
+        const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
+
+        console.log('Mobile: Found', raffleCreatedEvents.length, 'created raffles for address:', stableAddress);
+
+        for (const event of raffleCreatedEvents) {
+          try {
+            const raffleAddress = event.args.raffle;
+            const raffleContract = getContractInstance('raffle', raffleAddress);
+
+            if (!raffleContract) continue;
             const [name, ticketPrice, ticketLimit, participantsCount, startTime, duration, state] = await Promise.all([
-              executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
+              executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`),
               executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
               executeCall(raffleContract, 'ticketLimit', []).catch(() => ethers.BigNumber.from(0)),
               executeCall(raffleContract, 'getParticipantsCount', []).catch(() => ethers.BigNumber.from(0)),
@@ -314,10 +328,12 @@ export const useProfileData = () => {
               state: mapRaffleState(state),
               revenue: ethers.utils.formatEther(ticketPrice.mul(ticketsSold))
             });
+          } catch (error) {
+            console.error(`Mobile: Error processing created raffle ${raffleAddress}:`, error);
           }
-        } catch (error) {
-          console.log(`Error processing created raffle ${i}:`, error);
         }
+      } else {
+        console.log('Mobile: raffleDeployer contract not available');
       }
 
       setCreatedRaffles(raffles);
@@ -327,52 +343,66 @@ export const useProfileData = () => {
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
 
-  // Fetch purchased tickets
+  // Fetch purchased tickets (matches desktop implementation)
   const fetchPurchasedTickets = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !provider || !stableContracts.raffleFactory) {
+    if (!stableConnected || !stableAddress || !provider) {
+      console.log('Mobile: Missing requirements for fetchPurchasedTickets:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
       return;
     }
 
     try {
       const tickets = [];
-      const raffleCount = await executeCall(stableContracts.raffleFactory, 'getRaffleCount', []);
-      const raffleCountNum = parseInt(raffleCount.toString());
 
-      for (let i = 0; i < Math.min(raffleCountNum, 50); i++) {
-        try {
-          const raffleAddress = await executeCall(stableContracts.raffleFactory, 'raffles', [i]);
-          const raffleContract = getContractInstance('raffle', raffleAddress);
+      // Use same approach as desktop - get registered raffles and check each one
+      if (stableContracts.raffleManager) {
+        const currentBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 50000);
 
-          if (!raffleContract) continue;
+        console.log('Mobile: Fetching purchased tickets from registered raffles');
 
-          const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
+        const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
+        const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
 
-          if (userTicketCount.gt(0)) {
-            const [name, ticketPrice, state, startTime, duration] = await Promise.all([
-              executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
-              executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'state', []).catch(() => 0),
-              executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0))
-            ]);
+        console.log('Mobile: Checking', raffleRegisteredEvents.length, 'registered raffles for user tickets');
 
-            // Calculate end time
-            const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
+        for (const event of raffleRegisteredEvents) {
+          try {
+            const raffleAddress = event.args.raffle;
+            const raffleContract = getContractInstance('raffle', raffleAddress);
 
-            tickets.push({
-              raffleAddress,
-              raffleName: name,
-              ticketCount: userTicketCount.toNumber(),
-              ticketPrice: ethers.utils.formatEther(ticketPrice),
-              totalSpent: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
-              state: mapRaffleState(state),
-              endTime: endTime,
-              tickets: Array.from({length: userTicketCount.toNumber()}, (_, i) => i.toString())
-            });
+            if (!raffleContract) continue;
+
+            const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
+
+            if (userTicketCount.gt(0)) {
+              const [name, ticketPrice, state, startTime, duration] = await Promise.all([
+                executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`),
+                executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
+                executeCall(raffleContract, 'state', []).catch(() => 0),
+                executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
+                executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0))
+              ]);
+
+              // Calculate end time
+              const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
+
+              tickets.push({
+                address: raffleAddress,
+                name,
+                ticketCount: userTicketCount.toNumber(),
+                ticketPrice: ethers.utils.formatEther(ticketPrice),
+                totalSpent: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
+                state: mapRaffleState(state),
+                endTime: endTime,
+                tickets: Array.from({length: userTicketCount.toNumber()}, (_, i) => i.toString())
+              });
+            }
+          } catch (error) {
+            console.error(`Mobile: Error processing purchased tickets for raffle ${raffleAddress}:`, error);
           }
-        } catch (error) {
-          console.log(`Error processing purchased tickets ${i}:`, error);
         }
+      } else {
+        console.log('Mobile: raffleManager contract not available');
       }
 
       setPurchasedTickets(tickets);
@@ -502,7 +532,7 @@ export const useProfileData = () => {
       monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
       totalParticipants: createdRaffles.reduce((sum, r) => sum + parseInt(r.ticketsSold || 0), 0),
       uniqueParticipants: createdRaffles.reduce((sum, r) => sum + parseInt(r.ticketsSold || 0), 0), // Simplified
-      successRate: createdRaffles.length > 0 ? 
+      successRate: createdRaffles.length > 0 ?
         Math.round((createdRaffles.filter(r => r.state === 'completed' || r.state === 'allPrizesClaimed').length / createdRaffles.length) * 100) : 0
     }
   };
