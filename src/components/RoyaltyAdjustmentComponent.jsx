@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
+import AndroidKeyboardInput from './mobile/AndroidKeyboardInput';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -184,13 +185,15 @@ const RoyaltyAdjustmentComponent = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Collection Address</label>
-              <input
-                type="text"
-                value={collectionData.address}
-                onChange={(e) => handleChange('address', e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                placeholder="0x..."
-              />
+              <AndroidKeyboardInput>
+                <input
+                  type="text"
+                  value={collectionData.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  placeholder="0x..."
+                />
+              </AndroidKeyboardInput>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Collection Type</label>
@@ -279,28 +282,32 @@ const RoyaltyAdjustmentComponent = () => {
                 <label className="block text-sm font-medium mb-1">
                   New Royalty Percentage (0-10%)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.01"
-                  value={collectionData.royaltyPercentage}
-                  onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  placeholder="2.5"
-                />
+                <AndroidKeyboardInput>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    value={collectionData.royaltyPercentage}
+                    onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    placeholder="2.5"
+                  />
+                </AndroidKeyboardInput>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
                   New Royalty Recipient
                 </label>
-                <input
-                  type="text"
-                  value={collectionData.royaltyRecipient}
-                  onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  placeholder="0x..."
-                />
+                <AndroidKeyboardInput>
+                  <input
+                    type="text"
+                    value={collectionData.royaltyRecipient}
+                    onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    placeholder="0x..."
+                  />
+                </AndroidKeyboardInput>
               </div>
             </div>
 

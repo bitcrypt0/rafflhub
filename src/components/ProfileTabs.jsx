@@ -108,20 +108,42 @@ const ProfileTabs = ({
     }
   }, [isMobile, mobileActivePage]);
 
-  // Mobile full-page utility component
+  // Enhanced mobile full-page utility component with keyboard support
   const MobileUtilityPage = ({ utilityKey }) => {
     const utility = mobileUtilities.find(u => u.key === utilityKey);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
     if (!utility) return null;
 
     const UtilityComponent = utility.component;
 
+    // Listen for keyboard state changes
+    useEffect(() => {
+      const handleKeyboardChange = (event) => {
+        setKeyboardVisible(event.detail.visible);
+      };
+
+      window.addEventListener('keyboardStateChange', handleKeyboardChange);
+      return () => window.removeEventListener('keyboardStateChange', handleKeyboardChange);
+    }, []);
+
+    // Notify keyboard fix that a mobile page is open
+    useEffect(() => {
+      const { setModalOpen } = require('../utils/androidKeyboardFix');
+      setModalOpen(true);
+
+      return () => {
+        setModalOpen(false);
+      };
+    }, []);
+
     return (
       <div className="fixed inset-0 z-50 bg-background">
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm">
+        {/* Mobile Header - Fixed position to avoid keyboard issues */}
+        <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
           <button
             onClick={closeMobilePage}
-            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors min-h-[44px] min-w-[44px] justify-center"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -137,14 +159,32 @@ const ProfileTabs = ({
           <div className="w-16"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Mobile Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* Mobile Content - Keyboard aware */}
+        <div
+          className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${
+            keyboardVisible ? 'pb-2' : 'pb-4'
+          }`}
+          style={{
+            // Adjust height when keyboard is visible
+            height: keyboardVisible
+              ? `calc(100vh - 80px - var(--keyboard-height, 300px))`
+              : 'calc(100vh - 80px)',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           <div className="mb-4">
             <p className="text-sm text-muted-foreground">{utility.description}</p>
           </div>
 
-          {/* Render the utility component */}
-          <div className="mobile-utility-page-content">
+          {/* Render the utility component with keyboard-aware container */}
+          <div
+            className="mobile-utility-page-content"
+            style={{
+              // Ensure content is accessible when keyboard is open
+              minHeight: keyboardVisible ? 'auto' : '100%',
+              paddingBottom: keyboardVisible ? '1rem' : '2rem'
+            }}
+          >
             <UtilityComponent />
           </div>
         </div>

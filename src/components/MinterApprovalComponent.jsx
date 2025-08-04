@@ -20,6 +20,7 @@ import {
   Info,
   Search
 } from 'lucide-react';
+import AndroidKeyboardInput from './mobile/AndroidKeyboardInput';
 
 const MinterApprovalComponent = () => {
   const { address, connected, provider } = useWallet();
@@ -309,15 +310,17 @@ const MinterApprovalComponent = () => {
         <div className="space-y-2">
           <Label htmlFor="collection-address">Collection Contract Address</Label>
           <div className="flex gap-2">
-            <input
-              id="collection-address"
-              type="text"
-              placeholder="0x..."
-              value={collectionAddress}
-              onChange={(e) => setCollectionAddress(e.target.value)}
-              disabled={loading || !connected}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            />
+            <AndroidKeyboardInput className="flex-1">
+              <input
+                id="collection-address"
+                type="text"
+                placeholder="0x..."
+                value={collectionAddress}
+                onChange={(e) => setCollectionAddress(e.target.value)}
+                disabled={loading || !connected}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              />
+            </AndroidKeyboardInput>
             <Button
               onClick={fetchCollection}
               disabled={loading}
@@ -374,15 +377,17 @@ const MinterApprovalComponent = () => {
           <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
             <div className="space-y-2">
               <Label htmlFor="minter">Minter Address</Label>
-              <input
-                id="minter"
-                type="text"
-                placeholder="0x..."
-                value={minterAddress}
-                onChange={(e) => setMinterAddress(e.target.value)}
-                disabled={loading}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              />
+              <AndroidKeyboardInput>
+                <input
+                  id="minter"
+                  type="text"
+                  placeholder="0x..."
+                  value={minterAddress}
+                  onChange={(e) => setMinterAddress(e.target.value)}
+                  disabled={loading}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                />
+              </AndroidKeyboardInput>
               {minterAddress && !validateAddress(minterAddress) && (
                 <p className="text-sm text-red-600">Invalid Ethereum address</p>
               )}

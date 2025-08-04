@@ -625,6 +625,90 @@
       max-height: calc(100vh - var(--keyboard-height, 300px) - 2rem);
     }
 
+    /* Android-specific keyboard fixes */
+    .mobile-utility-page-content input,
+    .mobile-utility-page-content textarea,
+    .mobile-utility-page-content select {
+      /* Prevent zoom on focus for Android */
+      font-size: 16px !important;
+      /* Ensure proper touch targets */
+      min-height: 44px;
+      /* Prevent layout shifts */
+      box-sizing: border-box;
+    }
+
+    /* Stable layout during keyboard transitions */
+    .mobile-utility-page-content {
+      /* Prevent content jumping */
+      contain: layout style;
+      /* Smooth transitions */
+      transition: padding 0.3s ease;
+    }
+
+    /* Android keyboard visible state */
+    html[style*="--keyboard-visible: 1"] .mobile-utility-page-content {
+      /* Adjust padding when keyboard is visible */
+      padding-bottom: 1rem;
+    }
+
+    /* Prevent Android viewport issues */
+    @supports (-webkit-touch-callout: none) {
+      /* iOS specific - more stable */
+      .mobile-utility-page-content {
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    /* Android Chrome specific fixes */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      .mobile-utility-page-content input:focus,
+      .mobile-utility-page-content textarea:focus {
+        /* Prevent Android from changing viewport */
+        transform: translateZ(0);
+        /* Ensure element stays in place */
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    /* Android Keyboard Input Component Styles */
+    .android-keyboard-input {
+      /* Stable container */
+      contain: layout style;
+      /* Prevent layout shifts */
+      will-change: auto;
+    }
+
+    .android-keyboard-input input,
+    .android-keyboard-input textarea,
+    .android-keyboard-input select {
+      /* Prevent zoom on focus */
+      font-size: 16px !important;
+      /* Proper touch targets */
+      min-height: 44px;
+      /* Stable positioning */
+      transform: translateZ(0);
+      /* Prevent layout shifts */
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .android-input-focused {
+      /* Higher z-index when focused */
+      z-index: 10 !important;
+      /* Prevent any layout changes */
+      contain: strict;
+    }
+
+    .android-input-focused input,
+    .android-input-focused textarea {
+      /* Ensure focus styles are visible */
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+      /* Prevent any movement */
+      transform: translateZ(0);
+    }
+
     /* Prevent viewport jumping when keyboard appears */
     .mobile-utility-page-content {
       /* Use fixed positioning to prevent reflow */

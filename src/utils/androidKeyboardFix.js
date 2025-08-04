@@ -48,6 +48,11 @@ export const initMobileKeyboardFix = () => {
     window.addEventListener('orientationchange', handleOrientationChange, { passive: true });
   }
 
+  // Android-specific aggressive keyboard handling
+  if (isAndroid) {
+    initAndroidSpecificFixes();
+  }
+
   // Prevent viewport meta tag manipulation during keyboard events
   observeViewportChanges();
 };
@@ -64,38 +69,77 @@ const handleFocusIn = (event) => {
 
   // Only track input elements
   if (isInputElement(target)) {
-    console.log('Focus in:', target.tagName, target.type, 'Modal open:', isModalOpen);
+    console.log('Focus in:', target.tagName, target.type, 'Modal open:', isModalOpen, 'Platform:', isAndroid ? 'Android' : 'iOS');
     lastFocusedElement = target;
     preventNextBlur = false;
 
     // Set keyboard visible immediately for responsive UI
     setKeyboardVisible(true);
 
-    // Enhanced scroll into view for mobile
-    focusTimeout = setTimeout(() => {
-      if (target && document.contains(target)) {
-        // Different scroll behavior for iOS vs Android
-        const scrollOptions = {
-          behavior: isIOS ? 'auto' : 'smooth', // iOS prefers instant scroll
-          block: 'center',
-          inline: 'nearest'
-        };
+    // Android-specific aggressive focus handling
+    if (isAndroid) {
+      // Prevent any blur events for a short period
+      preventNextBlur = true;
+      setTimeout(() => {
+        preventNextBlur = false;
+      }, 500);
 
-        target.scrollIntoView(scrollOptions);
+      // Ensure input is in viewport immediately
+      target.scrollIntoView({
+        behavior: 'auto', // Instant for Android
+        block: 'center',
+        inline: 'nearest'
+      });
 
-        // Ensure focus is maintained
-        if (document.activeElement !== target) {
-          target.focus();
+      // Multiple focus attempts for Android reliability
+      const ensureAndroidFocus = () => {
+        if (target && document.contains(target)) {
+          if (document.activeElement !== target) {
+            console.log('Android: Re-focusing element');
+            target.focus();
+          }
+
+          // Check again after a delay
+          setTimeout(() => {
+            if (target && document.contains(target) && document.activeElement !== target) {
+              console.log('Android: Final focus attempt');
+              target.focus();
+            }
+          }, 100);
         }
-      }
-    }, isIOS ? 50 : 100); // iOS needs faster response
+      };
+
+      // Immediate focus
+      ensureAndroidFocus();
+
+      // Delayed focus for Android keyboard timing
+      setTimeout(ensureAndroidFocus, 200);
+    } else {
+      // iOS handling - more gentle
+      focusTimeout = setTimeout(() => {
+        if (target && document.contains(target)) {
+          const scrollOptions = {
+            behavior: 'auto', // iOS prefers instant scroll
+            block: 'center',
+            inline: 'nearest'
+          };
+
+          target.scrollIntoView(scrollOptions);
+
+          // Ensure focus is maintained
+          if (document.activeElement !== target) {
+            target.focus();
+          }
+        }
+      }, 50); // iOS needs faster response
+    }
   }
 };
 
 // Enhanced focus out handling
 const handleFocusOut = (event) => {
   const target = event.target;
-  console.log('Focus out:', target.tagName, 'Prevent blur:', preventNextBlur);
+  console.log('Focus out:', target.tagName, 'Prevent blur:', preventNextBlur, 'Platform:', isAndroid ? 'Android' : 'iOS');
 
   // Clear focus timeout
   if (focusTimeout) {
@@ -105,16 +149,46 @@ const handleFocusOut = (event) => {
 
   // Don't immediately clear keyboard state if we're preventing blur
   if (preventNextBlur) {
+    console.log('Blur prevented - maintaining keyboard state');
     preventNextBlur = false;
     return;
   }
 
-  // Delay keyboard state change to allow for refocusing
-  blurTimeout = setTimeout(() => {
-    if (!document.activeElement || !isInputElement(document.activeElement)) {
-      setKeyboardVisible(false);
-    }
-  }, isIOS ? 100 : 200); // iOS needs faster response
+  // Android-specific blur handling
+  if (isAndroid) {
+    // Much longer delay for Android to prevent premature keyboard closure
+    blurTimeout = setTimeout(() => {
+      // Check if any input element has focus
+      const activeElement = document.activeElement;
+      const hasInputFocus = activeElement && isInputElement(activeElement);
+
+      console.log('Android blur check:', {
+        activeElement: activeElement?.tagName,
+        hasInputFocus,
+        keyboardVisible
+      });
+
+      if (!hasInputFocus) {
+        // Double-check with viewport to ensure keyboard is actually gone
+        const currentHeight = window.visualViewport?.height || window.innerHeight;
+        const heightDiff = initialVisualViewportHeight - currentHeight;
+
+        if (heightDiff <= 50) { // Very small threshold for Android
+          console.log('Android: Keyboard confirmed closed');
+          setKeyboardVisible(false);
+        } else {
+          console.log('Android: Keyboard still detected, maintaining state');
+        }
+      }
+    }, 800); // Much longer delay for Android
+  } else {
+    // iOS handling - faster response
+    blurTimeout = setTimeout(() => {
+      if (!document.activeElement || !isInputElement(document.activeElement)) {
+        setKeyboardVisible(false);
+      }
+    }, 100);
+  }
 };
 
 // Enhanced input element detection
@@ -276,6 +350,89 @@ const handleOrientationChange = () => {
       lastFocusedElement.focus();
     }
   }, 500); // iOS needs time to settle after orientation change
+};
+
+// Android-specific aggressive keyboard fixes
+const initAndroidSpecificFixes = () => {
+  console.log('Initializing Android-specific keyboard fixes...');
+
+  // Aggressive input focus detection for Android
+  document.addEventListener('touchstart', (e) => {
+    const target = e.target;
+    if (isInputElement(target)) {
+      console.log('Android: Touch start on input element');
+      preventNextBlur = true;
+      setKeyboardVisible(true);
+
+      // Ensure focus happens
+      setTimeout(() => {
+        if (target && document.contains(target)) {
+          target.focus();
+        }
+      }, 50);
+    }
+  }, { capture: true, passive: false });
+
+  // Prevent Android from closing keyboard on layout changes
+  document.addEventListener('touchend', (e) => {
+    const target = e.target;
+    if (isInputElement(target)) {
+      console.log('Android: Touch end on input element');
+
+      // Delay to ensure focus is maintained
+      setTimeout(() => {
+        if (target && document.contains(target) && document.activeElement !== target) {
+          console.log('Android: Refocusing after touch end');
+          target.focus();
+        }
+      }, 100);
+    }
+  }, { capture: true, passive: false });
+
+  // Android-specific viewport stability
+  let androidViewportStable = true;
+  const stabilizeAndroidViewport = () => {
+    if (!androidViewportStable) return;
+
+    androidViewportStable = false;
+    setTimeout(() => {
+      androidViewportStable = true;
+    }, 300);
+
+    // Prevent any viewport changes during this period
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport && originalViewportContent) {
+      viewport.setAttribute('content', originalViewportContent);
+    }
+  };
+
+  // Monitor for Android-specific events that might close keyboard
+  document.addEventListener('scroll', stabilizeAndroidViewport, { passive: true });
+  window.addEventListener('resize', stabilizeAndroidViewport, { passive: true });
+
+  // Android-specific input event handling
+  document.addEventListener('input', (e) => {
+    if (isInputElement(e.target)) {
+      console.log('Android: Input event detected');
+      setKeyboardVisible(true);
+      preventNextBlur = true;
+    }
+  }, { capture: true });
+
+  // Prevent Android keyboard from closing on certain events
+  document.addEventListener('click', (e) => {
+    if (keyboardVisible && isInputElement(e.target)) {
+      console.log('Android: Click on input while keyboard visible');
+      e.stopPropagation();
+      preventNextBlur = true;
+
+      setTimeout(() => {
+        if (e.target && document.contains(e.target)) {
+          e.target.focus();
+        }
+      }, 50);
+    }
+  }, { capture: true });
 };
 
 // Prevent viewport meta tag manipulation during keyboard events
