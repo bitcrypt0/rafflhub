@@ -374,7 +374,7 @@ const ProfileTabs = ({
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-profile-tab="true">
       {isMobile ? (
         // Mobile: 2x2 grid layout with proper buttons
         <div className="grid grid-cols-2 gap-3 mb-6">

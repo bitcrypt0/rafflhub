@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Waves, Wallet, User, Plus, Search, Book, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { contractABIs } from '../contracts/contractABIs';
@@ -24,6 +24,7 @@ const Header = () => {
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
+  const location = useLocation();
 
   // Show loading state while detecting device type to prevent flash
   if (!isInitialized) {
@@ -68,7 +69,25 @@ const Header = () => {
   const hasFetchedRaffles = useRef(false);
 
   useEffect(() => {
+    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
+    if (location.pathname === '/profile') {
+      return;
+    }
+
     const handleClickOutside = (event) => {
+      // Exclude dashboard components and profile page interactions
+      const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
+                                   event.target.closest('[data-dashboard-card]') ||
+                                   event.target.closest('[data-profile-tab]') ||
+                                   event.target.closest('input') ||
+                                   event.target.closest('textarea') ||
+                                   event.target.closest('button') ||
+                                   event.target.closest('select');
+
+      if (isDashboardInteraction) {
+        return; // Don't close search when interacting with dashboard components
+      }
+
       if (
         showSearch &&
         searchInputRef.current &&
@@ -84,7 +103,7 @@ const Header = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showSearch, mouseInDropdown]);
+  }, [showSearch, mouseInDropdown, location.pathname]);
 
   // Fetch all raffles once for searching
   useEffect(() => {
@@ -173,7 +192,26 @@ const Header = () => {
   // Close search field when clicking outside
   useEffect(() => {
     if (!showSearch) return;
+
+    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
+    if (location.pathname === '/profile') {
+      return;
+    }
+
     function handleClickOutside(event) {
+      // Exclude dashboard components and profile page interactions
+      const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
+                                   event.target.closest('[data-dashboard-card]') ||
+                                   event.target.closest('[data-profile-tab]') ||
+                                   event.target.closest('input') ||
+                                   event.target.closest('textarea') ||
+                                   event.target.closest('button') ||
+                                   event.target.closest('select');
+
+      if (isDashboardInteraction) {
+        return; // Don't close search when interacting with dashboard components
+      }
+
       if (
         searchInputWrapperRef.current &&
         !searchInputWrapperRef.current.contains(event.target)
@@ -186,7 +224,7 @@ const Header = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showSearch]);
+  }, [showSearch, location.pathname]);
 
   useEffect(() => {
     hasFetchedRaffles.current = false;

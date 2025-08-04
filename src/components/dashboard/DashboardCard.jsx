@@ -37,19 +37,21 @@ const DashboardCard = ({
   };
 
   return (
-    <Card className={cn(
-      "relative transition-all duration-300 ease-in-out",
-      // Responsive sizing
-      isMobile && "w-full",
-      isTablet && "w-full",
-      // Expanded state styling
-      isExpanded && [
-        "ring-2 ring-primary/20",
-        "shadow-lg",
-        isMobile && "mb-4" // Extra margin on mobile when expanded
-      ],
-      className
-    )}>
+    <Card
+      data-dashboard-card="true"
+      className={cn(
+        "relative transition-all duration-300 ease-in-out",
+        // Responsive sizing
+        isMobile && "w-full",
+        isTablet && "w-full",
+        // Expanded state styling
+        isExpanded && [
+          "ring-2 ring-primary/20",
+          "shadow-lg",
+          isMobile && "mb-4" // Extra margin on mobile when expanded
+        ],
+        className
+      )}>
       <CardHeader className={cn(
         "pb-3",
         isMobile && "pb-2" // Tighter spacing on mobile

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Search, Wallet, Sun, Moon, Waves } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,6 +15,7 @@ const MobileHeader = () => {
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
@@ -44,7 +45,25 @@ const MobileHeader = () => {
   useEffect(() => {
     if (!showSearch) return;
 
+    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
+    if (location.pathname === '/profile') {
+      return;
+    }
+
     const handleClickOutside = (event) => {
+      // Exclude dashboard components and profile page interactions
+      const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
+                                   event.target.closest('[data-dashboard-card]') ||
+                                   event.target.closest('[data-profile-tab]') ||
+                                   event.target.closest('input') ||
+                                   event.target.closest('textarea') ||
+                                   event.target.closest('button') ||
+                                   event.target.closest('select');
+
+      if (isDashboardInteraction) {
+        return; // Don't close search when interacting with dashboard components
+      }
+
       if (
         searchContainerRef.current &&
         !searchContainerRef.current.contains(event.target)
@@ -63,7 +82,7 @@ const MobileHeader = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [showSearch, clearSearch]);
+  }, [showSearch, clearSearch, location.pathname]);
 
   const handleConnectWallet = async () => {
     try {

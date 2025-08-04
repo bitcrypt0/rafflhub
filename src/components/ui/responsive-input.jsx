@@ -4,11 +4,11 @@
  * rather than complex event handling. Provides consistent behavior across all platforms.
  */
 
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { cn } from '../../lib/utils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 
-const ResponsiveInput = React.forwardRef(({ 
+const ResponsiveInput = React.forwardRef(({
   type = "text",
   value,
   onChange,
@@ -19,9 +19,38 @@ const ResponsiveInput = React.forwardRef(({
   min,
   max,
   step,
-  ...props 
+  onFocus,
+  onBlur,
+  ...props
 }, ref) => {
   const { isMobile } = useMobileBreakpoints();
+  const inputRef = useRef(null);
+
+  // Prevent keyboard from closing on Android by maintaining focus
+  const handleFocus = useCallback((e) => {
+    if (isMobile) {
+      // Store reference to prevent focus loss
+      inputRef.current = e.target;
+
+      // Prevent any potential viewport changes from affecting focus
+      e.target.style.transform = 'translateZ(0)'; // Force hardware acceleration
+    }
+
+    if (onFocus) {
+      onFocus(e);
+    }
+  }, [isMobile, onFocus]);
+
+  const handleBlur = useCallback((e) => {
+    if (isMobile && inputRef.current) {
+      // Clean up hardware acceleration
+      e.target.style.transform = '';
+    }
+
+    if (onBlur) {
+      onBlur(e);
+    }
+  }, [isMobile, onBlur]);
 
   return (
     <input
@@ -63,6 +92,8 @@ const ResponsiveInput = React.forwardRef(({
       autoCorrect="off"
       autoCapitalize="off"
       spellCheck={false}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       style={{
         fontSize: isMobile ? '16px' : undefined,
         ...props.style
