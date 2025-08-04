@@ -638,11 +638,17 @@
     }
 
     /* Stable layout during keyboard transitions */
+    .mobile-component-container,
     .mobile-utility-page-content {
       /* Prevent content jumping */
       contain: layout style;
       /* Smooth transitions */
       transition: padding 0.3s ease;
+      /* Prevent auto-close during keyboard events */
+      pointer-events: auto;
+      /* Maintain stable positioning */
+      position: relative;
+      z-index: 1;
     }
 
     /* Android keyboard visible state */
@@ -677,6 +683,23 @@
       contain: layout style;
       /* Prevent layout shifts */
       will-change: auto;
+    }
+
+    /* Prevent dashboard card auto-close during keyboard events */
+    @media (max-width: 767px) {
+      .mobile-component-container {
+        /* Ensure stable interaction during keyboard transitions */
+        touch-action: manipulation;
+        /* Prevent accidental backdrop clicks */
+        isolation: isolate;
+      }
+
+      /* Prevent keyboard-triggered viewport changes from affecting card state */
+      .mobile-component-container * {
+        /* Maintain stable focus */
+        -webkit-user-select: text;
+        user-select: text;
+      }
     }
 
     .android-keyboard-input input,
@@ -784,7 +807,11 @@
       min-height: calc(100vh - 120px); /* Account for header */
     }
 
-    /* Mobile-specific optimizations for ProfileTabs inputs */
+    /* Mobile-specific optimizations for Dashboard inputs */
+    .mobile-component-container input,
+    .mobile-component-container textarea,
+    .mobile-component-container select,
+    .mobile-component-container [data-radix-select-trigger],
     .mobile-utility-page-content input,
     .mobile-utility-page-content textarea,
     .mobile-utility-page-content select,
@@ -799,6 +826,10 @@
       user-select: text !important;
       /* Prevent zoom on iOS */
       font-size: 16px !important;
+      /* Maintain focus during keyboard transitions */
+      -webkit-tap-highlight-color: transparent;
+      /* Prevent layout shifts */
+      box-sizing: border-box;
     }
 
     /* No custom focus styles - use browser defaults like CreateRafflePage */

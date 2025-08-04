@@ -5,7 +5,7 @@
  * Replaces the complex mobile/desktop dual rendering system.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '../../lib/utils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import DashboardCard from './DashboardCard';
@@ -20,9 +20,13 @@ const UnifiedDashboardGrid = ({
   ...props 
 }) => {
   const { isMobile, isTablet, isDesktop } = useMobileBreakpoints();
-  
-  // Single state management for all platforms
+
+  // Single state management for all platforms - use ref to persist across re-renders
   const [expandedCard, setExpandedCard] = useState(null);
+  const expandedCardRef = useRef(expandedCard);
+
+  // Update ref when state changes
+  expandedCardRef.current = expandedCard;
 
   // Dashboard components configuration
   const dashboardComponents = [
@@ -60,13 +64,11 @@ const UnifiedDashboardGrid = ({
     }
   ];
 
-  // Handle card expansion - only one card can be expanded at a time on mobile
+  // Handle card expansion - stable state management
   const handleCardToggle = (cardId) => {
-    if (isMobile) {
-      // On mobile, only allow one card to be expanded at a time
-      setExpandedCard(expandedCard === cardId ? null : cardId);
-    }
-    // On desktop/tablet, cards manage their own state independently
+    // Always allow toggling the clicked card, regardless of platform
+    // This prevents auto-closing when mobile state changes
+    setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
   // Determine grid layout based on screen size
@@ -117,7 +119,9 @@ const UnifiedDashboardGrid = ({
             description={component.description}
             icon={component.icon}
             component={component.component}
-            defaultExpanded={!isMobile && expandedCard === component.id}
+            // Always use external state management to prevent auto-close
+            isExpanded={expandedCard === component.id}
+            onToggle={() => handleCardToggle(component.id)}
             className={cn(
               // Responsive card styling
               isMobile && [
@@ -128,11 +132,6 @@ const UnifiedDashboardGrid = ({
               // Desktop/tablet styling
               !isMobile && "h-fit"
             )}
-            // Mobile-specific expansion handling
-            {...(isMobile && {
-              isExpanded: expandedCard === component.id,
-              onToggle: () => handleCardToggle(component.id)
-            })}
           />
         ))}
       </div>

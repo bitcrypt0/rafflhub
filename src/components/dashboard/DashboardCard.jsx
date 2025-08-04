@@ -11,20 +11,29 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 
-const DashboardCard = ({ 
+const DashboardCard = ({
   title,
   description,
   icon,
   component: Component,
   defaultExpanded = false,
   className = '',
-  ...props 
+  // External state management props to prevent auto-close
+  isExpanded: externalIsExpanded,
+  onToggle: externalOnToggle,
+  ...props
 }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  // Use external state if provided, otherwise use internal state
+  const [internalIsExpanded, setInternalIsExpanded] = useState(defaultExpanded);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const { isMobile, isTablet } = useMobileBreakpoints();
 
   const handleToggle = () => {
-    setIsExpanded(!isExpanded);
+    if (externalOnToggle) {
+      externalOnToggle();
+    } else {
+      setInternalIsExpanded(!internalIsExpanded);
+    }
   };
 
   return (

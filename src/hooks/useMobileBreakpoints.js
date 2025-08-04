@@ -33,6 +33,19 @@ export const useMobileBreakpoints = () => {
   useEffect(() => {
     const updateBreakpoints = () => {
       const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // Detect if this is likely a keyboard-triggered resize on mobile
+      const isLikelyKeyboardResize = breakpoints.isMobile &&
+        Math.abs(width - breakpoints.screenWidth) < 50 && // Width didn't change much
+        Math.abs(height - window.screen.height) > 200; // But height changed significantly
+
+      // Skip updates if this looks like a keyboard resize to prevent auto-close
+      if (isLikelyKeyboardResize) {
+        console.log('Skipping breakpoint update - likely keyboard resize');
+        return;
+      }
+
       const newBreakpoints = {
         isMobile: width < 768,
         isTablet: width >= 768 && width < 1024,
@@ -46,8 +59,10 @@ export const useMobileBreakpoints = () => {
       if (width < 768) {
         console.log('Mobile detected:', {
           width,
+          height,
           userAgent: navigator.userAgent,
-          touchDevice: newBreakpoints.isTouchDevice
+          touchDevice: newBreakpoints.isTouchDevice,
+          isKeyboardResize: isLikelyKeyboardResize
         });
       }
 
@@ -57,11 +72,20 @@ export const useMobileBreakpoints = () => {
     // Ensure we have the correct initial state
     updateBreakpoints();
 
-    // Listen for resize events
-    window.addEventListener('resize', updateBreakpoints);
+    // Listen for resize events with debouncing to reduce keyboard-triggered updates
+    let resizeTimeout;
+    const debouncedUpdate = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateBreakpoints, 150); // Debounce resize events
+    };
 
-    return () => window.removeEventListener('resize', updateBreakpoints);
-  }, []);
+    window.addEventListener('resize', debouncedUpdate);
+
+    return () => {
+      window.removeEventListener('resize', debouncedUpdate);
+      clearTimeout(resizeTimeout);
+    };
+  }, [breakpoints.isMobile, breakpoints.screenWidth]);
 
   return breakpoints;
 };
