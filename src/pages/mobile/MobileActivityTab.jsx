@@ -70,12 +70,12 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
 
   if (!activities || activities.length === 0) {
     return (
-      <div className="p-3">
-        <div className="text-center py-6">
-          <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-sm font-semibold mb-1">No Activity Yet</h3>
-          <p className="text-muted-foreground text-xs">
-            Activity will appear here once you participate.
+      <div className="p-6">
+        <div className="text-center py-12">
+          <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+          <p className="text-muted-foreground text-sm">
+            Activity will appear here once you participate in raffles.
           </p>
         </div>
       </div>
@@ -83,41 +83,41 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
   }
 
   return (
-    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
-      {activities.slice(0, 5).map((activity) => (
+    <div className="p-6 space-y-4">
+      {activities.slice(0, 8).map((activity) => (
         <div
           key={activity.id}
-          className="bg-muted/30 border border-border/50 rounded-lg p-3 hover:bg-muted/50 transition-colors"
+          className="bg-muted/30 border border-border/50 rounded-lg p-4 hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-3">
             {/* Activity Icon */}
-            <div className="flex-shrink-0 mt-0.5">
+            <div className="flex-shrink-0 mt-1">
               {getActivityIcon(activity.type)}
             </div>
 
             {/* Activity Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-1">
+              <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-foreground text-xs">
+                  <h4 className="font-medium text-foreground text-sm">
                     {getActivityTitle(activity)}
                   </h4>
-                  <p className="text-muted-foreground text-xs mt-0.5 truncate">
+                  <p className="text-muted-foreground text-sm mt-1">
                     {getActivityDescription(activity)}
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground flex-shrink-0">
+                <span className="text-sm text-muted-foreground flex-shrink-0">
                   {formatDate(activity.timestamp)}
                 </span>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => handleRaffleClick(activity.raffleAddress)}
-                  className="text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
+                  className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
                 >
-                  View
+                  View Raffle
                 </button>
 
                 {activity.type === 'ticket_purchase' && activity.state === 'ended' && (

@@ -136,51 +136,63 @@ const MobileProfilePage = () => {
             </div>
           </div>
         ) : (
-          <div ref={gridRef} className="grid grid-cols-2 gap-3">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const Component = tab.component;
-              const isActive = activeTab === tab.id;
+          <div ref={gridRef} className="space-y-3">
+            {/* Tab Navigation Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
 
-              return (
-                <div
-                  key={tab.id}
-                  className={`
-                    bg-card border rounded-lg transition-all duration-200 overflow-hidden
-                    ${isActive
-                      ? 'border-primary shadow-md ring-1 ring-primary/20'
-                      : 'border-border hover:border-primary/50'
-                    }
-                  `}
-                >
-                  {/* Tab Header */}
+                return (
                   <button
-                    onClick={() => setActiveTab(isActive ? null : tab.id)} // Toggle tab on click
+                    key={tab.id}
+                    onClick={() => setActiveTab(isActive ? null : tab.id)}
                     className={`
-                      w-full p-3 flex items-center gap-2 transition-colors
+                      p-4 bg-card border rounded-lg transition-all duration-200
+                      flex items-center gap-3 text-left
                       ${isActive
-                        ? 'bg-primary/5 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        ? 'border-primary shadow-md ring-1 ring-primary/20 bg-primary/5'
+                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
                       }
                     `}
                   >
-                    <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                    <span className={`text-sm font-medium ${isActive ? 'text-primary' : ''}`}>
+                    <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>
                       {tab.label}
                     </span>
                   </button>
+                );
+              })}
+            </div>
 
-                  {/* Tab Content */}
-                  {isActive && (
-                    <div className="border-t border-border">
-                      <div className="max-h-96 overflow-y-auto">
-                        <Component {...(tab.props || {})} />
-                      </div>
-                    </div>
-                  )}
+            {/* Active Tab Content - Full Width */}
+            {activeTab && (
+              <div className="bg-card border border-primary/20 rounded-lg shadow-sm overflow-hidden">
+                <div className="border-b border-border bg-primary/5 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const activeTabData = tabs.find(tab => tab.id === activeTab);
+                      const Icon = activeTabData?.icon;
+                      return (
+                        <>
+                          <Icon className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-primary">
+                            {activeTabData?.label}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
-              );
-            })}
+                <div className="min-h-[200px] max-h-[70vh] overflow-y-auto">
+                  {(() => {
+                    const activeTabData = tabs.find(tab => tab.id === activeTab);
+                    const Component = activeTabData?.component;
+                    return Component ? <Component {...(activeTabData.props || {})} /> : null;
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

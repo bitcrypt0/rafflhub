@@ -77,18 +77,18 @@ const MobileCreatedRafflesTab = ({
 
   if (!raffles || raffles.length === 0) {
     return (
-      <div className="p-3">
-        <div className="text-center py-6">
-          <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-sm font-semibold mb-1">No Raffles Created</h3>
-          <p className="text-muted-foreground text-xs mb-4">
-            Create your first raffle to start earning revenue.
+      <div className="p-6">
+        <div className="text-center py-12">
+          <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Raffles Created</h3>
+          <p className="text-muted-foreground text-sm mb-6">
+            Create your first raffle to start earning revenue and building your community.
           </p>
           <button
             onClick={handleCreateRaffle}
-            className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+            className="bg-primary text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
           >
-            Create Raffle
+            Create Your First Raffle
           </button>
         </div>
       </div>
@@ -96,26 +96,26 @@ const MobileCreatedRafflesTab = ({
   }
 
   return (
-    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+    <div className="p-6 space-y-4">
       {/* Create New Raffle Button */}
       <button
         onClick={handleCreateRaffle}
-        className="w-full bg-primary text-white p-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
+        className="w-full bg-primary text-white p-4 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
       >
-        <Plus className="h-3 w-3" />
-        Create New
+        <Plus className="h-4 w-4" />
+        Create New Raffle
       </button>
 
       {/* Raffles List */}
-      {raffles.slice(0, 3).map((raffle) => (
+      {raffles.slice(0, 5).map((raffle) => (
         <div
           key={raffle.address}
-          className="bg-muted/30 border border-border/50 rounded-lg p-3"
+          className="bg-muted/30 border border-border/50 rounded-lg p-4"
         >
           {/* Header */}
-          <div className="flex items-start justify-between gap-1 mb-2">
+          <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground text-xs truncate">
+              <h4 className="font-medium text-foreground text-sm">
                 {raffle.name}
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">

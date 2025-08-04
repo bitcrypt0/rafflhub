@@ -81,7 +81,8 @@ const CreateRaffleSideFilterBar = ({
 
   // Conditional visibility logic (maintaining existing behavior)
   const showNftConfiguration = raffleType === 'NFTDrop' || raffleType === 'Lucky Sale/NFT Giveaway';
-  const showCollectionSource = showNftConfiguration;
+  // Collection source options should only show for NFTDrop, not for Lucky Sale/NFT Giveaway
+  const showCollectionSource = raffleType === 'NFTDrop';
 
   // Render filter section (like LandingPage structure)
   const renderFilterSection = useCallback((title, category, options, currentValue, onChange, isDisabled = false) => {

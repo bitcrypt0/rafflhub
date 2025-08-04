@@ -60,39 +60,39 @@ const MobileDashboardTab = ({ creatorStats }) => {
   };
 
   return (
-    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+    <div className="p-6 space-y-4">
       {/* Creator Stats Accordion */}
       <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg border border-border/50 overflow-hidden">
         <button
           onClick={() => toggleSection('stats')}
-          className="w-full flex items-center justify-between p-3 hover:bg-primary/5 transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <h3 className="text-xs font-semibold text-foreground">Creator Stats</h3>
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Creator Stats</h3>
           </div>
           {expandedSections.stats ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <ChevronUp className="h-5 w-5 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
           )}
         </button>
 
         {expandedSections.stats && (
-          <div className="px-3 pb-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center">
-                <div className="text-lg font-bold text-foreground mb-0.5">
+          <div className="px-4 pb-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-background/50 rounded-lg">
+                <div className="text-2xl font-bold text-foreground mb-1">
                   {creatorStats.totalRaffles}
                 </div>
-                <div className="text-xs text-muted-foreground">Raffles</div>
+                <div className="text-sm text-muted-foreground">Raffles Created</div>
               </div>
 
-              <div className="text-center">
-                <div className="text-lg font-bold text-foreground mb-0.5">
+              <div className="text-center p-3 bg-background/50 rounded-lg">
+                <div className="text-2xl font-bold text-foreground mb-1">
                   {parseFloat(creatorStats.totalRevenue).toFixed(2)}
                 </div>
-                <div className="text-xs text-muted-foreground">ETH Revenue</div>
+                <div className="text-sm text-muted-foreground">ETH Revenue</div>
               </div>
             </div>
           </div>
@@ -103,22 +103,22 @@ const MobileDashboardTab = ({ creatorStats }) => {
       <div className="bg-card border border-border/50 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection('utilities')}
-          className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary" />
-            <h3 className="text-xs font-semibold text-foreground">Utilities</h3>
+          <div className="flex items-center gap-3">
+            <Settings className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Utilities</h3>
           </div>
           {expandedSections.utilities ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <ChevronUp className="h-5 w-5 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
           )}
         </button>
 
         {expandedSections.utilities && (
-          <div className="px-3 pb-3">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="px-4 pb-4">
+            <div className="grid grid-cols-1 gap-3">
               {utilities.map((utility) => {
                 const Icon = utility.icon;
 
@@ -126,24 +126,23 @@ const MobileDashboardTab = ({ creatorStats }) => {
                   <button
                     key={utility.id}
                     onClick={() => handleUtilityClick(utility.path)}
-                    className="group relative overflow-hidden bg-muted/20 border border-border/30 rounded-lg p-2 hover:shadow-sm transition-all duration-200 text-left"
+                    className="group relative overflow-hidden bg-muted/20 border border-border/30 rounded-lg p-4 hover:shadow-md transition-all duration-200 text-left"
                   >
                     {/* Background Gradient */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${utility.color} opacity-0 group-hover:opacity-10 transition-opacity duration-200`} />
 
                     {/* Content */}
                     <div className="relative">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={`p-1 rounded bg-gradient-to-br ${utility.color} text-white`}>
-                          <Icon className="h-3 w-3" />
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`p-2 rounded-lg bg-gradient-to-br ${utility.color} text-white`}>
+                          <Icon className="h-4 w-4" />
                         </div>
+                        <h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
+                          {utility.title}
+                        </h4>
                       </div>
 
-                      <h4 className="font-medium text-foreground text-xs mb-0.5 group-hover:text-primary transition-colors">
-                        {utility.title}
-                      </h4>
-
-                      <p className="text-xs text-muted-foreground leading-tight">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {utility.description}
                       </p>
                     </div>
