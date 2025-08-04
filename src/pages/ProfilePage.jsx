@@ -13,6 +13,8 @@ import { PageContainer } from '../components/Layout';
 import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useProfileData } from '../hooks/useProfileData';
+import MobileProfilePage from './mobile/MobileProfilePage';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -351,6 +353,22 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
 };
 
 const ProfilePage = () => {
+  const { isMobile } = useMobileBreakpoints();
+
+  // Use stable mobile detection to prevent switching between implementations
+  const [isMobileStable] = useState(isMobile);
+
+  // Route to mobile implementation for mobile devices
+  if (isMobileStable) {
+    return <MobileProfilePage />;
+  }
+
+  // Desktop/Tablet implementation continues below
+  return <DesktopProfilePage />;
+};
+
+// Desktop/Tablet ProfilePage implementation (original)
+const DesktopProfilePage = () => {
   const { connected, address, provider, chainId } = useWallet();
   const { contracts, getContractInstance, executeTransaction, executeCall } = useContract();
   const navigate = useNavigate();
