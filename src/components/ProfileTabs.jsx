@@ -108,34 +108,15 @@ const ProfileTabs = ({
     }
   }, [isMobile, mobileActivePage]);
 
-  // Enhanced mobile full-page utility component with keyboard support
+  // Simplified mobile full-page utility component
   const MobileUtilityPage = ({ utilityKey }) => {
     const utility = mobileUtilities.find(u => u.key === utilityKey);
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     if (!utility) return null;
 
     const UtilityComponent = utility.component;
 
-    // Listen for keyboard state changes
-    useEffect(() => {
-      const handleKeyboardChange = (event) => {
-        setKeyboardVisible(event.detail.visible);
-      };
 
-      window.addEventListener('keyboardStateChange', handleKeyboardChange);
-      return () => window.removeEventListener('keyboardStateChange', handleKeyboardChange);
-    }, []);
-
-    // Notify keyboard fix that a mobile page is open
-    useEffect(() => {
-      const { setModalOpen } = require('../utils/androidKeyboardFix');
-      setModalOpen(true);
-
-      return () => {
-        setModalOpen(false);
-      };
-    }, []);
 
     return (
       <div className="fixed inset-0 z-50 bg-background">
@@ -159,32 +140,14 @@ const ProfileTabs = ({
           <div className="w-16"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Mobile Content - Keyboard aware */}
-        <div
-          className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${
-            keyboardVisible ? 'pb-2' : 'pb-4'
-          }`}
-          style={{
-            // Adjust height when keyboard is visible
-            height: keyboardVisible
-              ? `calc(100vh - 80px - var(--keyboard-height, 300px))`
-              : 'calc(100vh - 80px)',
-            WebkitOverflowScrolling: 'touch'
-          }}
-        >
+        {/* Mobile Content */}
+        <div className="flex-1 overflow-y-auto p-4">
           <div className="mb-4">
             <p className="text-sm text-muted-foreground">{utility.description}</p>
           </div>
 
-          {/* Render the utility component with keyboard-aware container */}
-          <div
-            className="mobile-utility-page-content"
-            style={{
-              // Ensure content is accessible when keyboard is open
-              minHeight: keyboardVisible ? 'auto' : '100%',
-              paddingBottom: keyboardVisible ? '1rem' : '2rem'
-            }}
-          >
+          {/* Render the utility component */}
+          <div className="mobile-utility-page-content">
             <UtilityComponent />
           </div>
         </div>
