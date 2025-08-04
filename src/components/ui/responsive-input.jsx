@@ -58,18 +58,15 @@ const ResponsiveInput = React.forwardRef(({
         
         className
       )}
-      // Mobile-specific attributes to prevent unwanted behaviors
-      {...(isMobile && {
-        autoComplete: "off",
-        autoCorrect: "off",
-        autoCapitalize: "off",
-        spellCheck: false,
-        // Prevent zoom on focus for Android
-        style: {
-          fontSize: '16px',
-          ...props.style
-        }
-      })}
+      // Always apply mobile-friendly attributes (safe for all platforms)
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
+      style={{
+        fontSize: isMobile ? '16px' : undefined,
+        ...props.style
+      }}
       {...props}
     />
   );
@@ -121,17 +118,15 @@ export const ResponsiveTextarea = React.forwardRef(({
         
         className
       )}
-      // Mobile-specific attributes
-      {...(isMobile && {
-        autoComplete: "off",
-        autoCorrect: "off",
-        autoCapitalize: "off",
-        spellCheck: false,
-        style: {
-          fontSize: '16px',
-          ...props.style
-        }
-      })}
+      // Always apply mobile-friendly attributes (safe for all platforms)
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
+      style={{
+        fontSize: isMobile ? '16px' : undefined,
+        ...props.style
+      }}
       {...props}
     />
   );
@@ -173,11 +168,9 @@ export const ResponsiveNumberInput = React.forwardRef(({
         "[&::-webkit-inner-spin-button]:appearance-none",
         className
       )}
-      // Mobile-specific: Use numeric keypad
-      {...(isMobile && {
-        inputMode: "decimal",
-        pattern: "[0-9]*"
-      })}
+      // Mobile-friendly numeric input attributes (safe for all platforms)
+      inputMode={isMobile ? "decimal" : undefined}
+      pattern={isMobile ? "[0-9]*" : undefined}
       {...props}
     />
   );
