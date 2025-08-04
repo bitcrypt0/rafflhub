@@ -3,6 +3,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { toast } from '../components/ui/sonner';
+import { getTicketsSoldCount } from '../utils/contractCallUtils';
 
 /**
  * Shared data hook for ProfilePage (both desktop and mobile)
@@ -313,11 +314,10 @@ export const useProfileData = () => {
             if (!raffleContract) continue;
 
             // Use desktop approach for contract calls
-            const [nameResult, ticketPriceResult, ticketLimitResult, participantsCountResult, startTimeResult, durationResult, stateResult] = await Promise.all([
+            const [nameResult, ticketPriceResult, ticketLimitResult, startTimeResult, durationResult, stateResult] = await Promise.all([
               executeCall(raffleContract.name),
               executeCall(raffleContract.ticketPrice),
               executeCall(raffleContract.ticketLimit),
-              executeCall(raffleContract.getParticipantsCount),
               executeCall(raffleContract.startTime),
               executeCall(raffleContract.duration),
               executeCall(raffleContract.state)
@@ -326,15 +326,17 @@ export const useProfileData = () => {
             const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
             const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
             const ticketLimit = ticketLimitResult.success ? ticketLimitResult.result : ethers.BigNumber.from(0);
-            const participantsCount = participantsCountResult.success ? participantsCountResult.result : ethers.BigNumber.from(0);
             const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
             const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
             const state = stateResult.success ? stateResult.result : 0;
 
-            // Calculate end time and tickets sold
+            // Use fallback approach for tickets sold count (same as RaffleDetailPage)
+            const ticketsSoldCount = await getTicketsSoldCount(raffleContract);
+            const ticketsSold = ethers.BigNumber.from(ticketsSoldCount);
+
+            // Calculate end time and revenue
             const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
-            const ticketsSold = participantsCount;
-            const revenue = ticketPrice.mul ? ticketPrice.mul(ticketsSold) : ethers.BigNumber.from(0);
+            const revenue = ticketPrice.mul && ticketsSoldCount > 0 ? ticketPrice.mul(ticketsSold) : ethers.BigNumber.from(0);
 
             raffles.push({
               address: raffleAddress,

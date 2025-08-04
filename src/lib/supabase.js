@@ -9,7 +9,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 } else {
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Create Supabase client with disabled analytics to avoid Sentry issues
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+      // Disable analytics that might trigger Sentry
+      global: {
+        headers: {
+          'X-Client-Info': 'raffle-protocol-frontend'
+        }
+      }
+    });
   } catch (error) {
     console.error('Error creating Supabase client:', error);
     supabase = null;

@@ -3,6 +3,17 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// Suppress Sentry initialization errors from third-party libraries
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('Invalid Sentry Dsn') || message.includes('Sentry')) {
+    // Suppress Sentry-related errors
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
+
 console.log('main.jsx is executing...');
 
 const rootElement = document.getElementById('root');

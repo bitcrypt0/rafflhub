@@ -5,6 +5,7 @@ import { useWallet } from '../../../contexts/WalletContext';
 import { useContract } from '../../../contexts/ContractContext';
 import { toast } from '../../../components/ui/sonner';
 import { ethers } from 'ethers';
+import { getTicketsSoldCount } from '../../../utils/contractCallUtils';
 
 /**
  * Mobile-specific Revenue Withdrawal Page
@@ -47,15 +48,17 @@ const MobileRevenuePage = () => {
         return;
       }
 
-      const [name, creator, ticketPrice, ticketsSold, state, endTime] = await Promise.all([
+      const [name, creator, ticketPrice, state, endTime] = await Promise.all([
         executeCall(contract, 'name', []).catch(() => 'Unknown Raffle'),
         executeCall(contract, 'creator', []).catch(() => ''),
         executeCall(contract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-        executeCall(contract, 'ticketsSold', []).catch(() => ethers.BigNumber.from(0)),
         executeCall(contract, 'state', []).catch(() => 0),
         executeCall(contract, 'endTime', []).catch(() => ethers.BigNumber.from(0))
       ]);
 
+      // Use fallback approach for tickets sold count (same as RaffleDetailPage)
+      const ticketsSoldCount = await getTicketsSoldCount(contract);
+      const ticketsSold = ethers.BigNumber.from(ticketsSoldCount);
       const revenue = ticketPrice.mul(ticketsSold);
       const isCreator = creator.toLowerCase() === address.toLowerCase();
 
@@ -116,13 +119,15 @@ const MobileRevenuePage = () => {
           const creator = await executeCall(raffleContract, 'creator', []).catch(() => '');
           
           if (creator.toLowerCase() === address.toLowerCase()) {
-            const [name, ticketPrice, ticketsSold, state] = await Promise.all([
+            const [name, ticketPrice, state] = await Promise.all([
               executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
               executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'ticketsSold', []).catch(() => ethers.BigNumber.from(0)),
               executeCall(raffleContract, 'state', []).catch(() => 0)
             ]);
 
+            // Use fallback approach for tickets sold count (same as RaffleDetailPage)
+            const ticketsSoldCount = await getTicketsSoldCount(raffleContract);
+            const ticketsSold = ethers.BigNumber.from(ticketsSoldCount);
             const revenue = ticketPrice.mul(ticketsSold);
             const canWithdraw = state === 3 || state === 4; // completed or allPrizesClaimed
 

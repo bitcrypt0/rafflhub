@@ -11,6 +11,7 @@ import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useRaffleService } from '../hooks/useRaffleService';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
 import { PageLoading, CardSkeleton } from '../components/ui/loading';
+import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
 import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
@@ -131,23 +132,8 @@ const RaffleCard = ({ raffle }) => {
           if (isMounted) setTicketsSold(null);
           return;
         }
-        let count = 0;
-        try {
-          const participantsCount = await raffleContract.getParticipantsCount();
-          count = participantsCount.toNumber();
-        } catch (error) {
-          // Fallback: count participants by iterating
-          let index = 0;
-          while (true) {
-            try {
-              await raffleContract.participants(index);
-              count++;
-              index++;
-            } catch {
-              break;
-            }
-          }
-        }
+        // Use the same fallback approach as RaffleDetailPage and ProfilePage
+        const count = await getTicketsSoldCount(raffleContract);
         if (isMounted) setTicketsSold(count);
       } catch (e) {
         if (isMounted) setTicketsSold(null);

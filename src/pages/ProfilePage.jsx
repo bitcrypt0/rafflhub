@@ -14,6 +14,7 @@ import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
+import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import MobileProfilePage from './mobile/MobileProfilePage';
 
 function mapRaffleState(stateNum) {
@@ -771,21 +772,20 @@ const DesktopProfilePage = () => {
         
         if (raffleContract) {
           try {
-            const [name, startTime, duration, ticketLimit, ticketPrice, state, isExternallyPrized, participantsCount] = await Promise.all([
+            const [name, startTime, duration, ticketLimit, ticketPrice, state, isExternallyPrized] = await Promise.all([
               executeCall(raffleContract.name),
               executeCall(raffleContract.startTime),
               executeCall(raffleContract.duration),
               executeCall(raffleContract.ticketLimit),
               executeCall(raffleContract.ticketPrice),
               executeCall(raffleContract.state),
-              executeCall(raffleContract.isExternallyPrized),
-              executeCall(raffleContract.getParticipantsCount)
+              executeCall(raffleContract.isExternallyPrized)
             ]);
 
-            // Calculate tickets sold and total revenue
-            const ticketsSold = participantsCount.success ? participantsCount.result.toNumber() : 0;
-            const totalRevenue = ticketPrice.success && participantsCount.success ?
-              ticketPrice.result.mul(participantsCount.result) : ethers.BigNumber.from(0);
+            // Use fallback approach for tickets sold count (same as RaffleDetailPage)
+            const ticketsSold = await getTicketsSoldCount(raffleContract);
+            const totalRevenue = ticketPrice.success && ticketsSold > 0 ?
+              ticketPrice.result.mul(ethers.BigNumber.from(ticketsSold)) : ethers.BigNumber.from(0);
 
             if (name.success) {
               const raffleData = {

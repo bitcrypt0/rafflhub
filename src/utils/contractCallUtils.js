@@ -251,3 +251,37 @@ export const createSafeMethod = (contract, methodName, fallbackValue = null) => 
 
   return (...args) => contract[methodName](...args);
 };
+
+/**
+ * Get tickets sold count with fallback approach (same as RaffleDetailPage)
+ * First tries getParticipantsCount(), then falls back to iterating participants
+ */
+export const getTicketsSoldCount = async (raffleContract) => {
+  if (!raffleContract) {
+    return 0;
+  }
+
+  try {
+    // First try the direct method
+    const participantsCount = await raffleContract.getParticipantsCount();
+    return participantsCount.toNumber();
+  } catch (error) {
+    // Fallback: iterate through participants array
+    console.warn('getParticipantsCount failed, using fallback method:', error.message);
+    let ticketsSold = 0;
+    let index = 0;
+
+    while (true) {
+      try {
+        await raffleContract.participants(index);
+        ticketsSold++;
+        index++;
+      } catch {
+        // When participants(index) fails, we've reached the end
+        break;
+      }
+    }
+
+    return ticketsSold;
+  }
+};
