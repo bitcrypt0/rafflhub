@@ -22,9 +22,12 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
   };
 
   const getActivityTitle = (activity) => {
+    const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+    const quantity = activity.quantity || activity.ticketCount || 1;
+
     switch (activity.type) {
       case 'ticket_purchase':
-        return `Purchased ${activity.ticketCount} ticket${activity.ticketCount > 1 ? 's' : ''}`;
+        return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
       case 'prize_won':
         return 'Won Prize!';
       case 'refund_claimed':
@@ -35,15 +38,16 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
   };
 
   const getActivityDescription = (activity) => {
+    const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
     switch (activity.type) {
       case 'ticket_purchase':
-        return `${activity.raffleName} • ${activity.amount} ETH`;
+        return `${activity.amount} ETH`;
       case 'prize_won':
-        return `${activity.raffleName} • Congratulations!`;
+        return `${raffleName} • Congratulations!`;
       case 'refund_claimed':
-        return `${activity.raffleName} • ${activity.amount} ETH`;
+        return `${raffleName} • ${activity.amount} ETH`;
       default:
-        return activity.raffleName;
+        return raffleName;
     }
   };
 

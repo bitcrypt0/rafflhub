@@ -75,14 +75,14 @@ const MobileTicketsTab = ({ tickets, claimRefund }) => {
     <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
       {tickets.slice(0, 3).map((ticket) => (
         <div
-          key={ticket.raffleAddress}
+          key={ticket.address || ticket.raffleAddress}
           className="bg-muted/30 border border-border/50 rounded-lg p-3"
         >
           {/* Header */}
           <div className="flex items-start justify-between gap-1 mb-2">
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-foreground text-xs truncate">
-                {ticket.raffleName}
+                {ticket.name || ticket.raffleName || `Raffle ${ticket.address?.slice(0, 8)}...`}
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Ends: {formatDate(ticket.endTime)}
@@ -133,7 +133,7 @@ const MobileTicketsTab = ({ tickets, claimRefund }) => {
           {/* Action Buttons */}
           <div className="flex gap-1">
             <button
-              onClick={() => handleRaffleClick(ticket.raffleAddress)}
+              onClick={() => handleRaffleClick(ticket.address || ticket.raffleAddress)}
               className="flex-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
             >
               View
@@ -141,7 +141,7 @@ const MobileTicketsTab = ({ tickets, claimRefund }) => {
 
             {ticket.state === 'ended' && (
               <button
-                onClick={() => handleClaimRefund(ticket.raffleAddress)}
+                onClick={() => handleClaimRefund(ticket.address || ticket.raffleAddress)}
                 className="flex-1 text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors flex items-center justify-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />

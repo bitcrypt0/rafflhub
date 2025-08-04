@@ -62,7 +62,9 @@ const ActivityCard = ({ activity }) => {
   const getActivityDescription = () => {
     switch (activity.type) {
       case 'ticket_purchase':
-        return `Purchased ${activity.quantity} ticket(s) for ${activity.raffleName}`;
+        const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+        const quantity = activity.quantity || 1;
+        return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
       case 'raffle_created':
         return `Created raffle "${activity.raffleName}"`;
       case 'raffle_deleted':
@@ -94,8 +96,13 @@ const ActivityCard = ({ activity }) => {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium">{getActivityDescription()}</p>
+          {activity.type === 'ticket_purchase' && activity.amount && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              {activity.amount} ETH
+            </p>
+          )}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {new Date(activity.timestamp * 1000).toLocaleDateString()}
+            {activity.timestamp ? new Date(activity.timestamp * 1000).toLocaleDateString() : 'Unknown date'}
           </p>
           {activity.txHash && (
             <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
@@ -533,9 +540,11 @@ const DesktopProfilePage = () => {
                     activities.push({
                       type: 'ticket_purchase',
                       raffleAddress: raffleAddress,
-                      raffleName: name.result,
+                      raffleName: name.success ? name.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
                       quantity: quantity,
+                      amount: ethers.utils.formatEther(totalCost),
                       totalCost: totalCost,
+                      timestamp: (await provider.getBlock(ticketEvent.blockNumber)).timestamp,
                       purchaseDate: (await provider.getBlock(ticketEvent.blockNumber)).timestamp,
                       isWinner: isWinner.success ? isWinner.result : false,
                       raffleState: mappedState,
