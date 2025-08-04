@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
-import AndroidKeyboardInput from './mobile/AndroidKeyboardInput';
+import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 
 const CreateNewTokenIDComponent = () => {
   const { connected, address } = useWallet();
@@ -139,21 +139,16 @@ const CreateNewTokenIDComponent = () => {
   };
 
   return (
-    <div className={`bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg ${isMobile ? 'p-4' : 'p-6'}`}>
-      <div className="space-y-6">
+    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
         {/* Collection Lookup Section */}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">Collection Address</label>
-            <AndroidKeyboardInput>
-              <input
-                type="text"
-                value={collectionData.address}
-                onChange={(e) => handleChange('address', e.target.value)}
-                className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
-                placeholder="0x..."
-              />
-            </AndroidKeyboardInput>
+            <ResponsiveAddressInput
+              value={collectionData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              placeholder="0x..."
+            />
           </div>
 
           <button
@@ -197,16 +192,12 @@ const CreateNewTokenIDComponent = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium mb-2">Token ID</label>
-                <AndroidKeyboardInput>
-                  <input
-                    type="number"
-                    min="0"
-                    value={collectionData.tokenId}
-                    onChange={(e) => handleChange('tokenId', e.target.value)}
-                    className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
-                    placeholder="0"
-                  />
-                </AndroidKeyboardInput>
+                <ResponsiveNumberInput
+                  min="0"
+                  value={collectionData.tokenId}
+                  onChange={(e) => handleChange('tokenId', e.target.value)}
+                  placeholder="0"
+                />
                 <p className="text-xs text-muted-foreground mt-1">
                   Unique identifier for the new token
                 </p>
@@ -214,16 +205,12 @@ const CreateNewTokenIDComponent = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Max Supply</label>
-                <AndroidKeyboardInput>
-                  <input
-                    type="number"
-                    min="1"
-                    value={collectionData.maxSupply}
-                    onChange={(e) => handleChange('maxSupply', e.target.value)}
-                    className={`w-full px-3 py-2 border border-border rounded-md bg-background ${isMobile ? 'text-sm' : ''}`}
-                    placeholder="100"
-                  />
-                </AndroidKeyboardInput>
+                <ResponsiveNumberInput
+                  min="1"
+                  value={collectionData.maxSupply}
+                  onChange={(e) => handleChange('maxSupply', e.target.value)}
+                  placeholder="100"
+                />
                 <p className="text-xs text-muted-foreground mt-1">
                   Maximum number of tokens that can be minted
                 </p>
@@ -241,7 +228,6 @@ const CreateNewTokenIDComponent = () => {
             </button>
           </div>
         )}
-      </div>
     </div>
   );
 };

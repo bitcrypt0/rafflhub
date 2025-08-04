@@ -18,13 +18,11 @@ import {
   Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import RoyaltyAdjustmentComponent from './RoyaltyAdjustmentComponent';
-import MinterApprovalComponent from './MinterApprovalComponent';
-import CreatorRevenueWithdrawalComponent from './CreatorRevenueWithdrawalComponent';
-import CreateNewTokenIDComponent from './CreateNewTokenIDComponent';
+// Removed individual component imports - now handled by UnifiedDashboardGrid
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import UnifiedMobileModal from './mobile/UnifiedMobileModal';
 import { initMobileKeyboardFix, cleanupMobileKeyboardFix } from '../utils/androidKeyboardFix';
+import UnifiedDashboardGrid from './dashboard/UnifiedDashboardGrid';
 
 const ProfileTabs = ({
   activities,
@@ -54,138 +52,9 @@ const ProfileTabs = ({
     revenue: false
   });
 
-  // Mobile full-page navigation state
-  const [mobileActivePage, setMobileActivePage] = useState(null);
+  // Removed mobile utility state - now using UnifiedDashboardGrid
 
-  // Mobile utility components data
-  const mobileUtilities = [
-    {
-      key: 'royalty',
-      title: 'Royalty & Reveal',
-      description: 'Manage royalties and reveal collections',
-      icon: '👑',
-      component: RoyaltyAdjustmentComponent
-    },
-    {
-      key: 'minter',
-      title: 'Minter Approval',
-      description: 'Manage minter approvals for collections',
-      icon: '🔑',
-      component: MinterApprovalComponent
-    },
-    {
-      key: 'tokenCreator',
-      title: 'Create Token ID',
-      description: 'Add new token IDs to ERC1155 collections',
-      icon: '🆕',
-      component: CreateNewTokenIDComponent
-    },
-    {
-      key: 'revenue',
-      title: 'Revenue Withdrawal',
-      description: 'Withdraw revenue from completed raffles',
-      icon: '💰',
-      component: CreatorRevenueWithdrawalComponent
-    }
-  ];
-
-  // Mobile navigation functions
-  const openMobilePage = (pageKey) => {
-    setMobileActivePage(pageKey);
-  };
-
-  const closeMobilePage = () => {
-    setMobileActivePage(null);
-  };
-
-  // Prevent body scroll when mobile page is open
-  useEffect(() => {
-    if (isMobile && mobileActivePage) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
-    }
-  }, [isMobile, mobileActivePage]);
-
-  // Simplified mobile full-page utility component
-  const MobileUtilityPage = ({ utilityKey }) => {
-    const utility = mobileUtilities.find(u => u.key === utilityKey);
-
-    if (!utility) return null;
-
-    const UtilityComponent = utility.component;
-
-
-
-    return (
-      <div className="fixed inset-0 z-50 bg-background">
-        {/* Mobile Header - Fixed position to avoid keyboard issues */}
-        <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
-          <button
-            onClick={closeMobilePage}
-            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors min-h-[44px] min-w-[44px] justify-center"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="font-medium">Back</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{utility.icon}</span>
-            <h1 className="text-lg font-semibold">{utility.title}</h1>
-          </div>
-
-          <div className="w-16"></div> {/* Spacer for centering */}
-        </div>
-
-        {/* Mobile Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground">{utility.description}</p>
-          </div>
-
-          {/* Render the utility component */}
-          <div className="mobile-utility-page-content">
-            <UtilityComponent />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Mobile utility grid component
-  const MobileUtilityGrid = () => (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Creator Utilities</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Manage your collections, royalties, and revenue
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {mobileUtilities.map((utility) => (
-          <button
-            key={utility.key}
-            onClick={() => openMobilePage(utility.key)}
-            className="p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-all duration-200 text-left"
-          >
-            <div className="flex flex-col items-center text-center gap-2">
-              <span className="text-2xl">{utility.icon}</span>
-              <div>
-                <h4 className="font-medium text-sm leading-tight">{utility.title}</h4>
-                <p className="text-xs text-muted-foreground mt-1 leading-tight">
-                  {utility.description}
-                </p>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  // Removed MobileUtilityPage and MobileUtilityGrid - now using UnifiedDashboardGrid
 
   // Simple body scroll lock for mobile modals (no aggressive viewport manipulation)
   useEffect(() => {
@@ -441,7 +310,8 @@ const ProfileTabs = ({
   );
 
   const CreatorDashboardTab = () => (
-    <div className={`space-y-6 ${isMobile ? 'w-full overflow-hidden' : ''}`}>
+    <div className="space-y-6">
+      {/* Stats Cards - Responsive Grid */}
       <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -497,95 +367,8 @@ const ProfileTabs = ({
       </div>
 
 
-      {/* Management Components - Platform Aware */}
-      {isMobile ? (
-        /* Mobile: Full-page navigation */
-        <MobileUtilityGrid />
-      ) : (
-        /* Desktop: Modal-based interface */
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Royalty and Reveal Management</CardTitle>
-              <CardDescription>Reveal your collection and manage royalties</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MobileAwareModal
-                isOpen={modals.royalty}
-                onOpenChange={(open) => setModals(prev => ({ ...prev, royalty: open }))}
-                title="Royalty and Reveal Management"
-                trigger={
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                    Open Royalty Manager
-                  </Button>
-                }
-              >
-                <RoyaltyAdjustmentComponent />
-              </MobileAwareModal>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Minter Approval Management</CardTitle>
-              <CardDescription>Manage minter approvals for your collections</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MobileAwareModal
-                isOpen={modals.minter}
-                onOpenChange={(open) => setModals(prev => ({ ...prev, minter: open }))}
-                title="Minter Approval Management"
-                trigger={
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                    Open Minter Manager
-                  </Button>
-                }
-              >
-                <MinterApprovalComponent />
-              </MobileAwareModal>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Token ID</CardTitle>
-              <CardDescription>Add new token IDs to existing ERC1155 collections</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MobileAwareModal
-                isOpen={modals.tokenCreator}
-                onOpenChange={(open) => setModals(prev => ({ ...prev, tokenCreator: open }))}
-                title="Create New Token ID"
-                trigger={
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                    Open Token Creator
-                  </Button>
-                }
-              >
-                <CreateNewTokenIDComponent />
-              </MobileAwareModal>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Creator Revenue Withdrawal</CardTitle>
-              <CardDescription>Withdraw revenue from your raffles</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MobileAwareModal
-                isOpen={modals.revenue}
-                onOpenChange={(open) => setModals(prev => ({ ...prev, revenue: open }))}
-                title="Creator Revenue Withdrawal"
-                trigger={
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700">
-                    Open Revenue Manager
-                  </Button>
-                }
-              >
-                <CreatorRevenueWithdrawalComponent />
-              </MobileAwareModal>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Unified Dashboard Grid - Works across all platforms */}
+      <UnifiedDashboardGrid />
     </div>
   );
 
@@ -678,11 +461,6 @@ const ProfileTabs = ({
         <CreatorDashboardTab />
       </TabsContent>
     </Tabs>
-
-    {/* Mobile Full-Page Utility Overlay */}
-    {isMobile && mobileActivePage && (
-      <MobileUtilityPage utilityKey={mobileActivePage} />
-    )}
   </>
   );
 };

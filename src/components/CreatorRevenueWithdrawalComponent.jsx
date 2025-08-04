@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { toast } from './ui/sonner';
-import AndroidKeyboardInput from './mobile/AndroidKeyboardInput';
+import { ResponsiveAddressInput } from './ui/responsive-input';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
@@ -180,27 +180,18 @@ const CreatorRevenueWithdrawalComponent = () => {
                      ['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState);
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg">
-      <div className="flex items-center gap-2 mb-6">
-        <DollarSign className="h-5 w-5" />
-        <h3 className="font-semibold">Withdraw Creator Revenue</h3>
-      </div>
-
-      <div className="space-y-6">
+    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
         {/* Raffle Lookup Section */}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Raffle Contract Address</label>
             <div className="flex gap-2">
-              <AndroidKeyboardInput className="flex-1">
-                <input
-                  type="text"
-                  value={raffleData.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-border rounded-md bg-background"
-                  placeholder="0x..."
-                />
-              </AndroidKeyboardInput>
+              <ResponsiveAddressInput
+                value={raffleData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                placeholder="0x..."
+                className="flex-1"
+              />
               <button
                 onClick={() => loadRaffleInfo(raffleData.address)}
                 disabled={loadingInfo || !connected}
@@ -322,7 +313,6 @@ const CreatorRevenueWithdrawalComponent = () => {
             </p>
           </div>
         )}
-      </div>
     </div>
   );
 };

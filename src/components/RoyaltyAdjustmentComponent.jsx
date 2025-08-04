@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
-import AndroidKeyboardInput from './mobile/AndroidKeyboardInput';
+import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -178,22 +178,17 @@ const RoyaltyAdjustmentComponent = () => {
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg">
-      <div className="space-y-6">
+    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
         {/* Collection Lookup Section */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Collection Address</label>
-              <AndroidKeyboardInput>
-                <input
-                  type="text"
-                  value={collectionData.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  placeholder="0x..."
-                />
-              </AndroidKeyboardInput>
+              <ResponsiveAddressInput
+                value={collectionData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                placeholder="0x..."
+              />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Collection Type</label>
@@ -282,32 +277,24 @@ const RoyaltyAdjustmentComponent = () => {
                 <label className="block text-sm font-medium mb-1">
                   New Royalty Percentage (0-10%)
                 </label>
-                <AndroidKeyboardInput>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.01"
-                    value={collectionData.royaltyPercentage}
-                    onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    placeholder="2.5"
-                  />
-                </AndroidKeyboardInput>
+                <ResponsiveNumberInput
+                  min="0"
+                  max="10"
+                  step="0.01"
+                  value={collectionData.royaltyPercentage}
+                  onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                  placeholder="2.5"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
                   New Royalty Recipient
                 </label>
-                <AndroidKeyboardInput>
-                  <input
-                    type="text"
-                    value={collectionData.royaltyRecipient}
-                    onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    placeholder="0x..."
-                  />
-                </AndroidKeyboardInput>
+                <ResponsiveAddressInput
+                  value={collectionData.royaltyRecipient}
+                  onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                  placeholder="0x..."
+                />
               </div>
             </div>
 
@@ -330,7 +317,6 @@ const RoyaltyAdjustmentComponent = () => {
             </p>
           </div>
         )}
-      </div>
     </div>
   );
 };
