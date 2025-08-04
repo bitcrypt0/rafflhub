@@ -59,9 +59,9 @@ export const useProfileData = () => {
     }
   }, []);
 
-  // Fetch on-chain activity
+  // Fetch on-chain activity (matches desktop implementation)
   const fetchOnChainActivity = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !provider || !stableContracts.raffleFactory) {
+    if (!stableConnected || !stableAddress || !provider) {
       return;
     }
 
@@ -71,74 +71,189 @@ export const useProfileData = () => {
       let totalPrizesWon = 0;
       let totalRefundsClaimed = 0;
 
-      // Get all raffle addresses
-      const raffleCount = await executeCall(stableContracts.raffleFactory, 'getRaffleCount', []);
-      const raffleCountNum = parseInt(raffleCount.toString());
+      const currentBlock = await provider.getBlockNumber();
+      const fromBlock = Math.max(0, currentBlock - 50000); // Last 50k blocks
 
-      for (let i = 0; i < Math.min(raffleCountNum, 50); i++) {
+      console.log('Mobile: Fetching activity from block', fromBlock, 'to', currentBlock);
+
+      // 1. Fetch RaffleCreated events from RaffleDeployer (same as desktop)
+      if (stableContracts.raffleDeployer) {
         try {
-          const raffleAddress = await executeCall(stableContracts.raffleFactory, 'raffles', [i]);
-          const raffleContract = getContractInstance('raffle', raffleAddress);
+          const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
+          const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
 
-          if (!raffleContract) continue;
+          console.log('Mobile: Found', raffleCreatedEvents.length, 'RaffleCreated events for address:', stableAddress);
 
-          // Get raffle details
-          const [name, ticketPrice, ticketLimit, startTime, duration, state] = await Promise.all([
-            executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
-            executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'ticketLimit', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'state', []).catch(() => 0)
-          ]);
+          for (const event of raffleCreatedEvents) {
+            const block = await provider.getBlock(event.blockNumber);
+            try {
+              const raffleContract = getContractInstance('raffle', event.args.raffle);
+              let raffleName = `Raffle ${event.args.raffle.slice(0, 8)}...`;
 
-          // Calculate end time
-          const endTime = startTime.add(duration);
-
-          // Check if user has tickets
-          const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
-
-          if (userTicketCount.gt(0)) {
-            totalTicketsPurchased += userTicketCount.toNumber();
-            
-            activities.push({
-              id: `tickets-${raffleAddress}`,
-              type: 'ticket_purchase',
-              raffleAddress,
-              raffleName: name,
-              ticketCount: userTicketCount.toNumber(),
-              amount: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
-              timestamp: Date.now() - (i * 86400000), // Mock timestamp
-              state: mapRaffleState(state)
-            });
-
-            // Check if user won (if raffle is completed)
-            if (state >= 3) {
-              try {
-                const isWinner = await executeCall(raffleContract, 'isWinner', [stableAddress]).catch(() => false);
-                if (isWinner) {
-                  totalPrizesWon++;
-                  activities.push({
-                    id: `win-${raffleAddress}`,
-                    type: 'prize_won',
-                    raffleAddress,
-                    raffleName: name,
-                    timestamp: Date.now() - (i * 86400000) + 3600000,
-                    state: mapRaffleState(state)
-                  });
+              if (raffleContract) {
+                const nameResult = await executeCall(raffleContract, 'name', []);
+                if (nameResult) {
+                  raffleName = nameResult;
                 }
-              } catch (error) {
-                console.log('Error checking winners:', error);
               }
+
+              activities.push({
+                id: `created-${event.args.raffle}`,
+                type: 'raffle_created',
+                raffleAddress: event.args.raffle,
+                raffleName,
+                timestamp: block.timestamp * 1000,
+                blockNumber: event.blockNumber
+              });
+
+              totalRefundsClaimed++; // Count as raffle created
+            } catch (error) {
+              console.error('Mobile: Error processing RaffleCreated event:', error);
             }
           }
         } catch (error) {
-          console.log(`Error processing raffle ${i}:`, error);
+          console.error('Mobile: Error fetching RaffleCreated events:', error);
+        }
+      }
+
+      // 2. Fetch TicketsPurchased events from all raffles (same as desktop)
+      if (stableContracts.raffleManager) {
+        try {
+          const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
+          const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
+
+          console.log('Mobile: Found', raffleRegisteredEvents.length, 'registered raffles');
+
+          for (const event of raffleRegisteredEvents) {
+            const raffleAddress = event.args.raffle;
+            const raffleContract = getContractInstance('raffle', raffleAddress);
+
+            if (!raffleContract) continue;
+
+            try {
+              // Fetch ticket purchases for this raffle
+              const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(stableAddress);
+              const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
+
+              for (const ticketEvent of ticketEvents) {
+                const block = await provider.getBlock(ticketEvent.blockNumber);
+                try {
+                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
+                  const ticketPrice = await executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0));
+
+                  activities.push({
+                    id: `ticket-${ticketEvent.transactionHash}`,
+                    type: 'ticket_purchase',
+                    raffleAddress,
+                    raffleName,
+                    quantity: ticketEvent.args.quantity.toNumber(),
+                    amount: ethers.utils.formatEther(ticketPrice.mul(ticketEvent.args.quantity)),
+                    timestamp: block.timestamp * 1000,
+                    blockNumber: ticketEvent.blockNumber,
+                    transactionHash: ticketEvent.transactionHash
+                  });
+
+                  totalTicketsPurchased += ticketEvent.args.quantity.toNumber();
+                } catch (error) {
+                  console.error('Mobile: Error processing ticket event:', error);
+                }
+              }
+
+              // Fetch prize claims for this raffle
+              const prizeClaimedFilter = raffleContract.filters.PrizeClaimed(stableAddress);
+              const prizeEvents = await raffleContract.queryFilter(prizeClaimedFilter, fromBlock);
+
+              for (const prizeEvent of prizeEvents) {
+                const block = await provider.getBlock(prizeEvent.blockNumber);
+                try {
+                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
+
+                  activities.push({
+                    id: `prize-${prizeEvent.transactionHash}`,
+                    type: 'prize_claimed',
+                    raffleAddress,
+                    raffleName,
+                    tokenId: prizeEvent.args.tokenId ? prizeEvent.args.tokenId.toString() : 'N/A',
+                    timestamp: block.timestamp * 1000,
+                    blockNumber: prizeEvent.blockNumber,
+                    transactionHash: prizeEvent.transactionHash
+                  });
+
+                  totalPrizesWon++;
+                } catch (error) {
+                  console.error('Mobile: Error processing prize event:', error);
+                }
+              }
+
+              // Fetch deletion refunds for this raffle
+              const deletionRefundFilter = raffleContract.filters.DeletionRefund(stableAddress);
+              const deletionRefundEvents = await raffleContract.queryFilter(deletionRefundFilter, fromBlock);
+              for (const refundEvent of deletionRefundEvents) {
+                const block = await provider.getBlock(refundEvent.blockNumber);
+                try {
+                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
+
+                  activities.push({
+                    id: `refund-${refundEvent.transactionHash}`,
+                    type: 'refund_claimed',
+                    raffleAddress,
+                    raffleName,
+                    amount: ethers.utils.formatEther(refundEvent.args.amount),
+                    timestamp: block.timestamp * 1000,
+                    blockNumber: refundEvent.blockNumber,
+                    transactionHash: refundEvent.transactionHash
+                  });
+
+                  totalRefundsClaimed++;
+                } catch (error) {
+                  console.error('Mobile: Error processing refund event:', error);
+                }
+              }
+            } catch (error) {
+              console.error('Mobile: Error processing raffle events:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Mobile: Error fetching registered raffles:', error);
+        }
+      }
+
+      // 3. Fetch AdminWithdrawn events from RevenueManager (same as desktop)
+      if (stableContracts.revenueManager) {
+        try {
+          const adminWithdrawnFilter = stableContracts.revenueManager.filters.AdminWithdrawn(stableAddress);
+          const adminWithdrawnEvents = await stableContracts.revenueManager.queryFilter(adminWithdrawnFilter, fromBlock);
+
+          for (const event of adminWithdrawnEvents) {
+            const block = await provider.getBlock(event.blockNumber);
+            try {
+              activities.push({
+                id: `admin-${event.transactionHash}`,
+                type: 'admin_withdrawn',
+                amount: ethers.utils.formatEther(event.args.amount),
+                timestamp: block.timestamp * 1000,
+                blockNumber: event.blockNumber,
+                transactionHash: event.transactionHash
+              });
+            } catch (error) {
+              console.error('Mobile: Error processing admin withdrawal event:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Mobile: Error fetching admin withdrawal events:', error);
         }
       }
 
       // Sort activities by timestamp (newest first)
       activities.sort((a, b) => b.timestamp - a.timestamp);
+
+      console.log('Mobile: Total activities found:', activities.length);
+      console.log('Mobile: Activity breakdown:', {
+        totalTicketsPurchased,
+        totalPrizesWon,
+        totalRefundsClaimed,
+        activitiesCount: activities.length
+      });
 
       setUserActivity(activities);
       setActivityStats(prev => ({
