@@ -18,9 +18,8 @@ const MobileTokenCreatorPage = () => {
   const [formData, setFormData] = useState({
     collectionAddress: '',
     tokenId: '',
-    initialSupply: '1',
-    metadataURI: '',
-    recipientAddress: ''
+    maxSupply: '1',
+    metadataURI: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -42,24 +41,24 @@ const MobileTokenCreatorPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+
+      // Only ERC1155 supports createNewToken method
+      const contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+
       if (!contract) {
-        toast.error('Invalid collection address');
+        toast.error('Invalid ERC1155 collection address');
         return;
       }
 
       const owner = await executeCall(contract, 'owner', []).catch(() => 'Unknown');
       const name = await executeCall(contract, 'name', []).catch(() => 'Unknown Collection');
-      
-      // Check if current user is approved minter
-      const isMinter = await executeCall(contract, 'minters', [address]).catch(() => false);
+      const symbol = await executeCall(contract, 'symbol', []).catch(() => 'Unknown');
 
       setCollectionInfo({
         name,
+        symbol,
         owner,
-        isOwner: owner.toLowerCase() === address.toLowerCase(),
-        isMinter
+        isOwner: owner.toLowerCase() === address.toLowerCase()
       });
 
       toast.success('Collection information loaded');
@@ -89,45 +88,51 @@ const MobileTokenCreatorPage = () => {
     }
   };
 
-  // Create new token ID
+  // Create new token ID (matches desktop implementation)
   const createToken = async () => {
-    if (!formData.collectionAddress || !formData.tokenId || !formData.initialSupply || !connected) {
+    if (!formData.collectionAddress || !formData.tokenId || !formData.maxSupply || !connected) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!collectionInfo || !collectionInfo.isOwner) {
+      toast.error('Only collection owner can create new tokens');
+      return;
+    }
+
+    const tokenId = parseInt(formData.tokenId);
+    const maxSupply = parseInt(formData.maxSupply);
+
+    if (isNaN(tokenId) || tokenId < 0) {
+      toast.error('Please enter a valid token ID (non-negative integer)');
+      return;
+    }
+
+    if (isNaN(maxSupply) || maxSupply <= 0) {
+      toast.error('Please enter a valid max supply (positive integer)');
       return;
     }
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+      const contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      // Check if token already exists
-      const exists = await checkTokenExists();
-      if (exists) {
-        toast.error('Token ID already exists');
-        return;
-      }
+      // Use createNewToken method (matches desktop implementation)
+      await executeTransaction(contract, 'createNewToken', [tokenId, maxSupply]);
+      toast.success(`Token ID ${tokenId} created successfully with max supply of ${maxSupply}!`);
 
-      const recipient = formData.recipientAddress || address;
-      const supply = parseInt(formData.initialSupply);
-
-      // Mint the initial supply to create the token
-      await executeTransaction(contract, 'mint', [recipient, formData.tokenId, supply, '0x']);
-      toast.success('Token created successfully!');
-      
       // Clear form
       setFormData(prev => ({
         ...prev,
         tokenId: '',
-        initialSupply: '1',
-        metadataURI: '',
-        recipientAddress: ''
+        maxSupply: '1'
       }));
-      
+
       // Refresh collection info
       fetchCollectionInfo();
     } catch (error) {
@@ -281,45 +286,28 @@ const MobileTokenCreatorPage = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Initial Supply
+                  Max Supply
                 </label>
                 <input
                   type="number"
                   min="1"
-                  value={formData.initialSupply}
-                  onChange={(e) => handleInputChange('initialSupply', e.target.value)}
+                  value={formData.maxSupply}
+                  onChange={(e) => handleInputChange('maxSupply', e.target.value)}
                   placeholder="1"
                   className="w-full p-3 border border-border rounded-lg bg-background text-base"
                   style={{ fontSize: '16px' }}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Number of tokens to mint initially
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Recipient Address (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.recipientAddress}
-                  onChange={(e) => handleInputChange('recipientAddress', e.target.value)}
-                  placeholder="0x... (leave empty to mint to yourself)"
-                  className="w-full p-3 border border-border rounded-lg bg-background text-base"
-                  style={{ fontSize: '16px' }}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Address to receive the initial supply (defaults to your address)
+                  Maximum number of tokens that can be minted for this ID
                 </p>
               </div>
               
               <button
                 onClick={createToken}
-                disabled={loading || !formData.collectionAddress || !formData.tokenId || !formData.initialSupply}
+                disabled={loading || !formData.collectionAddress || !formData.tokenId || !formData.maxSupply || !collectionInfo?.isOwner}
                 className="w-full bg-green-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create Token'}
+                {loading ? 'Creating...' : 'Create New Token ID'}
               </button>
             </div>
           </div>
@@ -378,14 +366,14 @@ const MobileTokenCreatorPage = () => {
         )}
 
         {/* Access Denied */}
-        {collectionInfo && !canCreateTokens && (
+        {collectionInfo && !collectionInfo.isOwner && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-medium text-red-800 mb-1">Access Denied</h3>
                 <p className="text-sm text-red-700">
-                  You need to be the collection owner or an approved minter to create new tokens.
+                  Only the collection owner can create new token IDs.
                 </p>
               </div>
             </div>

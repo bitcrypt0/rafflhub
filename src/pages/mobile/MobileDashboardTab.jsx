@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Crown, Key, Plus, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { Settings, Crown, Key, Plus, DollarSign, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -116,28 +116,7 @@ const MobileDashboardTab = ({ creatorStats }) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h3 className="text-xs font-semibold text-foreground mb-2">Quick Actions</h3>
 
-        <div className="space-y-2">
-          <button
-            onClick={() => navigate('/create-raffle')}
-            className="w-full bg-primary text-white p-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
-          >
-            <Plus className="h-3 w-3" />
-            Create Raffle
-          </button>
-
-          <button
-            onClick={() => navigate('/')}
-            className="w-full bg-muted text-foreground p-2 rounded-lg text-xs font-medium hover:bg-muted/80 transition-colors flex items-center justify-center gap-1"
-          >
-            <Users className="h-3 w-3" />
-            Browse Raffles
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

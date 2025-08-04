@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Clock, Users, Ticket, Settings } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -16,7 +16,8 @@ import MobileDashboardTab from './MobileDashboardTab';
 const MobileProfilePage = () => {
   const { connected, address } = useWallet();
   const [activeTab, setActiveTab] = useState('activity');
-  
+  const gridRef = useRef(null);
+
   // Use shared data hook
   const {
     userActivity,
@@ -32,6 +33,30 @@ const MobileProfilePage = () => {
     withdrawRevenue,
     claimRefund
   } = useProfileData();
+
+  // Auto-close functionality when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (gridRef.current && !gridRef.current.contains(event.target)) {
+        setActiveTab(null); // Close all tabs when clicking outside
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  // Reset active tab when returning to page (fixes disappearing components)
+  useEffect(() => {
+    if (connected && !activeTab) {
+      setActiveTab('activity'); // Default to activity tab
+    }
+  }, [connected, activeTab]);
 
   // Show connect wallet message if not connected
   if (!connected) {
@@ -101,7 +126,8 @@ const MobileProfilePage = () => {
 
       {/* Grid Layout for Tab Components */}
       <div className="p-4 pb-6">
-        {loading ? (
+        {/* Show loading only on initial load, not when returning from dashboard */}
+        {loading && !userActivity && !createdRaffles && !purchasedTickets ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -109,7 +135,7 @@ const MobileProfilePage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div ref={gridRef} className="grid grid-cols-2 gap-3">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const Component = tab.component;
@@ -128,7 +154,7 @@ const MobileProfilePage = () => {
                 >
                   {/* Tab Header */}
                   <button
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => setActiveTab(isActive ? null : tab.id)} // Toggle tab on click
                     className={`
                       w-full p-3 flex items-center gap-2 transition-colors
                       ${isActive

@@ -17,13 +17,13 @@ const MobileMinterPage = () => {
   // Form state with standard HTML inputs
   const [formData, setFormData] = useState({
     collectionAddress: '',
-    minterAddress: '',
-    tokenId: ''
+    minterAddress: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [minterStatus, setMinterStatus] = useState(null);
+  const [collectionType, setCollectionType] = useState('erc1155'); // Default to ERC1155
 
   // Handle input changes
   const handleInputChange = (field, value) => {
@@ -41,19 +41,31 @@ const MobileMinterPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+
+      // Try ERC1155 first, then ERC721
+      let contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+      let type = 'erc1155';
+
       if (!contract) {
-        toast.error('Invalid collection address');
+        contract = getContractInstance('erc721Prize', formData.collectionAddress);
+        type = 'erc721';
+      }
+
+      if (!contract) {
+        toast.error('Invalid collection address or unsupported contract type');
         return;
       }
 
       const owner = await executeCall(contract, 'owner', []).catch(() => 'Unknown');
       const name = await executeCall(contract, 'name', []).catch(() => 'Unknown Collection');
+      const symbol = await executeCall(contract, 'symbol', []).catch(() => 'Unknown');
 
+      setCollectionType(type);
       setCollectionInfo({
         name,
+        symbol,
         owner,
+        type,
         isOwner: owner.toLowerCase() === address.toLowerCase()
       });
 
@@ -75,14 +87,15 @@ const MobileMinterPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+      const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(contractType, formData.collectionAddress);
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      // Check if address is approved minter
+      // Check if address is approved minter (both ERC721 and ERC1155 use same method)
       const isApproved = await executeCall(contract, 'minters', [formData.minterAddress]).catch(() => false);
 
       setMinterStatus({
@@ -108,16 +121,18 @@ const MobileMinterPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+      const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(contractType, formData.collectionAddress);
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      await executeTransaction(contract, 'setMinter', [formData.minterAddress, true]);
+      // Use setMinterApproval method (matches desktop implementation)
+      await executeTransaction(contract, 'setMinterApproval', [formData.minterAddress, true]);
       toast.success('Minter approved successfully!');
-      
+
       // Refresh minter status
       checkMinterStatus();
     } catch (error) {
@@ -137,16 +152,18 @@ const MobileMinterPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+      const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(contractType, formData.collectionAddress);
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      await executeTransaction(contract, 'setMinter', [formData.minterAddress, false]);
+      // Use setMinterApproval method (matches desktop implementation)
+      await executeTransaction(contract, 'setMinterApproval', [formData.minterAddress, false]);
       toast.success('Minter revoked successfully!');
-      
+
       // Refresh minter status
       checkMinterStatus();
     } catch (error) {
@@ -157,35 +174,7 @@ const MobileMinterPage = () => {
     }
   };
 
-  // Mint tokens (if user is approved minter)
-  const mintTokens = async () => {
-    if (!formData.collectionAddress || !formData.minterAddress || !formData.tokenId || !connected) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
 
-    try {
-      setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
-      if (!contract) {
-        toast.error('Invalid collection address');
-        return;
-      }
-
-      // Mint 1 token to the minter address
-      await executeTransaction(contract, 'mint', [formData.minterAddress, formData.tokenId, 1, '0x']);
-      toast.success('Token minted successfully!');
-      
-      // Clear token ID
-      setFormData(prev => ({ ...prev, tokenId: '' }));
-    } catch (error) {
-      console.error('Error minting tokens:', error);
-      toast.error('Failed to mint tokens');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,11 +235,19 @@ const MobileMinterPage = () => {
               <CheckCircle className="h-4 w-4 text-green-600" />
               Collection Information
             </h3>
-            
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name:</span>
                 <span className="font-medium">{collectionInfo.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Symbol:</span>
+                <span className="font-medium">{collectionInfo.symbol}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Type:</span>
+                <span className="font-medium">{collectionInfo.type.toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Owner:</span>
@@ -347,40 +344,7 @@ const MobileMinterPage = () => {
           </div>
         )}
 
-        {/* Mint Tokens (Approved Minters) */}
-        {minterStatus?.isApproved && (
-          <div className="bg-card border border-border rounded-lg p-4">
-            <h2 className="font-medium mb-4">Mint Tokens</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Token ID
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.tokenId}
-                  onChange={(e) => handleInputChange('tokenId', e.target.value)}
-                  placeholder="1"
-                  className="w-full p-3 border border-border rounded-lg bg-background text-base"
-                  style={{ fontSize: '16px' }}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Token ID to mint (will mint 1 token to the minter address)
-                </p>
-              </div>
-              
-              <button
-                onClick={mintTokens}
-                disabled={loading || !formData.collectionAddress || !formData.minterAddress || !formData.tokenId}
-                className="w-full bg-purple-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Minting...' : 'Mint Token'}
-              </button>
-            </div>
-          </div>
-        )}
+
 
         {/* Warning */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

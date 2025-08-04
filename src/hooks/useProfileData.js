@@ -66,7 +66,6 @@ export const useProfileData = () => {
     }
 
     try {
-      setLoading(true);
       const activities = [];
       let totalTicketsPurchased = 0;
       let totalPrizesWon = 0;
@@ -148,8 +147,6 @@ export const useProfileData = () => {
     } catch (error) {
       console.error('Error fetching on-chain activity:', error);
       toast.error('Failed to load activity data');
-    } finally {
-      setLoading(false);
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleFactory, executeCall, getContractInstance, mapRaffleState]);
 
@@ -260,9 +257,21 @@ export const useProfileData = () => {
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
     if (stableConnected && stableAddress) {
-      fetchOnChainActivity();
-      fetchCreatedRaffles();
-      fetchPurchasedTickets();
+      const loadAllData = async () => {
+        setLoading(true);
+        try {
+          await Promise.all([
+            fetchOnChainActivity(),
+            fetchCreatedRaffles(),
+            fetchPurchasedTickets()
+          ]);
+        } catch (error) {
+          console.error('Error loading profile data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAllData();
     } else {
       // Reset state when wallet disconnects
       setUserActivity([]);

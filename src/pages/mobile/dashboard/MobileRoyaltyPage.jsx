@@ -17,8 +17,9 @@ const MobileRoyaltyPage = () => {
   // Form state with standard HTML inputs
   const [formData, setFormData] = useState({
     collectionAddress: '',
-    newRoyaltyRecipient: '',
-    newRoyaltyPercentage: '',
+    collectionType: 'erc1155',
+    royaltyPercentage: '',
+    royaltyRecipient: '',
     baseURI: ''
   });
 
@@ -41,10 +42,18 @@ const MobileRoyaltyPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+
+      // Try ERC1155 first, then ERC721
+      let contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+      let type = 'erc1155';
+
       if (!contract) {
-        toast.error('Invalid collection address');
+        contract = getContractInstance('erc721Prize', formData.collectionAddress);
+        type = 'erc721';
+      }
+
+      if (!contract) {
+        toast.error('Invalid collection address or unsupported contract type');
         return;
       }
 
@@ -52,10 +61,15 @@ const MobileRoyaltyPage = () => {
       const royaltyInfo = await executeCall(contract, 'royaltyInfo', [1, 10000]).catch(() => null);
       const owner = await executeCall(contract, 'owner', []).catch(() => 'Unknown');
       const name = await executeCall(contract, 'name', []).catch(() => 'Unknown Collection');
+      const symbol = await executeCall(contract, 'symbol', []).catch(() => 'Unknown');
 
+      setFormData(prev => ({ ...prev, collectionType: type }));
       setCollectionInfo({
         name,
+        symbol,
         owner,
+        type,
+        isOwner: owner.toLowerCase() === address.toLowerCase(),
         currentRoyaltyRecipient: royaltyInfo ? royaltyInfo[0] : 'Unknown',
         currentRoyaltyPercentage: royaltyInfo ? (royaltyInfo[1].toNumber() / 100).toString() : '0'
       });
@@ -69,66 +83,47 @@ const MobileRoyaltyPage = () => {
     }
   };
 
-  // Update royalty recipient
-  const updateRoyaltyRecipient = async () => {
-    if (!formData.collectionAddress || !formData.newRoyaltyRecipient || !connected) {
+  // Update royalty settings (unified method like desktop)
+  const updateRoyalty = async () => {
+    if (!formData.collectionAddress || !formData.royaltyPercentage || !formData.royaltyRecipient || !connected) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const royaltyPercentage = parseFloat(formData.royaltyPercentage);
+    if (isNaN(royaltyPercentage) || royaltyPercentage < 0 || royaltyPercentage > 10) {
+      toast.error('Please enter a valid royalty percentage (0-10%)');
       return;
     }
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
+      const contractType = formData.collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(contractType, formData.collectionAddress);
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      await executeTransaction(contract, 'setRoyaltyRecipient', [formData.newRoyaltyRecipient]);
-      toast.success('Royalty recipient updated successfully!');
-      
+      // Convert percentage to basis points (multiply by 100) - matches desktop
+      const royaltyBasisPoints = Math.floor(royaltyPercentage * 100);
+
+      await executeTransaction(contract, 'setRoyalty', [royaltyBasisPoints, formData.royaltyRecipient]);
+      toast.success('Royalty settings updated successfully!');
+
       // Refresh collection info
       fetchCollectionInfo();
-      
+
       // Clear form
-      setFormData(prev => ({ ...prev, newRoyaltyRecipient: '' }));
+      setFormData(prev => ({
+        ...prev,
+        royaltyPercentage: '',
+        royaltyRecipient: ''
+      }));
     } catch (error) {
-      console.error('Error updating royalty recipient:', error);
-      toast.error('Failed to update royalty recipient');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update royalty percentage
-  const updateRoyaltyPercentage = async () => {
-    if (!formData.collectionAddress || !formData.newRoyaltyPercentage || !connected) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
-      
-      if (!contract) {
-        toast.error('Invalid collection address');
-        return;
-      }
-
-      const percentage = Math.round(parseFloat(formData.newRoyaltyPercentage) * 100);
-      await executeTransaction(contract, 'setRoyaltyPercentage', [percentage]);
-      toast.success('Royalty percentage updated successfully!');
-      
-      // Refresh collection info
-      fetchCollectionInfo();
-      
-      // Clear form
-      setFormData(prev => ({ ...prev, newRoyaltyPercentage: '' }));
-    } catch (error) {
-      console.error('Error updating royalty percentage:', error);
-      toast.error('Failed to update royalty percentage');
+      console.error('Error updating royalty:', error);
+      toast.error('Failed to update royalty settings');
     } finally {
       setLoading(false);
     }
@@ -244,69 +239,56 @@ const MobileRoyaltyPage = () => {
           </div>
         )}
 
-        {/* Update Royalty Recipient */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="font-medium mb-4">Update Royalty Recipient</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                New Royalty Recipient Address
-              </label>
-              <input
-                type="text"
-                value={formData.newRoyaltyRecipient}
-                onChange={(e) => handleInputChange('newRoyaltyRecipient', e.target.value)}
-                placeholder="0x..."
-                className="w-full p-3 border border-border rounded-lg bg-background text-base"
-                style={{ fontSize: '16px' }}
-              />
-            </div>
-            
-            <button
-              onClick={updateRoyaltyRecipient}
-              disabled={loading || !formData.collectionAddress || !formData.newRoyaltyRecipient}
-              className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Updating...' : 'Update Recipient'}
-            </button>
-          </div>
-        </div>
+        {/* Update Royalty Settings (Unified Form) */}
+        {collectionInfo?.isOwner && (
+          <div className="bg-card border border-border rounded-lg p-4">
+            <h2 className="font-medium mb-4">Update Royalty Settings</h2>
 
-        {/* Update Royalty Percentage */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="font-medium mb-4">Update Royalty Percentage</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                New Royalty Percentage (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
-                value={formData.newRoyaltyPercentage}
-                onChange={(e) => handleInputChange('newRoyaltyPercentage', e.target.value)}
-                placeholder="2.5"
-                className="w-full p-3 border border-border rounded-lg bg-background text-base"
-                style={{ fontSize: '16px' }}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Maximum 10%. Enter as decimal (e.g., 2.5 for 2.5%)
-              </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  New Royalty Percentage (0-10%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.01"
+                  value={formData.royaltyPercentage}
+                  onChange={(e) => handleInputChange('royaltyPercentage', e.target.value)}
+                  placeholder="2.5"
+                  className="w-full p-3 border border-border rounded-lg bg-background text-base"
+                  style={{ fontSize: '16px' }}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Maximum 10%. Enter as decimal (e.g., 2.5 for 2.5%)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  New Royalty Recipient Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.royaltyRecipient}
+                  onChange={(e) => handleInputChange('royaltyRecipient', e.target.value)}
+                  placeholder="0x..."
+                  className="w-full p-3 border border-border rounded-lg bg-background text-base"
+                  style={{ fontSize: '16px' }}
+                />
+              </div>
+
+              <button
+                onClick={updateRoyalty}
+                disabled={loading || !formData.collectionAddress || !formData.royaltyPercentage || !formData.royaltyRecipient}
+                className="w-full bg-purple-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Updating...' : 'Update Royalty Settings'}
+              </button>
             </div>
-            
-            <button
-              onClick={updateRoyaltyPercentage}
-              disabled={loading || !formData.collectionAddress || !formData.newRoyaltyPercentage}
-              className="w-full bg-green-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Updating...' : 'Update Percentage'}
-            </button>
           </div>
-        </div>
+        )}
 
         {/* Reveal Collection */}
         <div className="bg-card border border-border rounded-lg p-4">
