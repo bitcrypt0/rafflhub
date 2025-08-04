@@ -10,7 +10,7 @@ import { PageContainer } from '../components/Layout';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useRaffleService } from '../hooks/useRaffleService';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
-import { PageLoading, CardSkeleton } from '../components/ui/loading';
+import { PageLoading, ContentLoading, CardSkeleton } from '../components/ui/loading';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
@@ -25,7 +25,7 @@ const RAFFLE_STATE_LABELS = [
   'Completed',
   'Deleted',
   'Activation Failed',
-  'All Prizes Claimed',
+  'Prizes Claimed',
   'Unengaged'
 ];
 
@@ -274,7 +274,7 @@ const RaffleCard = ({ raffle }) => {
       'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-      'All Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
       'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
@@ -421,10 +421,12 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <PageLoading
-        message="Loading raffles from blockchain..."
-        isMobile={isMobile}
-      />
+      <PageContainer>
+        <ContentLoading
+          message="Loading raffles from blockchain..."
+          isMobile={isMobile}
+        />
+      </PageContainer>
     );
   }
 

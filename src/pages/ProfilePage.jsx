@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus } from 'lucide-react';
+import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus, ShoppingCart, Crown, RefreshCw, Activity } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
@@ -63,7 +63,7 @@ const ActivityCard = ({ activity }) => {
     switch (activity.type) {
       case 'ticket_purchase':
         const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
-        const quantity = activity.quantity || 1;
+        const quantity = activity.quantity || activity.ticketCount || 1;
         return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
       case 'raffle_created':
         return `Created raffle "${activity.raffleName}"`;
@@ -382,25 +382,89 @@ const DesktopProfilePage = () => {
   const navigate = useNavigate();
   const { isMobile } = useMobileBreakpoints(); // Move hook to top to fix Rules of Hooks violation
 
-  // Memoize stable values to prevent unnecessary re-renders
-  const stableConnected = useMemo(() => connected, [connected]);
-  const stableAddress = useMemo(() => address, [address]);
-  const stableContracts = useMemo(() => contracts, [contracts]);
+  // Use the same hook as mobile for consistent data structure
+  const {
+    userActivity,
+    createdRaffles,
+    purchasedTickets,
+    activityStats,
+    loading,
+    showRevenueModal,
+    selectedRaffle,
+    setSelectedRaffle,
+    fetchOnChainActivity,
+    fetchCreatedRaffles,
+    fetchPurchasedTickets,
+    withdrawRevenue,
+    claimRefund
+  } = useProfileData();
 
   const [activeTab, setActiveTab] = useState('activity');
-  const [userActivity, setUserActivity] = useState([]);
-  const [createdRaffles, setCreatedRaffles] = useState([]);
-  const [purchasedTickets, setPurchasedTickets] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showRevenueModal, setShowRevenueModal] = useState(false);
-  const [selectedRaffle, setSelectedRaffle] = useState(null);
-  const [activityStats, setActivityStats] = useState({
-    totalTicketsPurchased: 0,
-    totalRafflesCreated: 0,
-    totalPrizesWon: 0,
-    totalRevenueWithdrawn: '0',
-    totalRefundsClaimed: 0
-  });
+
+  // Transform raw activity data to match ProfileTabs expectations
+  const transformedActivities = useMemo(() => {
+    return userActivity.map(activity => {
+      const getActivityTitle = () => {
+        const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+        const quantity = activity.quantity || activity.ticketCount || 1;
+
+        switch (activity.type) {
+          case 'ticket_purchase':
+            return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
+          case 'raffle_created':
+            return `Created raffle "${raffleName}"`;
+          case 'raffle_deleted':
+            return `Deleted raffle "${raffleName}"`;
+          case 'prize_won':
+            return `Won prize in "${raffleName}"`;
+          case 'prize_claimed':
+            return `Claimed prize from "${raffleName}"`;
+          case 'refund_claimed':
+            return `Claimed refund from "${raffleName}"`;
+          case 'revenue_withdrawn':
+            return `Withdrew revenue from "${raffleName}"`;
+          case 'admin_withdrawn':
+            return `Admin withdrawal: ${activity.amount} ETH`;
+          default:
+            return activity.description || 'Activity';
+        }
+      };
+
+      const getActivityDescription = () => {
+        switch (activity.type) {
+          case 'ticket_purchase':
+            return activity.amount ? `${activity.amount} ETH` : '';
+          case 'refund_claimed':
+            return activity.amount ? `${activity.amount} ETH` : '';
+          default:
+            return activity.description || '';
+        }
+      };
+
+      const getActivityIcon = () => {
+        switch (activity.type) {
+          case 'ticket_purchase':
+            return <ShoppingCart className="h-4 w-4 text-blue-500" />;
+          case 'raffle_created':
+            return <Plus className="h-4 w-4 text-green-500" />;
+          case 'prize_claimed':
+            return <Crown className="h-4 w-4 text-yellow-500" />;
+          case 'refund_claimed':
+            return <RefreshCw className="h-4 w-4 text-orange-500" />;
+          default:
+            return <Activity className="h-4 w-4 text-gray-500" />;
+        }
+      };
+
+      return {
+        ...activity,
+        title: getActivityTitle(),
+        description: getActivityDescription(),
+        icon: getActivityIcon(),
+        timestamp: activity.timestamp ? new Date(activity.timestamp).toLocaleDateString() : 'Unknown date'
+      };
+    });
+  }, [userActivity]);
 
   // Utility to extract only the revert reason from contract errors
   function extractRevertReason(error) {
@@ -412,532 +476,18 @@ const DesktopProfilePage = () => {
     return msg;
   }
 
-  // Memoized fetch functions to prevent recreation
-  const fetchOnChainActivity = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !provider) return;
+  // Note: Fetch functions are now provided by useProfileData hook
+  // Removed duplicate fetchOnChainActivity function
 
-    setLoading(true);
-    try {
-      const activities = [];
-      const currentBlock = await provider.getBlockNumber();
-      // Increase block range to capture more events
-      const fromBlock = Math.max(0, currentBlock - 50000); // Last 50k blocks instead of 10k
 
-      console.log('Fetching activity from block', fromBlock, 'to', currentBlock);
+  // Note: fetchCreatedRaffles is now provided by useProfileData hook
 
-      // 1. Fetch RaffleCreated events from RaffleDeployer
-      if (contracts.raffleDeployer) {
-        try {
-          const raffleCreatedFilter = contracts.raffleDeployer.filters.RaffleCreated(null, address);
-          const raffleCreatedEvents = await contracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
-          
-          console.log('Found', raffleCreatedEvents.length, 'RaffleCreated events for address:', address);
-          
-          // If no events found, try from an even earlier block
-          if (raffleCreatedEvents.length === 0) {
-            const earlierFromBlock = Math.max(0, currentBlock - 100000); // Last 100k blocks
-            console.log('No events found, trying from block', earlierFromBlock);
-            const earlierEvents = await contracts.raffleDeployer.queryFilter(raffleCreatedFilter, earlierFromBlock);
-            console.log('Found', earlierEvents.length, 'events from earlier block range');
-            raffleCreatedEvents.push(...earlierEvents);
-          }
-          
-          for (const event of raffleCreatedEvents) {
-            const block = await provider.getBlock(event.blockNumber);
-            try {
-              // Try to get the actual raffle name
-              const raffleContract = getContractInstance(event.args.raffle, 'raffle');
-              let raffleName = `Raffle ${event.args.raffle.slice(0, 8)}...`;
-              
-              if (raffleContract) {
-                const nameResult = await executeCall(raffleContract.name);
-                if (nameResult.success) {
-                  raffleName = nameResult.result;
-                }
-              }
-              
-              activities.push({
-                type: 'raffle_created',
-                raffleAddress: event.args.raffle,
-                raffleName: raffleName,
-                timestamp: block.timestamp,
-                txHash: event.transactionHash,
-                blockNumber: event.blockNumber
-              });
-            } catch (error) {
-              console.error('Error processing RaffleCreated event:', error);
-              // Still add the activity with fallback name
-              activities.push({
-                type: 'raffle_created',
-                raffleAddress: event.args.raffle,
-                raffleName: `Raffle ${event.args.raffle.slice(0, 8)}...`,
-                timestamp: block.timestamp,
-                txHash: event.transactionHash,
-                blockNumber: event.blockNumber
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching RaffleCreated events:', error);
-        }
-      }
 
-      // 2. Fetch TicketsPurchased events from all raffles
-      if (contracts.raffleManager) {
-        try {
-          // Get all registered raffles
-          const raffleRegisteredFilter = contracts.raffleManager.filters.RaffleRegistered();
-          const raffleRegisteredEvents = await contracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
-          
-          console.log('Found', raffleRegisteredEvents.length, 'registered raffles');
-          
-          for (const event of raffleRegisteredEvents) {
-            const raffleAddress = event.args.raffle;
-            const raffleContract = getContractInstance(raffleAddress, 'raffle');
-            
-            if (raffleContract) {
-              try {
-                // Fetch ticket purchases for this raffle
-                const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(address);
-                const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
-                
-                for (const ticketEvent of ticketEvents) {
-                  const block = await provider.getBlock(ticketEvent.blockNumber);
-                  try {
-                    const [
-                      name,
-                      ticketPrice,
-                      stateNum,
-                      isWinner,
-                      prizeClaimed,
-                      refundClaimed,
-                      prizeCollection,
-                      isPrizedContract,
-                      isExternallyPrized
-                    ] = await Promise.all([
-                      executeCall(raffleContract.name),
-                      executeCall(raffleContract.ticketPrice),
-                      executeCall(raffleContract.state),
-                      executeCall(raffleContract.isWinner, address),
-                      executeCall(raffleContract.prizeClaimed, address),
-                      executeCall(raffleContract.refundClaimed, address),
-                      executeCall(raffleContract.prizeCollection),
-                      executeCall(raffleContract.isPrized),
-                      executeCall(raffleContract.isExternallyPrized)
-                    ]);
+  // Note: fetchPurchasedTickets is now provided by useProfileData hook
 
-                    const isPrized = !!isPrizedContract.success && isPrizedContract.result;
-                    let mappedState = stateNum.success ? mapRaffleState(stateNum.result) : 'unknown';
-                    if (!isPrized && mappedState === 'allPrizesClaimed') {
-                      mappedState = 'completed';
-                    }
-
-                    const quantity = ticketEvent.args.quantity.toNumber();
-                    const totalCost = ticketPrice.success ? 
-                      ticketPrice.result.mul(quantity) : 
-                      ethers.BigNumber.from(0);
-
-                    activities.push({
-                      type: 'ticket_purchase',
-                      raffleAddress: raffleAddress,
-                      raffleName: name.success ? name.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      quantity: quantity,
-                      amount: ethers.utils.formatEther(totalCost),
-                      totalCost: totalCost,
-                      timestamp: (await provider.getBlock(ticketEvent.blockNumber)).timestamp,
-                      purchaseDate: (await provider.getBlock(ticketEvent.blockNumber)).timestamp,
-                      isWinner: isWinner.success ? isWinner.result : false,
-                      raffleState: mappedState,
-                      prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
-                      refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                      isPrized,
-                      isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
-                    });
-                  } catch (error) {
-                    console.error('Error fetching ticket details:', error);
-                  }
-                }
-
-                // Fetch prize claims for this raffle
-                const prizeClaimedFilter = raffleContract.filters.PrizeClaimed(address);
-                const prizeEvents = await raffleContract.queryFilter(prizeClaimedFilter, fromBlock);
-                
-                for (const prizeEvent of prizeEvents) {
-                  const block = await provider.getBlock(prizeEvent.blockNumber);
-                  try {
-                    const raffleInfo = await executeCall(raffleContract.name);
-                    activities.push({
-                      type: 'prize_claimed',
-                      raffleAddress: raffleAddress,
-                      raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      tokenId: prizeEvent.args.tokenId.toString(),
-                      timestamp: block.timestamp,
-                      txHash: prizeEvent.transactionHash,
-                      blockNumber: prizeEvent.blockNumber
-                    });
-                  } catch (error) {
-                    console.error('Error fetching raffle name for prize:', error);
-                  }
-                }
-
-                // Fetch revenue withdrawals for this raffle
-                const revenueWithdrawnFilter = raffleContract.filters.RevenueWithdrawn(address);
-                const revenueEvents = await raffleContract.queryFilter(revenueWithdrawnFilter, fromBlock);
-                
-                for (const revenueEvent of revenueEvents) {
-                  const block = await provider.getBlock(revenueEvent.blockNumber);
-                  try {
-                    const raffleInfo = await executeCall(raffleContract.name);
-                    activities.push({
-                      type: 'revenue_withdrawn',
-                      raffleAddress: raffleAddress,
-                      raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      amount: revenueEvent.args.amount,
-                      timestamp: block.timestamp,
-                      txHash: revenueEvent.transactionHash,
-                      blockNumber: revenueEvent.blockNumber
-                    });
-                  } catch (error) {
-                    console.error('Error fetching raffle name for revenue:', error);
-                  }
-                }
-
-                // Fetch raffle deletions
-                const raffleDeletedFilter = raffleContract.filters.RaffleDeleted();
-                const deletedEvents = await raffleContract.queryFilter(raffleDeletedFilter, fromBlock);
-                
-                for (const deletedEvent of deletedEvents) {
-                  const block = await provider.getBlock(deletedEvent.blockNumber);
-                  try {
-                    const raffleInfo = await executeCall(raffleContract.name);
-                    activities.push({
-                      type: 'raffle_deleted',
-                      raffleAddress: raffleAddress,
-                      raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      timestamp: block.timestamp,
-                      txHash: deletedEvent.transactionHash,
-                      blockNumber: deletedEvent.blockNumber
-                    });
-                  } catch (error) {
-                    console.error('Error fetching raffle name for deletion:', error);
-                  }
-                }
-
-                // Fetch deletion refunds for this raffle
-                const deletionRefundFilter = raffleContract.filters.DeletionRefund(address);
-                const deletionRefundEvents = await raffleContract.queryFilter(deletionRefundFilter, fromBlock);
-                for (const refundEvent of deletionRefundEvents) {
-                  const block = await provider.getBlock(refundEvent.blockNumber);
-                  try {
-                    const raffleInfo = await executeCall(raffleContract.name);
-                    activities.push({
-                      type: 'refund_claimed',
-                      raffleAddress: raffleAddress,
-                      raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      amount: refundEvent.args.amount,
-                      timestamp: block.timestamp,
-                      txHash: refundEvent.transactionHash,
-                      blockNumber: refundEvent.blockNumber
-                    });
-                  } catch (error) {
-                    // fallback
-                    activities.push({
-                      type: 'refund_claimed',
-                      raffleAddress: raffleAddress,
-                      raffleName: `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      amount: refundEvent.args.amount,
-                      timestamp: block.timestamp,
-                      txHash: refundEvent.transactionHash,
-                      blockNumber: refundEvent.blockNumber
-                    });
-                  }
-                }
-
-                // Fetch full refunds for deletion for this raffle
-                const fullRefundForDeletionFilter = raffleContract.filters.FullRefundForDeletion(address);
-                const fullRefundEvents = await raffleContract.queryFilter(fullRefundForDeletionFilter, fromBlock);
-                for (const refundEvent of fullRefundEvents) {
-                  const block = await provider.getBlock(refundEvent.blockNumber);
-                  try {
-                    const raffleInfo = await executeCall(raffleContract.name);
-                    activities.push({
-                      type: 'refund_claimed',
-                      raffleAddress: raffleAddress,
-                      raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      amount: refundEvent.args.amount,
-                      timestamp: block.timestamp,
-                      txHash: refundEvent.transactionHash,
-                      blockNumber: refundEvent.blockNumber
-                    });
-                  } catch (error) {
-                    activities.push({
-                      type: 'refund_claimed',
-                      raffleAddress: raffleAddress,
-                      raffleName: `Raffle ${raffleAddress.slice(0, 8)}...`,
-                      amount: refundEvent.args.amount,
-                      timestamp: block.timestamp,
-                      txHash: refundEvent.transactionHash,
-                      blockNumber: refundEvent.blockNumber
-                    });
-                  }
-                }
-              } catch (error) {
-                console.error('Error processing raffle events:', error);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching raffle manager events:', error);
-        }
-      }
-
-      // 3. Fetch AdminWithdrawn events from RevenueManager
-      if (contracts.revenueManager) {
-        try {
-          const adminWithdrawnFilter = contracts.revenueManager.filters.AdminWithdrawn(address);
-          const adminWithdrawnEvents = await contracts.revenueManager.queryFilter(adminWithdrawnFilter, fromBlock);
-          
-          for (const event of adminWithdrawnEvents) {
-            const block = await provider.getBlock(event.blockNumber);
-            activities.push({
-              type: 'admin_withdrawn',
-              amount: event.args.amount,
-              timestamp: block.timestamp,
-              txHash: event.transactionHash,
-              blockNumber: event.blockNumber
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching AdminWithdrawn events:', error);
-        }
-      }
-
-      // Sort activities by timestamp (newest first)
-      activities.sort((a, b) => b.timestamp - a.timestamp);
-      setUserActivity(activities);
-
-      console.log('Total activities found:', activities.length);
-      console.log('Activity breakdown:', {
-        raffle_created: activities.filter(a => a.type === 'raffle_created').length,
-        ticket_purchase: activities.filter(a => a.type === 'ticket_purchase').length,
-        prize_claimed: activities.filter(a => a.type === 'prize_claimed').length,
-        revenue_withdrawn: activities.filter(a => a.type === 'revenue_withdrawn').length,
-        raffle_deleted: activities.filter(a => a.type === 'raffle_deleted').length,
-        admin_withdrawn: activities.filter(a => a.type === 'admin_withdrawn').length,
-        deletion_refund: activities.filter(a => a.type === 'refund_claimed').length,
-        full_refund_for_deletion: activities.filter(a => a.type === 'refund_claimed').length
-      });
-
-      // Calculate activity stats
-      const stats = {
-        totalTicketsPurchased: activities.filter(a => a.type === 'ticket_purchase').length,
-        totalRafflesCreated: activities.filter(a => a.type === 'raffle_created').length,
-        totalPrizesWon: activities.filter(a => a.type === 'prize_claimed').length,
-        totalRevenueWithdrawn: activities
-          .filter(a => a.type === 'revenue_withdrawn' || a.type === 'admin_withdrawn')
-          .reduce((sum, a) => sum.add(a.amount), ethers.BigNumber.from(0))
-          .toString(),
-        totalRefundsClaimed: activities.filter(a => a.type === 'refund_claimed').length
-      };
-      setActivityStats(stats);
-
-    } catch (error) {
-      console.error('Error fetching on-chain activity:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [stableConnected, stableAddress, provider, stableContracts, getContractInstance, executeCall]);
-
-  const fetchCreatedRaffles = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !stableContracts.raffleManager) return;
-
-    try {
-      const raffles = [];
-      const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 50000); // Use same extended range
-
-      console.log('Fetching created raffles from block', fromBlock, 'to', currentBlock);
-
-      // Get all RaffleCreated events for this user
-      const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
-      const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
-
-      console.log('Found', raffleCreatedEvents.length, 'RaffleCreated events for user:', stableAddress);
-
-      // If no events found, try from an even earlier block
-      if (raffleCreatedEvents.length === 0) {
-        const earlierFromBlock = Math.max(0, currentBlock - 100000); // Last 100k blocks
-        console.log('No raffles found, trying from block', earlierFromBlock);
-        const earlierEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, earlierFromBlock);
-        console.log('Found', earlierEvents.length, 'raffles from earlier block range');
-        raffleCreatedEvents.push(...earlierEvents);
-      }
-
-      for (const event of raffleCreatedEvents) {
-        const raffleAddress = event.args.raffle;
-        console.log('Processing raffle:', raffleAddress);
-        
-        const raffleContract = getContractInstance(raffleAddress, 'raffle');
-        
-        if (raffleContract) {
-          try {
-            const [name, startTime, duration, ticketLimit, ticketPrice, state, isExternallyPrized] = await Promise.all([
-              executeCall(raffleContract.name),
-              executeCall(raffleContract.startTime),
-              executeCall(raffleContract.duration),
-              executeCall(raffleContract.ticketLimit),
-              executeCall(raffleContract.ticketPrice),
-              executeCall(raffleContract.state),
-              executeCall(raffleContract.isExternallyPrized)
-            ]);
-
-            // Use fallback approach for tickets sold count (same as RaffleDetailPage)
-            const ticketsSold = await getTicketsSoldCount(raffleContract);
-            const totalRevenue = ticketPrice.success && ticketsSold > 0 ?
-              ticketPrice.result.mul(ethers.BigNumber.from(ticketsSold)) : ethers.BigNumber.from(0);
-
-            if (name.success) {
-              const raffleData = {
-                id: raffleAddress,
-                name: name.result,
-                address: raffleAddress,
-                startTime: startTime.success ? startTime.result.toNumber() : 0,
-                duration: duration.success ? duration.result.toNumber() : 0,
-                ticketLimit: ticketLimit.success ? ticketLimit.result.toNumber() : 0,
-                ticketsSold: ticketsSold,
-                totalRevenue: totalRevenue,
-                state: state.success ? mapRaffleState(state.result) : 'unknown',
-                isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
-              };
-              
-              console.log('Successfully fetched raffle data:', raffleData);
-              raffles.push(raffleData);
-            } else {
-              console.error('Failed to fetch raffle name for:', raffleAddress);
-            }
-          } catch (error) {
-            console.error('Error fetching raffle details for', raffleAddress, ':', error);
-          }
-        } else {
-          console.error('Failed to create contract instance for raffle:', raffleAddress);
-        }
-      }
-
-      console.log('Total created raffles found:', raffles.length);
-      setCreatedRaffles(raffles);
-    } catch (error) {
-      console.error('Error fetching created raffles:', error);
-    }
-  }, [stableConnected, stableAddress, stableContracts, provider, getContractInstance, executeCall]);
-
-  const fetchPurchasedTickets = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !stableContracts.raffleManager) return;
-
-    try {
-      const tickets = [];
-      const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 10000);
-
-      // Get all registered raffles
-      const raffleRegisteredFilter = contracts.raffleManager.filters.RaffleRegistered();
-      const raffleRegisteredEvents = await contracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
-
-      for (const event of raffleRegisteredEvents) {
-        const raffleAddress = event.args.raffle;
-        const raffleContract = getContractInstance(raffleAddress, 'raffle');
-        
-        if (raffleContract) {
-          // Get ticket purchases for this user
-          const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(address);
-          const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
-
-          for (const ticketEvent of ticketEvents) {
-            try {
-              const [
-                name,
-                ticketPrice,
-                stateNum,
-                isWinner,
-                prizeClaimed,
-                refundClaimed,
-                prizeCollection,
-                isPrizedContract,
-                isExternallyPrized
-              ] = await Promise.all([
-                executeCall(raffleContract.name),
-                executeCall(raffleContract.ticketPrice),
-                executeCall(raffleContract.state),
-                executeCall(raffleContract.isWinner, address),
-                executeCall(raffleContract.prizeClaimed, address),
-                executeCall(raffleContract.refundClaimed, address),
-                executeCall(raffleContract.prizeCollection),
-                executeCall(raffleContract.isPrized),
-                executeCall(raffleContract.isExternallyPrized)
-              ]);
-
-              const isPrized = !!isPrizedContract.success && isPrizedContract.result;
-              let mappedState = stateNum.success ? mapRaffleState(stateNum.result) : 'unknown';
-              if (!isPrized && mappedState === 'allPrizesClaimed') {
-                mappedState = 'completed';
-              }
-
-              if (name.success) {
-                const quantity = ticketEvent.args.quantity.toNumber();
-                const totalCost = ticketPrice.success ? 
-                  ticketPrice.result.mul(quantity) : 
-                  ethers.BigNumber.from(0);
-
-                tickets.push({
-                  id: `${raffleAddress}-${ticketEvent.transactionHash}`,
-                  raffleName: name.result,
-                  raffleAddress: raffleAddress,
-                  quantity: quantity,
-                  totalCost: totalCost,
-                  purchaseDate: (await provider.getBlock(ticketEvent.blockNumber)).timestamp,
-                  isWinner: isWinner.success ? isWinner.result : false,
-                  raffleState: mappedState,
-                  prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
-                  refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                  isPrized,
-                  isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
-                });
-              }
-            } catch (error) {
-              console.error('Error fetching ticket details:', error);
-            }
-          }
-        }
-      }
-
-      setPurchasedTickets(tickets);
-    } catch (error) {
-      console.error('Error fetching purchased tickets:', error);
-    }
-  }, [stableConnected, stableAddress, stableContracts, provider, getContractInstance, executeCall]);
 
   // Load data when wallet connects, reset when disconnects
-  useEffect(() => {
-    if (stableConnected && stableAddress) {
-      fetchOnChainActivity();
-      fetchCreatedRaffles();
-      fetchPurchasedTickets();
-    } else {
-      // Reset state when wallet disconnects
-      setUserActivity([]);
-      setCreatedRaffles([]);
-      setPurchasedTickets([]);
-      setLoading(false);
-      setShowRevenueModal(false);
-      setSelectedRaffle(null);
-      setActivityStats({
-        totalTicketsPurchased: 0,
-        totalRafflesCreated: 0,
-        totalPrizesWon: 0,
-        totalRevenueWithdrawn: '0',
-        totalRefundsClaimed: 0
-      });
-    }
-  }, [stableConnected, stableAddress, fetchOnChainActivity, fetchCreatedRaffles, fetchPurchasedTickets]);
+  // Note: Data fetching is now handled by useProfileData hook
 
   const handleDeleteRaffle = async (raffle) => {
     let confirmMessage = `Are you sure you want to delete "${raffle.name}"?`;
@@ -1161,7 +711,7 @@ const DesktopProfilePage = () => {
           </div>
         ) : (
           <ProfileTabs
-            activities={userActivity}
+            activities={transformedActivities}
             createdRaffles={createdRaffles}
             purchasedTickets={purchasedTickets}
             creatorStats={{

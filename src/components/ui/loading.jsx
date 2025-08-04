@@ -72,6 +72,43 @@ export const PageLoading = ({
 };
 
 /**
+ * Content loading component - only covers content area below header
+ */
+export const ContentLoading = ({
+  message = 'Loading...',
+  isMobile = false,
+  showProgress = false,
+  progress = 0,
+  maxProgress = 100
+}) => {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-background">
+      <div className="text-center space-y-4 px-4">
+        <LoadingSpinner
+          size={isMobile ? 'lg' : 'xl'}
+          text={message}
+          showText={true}
+        />
+
+        {showProgress && (
+          <div className="w-64 max-w-full mx-auto">
+            <div className="bg-muted rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(progress / maxProgress) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {progress} / {maxProgress}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
  * Card loading skeleton
  */
 export const CardSkeleton = ({ count = 1, isMobile = false }) => {

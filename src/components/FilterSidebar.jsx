@@ -63,7 +63,7 @@ const FilterSidebar = ({
       { value: 'completed', label: 'Completed', count: raffleCounts.raffleState.completed || 0 },
       { value: 'deleted', label: 'Deleted', count: raffleCounts.raffleState.deleted || 0 },
       { value: 'activation_failed', label: 'Activation Failed', count: raffleCounts.raffleState.activation_failed || 0 },
-      { value: 'all_prizes_claimed', label: 'All Prizes Claimed', count: raffleCounts.raffleState.all_prizes_claimed || 0 },
+      { value: 'all_prizes_claimed', label: 'Prizes Claimed', count: raffleCounts.raffleState.all_prizes_claimed || 0 },
       { value: 'unengaged', label: 'Unengaged', count: raffleCounts.raffleState.unengaged || 0 }
     ],
     raffleType: [

@@ -99,9 +99,9 @@ export const useProfileData = () => {
               let raffleName = `Raffle ${event.args.raffle.slice(0, 8)}...`;
 
               if (raffleContract) {
-                const nameResult = await executeCall(raffleContract, 'name', []);
-                if (nameResult) {
-                  raffleName = nameResult;
+                const nameResult = await executeCall(raffleContract.name, 'name');
+                if (nameResult.success && nameResult.result) {
+                  raffleName = nameResult.result;
                 }
               }
 
@@ -114,7 +114,7 @@ export const useProfileData = () => {
                 blockNumber: event.blockNumber
               });
 
-              totalRefundsClaimed++; // Count as raffle created
+              // Raffle created - no refund count increment needed
             } catch (error) {
               console.error('Mobile: Error processing RaffleCreated event:', error);
             }
@@ -146,9 +146,9 @@ export const useProfileData = () => {
               for (const ticketEvent of ticketEvents) {
                 const block = await provider.getBlock(ticketEvent.blockNumber);
                 try {
-                  // Use desktop approach for contract calls
-                  const nameResult = await executeCall(raffleContract.name);
-                  const ticketPriceResult = await executeCall(raffleContract.ticketPrice);
+                  // Use correct executeCall format
+                  const nameResult = await executeCall(raffleContract.name, 'name');
+                  const ticketPriceResult = await executeCall(raffleContract.ticketPrice, 'ticketPrice');
 
                   const raffleName = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
                   const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
@@ -181,7 +181,8 @@ export const useProfileData = () => {
               for (const prizeEvent of prizeEvents) {
                 const block = await provider.getBlock(prizeEvent.blockNumber);
                 try {
-                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
+                  const nameResult = await executeCall(raffleContract.name, 'name');
+                  const raffleName = nameResult.success && nameResult.result ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
 
                   activities.push({
                     id: `prize-${prizeEvent.transactionHash}`,
@@ -206,7 +207,8 @@ export const useProfileData = () => {
               for (const refundEvent of deletionRefundEvents) {
                 const block = await provider.getBlock(refundEvent.blockNumber);
                 try {
-                  const raffleName = await executeCall(raffleContract, 'name', []).catch(() => `Raffle ${raffleAddress.slice(0, 8)}...`);
+                  const nameResult = await executeCall(raffleContract.name, 'name');
+                  const raffleName = nameResult.success && nameResult.result ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
 
                   activities.push({
                     id: `refund-${refundEvent.transactionHash}`,
@@ -222,6 +224,32 @@ export const useProfileData = () => {
                   totalRefundsClaimed++;
                 } catch (error) {
                   console.error('Mobile: Error processing refund event:', error);
+                }
+              }
+
+              // Fetch full refunds for deletion for this raffle
+              const fullRefundFilter = raffleContract.filters.FullRefundForDeletion(stableAddress);
+              const fullRefundEvents = await raffleContract.queryFilter(fullRefundFilter, fromBlock);
+              for (const refundEvent of fullRefundEvents) {
+                const block = await provider.getBlock(refundEvent.blockNumber);
+                try {
+                  const nameResult = await executeCall(raffleContract.name, 'name');
+                  const raffleName = nameResult.success && nameResult.result ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
+
+                  activities.push({
+                    id: `full-refund-${refundEvent.transactionHash}`,
+                    type: 'refund_claimed',
+                    raffleAddress,
+                    raffleName,
+                    amount: ethers.utils.formatEther(refundEvent.args.amount),
+                    timestamp: block.timestamp * 1000,
+                    blockNumber: refundEvent.blockNumber,
+                    transactionHash: refundEvent.transactionHash
+                  });
+
+                  totalRefundsClaimed++;
+                } catch (error) {
+                  console.error('Mobile: Error processing full refund event:', error);
                 }
               }
             } catch (error) {
@@ -313,14 +341,14 @@ export const useProfileData = () => {
 
             if (!raffleContract) continue;
 
-            // Use desktop approach for contract calls
+            // Use correct executeCall format
             const [nameResult, ticketPriceResult, ticketLimitResult, startTimeResult, durationResult, stateResult] = await Promise.all([
-              executeCall(raffleContract.name),
-              executeCall(raffleContract.ticketPrice),
-              executeCall(raffleContract.ticketLimit),
-              executeCall(raffleContract.startTime),
-              executeCall(raffleContract.duration),
-              executeCall(raffleContract.state)
+              executeCall(raffleContract.name, 'name'),
+              executeCall(raffleContract.ticketPrice, 'ticketPrice'),
+              executeCall(raffleContract.ticketLimit, 'ticketLimit'),
+              executeCall(raffleContract.startTime, 'startTime'),
+              executeCall(raffleContract.duration, 'duration'),
+              executeCall(raffleContract.state, 'state')
             ]);
 
             const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
@@ -398,11 +426,11 @@ export const useProfileData = () => {
 
             if (userTicketCount.gt(0)) {
               const [nameResult, ticketPriceResult, stateResult, startTimeResult, durationResult] = await Promise.all([
-                executeCall(raffleContract.name),
-                executeCall(raffleContract.ticketPrice),
-                executeCall(raffleContract.state),
-                executeCall(raffleContract.startTime),
-                executeCall(raffleContract.duration)
+                executeCall(raffleContract.name, 'name'),
+                executeCall(raffleContract.ticketPrice, 'ticketPrice'),
+                executeCall(raffleContract.state, 'state'),
+                executeCall(raffleContract.startTime, 'startTime'),
+                executeCall(raffleContract.duration, 'duration')
               ]);
 
               const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;

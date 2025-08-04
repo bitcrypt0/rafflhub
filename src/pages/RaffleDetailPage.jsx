@@ -9,7 +9,7 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
-import { PageLoading } from '../components/ui/loading';
+import { PageLoading, ContentLoading } from '../components/ui/loading';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useRaffleStateManager } from '../hooks/useRaffleService';
 import {
@@ -29,7 +29,7 @@ const RAFFLE_STATE_LABELS = [
   'Completed',
   'Deleted',
   'Activation Failed',
-  'All Prizes Claimed',
+  'Prizes Claimed',
   'Unengaged'
 ];
 
@@ -515,6 +515,40 @@ const PrizeImageCard = ({ raffle }) => {
 // Enhanced Winner Card Component with improved styling
 const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName }) => {
   const isCurrentUser = connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase();
+  const [erc20Symbol, setErc20Symbol] = React.useState('TOKEN');
+
+  // Fetch ERC20 token symbol if needed
+  React.useEffect(() => {
+    let isMounted = true;
+    async function fetchERC20Symbol() {
+      if (!raffle.erc20PrizeToken || raffle.erc20PrizeToken === ethers.constants.AddressZero) return;
+
+      try {
+        // Use global cache to avoid repeated calls
+        if (!window.__erc20SymbolCache) window.__erc20SymbolCache = {};
+        if (window.__erc20SymbolCache[raffle.erc20PrizeToken]) {
+          if (isMounted) setErc20Symbol(window.__erc20SymbolCache[raffle.erc20PrizeToken]);
+          return;
+        }
+
+        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+        const erc20Abi = ["function symbol() view returns (string)"];
+        const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
+        const symbol = await contract.symbol();
+
+        if (isMounted) {
+          setErc20Symbol(symbol);
+          window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
+        }
+      } catch (error) {
+        console.error('Error fetching ERC20 symbol:', error);
+        if (isMounted) setErc20Symbol('TOKEN');
+      }
+    }
+
+    fetchERC20Symbol();
+    return () => { isMounted = false; };
+  }, [raffle.erc20PrizeToken]);
 
   const formatAddress = (address) => {
     return address; // Display full address instead of truncated
@@ -522,18 +556,38 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
 
   const getPrizeInfo = () => {
     if (!raffle.isPrized) return 'No Prize';
-    if (raffle.standard === 0) {
-      const amount = raffle.amountPerWinner || 1;
-      const name = collectionName || 'ERC721 NFT';
-      return `${amount} ${name}`;
+
+    const winnersCount = raffle.winnersCount || 1; // Fallback to 1 to avoid division by zero
+
+    // ETH Prize - Divide total amount by number of winners
+    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) {
+      const prizePerWinner = raffle.ethPrizeAmount.div(winnersCount);
+      return `${ethers.utils.formatEther(prizePerWinner)} ETH`;
     }
-    if (raffle.standard === 1) {
-      const amount = raffle.amountPerWinner || 1;
-      const name = collectionName || 'ERC1155 Token';
-      return `${amount} ${name}`;
+
+    // ERC20 Prize - Divide total amount by number of winners
+    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
+        raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+      const prizePerWinner = raffle.erc20PrizeAmount.div(winnersCount);
+      return `${ethers.utils.formatUnits(prizePerWinner, 18)} ${erc20Symbol}`;
     }
-    if (raffle.prizeType === 'ETH') return `${ethers.utils.formatEther(raffle.prizeAmount || '0')} ETH`;
-    if (raffle.prizeType === 'ERC20') return 'ERC20 Token';
+
+    // NFT Prizes (ERC721/ERC1155)
+    if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
+      if (raffle.standard === 0) {
+        // ERC721: Each winner gets exactly 1 NFT (amountPerWinner should be 1)
+        const amount = raffle.amountPerWinner || 1;
+        const name = collectionName || 'ERC721 NFT';
+        return `${amount} ${name}`;
+      }
+      if (raffle.standard === 1) {
+        // ERC1155: Use amountPerWinner as specified in the contract
+        const amount = raffle.amountPerWinner || 1;
+        const name = collectionName || 'ERC1155 Token';
+        return `${amount} ${name}`;
+      }
+    }
+
     return 'Prize Available';
   };
 
@@ -815,7 +869,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isMobile }) => {
           </div>
         );
       case 'Completed':
-      case 'All Prizes Claimed':
+      case 'Prizes Claimed':
         return (
           <div className="space-y-4">
             {loading ? (
@@ -1692,7 +1746,7 @@ const RaffleDetailPage = () => {
       'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
       'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-      'All Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
       'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
@@ -1875,10 +1929,12 @@ const RaffleDetailPage = () => {
 
   if (loading || isReconnecting) {
     return (
-      <PageLoading
-        message={isReconnecting ? "Reconnecting wallet..." : "Loading raffle details..."}
-        isMobile={isMobile}
-      />
+      <PageContainer>
+        <ContentLoading
+          message={isReconnecting ? "Reconnecting wallet..." : "Loading raffle details..."}
+          isMobile={isMobile}
+        />
+      </PageContainer>
     );
   }
 
