@@ -93,21 +93,14 @@ const MobileProfilePage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Profile Header */}
-      <MobileProfileHeader 
+      <MobileProfileHeader
         address={address}
         activityStats={activityStats}
         creatorStats={creatorStats}
       />
 
-      {/* Mobile Tab Navigation */}
-      <MobileTabNavigation 
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {/* Tab Content */}
-      <div className="pb-20"> {/* Bottom padding for tab navigation */}
+      {/* Grid Layout for Tab Components */}
+      <div className="p-4 pb-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -116,9 +109,52 @@ const MobileProfilePage = () => {
             </div>
           </div>
         ) : (
-          ActiveComponent && (
-            <ActiveComponent {...(activeTabData.props || {})} />
-          )
+          <div className="grid grid-cols-2 gap-3">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const Component = tab.component;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <div
+                  key={tab.id}
+                  className={`
+                    bg-card border rounded-lg transition-all duration-200 overflow-hidden
+                    ${isActive
+                      ? 'border-primary shadow-md ring-1 ring-primary/20'
+                      : 'border-border hover:border-primary/50'
+                    }
+                  `}
+                >
+                  {/* Tab Header */}
+                  <button
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      w-full p-3 flex items-center gap-2 transition-colors
+                      ${isActive
+                        ? 'bg-primary/5 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      }
+                    `}
+                  >
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-primary' : ''}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+
+                  {/* Tab Content */}
+                  {isActive && (
+                    <div className="border-t border-border">
+                      <div className="max-h-96 overflow-y-auto">
+                        <Component {...(tab.props || {})} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

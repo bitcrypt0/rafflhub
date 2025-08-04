@@ -59,11 +59,11 @@ const MobileTicketsTab = ({ tickets, claimRefund }) => {
 
   if (!tickets || tickets.length === 0) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Tickets Purchased</h3>
-          <p className="text-muted-foreground text-sm">
+      <div className="p-3">
+        <div className="text-center py-6">
+          <Ticket className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-sm font-semibold mb-1">No Tickets Purchased</h3>
+          <p className="text-muted-foreground text-xs">
             Purchase tickets in active raffles to see them here.
           </p>
         </div>
@@ -72,93 +72,77 @@ const MobileTicketsTab = ({ tickets, claimRefund }) => {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      {tickets.map((ticket) => (
+    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+      {tickets.slice(0, 3).map((ticket) => (
         <div
           key={ticket.raffleAddress}
-          className="bg-card border border-border rounded-lg p-4"
+          className="bg-muted/30 border border-border/50 rounded-lg p-3"
         >
           {/* Header */}
-          <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-start justify-between gap-1 mb-2">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground text-sm truncate">
+              <h4 className="font-medium text-foreground text-xs truncate">
                 {ticket.raffleName}
               </h4>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Ends: {formatDate(ticket.endTime)}
               </p>
             </div>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStateColor(ticket.state)}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${getStateColor(ticket.state)}`}>
               {getStateLabel(ticket.state)}
             </span>
           </div>
 
-          {/* Ticket Info */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Compact Ticket Info */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Ticket className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Tickets</span>
-              </div>
-              <p className="text-sm font-semibold">
+              <p className="text-xs text-muted-foreground">Tickets</p>
+              <p className="text-xs font-semibold">
                 {ticket.ticketCount}
               </p>
             </div>
-            
+
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <DollarSign className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Price</span>
-              </div>
-              <p className="text-sm font-semibold">
-                {parseFloat(ticket.ticketPrice).toFixed(3)} ETH
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <DollarSign className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Total</span>
-              </div>
-              <p className="text-sm font-semibold">
+              <p className="text-xs text-muted-foreground">Total Spent</p>
+              <p className="text-xs font-semibold text-blue-600">
                 {parseFloat(ticket.totalSpent).toFixed(3)} ETH
               </p>
             </div>
           </div>
 
-          {/* Ticket Numbers */}
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-2">Your Ticket Numbers:</p>
+          {/* Ticket Numbers (limited) */}
+          <div className="mb-2">
+            <p className="text-xs text-muted-foreground mb-1">Tickets:</p>
             <div className="flex flex-wrap gap-1">
-              {ticket.tickets.slice(0, 10).map((ticketNum, index) => (
+              {ticket.tickets.slice(0, 3).map((ticketNum, index) => (
                 <span
                   key={index}
-                  className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
+                  className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded"
                 >
                   #{ticketNum}
                 </span>
               ))}
-              {ticket.tickets.length > 10 && (
-                <span className="text-xs text-muted-foreground px-2 py-1">
-                  +{ticket.tickets.length - 10} more
+              {ticket.tickets.length > 3 && (
+                <span className="text-xs text-muted-foreground px-1.5 py-0.5">
+                  +{ticket.tickets.length - 3}
                 </span>
               )}
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <button
               onClick={() => handleRaffleClick(ticket.raffleAddress)}
-              className="flex-1 text-xs bg-primary/10 text-primary px-3 py-2 rounded-md hover:bg-primary/20 transition-colors"
+              className="flex-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
             >
-              View Raffle
+              View
             </button>
-            
+
             {ticket.state === 'ended' && (
               <button
                 onClick={() => handleClaimRefund(ticket.raffleAddress)}
-                className="flex-1 text-xs bg-green-500/10 text-green-600 px-3 py-2 rounded-md hover:bg-green-500/20 transition-colors flex items-center justify-center gap-1"
+                className="flex-1 text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors flex items-center justify-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />
                 Refund

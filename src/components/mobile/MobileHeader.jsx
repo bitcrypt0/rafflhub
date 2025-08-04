@@ -164,7 +164,7 @@ const MobileHeader = () => {
                 </Button>
               </SheetTrigger>
               
-              <SheetContent side="right" className="w-80 p-0 bg-background">
+              <SheetContent side="right" className="w-64 p-0 bg-background">
                 <SheetHeader className="p-3 border-b border-border">
                   <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
                 </SheetHeader>

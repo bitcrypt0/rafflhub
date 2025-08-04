@@ -49,90 +49,64 @@ const MobileDashboardTab = ({ creatorStats }) => {
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-3 space-y-3 max-h-80 overflow-y-auto">
       {/* Creator Stats Overview */}
-      <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg p-4 border border-border/50">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Creator Overview</h3>
+      <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg p-3 border border-border/50">
+        <div className="flex items-center gap-1 mb-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <h3 className="text-xs font-semibold text-foreground">Creator Stats</h3>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-2 gap-2">
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground mb-1">
+            <div className="text-lg font-bold text-foreground mb-0.5">
               {creatorStats.totalRaffles}
             </div>
-            <div className="text-xs text-muted-foreground">Total Raffles</div>
-            <div className="text-xs text-primary mt-1">
-              {creatorStats.activeRaffles} active
-            </div>
+            <div className="text-xs text-muted-foreground">Raffles</div>
           </div>
-          
+
           <div className="text-center">
-            <div className="text-2xl font-bold text-foreground mb-1">
+            <div className="text-lg font-bold text-foreground mb-0.5">
               {parseFloat(creatorStats.totalRevenue).toFixed(2)}
             </div>
             <div className="text-xs text-muted-foreground">ETH Revenue</div>
-            <div className="text-xs text-primary mt-1">
-              {creatorStats.successRate}% success rate
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground mb-1">
-              {creatorStats.totalParticipants}
-            </div>
-            <div className="text-xs text-muted-foreground">Participants</div>
-            <div className="text-xs text-primary mt-1">
-              {creatorStats.uniqueParticipants} unique
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground mb-1">
-              {creatorStats.monthlyRevenue}
-            </div>
-            <div className="text-xs text-muted-foreground">Monthly ETH</div>
-            <div className="text-xs text-primary mt-1">
-              This month
-            </div>
           </div>
         </div>
       </div>
 
       {/* Utilities Section */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Settings className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Creator Utilities</h3>
+        <div className="flex items-center gap-1 mb-2">
+          <Settings className="h-4 w-4 text-primary" />
+          <h3 className="text-xs font-semibold text-foreground">Utilities</h3>
         </div>
-        
-        <div className="grid grid-cols-2 gap-3">
+
+        <div className="grid grid-cols-2 gap-2">
           {utilities.map((utility) => {
             const Icon = utility.icon;
-            
+
             return (
               <button
                 key={utility.id}
                 onClick={() => handleUtilityClick(utility.path)}
-                className="group relative overflow-hidden bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200 text-left"
+                className="group relative overflow-hidden bg-card border border-border rounded-lg p-2 hover:shadow-sm transition-all duration-200 text-left"
               >
                 {/* Background Gradient */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${utility.color} opacity-0 group-hover:opacity-10 transition-opacity duration-200`} />
-                
+
                 {/* Content */}
                 <div className="relative">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${utility.color} text-white`}>
-                      <Icon className="h-4 w-4" />
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`p-1 rounded bg-gradient-to-br ${utility.color} text-white`}>
+                      <Icon className="h-3 w-3" />
                     </div>
                   </div>
-                  
-                  <h4 className="font-medium text-foreground text-sm mb-1 group-hover:text-primary transition-colors">
+
+                  <h4 className="font-medium text-foreground text-xs mb-0.5 group-hover:text-primary transition-colors">
                     {utility.title}
                   </h4>
-                  
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+
+                  <p className="text-xs text-muted-foreground leading-tight">
                     {utility.description}
                   </p>
                 </div>
@@ -144,23 +118,23 @@ const MobileDashboardTab = ({ creatorStats }) => {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
-        
-        <div className="space-y-3">
+        <h3 className="text-xs font-semibold text-foreground mb-2">Quick Actions</h3>
+
+        <div className="space-y-2">
           <button
             onClick={() => navigate('/create-raffle')}
-            className="w-full bg-primary text-white p-4 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-primary text-white p-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
           >
-            <Plus className="h-5 w-5" />
-            Create New Raffle
+            <Plus className="h-3 w-3" />
+            Create Raffle
           </button>
-          
+
           <button
             onClick={() => navigate('/')}
-            className="w-full bg-muted text-foreground p-4 rounded-lg font-medium hover:bg-muted/80 transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-muted text-foreground p-2 rounded-lg text-xs font-medium hover:bg-muted/80 transition-colors flex items-center justify-center gap-1"
           >
-            <Users className="h-5 w-5" />
-            Browse All Raffles
+            <Users className="h-3 w-3" />
+            Browse Raffles
           </button>
         </div>
       </div>

@@ -77,16 +77,16 @@ const MobileCreatedRafflesTab = ({
 
   if (!raffles || raffles.length === 0) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Raffles Created</h3>
-          <p className="text-muted-foreground text-sm mb-6">
+      <div className="p-3">
+        <div className="text-center py-6">
+          <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-sm font-semibold mb-1">No Raffles Created</h3>
+          <p className="text-muted-foreground text-xs mb-4">
             Create your first raffle to start earning revenue.
           </p>
           <button
             onClick={handleCreateRaffle}
-            className="bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
           >
             Create Raffle
           </button>
@@ -96,83 +96,67 @@ const MobileCreatedRafflesTab = ({
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
       {/* Create New Raffle Button */}
       <button
         onClick={handleCreateRaffle}
-        className="w-full bg-primary text-white p-4 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+        className="w-full bg-primary text-white p-2 rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
       >
-        <Plus className="h-5 w-5" />
-        Create New Raffle
+        <Plus className="h-3 w-3" />
+        Create New
       </button>
 
       {/* Raffles List */}
-      {raffles.map((raffle) => (
+      {raffles.slice(0, 3).map((raffle) => (
         <div
           key={raffle.address}
-          className="bg-card border border-border rounded-lg p-4"
+          className="bg-muted/30 border border-border/50 rounded-lg p-3"
         >
           {/* Header */}
-          <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-start justify-between gap-1 mb-2">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground text-sm truncate">
+              <h4 className="font-medium text-foreground text-xs truncate">
                 {raffle.name}
               </h4>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDate(raffle.endTime)}
               </p>
             </div>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStateColor(raffle.state)}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${getStateColor(raffle.state)}`}>
               {getStateLabel(raffle.state)}
             </span>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Compact Stats */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Sold</span>
-              </div>
-              <p className="text-sm font-semibold">
+              <p className="text-xs text-muted-foreground">Sold</p>
+              <p className="text-xs font-semibold">
                 {raffle.ticketsSold}/{raffle.maxTickets}
               </p>
             </div>
-            
+
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <DollarSign className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Price</span>
-              </div>
-              <p className="text-sm font-semibold">
-                {parseFloat(raffle.ticketPrice).toFixed(3)} ETH
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Revenue</span>
-              </div>
-              <p className="text-sm font-semibold">
+              <p className="text-xs text-muted-foreground">Revenue</p>
+              <p className="text-xs font-semibold text-green-600">
                 {parseFloat(raffle.revenue).toFixed(3)} ETH
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <button
               onClick={() => handleRaffleClick(raffle.address)}
-              className="flex-1 text-xs bg-primary/10 text-primary px-3 py-2 rounded-md hover:bg-primary/20 transition-colors"
+              className="flex-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
             >
-              View Details
+              View
             </button>
-            
+
             {(raffle.state === 'completed' || raffle.state === 'allPrizesClaimed') && parseFloat(raffle.revenue) > 0 && (
               <button
                 onClick={() => handleWithdrawRevenue(raffle)}
-                className="flex-1 text-xs bg-green-500/10 text-green-600 px-3 py-2 rounded-md hover:bg-green-500/20 transition-colors"
+                className="flex-1 text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors"
               >
                 Withdraw
               </button>

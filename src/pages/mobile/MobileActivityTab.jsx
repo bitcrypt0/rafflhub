@@ -66,12 +66,12 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
 
   if (!activities || activities.length === 0) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
-          <p className="text-muted-foreground text-sm">
-            Your raffle activity will appear here once you start participating.
+      <div className="p-3">
+        <div className="text-center py-6">
+          <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-sm font-semibold mb-1">No Activity Yet</h3>
+          <p className="text-muted-foreground text-xs">
+            Activity will appear here once you participate.
           </p>
         </div>
       </div>
@@ -79,26 +79,26 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {activities.map((activity) => (
+    <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+      {activities.slice(0, 5).map((activity) => (
         <div
           key={activity.id}
-          className="bg-card border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+          className="bg-muted/30 border border-border/50 rounded-lg p-3 hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2">
             {/* Activity Icon */}
-            <div className="flex-shrink-0 mt-1">
+            <div className="flex-shrink-0 mt-0.5">
               {getActivityIcon(activity.type)}
             </div>
 
             {/* Activity Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start justify-between gap-1">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-foreground text-sm">
+                  <h4 className="font-medium text-foreground text-xs">
                     {getActivityTitle(activity)}
                   </h4>
-                  <p className="text-muted-foreground text-xs mt-1">
+                  <p className="text-muted-foreground text-xs mt-0.5 truncate">
                     {getActivityDescription(activity)}
                   </p>
                 </div>
@@ -108,20 +108,20 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-1 mt-2">
                 <button
                   onClick={() => handleRaffleClick(activity.raffleAddress)}
-                  className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+                  className="text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
                 >
-                  View Raffle
+                  View
                 </button>
-                
+
                 {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
                   <button
                     onClick={() => claimRefund(activity.raffleAddress)}
-                    className="text-xs bg-green-500/10 text-green-600 px-3 py-1.5 rounded-md hover:bg-green-500/20 transition-colors"
+                    className="text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors"
                   >
-                    Claim Refund
+                    Refund
                   </button>
                 )}
               </div>
@@ -129,6 +129,18 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
           </div>
         </div>
       ))}
+
+      {/* View All Button */}
+      {activities.length > 5 && (
+        <div className="pt-2 border-t border-border/50">
+          <button
+            onClick={() => navigate('/profile')} // Navigate to full profile to see all activities
+            className="w-full text-xs text-primary hover:text-primary/80 transition-colors py-2"
+          >
+            View All {activities.length} Activities
+          </button>
+        </div>
+      )}
     </div>
   );
 };
