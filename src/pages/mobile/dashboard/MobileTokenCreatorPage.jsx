@@ -43,7 +43,7 @@ const MobileTokenCreatorPage = () => {
       setLoading(true);
 
       // Only ERC1155 supports createNewToken method
-      const contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
 
       if (!contract) {
         toast.error('Invalid ERC1155 collection address');
@@ -77,7 +77,7 @@ const MobileTokenCreatorPage = () => {
     }
 
     try {
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, 'erc1155');
       if (!contract) return false;
 
       // Try to get total supply for this token ID
@@ -115,7 +115,7 @@ const MobileTokenCreatorPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
 
       if (!contract) {
         toast.error('Invalid collection address');
@@ -152,7 +152,7 @@ const MobileTokenCreatorPage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('erc1155', formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, 'erc1155');
       
       if (!contract) {
         toast.error('Invalid collection address');

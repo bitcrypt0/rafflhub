@@ -40,7 +40,7 @@ const MobileRevenuePage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('raffle', raffleAddress);
+      const contract = getContractInstance(raffleAddress, 'raffle');
       
       if (!contract) {
         toast.error('Invalid raffle address');
@@ -109,7 +109,7 @@ const MobileRevenuePage = () => {
       for (let i = 0; i < Math.min(raffleCountNum, 20); i++) {
         try {
           const raffleAddress = await executeCall(contracts.raffleFactory, 'raffles', [i]);
-          const raffleContract = getContractInstance('raffle', raffleAddress);
+          const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
           if (!raffleContract) continue;
 
@@ -157,7 +157,7 @@ const MobileRevenuePage = () => {
 
     try {
       setLoading(true);
-      const contract = getContractInstance('raffle', raffleAddress);
+      const contract = getContractInstance(raffleAddress, 'raffle');
       
       if (!contract) {
         toast.error('Invalid raffle address');

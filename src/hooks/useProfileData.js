@@ -94,7 +94,7 @@ export const useProfileData = () => {
           for (const event of raffleCreatedEvents) {
             const block = await provider.getBlock(event.blockNumber);
             try {
-              const raffleContract = getContractInstance('raffle', event.args.raffle);
+              const raffleContract = getContractInstance(event.args.raffle, 'raffle');
               let raffleName = `Raffle ${event.args.raffle.slice(0, 8)}...`;
 
               if (raffleContract) {
@@ -133,7 +133,7 @@ export const useProfileData = () => {
 
           for (const event of raffleRegisteredEvents) {
             const raffleAddress = event.args.raffle;
-            const raffleContract = getContractInstance('raffle', raffleAddress);
+            const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
             if (!raffleContract) continue;
 
@@ -301,7 +301,7 @@ export const useProfileData = () => {
         for (const event of raffleCreatedEvents) {
           try {
             const raffleAddress = event.args.raffle;
-            const raffleContract = getContractInstance('raffle', raffleAddress);
+            const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
             if (!raffleContract) continue;
             const [name, ticketPrice, ticketLimit, participantsCount, startTime, duration, state] = await Promise.all([
@@ -368,7 +368,7 @@ export const useProfileData = () => {
         for (const event of raffleRegisteredEvents) {
           try {
             const raffleAddress = event.args.raffle;
-            const raffleContract = getContractInstance('raffle', raffleAddress);
+            const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
             if (!raffleContract) continue;
 
@@ -456,7 +456,7 @@ export const useProfileData = () => {
     }
 
     try {
-      const raffleContract = getContractInstance('raffle', raffleAddress);
+      const raffleContract = getContractInstance(raffleAddress, 'raffle');
       if (!raffleContract) {
         toast.error('Invalid raffle contract');
         return;
@@ -483,7 +483,7 @@ export const useProfileData = () => {
     }
 
     try {
-      const raffleContract = getContractInstance('raffle', raffleAddress);
+      const raffleContract = getContractInstance(raffleAddress, 'raffle');
       if (!raffleContract) {
         toast.error('Invalid raffle contract');
         return;

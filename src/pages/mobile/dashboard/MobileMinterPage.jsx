@@ -43,11 +43,11 @@ const MobileMinterPage = () => {
       setLoading(true);
 
       // Try ERC1155 first, then ERC721
-      let contract = getContractInstance('erc1155Prize', formData.collectionAddress);
+      let contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
       let type = 'erc1155';
 
       if (!contract) {
-        contract = getContractInstance('erc721Prize', formData.collectionAddress);
+        contract = getContractInstance(formData.collectionAddress, 'erc721Prize');
         type = 'erc721';
       }
 
@@ -88,7 +88,7 @@ const MobileMinterPage = () => {
     try {
       setLoading(true);
       const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
-      const contract = getContractInstance(contractType, formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, contractType);
 
       if (!contract) {
         toast.error('Invalid collection address');
@@ -122,7 +122,7 @@ const MobileMinterPage = () => {
     try {
       setLoading(true);
       const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
-      const contract = getContractInstance(contractType, formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, contractType);
 
       if (!contract) {
         toast.error('Invalid collection address');
@@ -153,7 +153,7 @@ const MobileMinterPage = () => {
     try {
       setLoading(true);
       const contractType = collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
-      const contract = getContractInstance(contractType, formData.collectionAddress);
+      const contract = getContractInstance(formData.collectionAddress, contractType);
 
       if (!contract) {
         toast.error('Invalid collection address');
