@@ -83,27 +83,31 @@ export const useProfileData = () => {
           if (!raffleContract) continue;
 
           // Get raffle details
-          const [name, ticketPrice, maxTickets, endTime, state] = await Promise.all([
+          const [name, ticketPrice, ticketLimit, startTime, duration, state] = await Promise.all([
             executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
             executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'maxTickets', []).catch(() => ethers.BigNumber.from(0)),
-            executeCall(raffleContract, 'endTime', []).catch(() => ethers.BigNumber.from(0)),
+            executeCall(raffleContract, 'ticketLimit', []).catch(() => ethers.BigNumber.from(0)),
+            executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
+            executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0)),
             executeCall(raffleContract, 'state', []).catch(() => 0)
           ]);
 
+          // Calculate end time
+          const endTime = startTime.add(duration);
+
           // Check if user has tickets
-          const userTickets = await executeCall(raffleContract, 'getTicketsByAddress', [stableAddress]).catch(() => []);
-          
-          if (userTickets.length > 0) {
-            totalTicketsPurchased += userTickets.length;
+          const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
+
+          if (userTicketCount.gt(0)) {
+            totalTicketsPurchased += userTicketCount.toNumber();
             
             activities.push({
               id: `tickets-${raffleAddress}`,
               type: 'ticket_purchase',
               raffleAddress,
               raffleName: name,
-              ticketCount: userTickets.length,
-              amount: ethers.utils.formatEther(ticketPrice.mul(userTickets.length)),
+              ticketCount: userTicketCount.toNumber(),
+              amount: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
               timestamp: Date.now() - (i * 86400000), // Mock timestamp
               state: mapRaffleState(state)
             });
@@ -111,8 +115,8 @@ export const useProfileData = () => {
             // Check if user won (if raffle is completed)
             if (state >= 3) {
               try {
-                const winners = await executeCall(raffleContract, 'getWinners', []).catch(() => []);
-                if (winners.includes(stableAddress)) {
+                const isWinner = await executeCall(raffleContract, 'isWinner', [stableAddress]).catch(() => false);
+                if (isWinner) {
                   totalPrizesWon++;
                   activities.push({
                     id: `win-${raffleAddress}`,
@@ -171,22 +175,27 @@ export const useProfileData = () => {
           const creator = await executeCall(raffleContract, 'creator', []).catch(() => '');
           
           if (creator.toLowerCase() === stableAddress.toLowerCase()) {
-            const [name, ticketPrice, maxTickets, ticketsSold, endTime, state] = await Promise.all([
+            const [name, ticketPrice, ticketLimit, participantsCount, startTime, duration, state] = await Promise.all([
               executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
               executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'maxTickets', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'ticketsSold', []).catch(() => ethers.BigNumber.from(0)),
-              executeCall(raffleContract, 'endTime', []).catch(() => ethers.BigNumber.from(0)),
+              executeCall(raffleContract, 'ticketLimit', []).catch(() => ethers.BigNumber.from(0)),
+              executeCall(raffleContract, 'getParticipantsCount', []).catch(() => ethers.BigNumber.from(0)),
+              executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
+              executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0)),
               executeCall(raffleContract, 'state', []).catch(() => 0)
             ]);
+
+            // Calculate end time and tickets sold
+            const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
+            const ticketsSold = participantsCount;
 
             raffles.push({
               address: raffleAddress,
               name,
               ticketPrice: ethers.utils.formatEther(ticketPrice),
-              maxTickets: maxTickets.toString(),
+              maxTickets: ticketLimit.toString(),
               ticketsSold: ticketsSold.toString(),
-              endTime: new Date(endTime.toNumber() * 1000),
+              endTime: endTime,
               state: mapRaffleState(state),
               revenue: ethers.utils.formatEther(ticketPrice.mul(ticketsSold))
             });
@@ -221,25 +230,29 @@ export const useProfileData = () => {
 
           if (!raffleContract) continue;
 
-          const userTickets = await executeCall(raffleContract, 'getTicketsByAddress', [stableAddress]).catch(() => []);
-          
-          if (userTickets.length > 0) {
-            const [name, ticketPrice, state, endTime] = await Promise.all([
+          const userTicketCount = await executeCall(raffleContract, 'ticketsPurchased', [stableAddress]).catch(() => ethers.BigNumber.from(0));
+
+          if (userTicketCount.gt(0)) {
+            const [name, ticketPrice, state, startTime, duration] = await Promise.all([
               executeCall(raffleContract, 'name', []).catch(() => `Raffle ${i + 1}`),
               executeCall(raffleContract, 'ticketPrice', []).catch(() => ethers.BigNumber.from(0)),
               executeCall(raffleContract, 'state', []).catch(() => 0),
-              executeCall(raffleContract, 'endTime', []).catch(() => ethers.BigNumber.from(0))
+              executeCall(raffleContract, 'startTime', []).catch(() => ethers.BigNumber.from(0)),
+              executeCall(raffleContract, 'duration', []).catch(() => ethers.BigNumber.from(0))
             ]);
+
+            // Calculate end time
+            const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
 
             tickets.push({
               raffleAddress,
               raffleName: name,
-              ticketCount: userTickets.length,
+              ticketCount: userTicketCount.toNumber(),
               ticketPrice: ethers.utils.formatEther(ticketPrice),
-              totalSpent: ethers.utils.formatEther(ticketPrice.mul(userTickets.length)),
+              totalSpent: ethers.utils.formatEther(ticketPrice.mul(userTicketCount)),
               state: mapRaffleState(state),
-              endTime: new Date(endTime.toNumber() * 1000),
-              tickets: userTickets.map(t => t.toString())
+              endTime: endTime,
+              tickets: Array.from({length: userTicketCount.toNumber()}, (_, i) => i.toString())
             });
           }
         } catch (error) {

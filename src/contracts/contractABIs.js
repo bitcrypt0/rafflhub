@@ -38,15 +38,6 @@ export const contractABIs = {
       ],
       "stateMutability": "view",
       "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "isExternallyPrized",
-      "outputs": [
-        { "internalType": "bool", "name": "", "type": "bool" }
-      ],
-      "stateMutability": "view",
-      "type": "function"
     }
   ],
   erc20: ERC20ABI

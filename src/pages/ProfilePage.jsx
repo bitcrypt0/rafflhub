@@ -771,16 +771,21 @@ const DesktopProfilePage = () => {
         
         if (raffleContract) {
           try {
-            const [name, startTime, duration, ticketLimit, ticketsSold, state, totalRevenue, isExternallyPrized] = await Promise.all([
+            const [name, startTime, duration, ticketLimit, ticketPrice, state, isExternallyPrized, participantsCount] = await Promise.all([
               executeCall(raffleContract.name),
               executeCall(raffleContract.startTime),
               executeCall(raffleContract.duration),
               executeCall(raffleContract.ticketLimit),
-              executeCall(raffleContract.ticketsSold),
+              executeCall(raffleContract.ticketPrice),
               executeCall(raffleContract.state),
-              executeCall(raffleContract.totalRevenue),
-              executeCall(raffleContract.isExternallyPrized)
+              executeCall(raffleContract.isExternallyPrized),
+              executeCall(raffleContract.getParticipantsCount)
             ]);
+
+            // Calculate tickets sold and total revenue
+            const ticketsSold = participantsCount.success ? participantsCount.result.toNumber() : 0;
+            const totalRevenue = ticketPrice.success && participantsCount.success ?
+              ticketPrice.result.mul(participantsCount.result) : ethers.BigNumber.from(0);
 
             if (name.success) {
               const raffleData = {
@@ -790,8 +795,8 @@ const DesktopProfilePage = () => {
                 startTime: startTime.success ? startTime.result.toNumber() : 0,
                 duration: duration.success ? duration.result.toNumber() : 0,
                 ticketLimit: ticketLimit.success ? ticketLimit.result.toNumber() : 0,
-                ticketsSold: ticketsSold.success ? ticketsSold.result.toNumber() : 0,
-                totalRevenue: totalRevenue.success ? totalRevenue.result : ethers.BigNumber.from(0),
+                ticketsSold: ticketsSold,
+                totalRevenue: totalRevenue,
                 state: state.success ? mapRaffleState(state.result) : 'unknown',
                 isExternallyPrized: isExternallyPrized.success ? isExternallyPrized.result : false
               };
