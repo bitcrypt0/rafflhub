@@ -611,6 +611,20 @@
       overscroll-behavior: none;
     }
 
+    /* Keyboard-aware modal adjustments */
+    .modal-open {
+      overflow: hidden !important;
+    }
+
+    /* Keyboard visible state adjustments */
+    html[style*="--keyboard-visible: 1"] .unified-mobile-modal {
+      padding-top: 1rem;
+    }
+
+    html[style*="--keyboard-visible: 1"] .unified-mobile-modal .modal-content {
+      max-height: calc(100vh - var(--keyboard-height, 300px) - 2rem);
+    }
+
     /* Prevent viewport jumping when keyboard appears */
     .mobile-utility-page-content {
       /* Use fixed positioning to prevent reflow */

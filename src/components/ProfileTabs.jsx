@@ -23,6 +23,8 @@ import MinterApprovalComponent from './MinterApprovalComponent';
 import CreatorRevenueWithdrawalComponent from './CreatorRevenueWithdrawalComponent';
 import CreateNewTokenIDComponent from './CreateNewTokenIDComponent';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import UnifiedMobileModal from './mobile/UnifiedMobileModal';
+import { initMobileKeyboardFix, cleanupMobileKeyboardFix } from '../utils/androidKeyboardFix';
 
 const ProfileTabs = ({
   activities,
@@ -37,6 +39,12 @@ const ProfileTabs = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
+
+  // Initialize mobile keyboard fix
+  useEffect(() => {
+    initMobileKeyboardFix();
+    return () => cleanupMobileKeyboardFix();
+  }, []);
 
   // Modal state management for desktop only
   const [modals, setModals] = useState({
@@ -176,73 +184,17 @@ const ProfileTabs = ({
     </div>
   );
 
-  // Lock body scroll when any modal is open on mobile
+  // Simple body scroll lock for mobile modals (no aggressive viewport manipulation)
   useEffect(() => {
     if (isMobile) {
       const isAnyModalOpen = Object.values(modals).some(Boolean);
 
       if (isAnyModalOpen) {
-        // Store original values
-        const originalOverflow = document.body.style.overflow;
-        const originalPosition = document.body.style.position;
-        const originalTop = document.body.style.top;
-        const originalWidth = document.body.style.width;
-
-        // Prevent scrolling and fix position
+        // Simple overflow hidden - let the new modal handle the rest
         document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = '0';
-        document.body.style.width = '100%';
 
-        // Aggressive viewport and scroll management for Android
-        const viewport = document.querySelector('meta[name=viewport]');
-        const originalViewport = viewport?.getAttribute('content');
-        if (viewport) {
-          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-        }
-
-        // Prevent body from moving when keyboard opens
-        const scrollY = window.scrollY;
-        document.body.style.top = `-${scrollY}px`;
-
-        // Additional Android-specific fixes
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = '100%';
-
-        // Prevent touch events on body
-        const preventBodyTouch = (e) => {
-          if (!modalRef.current?.contains(e.target)) {
-            e.preventDefault();
-          }
-        };
-
-        document.body.addEventListener('touchstart', preventBodyTouch, { passive: false });
-        document.body.addEventListener('touchmove', preventBodyTouch, { passive: false });
-
-        // Cleanup function to restore original values
         return () => {
-          document.body.style.overflow = originalOverflow;
-          document.body.style.position = originalPosition;
-          document.body.style.top = originalTop;
-          document.body.style.width = originalWidth;
-
-          // Restore document element styles
-          document.documentElement.style.overflow = '';
-          document.documentElement.style.height = '';
-
-          // Remove touch event listeners
-          document.body.removeEventListener('touchstart', preventBodyTouch);
-          document.body.removeEventListener('touchmove', preventBodyTouch);
-
-          // Restore scroll position
-          const scrollY = document.body.style.top;
-          if (scrollY) {
-            window.scrollTo(0, parseInt(scrollY || '0') * -1);
-          }
-
-          if (viewport && originalViewport) {
-            viewport.setAttribute('content', originalViewport);
-          }
+          document.body.style.overflow = '';
         };
       }
     }
@@ -257,7 +209,7 @@ const ProfileTabs = ({
     };
   }, [isMobile]);
 
-  // Custom mobile modal component that avoids Radix UI issues
+  // Mobile-aware modal component using the new UnifiedMobileModal
   const MobileAwareModal = ({
     isOpen,
     onOpenChange,
@@ -265,295 +217,21 @@ const ProfileTabs = ({
     title,
     children
   }) => {
-    const [keyboardOpen, setKeyboardOpen] = useState(false);
-    const modalRef = useRef(null);
-
-    // Completely disable backdrop interaction when keyboard is open or inputs are focused
-    const handleBackdropClick = (e) => {
-      console.log('Backdrop click:', { keyboardOpen, target: e.target.tagName });
-
-      // Never close if keyboard is open
-      if (keyboardOpen) {
-        console.log('Backdrop click blocked: keyboard open');
-        return;
-      }
-
-      // Check if any input in the modal has focus
-      const activeElement = document.activeElement;
-      if (activeElement && modalRef.current?.contains(activeElement)) {
-        console.log('Backdrop click blocked: input has focus');
-        return;
-      }
-
-      // Check if clicking on any interactive element
-      const target = e.target;
-      if (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.tagName === 'BUTTON' ||
-          target.closest('[role="combobox"]') ||
-          target.closest('[data-radix-select-trigger]') ||
-          target.closest('[data-radix-select-content]') ||
-          target.closest('[data-radix-select-item]') ||
-          target.closest('button') ||
-          target.closest('input') ||
-          target.closest('textarea')) {
-        console.log('Backdrop click blocked: interactive element');
-        return;
-      }
-
-      // Only close if clicking directly on backdrop
-      if (e.target === e.currentTarget) {
-        console.log('Closing modal via backdrop');
-        onOpenChange(false);
-      }
-    };
-
-    // Handle escape key
-    useEffect(() => {
-      if (isOpen && isMobile) {
-        const handleEscape = (e) => {
-          if (e.key === 'Escape') {
-            onOpenChange(false);
-          }
-        };
-
-        document.addEventListener('keydown', handleEscape);
-        return () => document.removeEventListener('keydown', handleEscape);
-      }
-    }, [isOpen, isMobile, onOpenChange]);
-
-    // Android-specific keyboard detection and input focus handling
-    useEffect(() => {
-      if (isOpen && isMobile) {
-        const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
-        const initialWindowHeight = window.innerHeight;
-        let focusTimeout;
-        let blurTimeout;
-
-        // More aggressive keyboard detection for Android
-        const handleViewportChange = () => {
-          const currentHeight = window.visualViewport?.height || window.innerHeight;
-          const windowHeight = window.innerHeight;
-
-          // Check both visual viewport and window height changes
-          const viewportDiff = initialViewportHeight - currentHeight;
-          const windowDiff = initialWindowHeight - windowHeight;
-          const maxDiff = Math.max(viewportDiff, windowDiff);
-
-          // Lower threshold for Android (100px instead of 150px)
-          const isKeyboardOpen = maxDiff > 100;
-          console.log('Keyboard detection:', { viewportDiff, windowDiff, maxDiff, isKeyboardOpen });
-          setKeyboardOpen(isKeyboardOpen);
-        };
-
-        // Aggressive input focus handling for Android
-        const handleFocusIn = (e) => {
-          console.log('Focus in:', e.target.tagName, e.target.type);
-          if (e.target.tagName === 'INPUT' ||
-              e.target.tagName === 'TEXTAREA' ||
-              e.target.hasAttribute('contenteditable') ||
-              e.target.closest('[data-radix-select-trigger]')) {
-
-            // Clear any pending blur timeout
-            if (blurTimeout) {
-              clearTimeout(blurTimeout);
-              blurTimeout = null;
-            }
-
-            // Immediately set keyboard open for Android
-            setKeyboardOpen(true);
-
-            // Also set with delay as backup
-            focusTimeout = setTimeout(() => {
-              setKeyboardOpen(true);
-            }, 50);
-          }
-        };
-
-        const handleFocusOut = (e) => {
-          console.log('Focus out:', e.target.tagName);
-          if (focusTimeout) {
-            clearTimeout(focusTimeout);
-            focusTimeout = null;
-          }
-
-          // Delay closing keyboard state to prevent flicker
-          blurTimeout = setTimeout(() => {
-            // Check if another input has focus
-            const activeElement = document.activeElement;
-            const isInputFocused = activeElement && (
-              activeElement.tagName === 'INPUT' ||
-              activeElement.tagName === 'TEXTAREA' ||
-              activeElement.hasAttribute('contenteditable') ||
-              activeElement.closest('[data-radix-select-trigger]')
-            );
-
-            if (!isInputFocused) {
-              // Double-check with viewport
-              const currentHeight = window.visualViewport?.height || window.innerHeight;
-              const windowHeight = window.innerHeight;
-              const viewportDiff = initialViewportHeight - currentHeight;
-              const windowDiff = initialWindowHeight - windowHeight;
-              const maxDiff = Math.max(viewportDiff, windowDiff);
-
-              if (maxDiff <= 100) {
-                setKeyboardOpen(false);
-              }
-            }
-          }, 500); // Longer delay for Android
-        };
-
-        // Multiple event listeners for better Android support
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener('resize', handleViewportChange);
-        }
-        window.addEventListener('resize', handleViewportChange);
-        window.addEventListener('orientationchange', handleViewportChange);
-
-        // Focus event listeners with capture for better Android support
-        document.addEventListener('focusin', handleFocusIn, true);
-        document.addEventListener('focusout', handleFocusOut, true);
-
-        // Additional Android-specific events
-        document.addEventListener('touchstart', (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            console.log('Touch start on input');
-            setKeyboardOpen(true);
-          }
-        }, true);
-
-        return () => {
-          if (window.visualViewport) {
-            window.visualViewport.removeEventListener('resize', handleViewportChange);
-          }
-          window.removeEventListener('resize', handleViewportChange);
-          window.removeEventListener('orientationchange', handleViewportChange);
-          document.removeEventListener('focusin', handleFocusIn, true);
-          document.removeEventListener('focusout', handleFocusOut, true);
-
-          if (focusTimeout) {
-            clearTimeout(focusTimeout);
-          }
-          if (blurTimeout) {
-            clearTimeout(blurTimeout);
-          }
-        };
-      }
-    }, [isOpen, isMobile]);
-
+    // Use the new UnifiedMobileModal for mobile, simple modal for desktop
     if (isMobile) {
       return (
-        <>
-          {/* Trigger button */}
-          <div onClick={() => onOpenChange(true)}>
-            {trigger}
-          </div>
-
-          {/* Custom mobile modal - rendered via portal */}
-          {isOpen && createPortal(
-            <div
-              className={`fixed inset-0 z-[9999] ${keyboardOpen ? 'items-start pt-4' : 'items-end'} flex justify-center`}
-              onClick={handleBackdropClick}
-              style={{
-                // Prevent viewport scaling issues on iOS
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
-            >
-              {/* Backdrop */}
-              <div className="absolute inset-0 bg-black/50" />
-
-              {/* Modal content */}
-              <div
-                ref={modalRef}
-                className={`relative w-full bg-background shadow-xl duration-300 flex flex-col ${
-                  keyboardOpen
-                    ? 'rounded-xl mx-4 max-h-[calc(100vh-2rem)]'
-                    : 'rounded-t-xl max-h-[90vh] animate-in slide-in-from-bottom-2'
-                }`}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  // Ensure modal stays in view when keyboard opens
-                  maxHeight: keyboardOpen ? 'calc(100vh - 2rem)' : '90vh',
-                }}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
-                  <h2 className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{title}</h2>
-                  <div className="flex items-center gap-2">
-                    {/* Debug info for development */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        KB: {keyboardOpen ? 'Open' : 'Closed'}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => onOpenChange(false)}
-                      className="p-2 hover:bg-muted rounded-md transition-colors"
-                      type="button"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div
-                  className="p-4 overflow-y-auto flex-1 mobile-modal-content"
-                  style={{
-                    WebkitOverflowScrolling: 'touch',
-                    touchAction: 'pan-y', // Allow vertical scrolling but prevent other gestures
-                    position: 'relative',
-                    zIndex: 1
-                  }}
-                  onTouchStart={(e) => {
-                    console.log('Content touch start:', e.target.tagName);
-                    e.stopPropagation();
-
-                    // If touching an input, ensure keyboard state is set
-                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                      setKeyboardOpen(true);
-                    }
-                  }}
-                  onTouchMove={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    console.log('Content click:', e.target.tagName);
-                    e.stopPropagation();
-                  }}
-                  onPointerDown={(e) => {
-                    console.log('Content pointer down:', e.target.tagName);
-                    e.stopPropagation();
-                  }}
-                >
-                  {/* Wrap children in a provider that ensures Select portals work */}
-                  <div
-                    style={{ position: 'relative', zIndex: 'auto' }}
-                    onFocus={(e) => {
-                      console.log('Content focus:', e.target.tagName);
-                      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                        setKeyboardOpen(true);
-                      }
-                    }}
-                  >
-                    {children}
-                  </div>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )}
-        </>
+        <UnifiedMobileModal
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          trigger={trigger}
+          title={title}
+        >
+          {children}
+        </UnifiedMobileModal>
       );
     }
 
-    // Desktop: Use regular Dialog
+    // Desktop modal implementation
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
@@ -575,7 +253,7 @@ const ProfileTabs = ({
         <h3 className="text-lg font-semibold">Recent Activity</h3>
         <Badge variant="outline">{activities.length} activities</Badge>
       </div>
-      
+
       {activities.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
@@ -592,26 +270,10 @@ const ProfileTabs = ({
                   {activity.icon}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(activity.timestamp * 1000).toLocaleDateString()}
-                  </p>
-                  {activity.txHash && (
-                    <p className="text-xs text-muted-foreground font-mono mt-1">
-                      Tx: {activity.txHash.slice(0, 10)}...
-                    </p>
-                  )}
+                  <p className="font-medium text-foreground">{activity.title}</p>
+                  <p className="text-sm text-muted-foreground">{activity.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
                 </div>
-                {activity.raffleAddress && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/raffle/${activity.raffleAddress}`)}
-                    className="p-1 hover:bg-muted rounded-md transition-colors"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </div>
           ))}
@@ -619,6 +281,8 @@ const ProfileTabs = ({
       )}
     </div>
   );
+
+
 
   const CreatedRafflesTab = () => (
     <div className="space-y-4">
