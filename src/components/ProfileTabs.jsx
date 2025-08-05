@@ -159,7 +159,7 @@ const ProfileTabs = ({
   const CreatedRafflesTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Created Raffles</h3>
+        <h3 className="text-lg font-semibold">My Raffles</h3>
         <Badge variant="outline">{createdRaffles.length} raffles</Badge>
       </div>
 
@@ -180,49 +180,45 @@ const ProfileTabs = ({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {createdRaffles.map((raffle) => (
             <Card key={raffle.address} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-1">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base truncate">{raffle.name}</CardTitle>
-                  <Badge 
-                    variant={raffle.state === 'active' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
+                  <CardTitle className="text-sm truncate">{raffle.name}</CardTitle>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    raffle.state === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                    raffle.state === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                    raffle.state === 'ended' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                    raffle.state === 'drawing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                    raffle.state === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                    raffle.state === 'allPrizesClaimed' || raffle.state === 'Prizes Claimed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                    raffle.state === 'deleted' ? 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
                     {raffle.state}
-                  </Badge>
+                  </span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
+              <CardContent className="space-y-2 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <p className="text-muted-foreground">Tickets Sold</p>
                     <p className="font-medium">{raffle.ticketsSold}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Revenue</p>
-                    <p className="font-medium">
-                      {raffle.ticketsSold * parseFloat(raffle.ticketPrice) / 1e18} ETH
+                    <p className="font-medium text-green-600">
+                      {parseFloat(raffle.revenue || 0).toFixed(3)} ETH
                     </p>
                   </div>
                 </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/raffle/${raffle.address}`)}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => onViewRevenue(raffle)}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
-                  >
-                    <DollarSign className="h-4 w-4 mr-1" />
-                    Revenue
-                  </Button>
-                </div>
+
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/raffle/${raffle.address}`)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View Raffle
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -252,39 +248,40 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {purchasedTickets.map((ticket) => (
             <Card key={ticket.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base truncate">{ticket.raffleName}</CardTitle>
-                  <Badge 
-                    variant={ticket.canClaimPrize ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {ticket.canClaimPrize ? 'Prize Available' : ticket.state}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Ticket Price</p>
-                    <p className="font-medium">{parseFloat(ticket.ticketPrice) / 1e18} ETH</p>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  {/* Ticket Icon */}
+                  <div className="flex-shrink-0 mt-1">
+                    <Ticket className="h-4 w-4 text-blue-500" />
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Purchase Date</p>
-                    <p className="font-medium">
-                      {new Date(ticket.purchaseTime * 1000).toLocaleDateString()}
-                    </p>
+
+                  {/* Ticket Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground text-sm">
+                          Purchased {ticket.ticketCount} {ticket.raffleName || ticket.name} ticket{ticket.ticketCount > 1 ? 's' : ''}
+                        </h4>
+                        <p className="text-muted-foreground text-sm mt-1">
+                          {ticket.totalSpent} ETH
+                        </p>
+                      </div>
+                      <span className="text-sm text-muted-foreground flex-shrink-0">
+                        {new Date(ticket.purchaseTime * 1000).toLocaleDateString()}
+                      </span>
+                    </div>
+
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
+                    onClick={() => navigate(`/raffle/${ticket.address}`)}
                     className="flex-1"
                   >
                     <Eye className="h-4 w-4 mr-1" />
@@ -409,7 +406,7 @@ const ProfileTabs = ({
             }`}
           >
             <Ticket className="h-5 w-5" />
-            <span className="text-sm font-medium">Tickets</span>
+            <span className="text-sm font-medium">Purchased Tickets</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -432,11 +429,11 @@ const ProfileTabs = ({
           </TabsTrigger>
           <TabsTrigger value="created" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Created
+            My Raffles
           </TabsTrigger>
           <TabsTrigger value="purchased" className="flex items-center gap-2">
             <Ticket className="h-4 w-4" />
-            Purchased
+            Purchased Tickets
           </TabsTrigger>
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />

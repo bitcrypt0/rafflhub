@@ -617,7 +617,7 @@ const DesktopProfilePage = () => {
 
   const tabs = [
     { id: 'activity', label: 'Activity', icon: Clock },
-    { id: 'created', label: 'Created Raffles', icon: Users },
+    { id: 'created', label: 'My Raffles', icon: Users },
     { id: 'tickets', label: 'Purchased Tickets', icon: Ticket },
     { id: 'collections', label: 'Creator Dashboard', icon: Settings }
   ];

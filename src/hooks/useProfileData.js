@@ -391,77 +391,125 @@ export const useProfileData = () => {
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, executeCall, getContractInstance, mapRaffleState]);
 
-  // Fetch purchased tickets (matches desktop implementation)
+  // Fetch purchased tickets using TicketsPurchased events (same approach as Activity tab)
   const fetchPurchasedTickets = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider) {
-      console.log('Mobile: Missing requirements for fetchPurchasedTickets:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
+      console.log('Missing requirements for fetchPurchasedTickets:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
       return;
     }
 
     try {
       const tickets = [];
 
-      // Use same approach as desktop - get registered raffles and check each one
       if (stableContracts.raffleManager) {
         const currentBlock = await provider.getBlockNumber();
         const fromBlock = Math.max(0, currentBlock - 50000);
 
-        console.log('Mobile: Fetching purchased tickets from registered raffles');
+        console.log('Fetching purchased tickets using TicketsPurchased events (same as Activity tab)');
 
         const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
         const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
 
-        console.log('Mobile: Checking', raffleRegisteredEvents.length, 'registered raffles for user tickets');
+        console.log('Checking', raffleRegisteredEvents.length, 'registered raffles for TicketsPurchased events');
+
+        // Group ticket purchases by raffle address
+        const ticketsByRaffle = new Map();
 
         for (const event of raffleRegisteredEvents) {
           try {
             const raffleAddress = event.args.raffle;
+            console.log(`Checking raffle ${raffleAddress} for ticket purchases...`);
+
             const raffleContract = getContractInstance(raffleAddress, 'raffle');
 
-            if (!raffleContract) continue;
+            if (!raffleContract) {
+              console.log(`No contract instance for raffle ${raffleAddress}`);
+              continue;
+            }
 
-            // Use desktop approach for contract calls
-            const userTicketCountResult = await executeCall(raffleContract.ticketsPurchased, stableAddress);
-            const userTicketCount = userTicketCountResult.success ? userTicketCountResult.result : ethers.BigNumber.from(0);
+            // Fetch TicketsPurchased events for this user in this raffle (exact same as Activity tab)
+            const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(stableAddress);
+            const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
 
-            if (userTicketCount.gt(0)) {
-              const [nameResult, ticketPriceResult, stateResult, startTimeResult, durationResult] = await Promise.all([
-                executeCall(raffleContract.name, 'name'),
-                executeCall(raffleContract.ticketPrice, 'ticketPrice'),
-                executeCall(raffleContract.state, 'state'),
-                executeCall(raffleContract.startTime, 'startTime'),
-                executeCall(raffleContract.duration, 'duration')
-              ]);
+            console.log(`Raffle ${raffleAddress}: Found ${ticketEvents.length} TicketsPurchased events`);
 
-              const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
-              const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
-              const state = stateResult.success ? stateResult.result : 0;
-              const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
-              const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
+            if (ticketEvents.length > 0) {
+              // Process each ticket event to aggregate data (similar to Activity tab approach)
+              let totalTickets = 0;
+              let totalCost = ethers.BigNumber.from(0);
+              let earliestPurchase = null;
+              let raffleName = `Raffle ${raffleAddress.slice(0, 8)}...`;
+              let ticketPrice = ethers.BigNumber.from(0);
 
-              // Calculate end time and total spent
-              const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
-              const totalSpent = ticketPrice.mul ? ticketPrice.mul(userTicketCount) : ethers.BigNumber.from(0);
+              for (const ticketEvent of ticketEvents) {
+                const block = await provider.getBlock(ticketEvent.blockNumber);
+                try {
+                  // Get raffle details for each event (same as Activity tab)
+                  const nameResult = await executeCall(raffleContract.name, 'name');
+                  const ticketPriceResult = await executeCall(raffleContract.ticketPrice, 'ticketPrice');
 
-              tickets.push({
-                address: raffleAddress,
-                name,
-                ticketCount: userTicketCount.toNumber(),
-                ticketPrice: ethers.utils.formatEther(ticketPrice),
-                totalSpent: ethers.utils.formatEther(totalSpent),
-                state: mapRaffleState(state),
-                endTime: endTime,
-                tickets: Array.from({length: userTicketCount.toNumber()}, (_, i) => i.toString())
-              });
+                  raffleName = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
+                  ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
+
+                  const quantity = ticketEvent.args.quantity.toNumber();
+                  const cost = ticketPrice.mul ? ticketPrice.mul(ticketEvent.args.quantity) : ethers.BigNumber.from(0);
+
+                  totalTickets += quantity;
+                  totalCost = totalCost.add(cost);
+
+                  // Track earliest purchase time
+                  if (!earliestPurchase || block.timestamp < earliestPurchase) {
+                    earliestPurchase = block.timestamp;
+                  }
+
+                  console.log(`Ticket event: ${quantity} tickets, ${ethers.utils.formatEther(cost)} ETH`);
+                } catch (error) {
+                  console.error('Error processing individual ticket event:', error);
+                }
+              }
+
+              if (totalTickets > 0) {
+                // Get additional raffle details
+                const [stateResult, startTimeResult, durationResult] = await Promise.all([
+                  executeCall(raffleContract.state, 'state'),
+                  executeCall(raffleContract.startTime, 'startTime'),
+                  executeCall(raffleContract.duration, 'duration')
+                ]);
+
+                const state = stateResult.success ? stateResult.result : 0;
+                const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
+                const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
+                const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
+
+                const ticketData = {
+                  id: raffleAddress, // Required for React key
+                  address: raffleAddress,
+                  raffleName: raffleName, // Expected by desktop display
+                  name: raffleName,
+                  ticketCount: totalTickets,
+                  ticketPrice: ethers.utils.formatEther(ticketPrice),
+                  totalSpent: ethers.utils.formatEther(totalCost),
+                  state: mapRaffleState(state),
+                  endTime: endTime,
+                  purchaseTime: earliestPurchase || startTime.toNumber(),
+                  canClaimPrize: false,
+                  canClaimRefund: false,
+                  tickets: Array.from({length: totalTickets}, (_, i) => i.toString())
+                };
+
+                console.log(`Adding ticket data for ${raffleName}:`, ticketData);
+                tickets.push(ticketData);
+              }
             }
           } catch (error) {
-            console.error(`Mobile: Error processing purchased tickets for raffle ${raffleAddress}:`, error);
+            console.error(`Error processing TicketsPurchased events for raffle ${event.args.raffle}:`, error);
           }
         }
       } else {
-        console.log('Mobile: raffleManager contract not available');
+        console.log('raffleManager contract not available');
       }
 
+      console.log('Setting purchased tickets:', tickets.length, 'tickets found using TicketsPurchased events');
       setPurchasedTickets(tickets);
     } catch (error) {
       console.error('Error fetching purchased tickets:', error);

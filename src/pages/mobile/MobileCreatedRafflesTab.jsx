@@ -110,7 +110,7 @@ const MobileCreatedRafflesTab = ({
       {raffles.slice(0, 5).map((raffle) => (
         <div
           key={raffle.address}
-          className="bg-muted/30 border border-border/50 rounded-lg p-4"
+          className="bg-muted/30 border border-border/50 rounded-lg p-3"
         >
           {/* Header */}
           <div className="flex items-start justify-between gap-2 mb-3">
@@ -139,7 +139,7 @@ const MobileCreatedRafflesTab = ({
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Revenue</p>
               <p className="text-xs font-semibold text-green-600">
-                {parseFloat(raffle.revenue).toFixed(3)} ETH
+                {parseFloat(raffle.revenue || 0).toFixed(3)} ETH
               </p>
             </div>
           </div>

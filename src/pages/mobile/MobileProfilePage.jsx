@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Clock, Users, Ticket, Settings } from 'lucide-react';
+import { User, Clock, Users, Settings } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import MobileProfileHeader from './MobileProfileHeader';
 import MobileTabNavigation from './MobileTabNavigation';
 import MobileActivityTab from './MobileActivityTab';
 import MobileCreatedRafflesTab from './MobileCreatedRafflesTab';
-import MobileTicketsTab from './MobileTicketsTab';
+
 import MobileDashboardTab from './MobileDashboardTab';
 
 /**
@@ -76,20 +76,20 @@ const MobileProfilePage = () => {
 
   // Tab configuration
   const tabs = [
-    { 
-      id: 'activity', 
-      label: 'Activity', 
+    {
+      id: 'activity',
+      label: 'Activity',
       icon: Clock,
       component: MobileActivityTab,
       props: { activities: userActivity, claimRefund }
     },
-    { 
-      id: 'created', 
-      label: 'Created', 
+    {
+      id: 'created',
+      label: 'My Raffles',
       icon: Users,
       component: MobileCreatedRafflesTab,
-      props: { 
-        raffles: createdRaffles, 
+      props: {
+        raffles: createdRaffles,
         showRevenueModal,
         setShowRevenueModal,
         selectedRaffle,
@@ -97,16 +97,9 @@ const MobileProfilePage = () => {
         withdrawRevenue
       }
     },
-    { 
-      id: 'tickets', 
-      label: 'Tickets', 
-      icon: Ticket,
-      component: MobileTicketsTab,
-      props: { tickets: purchasedTickets, claimRefund }
-    },
-    { 
-      id: 'dashboard', 
-      label: 'Dashboard', 
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
       icon: Settings,
       component: MobileDashboardTab,
       props: { creatorStats }
@@ -137,8 +130,8 @@ const MobileProfilePage = () => {
           </div>
         ) : (
           <div ref={gridRef} className="space-y-3">
-            {/* Tab Navigation Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Tab Navigation Grid - 3 tabs layout */}
+            <div className="grid grid-cols-3 gap-3">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
