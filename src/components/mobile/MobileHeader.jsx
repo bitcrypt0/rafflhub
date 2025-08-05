@@ -9,6 +9,7 @@ import { useRaffleSearch } from '../../hooks/useRaffleService';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '../ui/sheet';
 import NetworkSelector from '../ui/network-selector';
+import Logo from '../ui/Logo';
 
 const MobileHeader = () => {
   const { connected, address, formatAddress, disconnect, connectWallet } = useWallet();
@@ -136,12 +137,7 @@ const MobileHeader = () => {
         <div className="flex items-center justify-between h-14 px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <span 
-              className="text-lg font-bold text-foreground" 
-              style={{ fontFamily: 'Orbitron, monospace' }}
-            >
-              Rafflhub
-            </span>
+            <Logo size="sm" className="active:opacity-70" />
           </Link>
 
           {/* Right side actions */}

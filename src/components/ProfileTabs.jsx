@@ -18,6 +18,48 @@ import {
   Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// Use the same state labels as RaffleCard component
+const RAFFLE_STATE_LABELS = [
+  'Pending',
+  'Active',
+  'Ended',
+  'Drawing',
+  'Completed',
+  'Deleted',
+  'Activation Failed',
+  'Prizes Claimed',
+  'Unengaged'
+];
+
+// Use the same state badge function as RaffleCard component
+const getStatusBadge = (raffle) => {
+  // Debug logging to help identify state mapping issues
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🏷️ ProfileTabs getStatusBadge:', {
+      raffleName: raffle.name,
+      stateNum: raffle.stateNum,
+      stringState: raffle.state,
+      expectedLabel: RAFFLE_STATE_LABELS[raffle.stateNum]
+    });
+  }
+
+  const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
+  const colorMap = {
+    'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
+    'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+    'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+  };
+  return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+};
+
 // Removed individual component imports - now handled by UnifiedDashboardGrid
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import UnifiedMobileModal from './mobile/UnifiedMobileModal';
@@ -183,18 +225,7 @@ const ProfileTabs = ({
               <CardHeader className="pb-1 px-3 pt-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm truncate">{raffle.name}</CardTitle>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    raffle.state === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                    raffle.state === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                    raffle.state === 'ended' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                    raffle.state === 'drawing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                    raffle.state === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                    raffle.state === 'allPrizesClaimed' || raffle.state === 'Prizes Claimed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                    raffle.state === 'deleted' ? 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300' :
-                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                  }`}>
-                    {raffle.state}
-                  </span>
+                  {getStatusBadge(raffle)}
                 </div>
               </CardHeader>
               <CardContent className="space-y-2 pt-0 px-3 pb-3">

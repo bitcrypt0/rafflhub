@@ -136,6 +136,7 @@ const MobileRevenuePage = () => {
               name,
               revenue: ethers.utils.formatEther(revenue),
               state: mapRaffleState(state),
+              stateNum: state, // Add the numeric state for proper badge display
               canWithdraw
             });
           }

@@ -62,14 +62,17 @@ const NetworkSelector = () => {
           }, 1000);
         }
       } else {
-        setTimeout(() => {
-          if (window.ethereum && window.ethereum.chainId) {
-            const currentChainId = parseInt(window.ethereum.chainId, 16);
-            if (currentChainId !== targetChainId) {
-              toast.error('Failed to switch network: ' + getErrorMessage(err));
+        // Only show error if it's not a user rejection
+        if (!err.message?.includes('User rejected') && err.code !== 4001) {
+          setTimeout(() => {
+            if (window.ethereum && window.ethereum.chainId) {
+              const currentChainId = parseInt(window.ethereum.chainId, 16);
+              if (currentChainId !== targetChainId) {
+                toast.error('Failed to switch network: ' + getErrorMessage(err));
+              }
             }
-          }
-        }, 1000);
+          }, 1000);
+        }
       }
     } finally {
       setPending(false);

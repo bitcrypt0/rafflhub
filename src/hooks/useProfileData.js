@@ -4,6 +4,7 @@ import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { toast } from '../components/ui/sonner';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
+import { handleError } from '../utils/errorHandling';
 
 /**
  * Shared data hook for ProfilePage (both desktop and mobile)
@@ -307,8 +308,10 @@ export const useProfileData = () => {
       }));
 
     } catch (error) {
-      console.error('Error fetching on-chain activity:', error);
-      toast.error('Failed to load activity data');
+      handleError(error, {
+        context: { operation: 'fetchOnChainActivity', isReadOnly: true },
+        fallbackMessage: 'Failed to load activity data'
+      });
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, stableContracts.raffleManager, stableContracts.revenueManager, executeCall, getContractInstance, mapRaffleState]);
 
@@ -374,6 +377,7 @@ export const useProfileData = () => {
               ticketsSold: ticketsSold.toString(),
               endTime: endTime,
               state: mapRaffleState(state),
+              stateNum: state, // Add the numeric state for proper badge display
               revenue: ethers.utils.formatEther(revenue)
             });
           } catch (error) {
@@ -386,8 +390,10 @@ export const useProfileData = () => {
 
       setCreatedRaffles(raffles);
     } catch (error) {
-      console.error('Error fetching created raffles:', error);
-      toast.error('Failed to load created raffles');
+      handleError(error, {
+        context: { operation: 'fetchCreatedRaffles', isReadOnly: true },
+        fallbackMessage: 'Failed to load created raffles'
+      });
     }
   }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, executeCall, getContractInstance, mapRaffleState]);
 

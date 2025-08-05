@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { contractABIs } from '../contracts/contractABIs';
 import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
+import Logo from './ui/Logo';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import MobileHeader from './mobile/MobileHeader';
 import MobileErrorBoundary from './mobile/MobileErrorBoundary';
@@ -31,8 +32,8 @@ const Header = () => {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="flex items-center justify-between h-16 px-4">
-          <div className="text-lg font-bold text-foreground" style={{ fontFamily: 'Orbitron, monospace' }}>
-            Rafflhub
+          <div className="flex items-center">
+            <Logo size="md" />
           </div>
         </div>
       </header>
@@ -238,7 +239,7 @@ const Header = () => {
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-3">
-                  <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflhub</span>
+                  <Logo size="md" className="hover:opacity-80" />
                 </Link>
               </div>
               <div className="flex items-center gap-4 w-full justify-end">

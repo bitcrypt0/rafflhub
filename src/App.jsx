@@ -12,6 +12,12 @@ import ErrorBoundary from './components/ui/error-boundary';
 import { usePerformanceMonitor } from './components/debug/PerformanceMonitor';
 import { initAndroidKeyboardFix, cleanupAndroidKeyboardFix } from './utils/androidKeyboardFix';
 import LandingPage from './pages/LandingPage';
+
+// Load test utilities in development
+if (process.env.NODE_ENV === 'development') {
+  import('./utils/toastTestUtils');
+  import('./utils/eventListenerTest');
+}
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import RaffleDetailPage from './pages/RaffleDetailPage';

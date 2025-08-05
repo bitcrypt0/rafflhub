@@ -117,7 +117,10 @@ export const ContractProvider = ({ children }) => {
       } else if (error?.message) {
         message = error.message;
       }
-      toast.error(message, { duration: 4000 });
+
+      // Only show toast error if this is a user-facing transaction
+      // Let individual components handle their own error display for better UX
+      console.error('Contract transaction failed:', message);
       return { success: false, error: message };
     }
   };
@@ -159,7 +162,23 @@ export const ContractProvider = ({ children }) => {
       }
 
       console.warn(`Contract call failed for ${methodName}:`, message);
-      toast.error(message, { duration: 4000 });
+
+      // Only show toast for critical errors that users need to know about
+      // Suppress common read-only call failures that are expected
+      const isExpectedFailure =
+        message.toLowerCase().includes('no tickets purchased') ||
+        message.toLowerCase().includes('not found') ||
+        message.toLowerCase().includes('does not exist') ||
+        message.toLowerCase().includes('unavailable') ||
+        message.toLowerCase().includes('network connectivity issue') ||
+        methodName?.toLowerCase().includes('get') ||
+        methodName?.toLowerCase().includes('fetch') ||
+        methodName?.toLowerCase().includes('check');
+
+      if (!isExpectedFailure) {
+        toast.error(message);
+      }
+
       return { success: false, error: message };
     }
   };

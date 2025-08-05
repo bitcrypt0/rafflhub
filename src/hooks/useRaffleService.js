@@ -3,6 +3,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useMobileBreakpoints } from './useMobileBreakpoints';
 import raffleService from '../services/RaffleService';
+import { ethers } from 'ethers';
 
 /**
  * Hook for managing raffle state updates without page reloads
@@ -356,6 +357,227 @@ export const useRaffleSearch = () => {
     searchError,
     search,
     clearSearch
+  };
+};
+
+/**
+ * Custom hook for listening to raffle contract events
+ * Provides real-time updates for winner selection and state changes
+ */
+export const useRaffleEventListener = (raffleAddress, options = {}) => {
+  const {
+    onWinnersSelected,
+    onStateChange,
+    onPrizeClaimed,
+    onTicketsPurchased,
+    enablePolling = true,
+    pollingInterval = 10000, // 10 seconds
+    autoStart = true
+  } = options;
+
+  const { getContractInstance, provider } = useContract();
+  const { connected } = useWallet();
+
+  const [isListening, setIsListening] = useState(false);
+  const [lastBlockNumber, setLastBlockNumber] = useState(null);
+  const [eventHistory, setEventHistory] = useState([]);
+
+  const contractRef = useRef(null);
+  const listenersRef = useRef([]);
+  const pollingRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  // Initialize contract instance
+  useEffect(() => {
+    if (raffleAddress && getContractInstance) {
+      contractRef.current = getContractInstance(raffleAddress, 'raffle');
+    } else {
+      contractRef.current = null;
+    }
+  }, [raffleAddress, getContractInstance]);
+
+  // Event handler wrapper with error handling
+  const createEventHandler = useCallback((eventName, callback) => {
+    return (...args) => {
+      try {
+        if (mountedRef.current && callback) {
+          console.log(`🎯 Raffle Event [${eventName}]:`, args);
+
+          // Add to event history
+          const eventData = {
+            eventName,
+            args,
+            timestamp: Date.now(),
+            blockNumber: args[args.length - 1]?.blockNumber || null
+          };
+
+          setEventHistory(prev => [...prev.slice(-9), eventData]); // Keep last 10 events
+
+          callback(...args);
+        }
+      } catch (error) {
+        console.error(`Error handling ${eventName} event:`, error);
+      }
+    };
+  }, []);
+
+  // Set up event listeners
+  const setupEventListeners = useCallback(() => {
+    if (!contractRef.current || !connected) {
+      return;
+    }
+
+    try {
+      console.log(`🎧 Setting up event listeners for raffle: ${raffleAddress}`);
+
+      // Clear existing listeners
+      listenersRef.current.forEach(({ contract, event, handler }) => {
+        contract.off(event, handler);
+      });
+      listenersRef.current = [];
+
+      const contract = contractRef.current;
+
+      // WinnersSelected event
+      if (onWinnersSelected) {
+        const winnersHandler = createEventHandler('WinnersSelected', (winners, event) => {
+          onWinnersSelected(winners, event);
+        });
+        contract.on('WinnersSelected', winnersHandler);
+        listenersRef.current.push({ contract, event: 'WinnersSelected', handler: winnersHandler });
+      }
+
+      // PrizeClaimed event
+      if (onPrizeClaimed) {
+        const prizeHandler = createEventHandler('PrizeClaimed', (winner, tokenId, event) => {
+          onPrizeClaimed(winner, tokenId, event);
+        });
+        contract.on('PrizeClaimed', prizeHandler);
+        listenersRef.current.push({ contract, event: 'PrizeClaimed', handler: prizeHandler });
+      }
+
+      // TicketsPurchased event
+      if (onTicketsPurchased) {
+        const ticketsHandler = createEventHandler('TicketsPurchased', (participant, quantity, event) => {
+          onTicketsPurchased(participant, quantity, event);
+        });
+        contract.on('TicketsPurchased', ticketsHandler);
+        listenersRef.current.push({ contract, event: 'TicketsPurchased', handler: ticketsHandler });
+      }
+
+      setIsListening(true);
+      console.log(`✅ Event listeners active for ${listenersRef.current.length} events`);
+
+    } catch (error) {
+      console.error('Error setting up event listeners:', error);
+      setIsListening(false);
+    }
+  }, [raffleAddress, connected, onWinnersSelected, onPrizeClaimed, onTicketsPurchased, createEventHandler]);
+
+  // Cleanup event listeners
+  const cleanupEventListeners = useCallback(() => {
+    console.log(`🧹 Cleaning up event listeners for raffle: ${raffleAddress}`);
+
+    listenersRef.current.forEach(({ contract, event, handler }) => {
+      try {
+        contract.off(event, handler);
+      } catch (error) {
+        console.warn(`Error removing ${event} listener:`, error);
+      }
+    });
+
+    listenersRef.current = [];
+    setIsListening(false);
+  }, [raffleAddress]);
+
+  // Polling for state changes (fallback mechanism)
+  const setupPolling = useCallback(() => {
+    if (!enablePolling || !contractRef.current || !onStateChange) {
+      return;
+    }
+
+    const pollForStateChanges = async () => {
+      try {
+        if (!mountedRef.current || !contractRef.current) return;
+
+        const currentBlock = await provider?.getBlockNumber();
+        if (currentBlock && currentBlock !== lastBlockNumber) {
+          setLastBlockNumber(currentBlock);
+
+          // Check for state changes by polling contract state
+          const stateNum = await contractRef.current.state();
+          const stateValue = stateNum.toNumber ? stateNum.toNumber() : Number(stateNum);
+
+          // Trigger state change callback
+          if (onStateChange) {
+            onStateChange(stateValue, currentBlock);
+          }
+        }
+      } catch (error) {
+        console.warn('Error during state polling:', error);
+      }
+    };
+
+    // Initial poll
+    pollForStateChanges();
+
+    // Set up interval
+    pollingRef.current = setInterval(pollForStateChanges, pollingInterval);
+    console.log(`📊 State polling enabled (${pollingInterval}ms interval)`);
+  }, [enablePolling, onStateChange, provider, lastBlockNumber, pollingInterval]);
+
+  // Cleanup polling
+  const cleanupPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+      console.log('📊 State polling disabled');
+    }
+  }, []);
+
+  // Start listening
+  const startListening = useCallback(() => {
+    if (!raffleAddress || !contractRef.current) {
+      console.warn('Cannot start listening: missing raffle address or contract');
+      return;
+    }
+
+    setupEventListeners();
+    setupPolling();
+  }, [raffleAddress, setupEventListeners, setupPolling]);
+
+  // Stop listening
+  const stopListening = useCallback(() => {
+    cleanupEventListeners();
+    cleanupPolling();
+  }, [cleanupEventListeners, cleanupPolling]);
+
+  // Auto-start listening when dependencies are ready
+  useEffect(() => {
+    if (autoStart && raffleAddress && contractRef.current && connected) {
+      startListening();
+    }
+
+    return () => {
+      stopListening();
+    };
+  }, [autoStart, raffleAddress, connected, startListening, stopListening]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      stopListening();
+    };
+  }, [stopListening]);
+
+  return {
+    isListening,
+    eventHistory,
+    lastBlockNumber,
+    startListening,
+    stopListening,
+    clearEventHistory: () => setEventHistory([])
   };
 };
 

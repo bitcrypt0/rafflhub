@@ -13,6 +13,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import TokenGatedSection from '../components/TokenGatedSection';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import CreateRaffleSideFilterBar from '../components/CreateRaffleSideFilterBar';
+import { useErrorHandler } from '../utils/errorHandling';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -802,11 +803,15 @@ const NonPrizedRaffleForm = () => {
           maxTicketsPerParticipant: ''
         });
       } else {
-        throw new Error(result.error);
+        // Error already handled by executeTransaction, just show user-friendly message
+        toast.error(result.error || 'Failed to create raffle');
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      toast.error(extractRevertReason(error));
+      // Only show toast if it's not already handled
+      if (!error.message?.includes('Transaction failed')) {
+        toast.error(extractRevertReason(error));
+      }
     } finally {
       setLoading(false);
     }

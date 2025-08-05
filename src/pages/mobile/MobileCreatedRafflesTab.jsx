@@ -2,6 +2,19 @@ import React from 'react';
 import { Plus, Users, DollarSign, Clock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Use the same state labels as RaffleCard component
+const RAFFLE_STATE_LABELS = [
+  'Pending',
+  'Active',
+  'Ended',
+  'Drawing',
+  'Completed',
+  'Deleted',
+  'Activation Failed',
+  'Prizes Claimed',
+  'Unengaged'
+];
+
 /**
  * Mobile-optimized created raffles tab with simple card layout
  */
@@ -15,36 +28,32 @@ const MobileCreatedRafflesTab = ({
 }) => {
   const navigate = useNavigate();
 
-  const getStateColor = (state) => {
-    switch (state) {
-      case 'active':
-        return 'text-green-600 bg-green-100';
-      case 'completed':
-        return 'text-blue-600 bg-blue-100';
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'ended':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+  // Use the same state badge function as RaffleCard component
+  const getStatusBadge = (raffle) => {
+    // Debug logging to help identify state mapping issues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📱 MobileCreatedRafflesTab getStatusBadge:', {
+        raffleName: raffle.name,
+        stateNum: raffle.stateNum,
+        stringState: raffle.state,
+        expectedLabel: RAFFLE_STATE_LABELS[raffle.stateNum]
+      });
     }
-  };
 
-  const getStateLabel = (state) => {
-    switch (state) {
-      case 'active':
-        return 'Active';
-      case 'completed':
-        return 'Completed';
-      case 'pending':
-        return 'Pending';
-      case 'ended':
-        return 'Ended';
-      case 'allPrizesClaimed':
-        return 'Finished';
-      default:
-        return state;
-    }
+    const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
+    const colorMap = {
+      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    };
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
 
   const formatDate = (date) => {
@@ -122,9 +131,7 @@ const MobileCreatedRafflesTab = ({
                 {formatDate(raffle.endTime)}
               </p>
             </div>
-            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${getStateColor(raffle.state)}`}>
-              {getStateLabel(raffle.state)}
-            </span>
+            {getStatusBadge(raffle)}
           </div>
 
           {/* Compact Stats */}
