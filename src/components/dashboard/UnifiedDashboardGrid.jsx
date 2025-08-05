@@ -48,8 +48,8 @@ const UnifiedDashboardGrid = ({
     },
     {
       id: 'tokenCreator',
-      title: 'Create Token ID',
-      description: 'Add new token IDs to existing ERC1155 collections',
+      title: 'Create New Token ID & Set Token URI',
+      description: 'Add new token IDs to existing ERC1155 collections and set metadata URIs',
       icon: '🆕',
       component: CreateNewTokenIDComponent,
       priority: 3

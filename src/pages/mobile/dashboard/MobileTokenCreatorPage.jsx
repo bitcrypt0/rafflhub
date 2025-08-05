@@ -16,9 +16,16 @@ const MobileTokenCreatorPage = () => {
 
   // Form state with standard HTML inputs
   const [formData, setFormData] = useState({
-    collectionAddress: '',
+    collectionAddress: ''
+  });
+
+  const [tokenCreationData, setTokenCreationData] = useState({
     tokenId: '',
-    maxSupply: '1',
+    maxSupply: '1'
+  });
+
+  const [uriData, setUriData] = useState({
+    tokenId: '',
     metadataURI: ''
   });
 
@@ -90,7 +97,7 @@ const MobileTokenCreatorPage = () => {
 
   // Create new token ID (matches desktop implementation)
   const createToken = async () => {
-    if (!formData.collectionAddress || !formData.tokenId || !formData.maxSupply || !connected) {
+    if (!formData.collectionAddress || !tokenCreationData.tokenId || !tokenCreationData.maxSupply || !connected) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -100,8 +107,8 @@ const MobileTokenCreatorPage = () => {
       return;
     }
 
-    const tokenId = parseInt(formData.tokenId);
-    const maxSupply = parseInt(formData.maxSupply);
+    const tokenId = parseInt(tokenCreationData.tokenId);
+    const maxSupply = parseInt(tokenCreationData.maxSupply);
 
     if (isNaN(tokenId) || tokenId < 0) {
       toast.error('Please enter a valid token ID (non-negative integer)');
@@ -126,12 +133,11 @@ const MobileTokenCreatorPage = () => {
       await executeTransaction(contract, 'createNewToken', [tokenId, maxSupply]);
       toast.success(`Token ID ${tokenId} created successfully with max supply of ${maxSupply}!`);
 
-      // Clear form
-      setFormData(prev => ({
-        ...prev,
+      // Clear token creation form
+      setTokenCreationData({
         tokenId: '',
         maxSupply: '1'
-      }));
+      });
 
       // Refresh collection info
       fetchCollectionInfo();
@@ -145,29 +151,44 @@ const MobileTokenCreatorPage = () => {
 
   // Set token URI (if supported)
   const setTokenURI = async () => {
-    if (!formData.collectionAddress || !formData.tokenId || !formData.metadataURI || !connected) {
+    if (!formData.collectionAddress || !uriData.tokenId || !uriData.metadataURI || !connected) {
       toast.error('Please fill in collection address, token ID, and metadata URI');
+      return;
+    }
+
+    if (!collectionInfo || !collectionInfo.isOwner) {
+      toast.error('Only collection owner can set token URIs');
+      return;
+    }
+
+    const tokenId = parseInt(uriData.tokenId);
+
+    if (isNaN(tokenId) || tokenId < 0) {
+      toast.error('Please enter a valid token ID (non-negative integer)');
       return;
     }
 
     try {
       setLoading(true);
-      const contract = getContractInstance(formData.collectionAddress, 'erc1155');
-      
+      const contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
+
       if (!contract) {
         toast.error('Invalid collection address');
         return;
       }
 
-      // Try to set URI for specific token (if contract supports it)
-      await executeTransaction(contract, 'setTokenURI', [formData.tokenId, formData.metadataURI]);
-      toast.success('Token URI set successfully!');
-      
-      // Clear URI field
-      setFormData(prev => ({ ...prev, metadataURI: '' }));
+      // Use setURI function with tokenId and URI parameters
+      await executeTransaction(contract, 'setURI', [tokenId, uriData.metadataURI]);
+      toast.success(`URI set successfully for token ID ${tokenId}!`);
+
+      // Clear URI form
+      setUriData({
+        tokenId: '',
+        metadataURI: ''
+      });
     } catch (error) {
       console.error('Error setting token URI:', error);
-      toast.error('Failed to set token URI (contract may not support this feature)');
+      toast.error('Failed to set token URI');
     } finally {
       setLoading(false);
     }
@@ -188,7 +209,7 @@ const MobileTokenCreatorPage = () => {
           </button>
           <div className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Create Token ID</h1>
+            <h1 className="text-lg font-semibold">Create New Token ID & Set Token URI</h1>
           </div>
         </div>
       </div>

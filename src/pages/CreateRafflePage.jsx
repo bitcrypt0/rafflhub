@@ -127,7 +127,7 @@ function ERC1155DropForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Raffle Name</label>
+            <label className="block text-base font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -137,7 +137,7 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Prize Collection Address</label>
+            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
             <input
               type="text"
               value={formData.collectionAddress || ''}
@@ -159,7 +159,7 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Units Per Winner</label>
+            <label className="block text-base font-medium mb-2">Units Per Winner</label>
             <input
               type="number"
               min="1"
@@ -170,7 +170,7 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Start Time</label>
+            <label className="block text-base font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
