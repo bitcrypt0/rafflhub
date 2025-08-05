@@ -245,13 +245,7 @@ const MobileHeader = () => {
                       <NetworkSelector />
                     </div>
 
-                    {/* Close Button */}
-                    <div className="pt-2">
-                      <SheetClose className="w-full flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-foreground">
-                        <X className="h-4 w-4" />
-                        <span className="text-sm font-medium">Close Menu</span>
-                      </SheetClose>
-                    </div>
+
                   </div>
                 </div>
               </SheetContent>

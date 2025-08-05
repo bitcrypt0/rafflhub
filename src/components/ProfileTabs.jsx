@@ -177,10 +177,10 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {createdRaffles.map((raffle) => (
             <Card key={raffle.address} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-1">
+              <CardHeader className="pb-1 px-3 pt-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm truncate">{raffle.name}</CardTitle>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -197,7 +197,7 @@ const ProfileTabs = ({
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2 pt-0">
+              <CardContent className="space-y-2 pt-0 px-3 pb-3">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <p className="text-muted-foreground">Tickets Sold</p>
