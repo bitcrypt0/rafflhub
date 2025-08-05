@@ -10,7 +10,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-background/80 backdrop-blur-md border-t border-border/50 mt-auto shrink-0">
-      <div className="w-full px-6 sm:px-8 lg:px-12 py-2 sm:py-4">
+      <div className="w-full px-6 sm:px-8 lg:px-12 py-1 sm:py-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 w-full">
           <div className="text-sm text-muted-foreground sm:ml-0">
             © {currentYear} Rafflhub. All rights reserved.

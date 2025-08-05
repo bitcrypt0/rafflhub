@@ -28,8 +28,8 @@ const MobileDashboardTab = ({ creatorStats }) => {
     },
     {
       id: 'tokens',
-      title: 'Create Token ID',
-      description: 'Add new token IDs to ERC1155 collections',
+      title: 'Create New Token ID & Set Token URI',
+      description: 'Add new token IDs to ERC1155 collections and set metadata URIs',
       icon: Plus,
       path: '/profile/mobile/tokens',
       color: 'from-green-500 to-green-600'

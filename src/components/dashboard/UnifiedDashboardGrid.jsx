@@ -146,15 +146,7 @@ const UnifiedDashboardGrid = ({
         </div>
       )}
 
-      {/* Desktop/tablet help text */}
-      {!isMobile && (
-        <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/30">
-          <p className="text-sm text-muted-foreground text-center">
-            Click any card to expand and access its management tools. 
-            Multiple cards can be open simultaneously.
-          </p>
-        </div>
-      )}
+
     </div>
   );
 };
