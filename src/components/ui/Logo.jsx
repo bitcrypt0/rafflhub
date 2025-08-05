@@ -19,12 +19,13 @@ const Logo = ({
 }) => {
   const { getCurrentTheme } = useTheme();
   
-  // Size presets
+  // Size presets - adjusted to match original text logo sizes
   const sizeClasses = {
-    'sm': 'h-6 w-auto',
-    'md': 'h-8 w-auto', 
-    'lg': 'h-12 w-auto',
-    'xl': 'h-16 w-auto'
+    'xs': 'h-4 w-auto',     // Extra small
+    'sm': 'h-5 w-auto',     // Small - for mobile (matches text-lg)
+    'md': 'h-6 w-auto',     // Medium - for desktop (matches text-xl)
+    'lg': 'h-8 w-auto',     // Large
+    'xl': 'h-12 w-auto'     // Extra large
   };
   
   // Get the appropriate size class

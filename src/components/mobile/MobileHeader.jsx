@@ -137,7 +137,7 @@ const MobileHeader = () => {
         <div className="flex items-center justify-between h-14 px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <Logo size="sm" className="active:opacity-70" />
+            <Logo size="xs" className="active:opacity-70" />
           </Link>
 
           {/* Right side actions */}
