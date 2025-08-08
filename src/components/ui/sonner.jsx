@@ -205,9 +205,9 @@ const Toaster = ({
     <Sonner
       theme="dark"
       className="toaster group"
-      position="top-right"
+      position="bottom-right"
       expand={true}
-      richColors={true}
+      richColors={false}
       closeButton={true}
       {...props} />
   );

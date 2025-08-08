@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
+import { RaffleErrorDisplay } from './ui/raffle-error-display';
 
 /**
  * FilteredRaffleGrid Component
@@ -42,16 +43,12 @@ const FilteredRaffleGrid = ({
   // Error state
   if (error) {
     return (
-      <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-full flex items-center justify-center">
-            <Trophy className="w-8 h-8 text-destructive" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground">Error Loading Raffles</h3>
-          <p className="text-muted-foreground max-w-md">
-            {error}
-          </p>
-        </div>
+      <div className={className}>
+        <RaffleErrorDisplay
+          error={error}
+          onRetry={null} // FilteredRaffleGrid doesn't handle retries
+          showCreateButton={true}
+        />
       </div>
     );
   }

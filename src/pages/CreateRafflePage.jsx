@@ -12,8 +12,11 @@ import { contractABIs } from '../contracts/contractABIs';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import TokenGatedSection from '../components/TokenGatedSection';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
+import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import CreateRaffleSideFilterBar from '../components/CreateRaffleSideFilterBar';
 import { useErrorHandler } from '../utils/errorHandling';
+import { SUPPORTED_NETWORKS } from '../networks';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -91,14 +94,14 @@ function ERC1155DropForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-        toast.success('ERC1155 Collection raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           collectionAddress: '',
@@ -123,7 +126,7 @@ function ERC1155DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create ERC1155 Collection Raffle</h3>
+        <h3 className="text-xl font-semibold">ERC1155 Collection Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,10 +238,10 @@ function ERC1155DropForm() {
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">Ticket Price (ETH)</label>
+          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
           <input
             type="number"
-            min="0.00000001"
+            min="0"
             step="any"
             value={formData.ticketPrice || ''}
             onChange={e => handleChange('ticketPrice', e.target.value)}
@@ -265,6 +268,7 @@ function ERC1155DropForm() {
 const PrizedRaffleForm = () => {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const [loading, setLoading] = useState(false);
   // Add token-gated state
   const [tokenGatedEnabled, setTokenGatedEnabled] = useState(false);
@@ -347,7 +351,7 @@ const PrizedRaffleForm = () => {
           maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
           erc20PrizeToken: ethers.constants.AddressZero,
           erc20PrizeAmount: 0,
-          ethPrizeAmount: 0,
+          nativePrizeAmount: 0,
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
@@ -384,7 +388,7 @@ const PrizedRaffleForm = () => {
           maxSupply: 0,
           erc20PrizeToken: ethers.constants.AddressZero,
           erc20PrizeAmount: 0,
-          ethPrizeAmount: 0,
+          nativePrizeAmount: 0,
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
@@ -405,7 +409,7 @@ const PrizedRaffleForm = () => {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        toast.success('Prized raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -447,7 +451,7 @@ const PrizedRaffleForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Prized Raffle</h3>
+        <h3 className="text-xl font-semibold">Prized Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Basic Information */}
@@ -521,7 +525,7 @@ const PrizedRaffleForm = () => {
 
         {/* Custom Ticket Price */}
         <div>
-          <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
           <input
             type="number"
             step="0.001"
@@ -614,11 +618,10 @@ const PrizedRaffleForm = () => {
                 <input
                   type="number"
                   min="0"
-                  max="10"
                   value={formData.royaltyPercentage || ''}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
                   className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                  placeholder="0-10%"
+                  placeholder="e.g. 5 for 5%"
                 />
               </div>
             </div>
@@ -781,7 +784,7 @@ const NonPrizedRaffleForm = () => {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0
@@ -792,7 +795,7 @@ const NonPrizedRaffleForm = () => {
       );
 
       if (result.success) {
-        toast.success('Non-prized raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         // Reset form
         setFormData({
           name: '',
@@ -821,7 +824,7 @@ const NonPrizedRaffleForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Non-Prized Raffle</h3>
+        <h3 className="text-xl font-semibold">Non-Prized Raffle</h3>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -975,7 +978,7 @@ const WhitelistRaffleForm = () => {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -1001,7 +1004,7 @@ const WhitelistRaffleForm = () => {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        toast.success('Whitelist raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -1030,7 +1033,7 @@ const WhitelistRaffleForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Whitelist Raffle</h3>
+        <h3 className="text-xl font-semibold">Whitelist Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1127,6 +1130,7 @@ const WhitelistRaffleForm = () => {
 const NewERC721DropForm = () => {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -1216,7 +1220,7 @@ const NewERC721DropForm = () => {
         maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         // Reveal feature
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
@@ -1231,7 +1235,7 @@ const NewERC721DropForm = () => {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-        toast.success('ERC721 Collection raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -1268,7 +1272,7 @@ const NewERC721DropForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create New ERC721 Collection Raffle</h3>
+        <h3 className="text-xl font-semibold">New ERC721 Collection Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1346,7 +1350,7 @@ const NewERC721DropForm = () => {
             )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
@@ -1408,7 +1412,6 @@ const NewERC721DropForm = () => {
                 onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                 min="0"
-                max="10"
                 step="0.01"
                 placeholder="e.g. 5 for 5%"
               />
@@ -1512,6 +1515,7 @@ const NewERC721DropForm = () => {
 function ExistingERC721DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   // Add token-gated state
@@ -1577,7 +1581,7 @@ function ExistingERC721DropForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -1590,7 +1594,7 @@ function ExistingERC721DropForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('Existing ERC721 Collection raffle created successfully!');
+      toast.success('Your raffle was created successfully!');
       setFormData({
         name: '',
         collection: '',
@@ -1621,7 +1625,7 @@ function ExistingERC721DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Raffle (Existing ERC721 Prize)</h3>
+        <h3 className="text-xl font-semibold">Existing ERC721 Prize Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1715,10 +1719,10 @@ function ExistingERC721DropForm() {
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">Ticket Price (ETH) <span className="font-normal text-xs text-muted-foreground">(Leave empty for NFT giveaway)</span></label>
+          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
-            min="0.00000001"
+            min="0"
             step="any"
             value={formData.ticketPrice || ''}
             onChange={e => handleChange('ticketPrice', e.target.value)}
@@ -1750,6 +1754,7 @@ function ExistingERC721DropForm() {
 function ExistingERC1155DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -1811,7 +1816,7 @@ function ExistingERC1155DropForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -1824,7 +1829,7 @@ function ExistingERC1155DropForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('Existing ERC1155 Collection raffle created successfully!');
+      toast.success('Your raffle was created successfully!');
       setFormData({
         name: '',
         collectionAddress: '',
@@ -1857,7 +1862,7 @@ function ExistingERC1155DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Raffle (Existing ERC1155 Collection)</h3>
+        <h3 className="text-xl font-semibold">Existing ERC1155 Collection Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1977,7 +1982,7 @@ function ExistingERC1155DropForm() {
             )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
@@ -2010,7 +2015,7 @@ function ExistingERC1155DropForm() {
 
 // --- Update FILTERS ---
 const FILTERS = {
-  raffleType: ['Whitelist/Allowlist', 'NFTDrop', 'Lucky Sale/NFT Giveaway', 'ETH Giveaway', 'ERC20 Token Giveaway'],
+  raffleType: ['Whitelist/Allowlist', 'NFTDrop', 'Lucky Sale/NFT Giveaway', 'Native Token Giveaway', 'ERC20 Token Giveaway'],
   nftStandard: ['ERC721', 'ERC1155'],
   erc721Source: ['New ERC721 Collection', 'Existing ERC721 Collection'],
   escrowedSource: ['Internal NFT Prize', 'External NFT Prize'],
@@ -2019,8 +2024,21 @@ const FILTERS = {
 };
 
 const CreateRafflePage = () => {
-  const { connected } = useWallet();
+  const { connected, chainId } = useWallet();
   const { contracts } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
+
+  // Check if contracts are available on current network
+  const areContractsAvailable = () => {
+    if (!chainId || !SUPPORTED_NETWORKS[chainId]) {
+      return false;
+    }
+    const contractAddresses = SUPPORTED_NETWORKS[chainId].contractAddresses;
+    return contractAddresses?.raffleDeployer &&
+           contractAddresses.raffleDeployer !== '0x...' &&
+           contractAddresses?.raffleManager &&
+           contractAddresses.raffleManager !== '0x...';
+  };
   const [allowExisting721, setAllowExisting721] = useState(null);
 
   // Filter state
@@ -2079,7 +2097,7 @@ const CreateRafflePage = () => {
       if (nftStandard === 'ERC721') return <LuckySaleERC721Form />;
       if (nftStandard === 'ERC1155') return <LuckySaleERC1155Form />;
     }
-    if (raffleType === 'ETH Giveaway') return <ETHGiveawayForm />;
+    if (raffleType === 'Native Token Giveaway') return <ETHGiveawayForm />;
     if (raffleType === 'ERC20 Token Giveaway') return <ERC20GiveawayForm />;
     return null;
   };
@@ -2096,6 +2114,20 @@ const CreateRafflePage = () => {
             Please connect your wallet to create raffles and deploy collections.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Check if contracts are available on this network
+  if (!areContractsAvailable()) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <RaffleErrorDisplay
+          error="CONTRACTS_NOT_AVAILABLE"
+          onRetry={null}
+          isMobile={isMobile}
+          showCreateButton={false}
+        />
       </div>
     );
   }
@@ -2200,6 +2232,7 @@ function LuckySaleERC721Form() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
   const { isMobile } = useMobileBreakpoints();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -2277,7 +2310,7 @@ function LuckySaleERC721Form() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -2290,7 +2323,7 @@ function LuckySaleERC721Form() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-        toast.success('Lucky Sale ERC721 raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           collectionAddress: '',
@@ -2322,7 +2355,7 @@ function LuckySaleERC721Form() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Create Lucky Sale (ERC721 Escrowed Prize)</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Lucky Sale (ERC721 Escrowed Prize)</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2432,7 +2465,7 @@ function LuckySaleERC721Form() {
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">Ticket Price (ETH) <span className="font-normal text-xs text-muted-foreground">(Leave empty for NFT giveaway)</span></label>
+          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
             step="any"
@@ -2466,6 +2499,7 @@ function LuckySaleERC721Form() {
 function LuckySaleERC1155Form() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -2544,7 +2578,7 @@ function LuckySaleERC1155Form() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -2557,7 +2591,7 @@ function LuckySaleERC1155Form() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-        toast.success('Lucky Sale ERC1155 raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           collectionAddress: '',
@@ -2590,7 +2624,7 @@ function LuckySaleERC1155Form() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create Lucky Sale (ERC1155 Escrowed Prize)</h3>
+        <h3 className="text-xl font-semibold">Lucky Sale (ERC1155 Escrowed Prize)</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2711,7 +2745,7 @@ function LuckySaleERC1155Form() {
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">Ticket Price (ETH) <span className="font-normal text-xs text-muted-foreground">(Leave empty for NFT giveaway)</span></label>
+          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
             step="any"
@@ -2746,6 +2780,7 @@ function ETHGiveawayForm() {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const { isMobile } = useMobileBreakpoints();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -2803,7 +2838,7 @@ function ETHGiveawayForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: ethers.BigNumber.from(0),
-        ethPrizeAmount: ethAmount,
+        nativePrizeAmount: ethAmount,
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -2823,7 +2858,7 @@ function ETHGiveawayForm() {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        toast.success('ETH Giveaway raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           ethAmount: '',
@@ -2848,7 +2883,7 @@ function ETHGiveawayForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Feeling Generous? Now's a great time to give away some ETH!</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>{getCurrencyLabel()} Giveaway</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2863,7 +2898,7 @@ function ETHGiveawayForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Total ETH Prize</label>
+            <label className="block text-base font-medium mb-2">{getCurrencyLabel('prize')}</label>
             <input
               type="number"
               min="0.00000001"
@@ -3063,7 +3098,7 @@ function ERC20GiveawayForm() {
         maxSupply: 0,
         erc20PrizeToken: formData.tokenAddress,
         erc20PrizeAmount: tokenAmount,
-        ethPrizeAmount: ethers.BigNumber.from(0),
+        nativePrizeAmount: ethers.BigNumber.from(0),
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
@@ -3076,7 +3111,7 @@ function ERC20GiveawayForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-        toast.success('ERC20 Giveaway raffle created successfully!');
+        toast.success('Your raffle was created successfully!');
         setFormData({
           name: '',
           tokenAddress: '',
@@ -3099,7 +3134,7 @@ function ERC20GiveawayForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>It's a great day to give out some tokens! 🎁</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>ERC20 Token Giveaway</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3322,6 +3357,7 @@ function extractRevertReason(error) {
 function NewERC1155DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
+  const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -3411,7 +3447,7 @@ function NewERC1155DropForm() {
         maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0,
+        nativePrizeAmount: 0,
         // Reveal feature
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
@@ -3426,7 +3462,7 @@ function NewERC1155DropForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('New ERC1155 Collection raffle created successfully!');
+      toast.success('Your raffle was created successfully!');
       setFormData({
         name: '',
         startTime: '',
@@ -3464,7 +3500,7 @@ function NewERC1155DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Create New ERC1155 Collection Raffle</h3>
+        <h3 className="text-xl font-semibold">New ERC1155 Collection Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3543,7 +3579,7 @@ function NewERC1155DropForm() {
             )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
@@ -3625,7 +3661,6 @@ function NewERC1155DropForm() {
                 onChange={e => handleChange('royaltyPercentage', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                 min="0"
-                max="10"
                 step="0.01"
                 placeholder="e.g. 5 for 5%"
               />

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Filter, X, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 
 /**
  * CreateRaffleSideFilterBar Component
@@ -23,6 +24,7 @@ const CreateRaffleSideFilterBar = ({
   className = ""
 }) => {
   const { isMobile } = useMobileBreakpoints();
+  const { getCurrencySymbol } = useNativeCurrency();
 
   // Expanded sections state (like LandingPage)
   const [expandedSections, setExpandedSections] = useState({
@@ -31,14 +33,17 @@ const CreateRaffleSideFilterBar = ({
     collectionSource: true
   });
 
-  // Filter options (from existing FILTERS constant)
-  const raffleTypeOptions = [
-    { value: 'Whitelist/Allowlist', label: 'Whitelist/Allowlist', description: 'Whitelist Campaigns' },
-    { value: 'NFTDrop', label: 'NFT Drop', description: 'Raffles with Mintable NFT Prizes' },
-    { value: 'Lucky Sale/NFT Giveaway', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales/NFT Giveaways' },
-    { value: 'ETH Giveaway', label: 'ETH Giveaway', description: 'Native Coin Giveaways' },
-    { value: 'ERC20 Token Giveaway', label: 'ERC20 Token Giveaway', description: 'Token Giveaways' }
-  ];
+  // Filter options (dynamic based on network)
+  const raffleTypeOptions = useMemo(() => {
+    const currencySymbol = getCurrencySymbol();
+    return [
+      { value: 'Whitelist/Allowlist', label: 'Whitelist/Allowlist', description: 'Whitelist Campaigns' },
+      { value: 'NFTDrop', label: 'NFT Drop', description: 'Raffles with Mintable NFT Prizes' },
+      { value: 'Lucky Sale/NFT Giveaway', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales/NFT Giveaways' },
+      { value: 'Native Token Giveaway', label: `${currencySymbol} Giveaway`, description: 'Native Coin Giveaways' },
+      { value: 'ERC20 Token Giveaway', label: 'ERC20 Token Giveaway', description: 'Token Giveaways' }
+    ];
+  }, [getCurrencySymbol]);
 
   const nftStandardOptions = [
     { value: 'ERC721', label: 'ERC721' },

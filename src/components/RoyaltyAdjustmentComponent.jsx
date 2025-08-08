@@ -275,11 +275,10 @@ const RoyaltyAdjustmentComponent = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  New Royalty Percentage (0-10%)
+                  New Royalty Percentage (%)
                 </label>
                 <ResponsiveNumberInput
                   min="0"
-                  max="10"
                   step="0.01"
                   value={collectionData.royaltyPercentage}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
@@ -302,7 +301,7 @@ const RoyaltyAdjustmentComponent = () => {
               onClick={handleUpdateRoyalty}
               disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner}
               className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
-              title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
+              title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !collectionData.royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
               <Settings className="h-4 w-4" />
               {loading ? 'Updating...' : 'Update Royalty Settings'}

@@ -51,12 +51,18 @@ export const shouldShowErrorToast = (error, context = {}) => {
     return false;
   }
   
-  // Don't show toast for expected read-only failures
+  // Don't show toast for expected read-only failures (missing onchain data)
   if (context.isReadOnly && (
     message.includes('not found') ||
     message.includes('does not exist') ||
     message.includes('no tickets') ||
-    message.includes('unavailable')
+    message.includes('unavailable') ||
+    message.includes('400') ||
+    message.includes('non-200 status code') ||
+    message.includes('failed to load') ||
+    message.includes('no data') ||
+    message.includes('empty result') ||
+    message.includes('no records')
   )) {
     return false;
   }

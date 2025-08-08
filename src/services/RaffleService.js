@@ -81,11 +81,45 @@ class RaffleService {
   }
 
   /**
+   * Check if contracts are available on the current network
+   */
+  areContractsAvailable() {
+    const { chainId } = this.walletContext || {};
+
+    if (!chainId || !SUPPORTED_NETWORKS[chainId]) {
+      console.log('❌ Chain not supported or chainId missing:', { chainId });
+      return false;
+    }
+
+    const contractAddresses = SUPPORTED_NETWORKS[chainId].contractAddresses;
+
+    // Check if essential contracts are available (not just placeholder '0x...')
+    const isAvailable = contractAddresses?.raffleManager &&
+           contractAddresses.raffleManager !== '0x...' &&
+           contractAddresses?.raffleDeployer &&
+           contractAddresses.raffleDeployer !== '0x...';
+
+    console.log('🔍 Contract availability check:', {
+      chainId,
+      isAvailable,
+      raffleManager: contractAddresses?.raffleManager,
+      raffleDeployer: contractAddresses?.raffleDeployer
+    });
+
+    return isAvailable;
+  }
+
+  /**
    * Get RaffleManager contract with fallback logic
    */
   getRaffleManagerContract() {
     const { chainId } = this.walletContext || {};
-    
+
+    // Check if contracts are available first
+    if (!this.areContractsAvailable()) {
+      return null;
+    }
+
     // Try ContractContext first (preferred)
     if (this.contractContext?.contracts?.raffleManager) {
       return this.contractContext.contracts.raffleManager;
@@ -158,14 +192,19 @@ class RaffleService {
   async getAllRaffleAddresses() {
     const cacheKey = `raffleAddresses_${this.walletContext?.chainId}`;
     const cached = this.cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       return cached.data;
     }
 
+    // Check if contracts are available on this network
+    if (!this.areContractsAvailable()) {
+      throw new Error('CONTRACTS_NOT_AVAILABLE');
+    }
+
     const raffleManager = this.getRaffleManagerContract();
     if (!raffleManager) {
-      throw new Error('RaffleManager contract not available');
+      throw new Error('CONTRACTS_NOT_AVAILABLE');
     }
 
     const addresses = await this.withRetry(
@@ -198,8 +237,8 @@ class RaffleService {
 
       // Fetch basic raffle data - use sequential calls on mobile for better reliability
       let name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount,
-          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection,
-          erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, isExternallyPrized, standard;
+          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomPrice, isEscrowedPrize;
 
       if (config.isMobile) {
         // Sequential calls on mobile for better reliability
@@ -216,20 +255,32 @@ class RaffleService {
         // Optional fields with fallbacks
         isPrizedContract = await raffleContract.isPrized?.().catch(() => false);
         prizeCollection = await raffleContract.prizeCollection?.().catch(() => ethers.constants.AddressZero);
+        prizeTokenId = await raffleContract.prizeTokenId?.().catch(() => ethers.BigNumber.from(0));
         erc20PrizeToken = await raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero);
         erc20PrizeAmount = await raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0));
-        ethPrizeAmount = await raffleContract.ethPrizeAmount?.().catch(() => ethers.BigNumber.from(0));
+        nativePrizeAmount = await raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0));
         isExternallyPrized = await raffleContract.isExternallyPrized?.().catch((err) => {
           console.warn(`isExternallyPrized failed for ${raffleAddress}:`, err.message);
           return false;
         });
-        standard = await raffleContract.standard?.().catch(() => undefined);
+        standard = await raffleContract.standard?.().catch((error) => {
+          console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
+          return undefined;
+        });
+        usesCustomPrice = await raffleContract.usesCustomPrice?.().catch((error) => {
+          console.warn(`[RaffleService] usesCustomPrice failed for ${raffleAddress}:`, error.message);
+          return false;
+        });
+        isEscrowedPrize = await raffleContract.isEscrowedPrize?.().catch((error) => {
+          console.warn(`[RaffleService] isEscrowedPrize failed for ${raffleAddress}:`, error.message);
+          return false;
+        });
       } else {
         // Parallel calls on desktop
         [
           name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount,
-          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection,
-          erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, isExternallyPrized, standard
+          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomPrice, isEscrowedPrize
         ] = await Promise.all([
           this.withRetry(() => raffleContract.name(), `name-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config),
@@ -242,11 +293,26 @@ class RaffleService {
           this.withRetry(() => raffleContract.state(), `state-${raffleAddress}`, config),
           raffleContract.isPrized?.().catch(() => false),
           raffleContract.prizeCollection?.().catch(() => ethers.constants.AddressZero),
+          raffleContract.prizeTokenId?.().catch(() => ethers.BigNumber.from(0)),
           raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero),
           raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.ethPrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.isExternallyPrized?.().catch(() => false),
-          raffleContract.standard?.().catch(() => undefined)
+          raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
+          raffleContract.isExternallyPrized?.().catch((error) => {
+            console.warn(`[RaffleService] isExternallyPrized failed for ${raffleAddress}:`, error.message);
+            return false;
+          }),
+          raffleContract.standard?.().catch((error) => {
+            console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
+            return undefined;
+          }),
+          raffleContract.usesCustomPrice?.().catch((error) => {
+            console.warn(`[RaffleService] usesCustomPrice failed for ${raffleAddress}:`, error.message);
+            return false;
+          }),
+          raffleContract.isEscrowedPrize?.().catch((error) => {
+            console.warn(`[RaffleService] isEscrowedPrize failed for ${raffleAddress}:`, error.message);
+            return false;
+          })
         ]);
       }
 
@@ -276,14 +342,35 @@ class RaffleService {
         maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
         isPrized: !!isPrizedContract,
         prizeCollection,
+        prizeTokenId: prizeTokenId ? (prizeTokenId.toNumber ? prizeTokenId.toNumber() : Number(prizeTokenId)) : 0,
         stateNum: stateNum,
         state: raffleState,
         erc20PrizeToken,
         erc20PrizeAmount,
-        ethPrizeAmount,
-        isExternallyPrized: !!isExternallyPrized,
-        standard: standard ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined
+        nativePrizeAmount,
+        isExternallyPrized: isExternallyPrized,
+        standard: standard ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined,
+        usesCustomPrice: usesCustomPrice,
+        isEscrowedPrize: isEscrowedPrize
       };
+
+      // Debug logging for NFT prizes to investigate the issue
+      if (raffleData.prizeCollection && raffleData.prizeCollection !== ethers.constants.AddressZero) {
+        console.log(`[RaffleService] NFT Prize raffle data for ${raffleAddress}:`, {
+          prizeCollection: raffleData.prizeCollection,
+          prizeTokenId: raffleData.prizeTokenId,
+          prizeTokenIdRaw: prizeTokenId,
+          isExternallyPrized: raffleData.isExternallyPrized,
+          isExternallyPrizedRaw: isExternallyPrized,
+          usesCustomPrice: raffleData.usesCustomPrice,
+          usesCustomPriceRaw: usesCustomPrice,
+          isEscrowedPrize: raffleData.isEscrowedPrize,
+          isEscrowedPrizeRaw: isEscrowedPrize,
+          standard: raffleData.standard
+        });
+      }
+
+      return raffleData;
     } catch (error) {
       console.error(`Error fetching raffle details for ${raffleAddress}:`, error);
       return null;

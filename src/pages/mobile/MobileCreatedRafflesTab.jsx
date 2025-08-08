@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Users, DollarSign, Clock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 
 // Use the same state labels as RaffleCard component
 const RAFFLE_STATE_LABELS = [
@@ -18,15 +19,16 @@ const RAFFLE_STATE_LABELS = [
 /**
  * Mobile-optimized created raffles tab with simple card layout
  */
-const MobileCreatedRafflesTab = ({ 
-  raffles, 
-  showRevenueModal, 
-  setShowRevenueModal, 
-  selectedRaffle, 
-  setSelectedRaffle, 
-  withdrawRevenue 
+const MobileCreatedRafflesTab = ({
+  raffles,
+  showRevenueModal,
+  setShowRevenueModal,
+  selectedRaffle,
+  setSelectedRaffle,
+  withdrawRevenue
 }) => {
   const navigate = useNavigate();
+  const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
 
   // Use the same state badge function as RaffleCard component
   const getStatusBadge = (raffle) => {
@@ -146,7 +148,7 @@ const MobileCreatedRafflesTab = ({
             <div className="text-center">
               <p className="text-xs text-muted-foreground">Revenue</p>
               <p className="text-xs font-semibold text-green-600">
-                {parseFloat(raffle.revenue || 0).toFixed(3)} ETH
+                {formatRevenueAmount(raffle.revenue || 0)}
               </p>
             </div>
           </div>
@@ -178,7 +180,7 @@ const MobileCreatedRafflesTab = ({
           <div className="bg-background rounded-lg p-6 w-full max-w-sm">
             <h3 className="text-lg font-semibold mb-4">Withdraw Revenue</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              Withdraw {parseFloat(selectedRaffle.revenue).toFixed(4)} ETH from "{selectedRaffle.name}"?
+              Withdraw {formatRevenueAmount(selectedRaffle.revenue)} from "{selectedRaffle.name}"?
             </p>
             <div className="flex gap-3">
               <button

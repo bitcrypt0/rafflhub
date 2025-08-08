@@ -8,9 +8,11 @@ import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleService } from '../hooks/useRaffleService';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
 import { PageLoading, ContentLoading, CardSkeleton } from '../components/ui/loading';
+import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
@@ -36,8 +38,11 @@ const RaffleCard = ({ raffle }) => {
   const [erc20Symbol, setErc20Symbol] = useState('');
   const { getContractInstance } = useContract();
   const { updateCollabStatus, setCollabLoading, getCollabStatus } = useCollabDetection();
+  const { formatTicketPrice, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
   const [ticketsSold, setTicketsSold] = useState(null);
   const [collectionName, setCollectionName] = useState(null);
+  const [collectionSymbol, setCollectionSymbol] = useState(null);
+  const [directContractValues, setDirectContractValues] = useState(null);
 
   useEffect(() => {
     let interval;
@@ -143,53 +148,163 @@ const RaffleCard = ({ raffle }) => {
     // Only refetch if address changes
   }, [raffle.address, getContractInstance]);
 
-  // Fetch collection name for NFT prizes
+  // Direct contract query for NFT prizes to get accurate values
   useEffect(() => {
-    const fetchCollectionName = async () => {
-      if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
-        setCollectionName(null);
+    async function fetchDirectContractValues() {
+      // Only fetch for NFT prizes
+      if (!raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
         return;
       }
 
       try {
-        // Try both contract types if standard is undefined
+        const raffleContract = getContractInstance(raffle.address, 'raffle');
+        if (!raffleContract) {
+          console.warn('[RaffleCard] No contract instance for direct query:', raffle.address);
+          return;
+        }
+
+        console.log('[RaffleCard] Fetching direct contract values for NFT prize raffle:', raffle.address);
+
+        // Fetch values directly like RaffleDetailPage does
+        const [isExternallyPrizedDirect, usesCustomPriceDirect, isEscrowedPrizeDirect] = await Promise.all([
+          raffleContract.isExternallyPrized().catch((error) => {
+            console.warn('[RaffleCard] Direct isExternallyPrized failed:', error.message);
+            return null;
+          }),
+          raffleContract.usesCustomPrice().catch((error) => {
+            console.warn('[RaffleCard] Direct usesCustomPrice failed:', error.message);
+            return null;
+          }),
+          raffleContract.isEscrowedPrize().catch((error) => {
+            console.warn('[RaffleCard] Direct isEscrowedPrize failed:', error.message);
+            return null;
+          })
+        ]);
+
+        const directValues = {
+          isExternallyPrized: isExternallyPrizedDirect,
+          usesCustomPrice: usesCustomPriceDirect,
+          isEscrowedPrize: isEscrowedPrizeDirect
+        };
+
+        console.log('[RaffleCard] Direct contract values fetched:', {
+          address: raffle.address,
+          directValues,
+          raffleServiceValues: {
+            isExternallyPrized: raffle.isExternallyPrized,
+            usesCustomPrice: raffle.usesCustomPrice
+          },
+          comparison: {
+            isExternallyPrizedMatch: directValues.isExternallyPrized === raffle.isExternallyPrized,
+            usesCustomPriceMatch: directValues.usesCustomPrice === raffle.usesCustomPrice
+          }
+        });
+
+        setDirectContractValues(directValues);
+      } catch (error) {
+        console.error('[RaffleCard] Error fetching direct contract values:', error);
+      }
+    }
+
+    fetchDirectContractValues();
+  }, [raffle.address, raffle.prizeCollection, getContractInstance]);
+
+  // Fetch collection name and symbol for NFT prizes
+  useEffect(() => {
+    const fetchCollectionInfo = async () => {
+      if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
+        setCollectionName(null);
+        setCollectionSymbol(null);
+        return;
+      }
+
+      try {
         let contract = null;
         let name = null;
+        let symbol = null;
+
+        // Enhanced debugging
+        console.log(`[RaffleCard] Attempting to fetch collection info for ${raffle.address}:`, {
+          prizeCollection: raffle.prizeCollection,
+          standard: raffle.standard,
+          standardType: typeof raffle.standard,
+          standardDefined: typeof raffle.standard !== 'undefined'
+        });
 
         if (typeof raffle.standard !== 'undefined') {
-          // Use standard if available
+          // Use standard if available (like RaffleDetailPage)
           const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+          console.log(`[RaffleCard] Using standard-based contract type: ${contractType}`);
+
           contract = getContractInstance(raffle.prizeCollection, contractType);
           if (contract) {
+            console.log(`[RaffleCard] Got contract instance, fetching name...`);
             name = await contract.name();
+            console.log(`[RaffleCard] Name fetched: ${name}`);
+
+            // Try to fetch symbol
+            try {
+              symbol = await contract.symbol();
+              console.log(`[RaffleCard] Symbol fetched: ${symbol}`);
+            } catch (symbolError) {
+              console.warn(`[RaffleCard] Failed to fetch symbol:`, symbolError.message);
+              symbol = null;
+            }
+          } else {
+            console.warn(`[RaffleCard] Failed to get contract instance for ${contractType}`);
           }
         } else {
-          // Try ERC721 first, then ERC1155 if that fails
+          // Fallback: Try both contract types if standard is undefined
+          console.log(`[RaffleCard] Standard undefined, trying ERC721 first...`);
           try {
             contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
             if (contract) {
               name = await contract.name();
+              try {
+                symbol = await contract.symbol();
+              } catch (symbolError) {
+                symbol = null;
+              }
+              console.log(`[RaffleCard] ERC721 success - name: ${name}, symbol: ${symbol}`);
             }
           } catch (erc721Error) {
+            console.log(`[RaffleCard] ERC721 failed, trying ERC1155...`);
             try {
               contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
               if (contract) {
                 name = await contract.name();
+                try {
+                  symbol = await contract.symbol();
+                } catch (symbolError) {
+                  symbol = null;
+                }
+                console.log(`[RaffleCard] ERC1155 success - name: ${name}, symbol: ${symbol}`);
               }
             } catch (erc1155Error) {
-              console.warn('Failed to fetch collection name from both ERC721 and ERC1155:', erc721Error, erc1155Error);
+              console.warn('[RaffleCard] Both ERC721 and ERC1155 failed:', erc721Error.message, erc1155Error.message);
             }
           }
         }
 
         setCollectionName(name);
+        setCollectionSymbol(symbol);
+
+        // Final debug logging
+        console.log(`[RaffleCard] Collection info result for ${raffle.address}:`, {
+          prizeCollection: raffle.prizeCollection,
+          standard: raffle.standard,
+          finalName: name,
+          finalSymbol: symbol,
+          success: !!name
+        });
       } catch (error) {
-        console.warn('Failed to fetch collection name:', error);
+        console.error(`[RaffleCard] Error fetching collection info for ${raffle.prizeCollection}:`, error);
         setCollectionName(null);
+        setCollectionSymbol(null);
       }
     };
 
-    fetchCollectionName();
+    fetchCollectionInfo();
   }, [raffle, getContractInstance]);
 
   // Check for collab status with holderTokenAddress
@@ -281,6 +396,73 @@ const RaffleCard = ({ raffle }) => {
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
 
+  // Enhanced NFT type detection based on correct understanding of contract flags
+  const getEnhancedNFTType = () => {
+    // Only for NFT prizes (ERC721/ERC1155)
+    if (!raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
+      return null;
+    }
+
+    // Use direct contract values if available, otherwise fall back to raffle service values
+    const isExternallyPrized = (directContractValues && directContractValues.isExternallyPrized !== null)
+      ? directContractValues.isExternallyPrized
+      : raffle.isExternallyPrized;
+    const usesCustomPrice = (directContractValues && directContractValues.usesCustomPrice !== null)
+      ? directContractValues.usesCustomPrice === true
+      : raffle.usesCustomPrice === true;
+    const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null)
+      ? directContractValues.isEscrowedPrize === true
+      : raffle.isEscrowedPrize === true;
+
+    // Determine if this is a mintable NFT prize
+    // Based on your clarification: isMintable should only be true for mintable ERC721/ERC1155 prizes
+    // We need to infer this from the available data since there's no direct isMintable flag
+    const isMintable = !isEscrowedPrize; // If not escrowed, then it's mintable
+
+    // Enhanced debugging to investigate the issue
+    console.log('[RaffleCard] DETAILED DEBUG for raffle:', raffle.address, {
+      prizeCollection: raffle.prizeCollection,
+      raffleServiceValues: {
+        isExternallyPrized: raffle.isExternallyPrized,
+        usesCustomPrice: raffle.usesCustomPrice,
+        isEscrowedPrize: raffle.isEscrowedPrize
+      },
+      directContractValues: directContractValues,
+      finalValuesUsed: {
+        isExternallyPrized: isExternallyPrized,
+        usesCustomPrice: usesCustomPrice,
+        isEscrowedPrize: isEscrowedPrize,
+        isMintable: isMintable
+      },
+      ticketPrice: raffle.ticketPrice ? raffle.ticketPrice.toString() : 'undefined',
+      standard: raffle.standard
+    });
+
+    // Validation: isExternallyPrized should always be false when usesCustomPrice is true
+    if (usesCustomPrice && isExternallyPrized) {
+      console.warn('[RaffleCard] Invalid state: isExternallyPrized is true when usesCustomPrice is true for raffle:', raffle.address);
+    }
+
+    console.log('[RaffleCard] Logic determination:', {
+      isEscrowedPrize,
+      isMintable,
+      usesCustomPrice,
+      willReturn: isEscrowedPrize && usesCustomPrice ? 'Lucky NFT Sale' :
+                  isEscrowedPrize && !usesCustomPrice ? 'NFT Giveaway' :
+                  isMintable && !usesCustomPrice ? 'NFT Drop (Free Mint)' :
+                  isMintable && usesCustomPrice ? 'NFT Drop (Paid Mint)' : 'NFT Prize'
+    });
+
+    // Apply the corrected logic based on your clarification
+    if (isEscrowedPrize && usesCustomPrice) return 'Lucky NFT Sale';
+    if (isEscrowedPrize && !usesCustomPrice) return 'NFT Giveaway';
+    if (isMintable && !usesCustomPrice) return 'NFT Drop (Free Mint)';
+    if (isMintable && usesCustomPrice) return 'NFT Drop (Paid Mint)';
+
+    // Fallback for any edge cases
+    return 'NFT Prize';
+  };
+
   const getPrizeType = () => {
     // Use async-determined collab status from context
     const collabStatus = getCollabStatus(raffle.address);
@@ -289,14 +471,34 @@ const RaffleCard = ({ raffle }) => {
     if (collabStatus === undefined) return 'Checking...'; // Still determining collab status
 
     // Continue with other prize types
-    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
-    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
-    if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
+    if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+      // Display native currency ticker + 'Giveaway' (e.g., 'AVAX Giveaway', 'ETH Giveaway')
+      return `${getCurrencySymbol()} Giveaway`;
+    }
+    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+      // Display 'Token Giveaway' for ERC20 tokens
+      return 'Token Giveaway';
+    }
+
+    // ✅ NEW: Enhanced NFT type detection
+    const enhancedNFTType = getEnhancedNFTType();
+    if (enhancedNFTType) {
+      // Add debugging log for enhanced NFT type detection
+      console.log('[RaffleCard] Enhanced NFT type detection:', {
+        address: raffle.address,
+        prizeCollection: raffle.prizeCollection,
+        isExternallyPrized: raffle.isExternallyPrized,
+        usesCustomPrice: raffle.usesCustomPrice,
+        resultType: enhancedNFTType
+      });
+      return enhancedNFTType;
+    }
+
     return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
   };
 
   const getPrizeAmount = () => {
-    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return `${ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH`;
+    if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) return formatPrizeAmount(raffle.nativePrizeAmount);
     if (raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return `${ethers.utils.formatUnits(raffle.erc20PrizeAmount, 18)} ${erc20Symbol || 'TOKEN'}`;
     return null;
   };
@@ -313,44 +515,129 @@ const RaffleCard = ({ raffle }) => {
       </div>
       
       <div className="space-y-2 mb-4">
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Creator:</span>
           <span className="font-mono">{raffle.creator?.slice(0, 10)}...</span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Ticket Price:</span>
-          <span>{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</span>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">Ticket Fee:</span>
+          <span>{formatTicketPrice(raffle.ticketPrice || '0')}</span>
         </div>
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Tickets Sold:</span>
           <span>{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
         </div>
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Winners:</span>
           <span>{raffle.winnersCount}</span>
         </div>
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">{timeLabel}:</span>
           <span>{timeRemaining}</span>
         </div>
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Type:</span>
-          <span className={`px-2 py-1 rounded-full text-sm`}>{getPrizeType()}</span>
+          <span className="px-2 py-1 rounded-full text-sm bg-muted/20">{getPrizeType()}</span>
         </div>
-        {(getPrizeType() === 'NFT Prize') && (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Prize Collection:</span>
-            <span className={collectionName ? '' : 'font-mono'}>
-              {collectionName || `${raffle.prizeCollection?.slice(0, 10)}...`}
-            </span>
-          </div>
-        )}
-        {(getPrizeType() === 'ERC20' || getPrizeType() === 'ETH') && (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Prize Amount:</span>
-            <span>{getPrizeAmount()}</span>
-          </div>
-        )}
+        {(() => {
+          const prizeType = getPrizeType();
+          const isNFTPrize = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero;
+
+          if (!isNFTPrize) return null;
+
+          // Determine if this is escrowed or mintable based on the corrected logic
+          const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null)
+            ? directContractValues.isEscrowedPrize === true
+            : raffle.isEscrowedPrize === true;
+          const isMintable = !isEscrowedPrize;
+
+          if (isEscrowedPrize) {
+            // For escrowed NFT prizes: show 'Prize ID' with symbol + token ID (e.g., "BAYC #23")
+            const prizeId = (raffle.prizeTokenId !== undefined && raffle.prizeTokenId !== null)
+              ? `#${raffle.prizeTokenId}`
+              : '#Unknown';
+            const displayValue = collectionSymbol
+              ? `${collectionSymbol} ${prizeId}` // Use symbol if available (e.g., "BAYC #23")
+              : collectionName
+                ? `${collectionName} ${prizeId}` // Fall back to name if no symbol
+                : `${raffle.prizeCollection?.slice(0, 10)}... ${prizeId}`; // Fall back to address
+
+            console.log(`[RaffleCard] Escrowed prize display for ${raffle.address}:`, {
+              prizeTokenId: raffle.prizeTokenId,
+              prizeId: prizeId,
+              collectionSymbol: collectionSymbol,
+              collectionName: collectionName,
+              displayValue: displayValue
+            });
+
+            return (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Prize Token ID:</span>
+                <span className={collectionSymbol || collectionName ? '' : 'font-mono'}>
+                  {displayValue}
+                </span>
+              </div>
+            );
+          } else if (isMintable) {
+            // For mintable NFT prizes: show 'Prize Collection' with collection name or address
+            // Fix: If we have a collection name, it's likely ERC721 (even if standard is undefined)
+            // ERC1155 collections often don't have names, so if we got a name, prefer showing it
+            const hasCollectionName = collectionName && collectionName.trim() !== '';
+            const isLikelyERC721 = raffle.standard === 0 || (raffle.standard === undefined && hasCollectionName);
+            const isDefinitelyERC1155 = raffle.standard === 1;
+
+            const displayValue = isDefinitelyERC1155
+              ? `${raffle.prizeCollection?.slice(0, 10)}...` // ERC1155: always use address
+              : (hasCollectionName
+                  ? collectionName // ERC721 or likely ERC721: use name if available
+                  : `${raffle.prizeCollection?.slice(0, 10)}...`); // Fallback to address
+
+            console.log(`[RaffleCard] Mintable prize display for ${raffle.address}:`, {
+              standard: raffle.standard,
+              isERC721: raffle.standard === 0,
+              isLikelyERC721: isLikelyERC721,
+              isDefinitelyERC1155: isDefinitelyERC1155,
+              hasCollectionName: hasCollectionName,
+              collectionName: collectionName,
+              prizeCollection: raffle.prizeCollection,
+              displayValue: displayValue
+            });
+
+            return (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Prize Collection:</span>
+                <span className={hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}>
+                  {displayValue}
+                </span>
+              </div>
+            );
+          }
+
+          return null;
+        })()}
+        {(() => {
+          const prizeType = getPrizeType();
+          const isEscrowedNFT = raffle.prizeCollection &&
+                               raffle.prizeCollection !== ethers.constants.AddressZero &&
+                               raffle.isExternallyPrized === false;
+
+          // Hide Prize Amount for escrowed NFT prizes
+          if (isEscrowedNFT) {
+            return null;
+          }
+
+          // Show Prize Amount for Token Giveaways and other giveaways
+          if (prizeType === 'Token Giveaway' || prizeType.includes('Giveaway')) {
+            return (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Prize Amount:</span>
+                <span>{getPrizeAmount()}</span>
+              </div>
+            );
+          }
+
+          return null;
+        })()}
       </div>
       
       <Button
@@ -368,6 +655,7 @@ const RaffleCard = ({ raffle }) => {
 const LandingPage = () => {
   const { connected } = useWallet();
   const { isMobile } = useMobileBreakpoints();
+  const { formatTicketPrice, formatPrizeAmount } = useNativeCurrency();
 
   // Use the new RaffleService hook
   const {
@@ -443,10 +731,11 @@ const LandingPage = () => {
           </p>
         </div>
 
-        <NetworkError
-          error={{ message: error }}
+        <RaffleErrorDisplay
+          error={error}
           onRetry={refreshRaffles}
           isMobile={isMobile}
+          showCreateButton={true}
         />
       </PageContainer>
     );

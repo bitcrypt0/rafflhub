@@ -81,6 +81,11 @@ export const useRaffleService = (options = {}) => {
       return;
     }
 
+    if (!walletContext?.chainId) {
+      console.log('⏸️ ChainId not yet available, skipping fetch');
+      return;
+    }
+
     if (!mountedRef.current) {
       console.log('❌ Component unmounted');
       return;
@@ -115,7 +120,7 @@ export const useRaffleService = (options = {}) => {
 
       if (fetchedRaffles.length === 0) {
         console.log('⚠️ No raffles found');
-        setError('No raffles found on the blockchain');
+        setError('NO_RAFFLES_FOUND');
       } else {
         console.log('✅ Raffles set successfully');
         setError(null);
@@ -130,20 +135,23 @@ export const useRaffleService = (options = {}) => {
         chainId: walletContext?.chainId
       });
       
-      // Enhanced error handling with specific messages
-      let errorMessage = 'Failed to fetch raffles from blockchain';
-      
-      if (err.message?.includes('Too Many Requests')) {
-        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+      // Enhanced error handling with specific error codes
+      let errorCode = 'NETWORK_ERROR';
+
+      if (err.message?.includes('CONTRACTS_NOT_AVAILABLE')) {
+        errorCode = 'CONTRACTS_NOT_AVAILABLE';
+      } else if (err.message?.includes('Too Many Requests')) {
+        errorCode = 'RATE_LIMIT';
       } else if (err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your connection and try again.';
+        errorCode = 'TIMEOUT';
       } else if (err.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your connection.';
-      } else if (err.message?.includes('not available')) {
-        errorMessage = 'Smart contracts not available on this network.';
+        errorCode = 'NETWORK_ERROR';
+      } else if (err.message?.includes('not available') || err.message?.includes('RaffleManager contract not available')) {
+        // Handle cases where contracts are not available but error message is different
+        errorCode = 'CONTRACTS_NOT_AVAILABLE';
       }
-      
-      setError(errorMessage);
+
+      setError(errorCode);
       
       // Don't clear raffles on background fetch errors
       if (!isBackground) {
@@ -213,9 +221,14 @@ export const useRaffleService = (options = {}) => {
       environment: process.env.NODE_ENV
     });
 
-    if (autoFetch && walletContext?.connected) {
-      console.log('🚀 Triggering auto-fetch');
-      fetchRaffles();
+    if (autoFetch && walletContext?.connected && walletContext?.chainId) {
+      // Add a small delay to ensure wallet context is fully initialized
+      const timer = setTimeout(() => {
+        console.log('🚀 Triggering auto-fetch');
+        fetchRaffles();
+      }, 100);
+
+      return () => clearTimeout(timer);
     } else {
       console.log('⏸️ Auto-fetch conditions not met');
     }
@@ -363,6 +376,7 @@ export const useRaffleSearch = () => {
 /**
  * Custom hook for listening to raffle contract events
  * Provides real-time updates for winner selection and state changes
+ * Enhanced with state-conditional listening for better performance
  */
 export const useRaffleEventListener = (raffleAddress, options = {}) => {
   const {
@@ -370,9 +384,13 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
     onStateChange,
     onPrizeClaimed,
     onTicketsPurchased,
+    onRpcError, // New callback for RPC error detection
     enablePolling = true,
     pollingInterval = 10000, // 10 seconds
-    autoStart = true
+    autoStart = true,
+    raffleState = null, // Current raffle state for conditional listening
+    enableStateConditionalListening = true, // Enable optimized listening based on state
+    stopOnCompletion = false // Stop listening for winner selection events after completion
   } = options;
 
   const { getContractInstance, provider } = useContract();
@@ -381,11 +399,13 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
   const [isListening, setIsListening] = useState(false);
   const [lastBlockNumber, setLastBlockNumber] = useState(null);
   const [eventHistory, setEventHistory] = useState([]);
+  const [currentRaffleState, setCurrentRaffleState] = useState(raffleState);
 
   const contractRef = useRef(null);
   const listenersRef = useRef([]);
   const pollingRef = useRef(null);
   const mountedRef = useRef(true);
+  const lastStateRef = useRef(raffleState);
 
   // Initialize contract instance
   useEffect(() => {
@@ -396,7 +416,40 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
     }
   }, [raffleAddress, getContractInstance]);
 
-  // Event handler wrapper with error handling
+  // Update current raffle state when it changes
+  useEffect(() => {
+    if (raffleState !== lastStateRef.current) {
+      console.log(`🔄 Raffle state updated: ${lastStateRef.current} → ${raffleState}`);
+      setCurrentRaffleState(raffleState);
+      lastStateRef.current = raffleState;
+    }
+  }, [raffleState]);
+
+  // Determine if we should listen based on raffle state
+  const shouldListen = useCallback(() => {
+    if (!enableStateConditionalListening) {
+      return true; // Always listen if conditional listening is disabled
+    }
+
+    // If stopOnCompletion is enabled, stop listening for winner selection events after completion
+    if (stopOnCompletion && (currentRaffleState === 4 || currentRaffleState === 7)) {
+      console.log(`🎧 Stopping winner selection listening - raffle completed (state=${currentRaffleState})`);
+      return false;
+    }
+
+    // Listen when raffle is in states where events are likely:
+    // 1 = Active (for TicketsPurchased events)
+    // 2 = Drawing (for WinnersSelected events - this is key!)
+    // 3 = Completed (for PrizeClaimed events)
+    // 4 = Prizes Claimed (for PrizeClaimed events)
+    const activeStates = [1, 2, 3, 4];
+    const shouldListenNow = currentRaffleState === null || activeStates.includes(currentRaffleState);
+
+    console.log(`🎧 Should listen check: state=${currentRaffleState}, shouldListen=${shouldListenNow}, stopOnCompletion=${stopOnCompletion}`);
+    return shouldListenNow;
+  }, [currentRaffleState, enableStateConditionalListening, stopOnCompletion]);
+
+  // Enhanced event handler with better error handling and WinnersSelected priority
   const createEventHandler = useCallback((eventName, callback) => {
     return (...args) => {
       try {
@@ -413,7 +466,39 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
 
           setEventHistory(prev => [...prev.slice(-9), eventData]); // Keep last 10 events
 
-          callback(...args);
+          // Special handling for WinnersSelected event - ensure immediate processing with RPC resilience
+          if (eventName === 'WinnersSelected') {
+            console.log('🏆 WinnersSelected event - triggering immediate callback with RPC resilience');
+            // Use setTimeout to ensure callback runs in next tick for better reliability
+            setTimeout(() => {
+              try {
+                callback(...args);
+                // Trigger additional state polling after WinnersSelected to ensure state sync
+                setTimeout(() => {
+                  if (mountedRef.current && contractRef.current) {
+                    console.log('🔄 Additional state poll after WinnersSelected event');
+                    // Force a state poll to ensure UI updates even if RPC had issues
+                    const pollForStateChanges = async () => {
+                      try {
+                        const stateNum = await contractRef.current.state();
+                        const stateValue = stateNum.toNumber ? stateNum.toNumber() : Number(stateNum);
+                        if (onStateChange) {
+                          onStateChange(stateValue, null);
+                        }
+                      } catch (error) {
+                        console.warn('Error in additional state poll:', error);
+                      }
+                    };
+                    pollForStateChanges();
+                  }
+                }, 3000); // 3 second delay for RPC stabilization
+              } catch (error) {
+                console.error('Error in WinnersSelected callback:', error);
+              }
+            }, 1000); // 1 second delay for immediate processing
+          } else {
+            callback(...args);
+          }
         }
       } catch (error) {
         console.error(`Error handling ${eventName} event:`, error);
@@ -421,14 +506,20 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
     };
   }, []);
 
-  // Set up event listeners
+  // Set up event listeners with conditional listening based on raffle state
   const setupEventListeners = useCallback(() => {
     if (!contractRef.current || !connected) {
       return;
     }
 
+    // Check if we should listen based on raffle state
+    if (!shouldListen()) {
+      console.log(`🎧 Skipping event listeners setup - raffle state ${currentRaffleState} doesn't require listening`);
+      return;
+    }
+
     try {
-      console.log(`🎧 Setting up event listeners for raffle: ${raffleAddress}`);
+      console.log(`🎧 Setting up event listeners for raffle: ${raffleAddress} (state: ${currentRaffleState})`);
 
       // Clear existing listeners
       listenersRef.current.forEach(({ contract, event, handler }) => {
@@ -496,26 +587,85 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
       return;
     }
 
+    // Check if we should stop polling based on completion status
+    if (stopOnCompletion && (currentRaffleState === 4 || currentRaffleState === 7)) {
+      console.log(`📊 Stopping state polling - raffle completed (state=${currentRaffleState})`);
+      return;
+    }
+
     const pollForStateChanges = async () => {
-      try {
-        if (!mountedRef.current || !contractRef.current) return;
+      let retryCount = 0;
+      const maxRetries = 3;
+      const retryDelay = 2000; // 2 seconds
 
-        const currentBlock = await provider?.getBlockNumber();
-        if (currentBlock && currentBlock !== lastBlockNumber) {
-          setLastBlockNumber(currentBlock);
+      const attemptPoll = async () => {
+        try {
+          if (!mountedRef.current || !contractRef.current) return;
 
-          // Check for state changes by polling contract state
-          const stateNum = await contractRef.current.state();
-          const stateValue = stateNum.toNumber ? stateNum.toNumber() : Number(stateNum);
+          // Enhanced RPC resilience: retry on 500 errors
+          const currentBlock = await provider?.getBlockNumber().catch(async (error) => {
+            if (error.message?.includes('500') && retryCount < maxRetries) {
+              console.warn(`RPC 500 error on getBlockNumber, retrying (${retryCount + 1}/${maxRetries})...`);
 
-          // Trigger state change callback
-          if (onStateChange) {
-            onStateChange(stateValue, currentBlock);
+              // Notify about RPC error on first attempt
+              if (retryCount === 0 && onRpcError) {
+                onRpcError(error);
+              }
+
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              return provider?.getBlockNumber();
+            }
+            throw error;
+          });
+
+          if (currentBlock && currentBlock !== lastBlockNumber) {
+            setLastBlockNumber(currentBlock);
+
+            // Check for state changes by polling contract state with retry logic
+            const stateNum = await contractRef.current.state().catch(async (error) => {
+              if (error.message?.includes('500') && retryCount < maxRetries) {
+                console.warn(`RPC 500 error on state(), retrying (${retryCount + 1}/${maxRetries})...`);
+
+                // Notify about RPC error on first attempt
+                if (retryCount === 0 && onRpcError) {
+                  onRpcError(error);
+                }
+
+                retryCount++;
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                return contractRef.current.state();
+              }
+              throw error;
+            });
+
+            const stateValue = stateNum.toNumber ? stateNum.toNumber() : Number(stateNum);
+
+            // Trigger state change callback
+            if (onStateChange) {
+              onStateChange(stateValue, currentBlock);
+            }
+          }
+        } catch (error) {
+          const errorMessage = error.message || error.toString();
+
+          // Enhanced error handling for RPC issues with callback notification
+          if (errorMessage.includes('500') || errorMessage.includes('Non-200 status code')) {
+            console.warn('RPC server error during state polling, will retry on next cycle:', errorMessage);
+
+            // Notify about RPC error for auto-refresh logic
+            if (onRpcError) {
+              onRpcError(error);
+            }
+
+            // Don't throw error, just log and continue - next polling cycle will retry
+          } else {
+            console.warn('Error during state polling:', error);
           }
         }
-      } catch (error) {
-        console.warn('Error during state polling:', error);
-      }
+      };
+
+      await attemptPoll();
     };
 
     // Initial poll
@@ -524,7 +674,7 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
     // Set up interval
     pollingRef.current = setInterval(pollForStateChanges, pollingInterval);
     console.log(`📊 State polling enabled (${pollingInterval}ms interval)`);
-  }, [enablePolling, onStateChange, provider, lastBlockNumber, pollingInterval]);
+  }, [enablePolling, onStateChange, provider, lastBlockNumber, pollingInterval, stopOnCompletion, currentRaffleState]);
 
   // Cleanup polling
   const cleanupPolling = useCallback(() => {
@@ -552,16 +702,17 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
     cleanupPolling();
   }, [cleanupEventListeners, cleanupPolling]);
 
-  // Auto-start listening when dependencies are ready
+  // Auto-start listening when dependencies are ready or raffle state changes
   useEffect(() => {
     if (autoStart && raffleAddress && contractRef.current && connected) {
+      console.log(`🔄 Auto-starting listeners due to dependency change (state: ${currentRaffleState})`);
       startListening();
     }
 
     return () => {
       stopListening();
     };
-  }, [autoStart, raffleAddress, connected, startListening, stopListening]);
+  }, [autoStart, raffleAddress, connected, currentRaffleState, startListening, stopListening]);
 
   // Cleanup on unmount
   useEffect(() => {

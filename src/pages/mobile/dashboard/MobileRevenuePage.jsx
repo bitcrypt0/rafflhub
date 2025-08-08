@@ -6,6 +6,7 @@ import { useContract } from '../../../contexts/ContractContext';
 import { toast } from '../../../components/ui/sonner';
 import { ethers } from 'ethers';
 import { getTicketsSoldCount } from '../../../utils/contractCallUtils';
+import { handleError } from '../../../utils/errorHandling';
 
 /**
  * Mobile-specific Revenue Withdrawal Page
@@ -147,8 +148,10 @@ const MobileRevenuePage = () => {
 
       setCreatedRaffles(raffles);
     } catch (error) {
-      console.error('Error fetching created raffles:', error);
-      toast.error('Failed to load created raffles');
+      handleError(error, {
+        context: { operation: 'fetchCreatedRaffles', isReadOnly: true },
+        fallbackMessage: 'Failed to load created raffles'
+      });
     } finally {
       setLoading(false);
     }

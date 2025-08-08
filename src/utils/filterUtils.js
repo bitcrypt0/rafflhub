@@ -56,9 +56,9 @@ export const getRaffleType = (raffle) => {
 export const getPrizeType = (raffle) => {
   if (!raffle.isPrized) return null;
   
-  // Check for ETH prize
-  if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) {
-    return 'eth';
+  // Check for Native Token prize
+  if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+    return 'native';
   }
   
   // Check for ERC20 prize
@@ -89,9 +89,9 @@ export const getPrizeStandards = (raffle) => {
   
   const standards = [];
   
-  // ETH standard
-  if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) {
-    standards.push('eth');
+  // Native Token standard
+  if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+    standards.push('native');
   }
   
   // ERC20 standard

@@ -62,6 +62,7 @@ const getStatusBadge = (raffle) => {
 
 // Removed individual component imports - now handled by UnifiedDashboardGrid
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import UnifiedMobileModal from './mobile/UnifiedMobileModal';
 import { initMobileKeyboardFix, cleanupMobileKeyboardFix } from '../utils/androidKeyboardFix';
 import UnifiedDashboardGrid from './dashboard/UnifiedDashboardGrid';
@@ -79,6 +80,7 @@ const ProfileTabs = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
+  const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
 
   // Initialize mobile keyboard fix
   useEffect(() => {
@@ -237,7 +239,7 @@ const ProfileTabs = ({
                   <div>
                     <p className="text-muted-foreground">Revenue</p>
                     <p className="font-medium text-green-600">
-                      {parseFloat(raffle.revenue || 0).toFixed(3)} ETH
+                      {formatRevenueAmount(raffle.revenue || 0)}
                     </p>
                   </div>
                 </div>
@@ -297,7 +299,7 @@ const ProfileTabs = ({
                           Purchased {ticket.ticketCount} {ticket.raffleName || ticket.name} ticket{ticket.ticketCount > 1 ? 's' : ''}
                         </h4>
                         <p className="text-muted-foreground text-sm mt-1">
-                          {ticket.totalSpent} ETH
+                          {ticket.totalSpent} {getCurrencySymbol()}
                         </p>
                       </div>
                       <span className="text-sm text-muted-foreground flex-shrink-0">
@@ -360,7 +362,7 @@ const ProfileTabs = ({
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{creatorStats.totalRevenue} ETH</div>
+            <div className="text-2xl font-bold">{creatorStats.totalRevenue} {getCurrencySymbol()}</div>
             <p className="text-xs text-muted-foreground">
               +{creatorStats.monthlyRevenue} this month
             </p>

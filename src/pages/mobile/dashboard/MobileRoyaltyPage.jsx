@@ -91,8 +91,8 @@ const MobileRoyaltyPage = () => {
     }
 
     const royaltyPercentage = parseFloat(formData.royaltyPercentage);
-    if (isNaN(royaltyPercentage) || royaltyPercentage < 0 || royaltyPercentage > 10) {
-      toast.error('Please enter a valid royalty percentage (0-10%)');
+    if (isNaN(royaltyPercentage) || royaltyPercentage < 0) {
+      toast.error('Please enter a valid royalty percentage (minimum 0%)');
       return;
     }
 
@@ -247,12 +247,11 @@ const MobileRoyaltyPage = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  New Royalty Percentage (0-10%)
+                  New Royalty Percentage (%)
                 </label>
                 <input
                   type="number"
                   min="0"
-                  max="10"
                   step="0.01"
                   value={formData.royaltyPercentage}
                   onChange={(e) => handleInputChange('royaltyPercentage', e.target.value)}
@@ -261,7 +260,7 @@ const MobileRoyaltyPage = () => {
                   style={{ fontSize: '16px' }}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Maximum 10%. Enter as decimal (e.g., 2.5 for 2.5%)
+                  Enter as decimal (e.g., 2.5 for 2.5%)
                 </p>
               </div>
 

@@ -14,6 +14,7 @@ import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import MobileProfilePage from './mobile/MobileProfilePage';
 
@@ -31,6 +32,7 @@ function mapRaffleState(stateNum) {
 
 const ActivityCard = ({ activity }) => {
   const navigate = useNavigate();
+  const { getCurrencySymbol } = useNativeCurrency();
   
   const getActivityIcon = () => {
     switch (activity.type) {
@@ -50,10 +52,7 @@ const ActivityCard = ({ activity }) => {
         return <DollarSign className="h-5 w-5 text-emerald-500" />;
       case 'admin_withdrawn':
         return <DollarSign className="h-5 w-5 text-indigo-500" />;
-      case 'deletion_refund':
-        return <Minus className="h-5 w-5 text-orange-500" />;
-      case 'full_refund_for_deletion':
-        return <Minus className="h-5 w-5 text-orange-500" />;
+
       default:
         return <Clock className="h-5 w-5 text-gray-500" />;
     }
@@ -72,17 +71,17 @@ const ActivityCard = ({ activity }) => {
       case 'prize_won':
         return `Won prize in "${activity.raffleName}"`;
       case 'prize_claimed':
-        return `Claimed prize from "${activity.raffleName}"`;
+        const prizeType = activity.prizeType || 'Prize';
+        const prizeDetails = activity.amount ? ` (${activity.amount} ${activity.prizeType === 'Native Currency' ? getCurrencySymbol() : activity.prizeType === 'ERC20 Token' ? 'tokens' : ''})` :
+                           activity.tokenId ? ` (Token ID: ${activity.tokenId})` : '';
+        return `Claimed ${prizeType} from "${activity.raffleName}"${prizeDetails}`;
       case 'refund_claimed':
         return `Claimed refund for "${activity.raffleName}"`;
       case 'revenue_withdrawn':
-        return `Withdrew ${ethers.utils.formatEther(activity.amount)} ETH revenue from "${activity.raffleName}"`;
+        return `Withdrew ${activity.amount} ${getCurrencySymbol()} revenue from "${activity.raffleName}"`;
       case 'admin_withdrawn':
-        return `Withdrew ${ethers.utils.formatEther(activity.amount)} ETH admin revenue`;
-      case 'deletion_refund':
-        return `Claimed deletion refund for "${activity.raffleName}"`;
-      case 'full_refund_for_deletion':
-        return `Claimed full refund for "${activity.raffleName}"`;
+        return `Withdrew ${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()} admin revenue`;
+
       default:
         return activity.description;
     }
@@ -98,7 +97,14 @@ const ActivityCard = ({ activity }) => {
           <p className="text-sm font-medium">{getActivityDescription()}</p>
           {activity.type === 'ticket_purchase' && activity.amount && (
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              {activity.amount} ETH
+              {activity.amount} {getCurrencySymbol()}
+            </p>
+          )}
+          {activity.type === 'prize_claimed' && activity.prizeType && (
+            <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+              {activity.prizeType}
+              {activity.amount && ` - ${activity.amount} ${activity.prizeType === 'Native Currency' ? getCurrencySymbol() : activity.prizeType === 'ERC20 Token' ? 'tokens' : ''}`}
+              {activity.tokenId && ` - Token ID: ${activity.tokenId}`}
             </p>
           )}
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -381,6 +387,7 @@ const DesktopProfilePage = () => {
   const { contracts, getContractInstance, executeTransaction, executeCall } = useContract();
   const navigate = useNavigate();
   const { isMobile } = useMobileBreakpoints(); // Move hook to top to fix Rules of Hooks violation
+  const { getCurrencySymbol } = useNativeCurrency();
 
   // Use the same hook as mobile for consistent data structure
   const {
@@ -424,7 +431,7 @@ const DesktopProfilePage = () => {
           case 'revenue_withdrawn':
             return `Withdrew revenue from "${raffleName}"`;
           case 'admin_withdrawn':
-            return `Admin withdrawal: ${activity.amount} ETH`;
+            return `Admin withdrawal: ${activity.amount} ${getCurrencySymbol()}`;
           default:
             return activity.description || 'Activity';
         }
@@ -433,9 +440,9 @@ const DesktopProfilePage = () => {
       const getActivityDescription = () => {
         switch (activity.type) {
           case 'ticket_purchase':
-            return activity.amount ? `${activity.amount} ETH` : '';
+            return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
           case 'refund_claimed':
-            return activity.amount ? `${activity.amount} ETH` : '';
+            return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
           default:
             return activity.description || '';
         }
@@ -626,8 +633,14 @@ const DesktopProfilePage = () => {
     // Note: This is a simplified version. Full collab detection requires async holderTokenAddress() check
     // For now, only detecting NFT Collab via isExternallyPrized until async enhancement is implemented
     if (raffle.isExternallyPrized) return 'NFT Collab';
-    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
-    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
+    if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+      // Display native currency ticker + 'Giveaway' (e.g., 'AVAX Giveaway', 'ETH Giveaway')
+      return `${getCurrencySymbol()} Giveaway`;
+    }
+    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+      // Display 'Token Giveaway' for ERC20 tokens
+      return 'Token Giveaway';
+    }
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
     return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
   }
@@ -685,8 +698,13 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-3">
                   <DollarSign className="h-8 w-8 text-emerald-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
-                    <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                      {activityStats.totalRevenueWithdrawn && activityStats.totalRevenueWithdrawn.toString ?
+                        parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4) :
+                        '0.0000'
+                      }
+                    </p>
+                    <p className="text-sm text-muted-foreground">Creator Revenue Withdrawn</p>
                   </div>
                 </div>
               </div>

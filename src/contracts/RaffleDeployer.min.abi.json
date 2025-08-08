@@ -33,7 +33,7 @@
       { "internalType": "uint256", "name": "maxSupply", "type": "uint256" },
       { "internalType": "address", "name": "erc20PrizeToken", "type": "address" },
       { "internalType": "uint256", "name": "erc20PrizeAmount", "type": "uint256" },
-          { "internalType": "uint256", "name": "ethPrizeAmount", "type": "uint256" },
+          { "internalType": "uint256", "name": "nativePrizeAmount", "type": "uint256" },
           { "internalType": "uint8", "name": "revealType", "type": "uint8" },
           { "internalType": "string", "name": "unrevealedBaseURI", "type": "string" },
           { "internalType": "uint256", "name": "revealTime", "type": "uint256" },

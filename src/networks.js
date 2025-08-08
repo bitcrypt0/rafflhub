@@ -3,6 +3,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'Ethereum Mainnet',
     rpcUrl: 'https://ethereum-rpc.publicnode.com',
     explorer: 'https://etherscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -14,6 +15,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'OP Mainnet',
     rpcUrl: 'https://mainnet.optimism.io',
     explorer: 'https://optimistic.etherscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -25,6 +27,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'BNB Smart Chain',
     rpcUrl: 'https://bsc.blockrazor.xyz',
     explorer: 'https://bscscan.com',
+    nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -36,6 +39,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'BNB Smart Chain Testnet',
     rpcUrl: 'https://bsc-testnet-rpc.publicnode.com',
     explorer: 'https://testnet.bscscan.com',
+    nativeCurrency: { name: 'Test BNB', symbol: 'tBNB', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -47,17 +51,19 @@ export const SUPPORTED_NETWORKS = {
     name: 'Avalanche Fuji Testnet',
     rpcUrl: 'https://avalanche-fuji.drpc.org',
     explorer: 'https://testnet.snowscan.xyz',
+    nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x6cB76737D48808894DEE60cE109280fC656Dd507',
-      raffleDeployer: '0x211E3D8024C0986A907CFE427d33aDD194cC8DA4',
-      revenueManager: '0x8502356d5DD2913bF902Fb61EC5D38351B22267f',
-      nftFactory: '0x2581CBbd9F386cf35aC636a1Ce0cB0E6d2F6E3bf'
+      raffleManager: '0xBCD211473e397d16607aD8F2e2F634055e24D4d4',
+      raffleDeployer: '0x217Aa07d4bE1ad9B711eF1843fD94E0AeB8f1A4f',
+      revenueManager: '0x5abAF190A71Afea5870F241247853e8dE768bEf5',
+      nftFactory: '0xE35523508B88c189FBEd16AEDC53830e4C26875a'
     }
   },
   43114: {
     name: 'Avalanche C-Chain',
     rpcUrl: 'https://avalanche.drpc.org',
     explorer: 'https://snowscan.xyz',
+    nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -69,6 +75,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'Base Mainnet',
     rpcUrl: 'https://base.drpc.org',
     explorer: 'https://basescan.org',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -80,39 +87,43 @@ export const SUPPORTED_NETWORKS = {
     name: 'Base Sepolia',
     rpcUrl: 'https://base-sepolia-rpc.publicnode.com',
     explorer: 'https://sepolia.basescan.org',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x92C333E08746D7A204E873ea617dBee188f78B98',
-      raffleDeployer: '0xDF05a7588a15d73BA818f92c197dCc9465CcdC65',
-      revenueManager: '0x67AC55ca832fA03970b16f28BFe10c56E020c5B5',
-      nftFactory: '0x160737D48ea71DC070c5FD7BC3eDBE59ecc6b777'
+      raffleManager: '0x988113112B84572f9332e131e1A901b53dEfF5cf',
+      raffleDeployer: '0xB7C827D4b90d7d753b97D7828FC04AB8EfF77258',
+      revenueManager: '0x9d89F9948fbf82B7C3d0E53Bc497cB96ae2Ea466',
+      nftFactory: '0x763Ca72A5deFa8c0125df20999fa819F8f3E2445'
     }
   },
   11155111: {
     name: 'Ethereum Sepolia',
     rpcUrl: 'https://sepolia.infura.io',
     explorer: 'https://sepolia.etherscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x330132F2aEb2643bCAC64C073EDA8a17075434e6',
-      raffleDeployer: '0x155D0E31A9Ea3A591926622BA862fFFe90450488',
-      revenueManager: '0xD88bf9b03ECE7aaDd40Be883461e988DbeD56db9',
-      nftFactory: '0xe6e7C91ed1240b6F7CE2f9c3A5af441ad4DC2D7A'
+      raffleManager: '0x0ed4c953be2F304B33d10494A2901e520Df6E526',
+      raffleDeployer: '0xF93E17Dec038427EFCf4B5F7D327Db16dE21797D',
+      revenueManager: '0xb5B2C625d2c2793e38Fdc839B769De0981B42134',
+      nftFactory: '0x6F2E18c907303AeC1034Dec9A66ed91FFf5CB90f'
     }
   },
   11155420: {
     name: 'OP Sepolia Testnet',
     rpcUrl: 'https://sepolia.optimism.io',
     explorer: 'https://sepolia-optimism.etherscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x4Ed6890cc32f04D8E422Dc534460832f032D0052',
-      raffleDeployer: '0xb2F34D0E4761be2229f445Aa47EDe064aee25F2c',
-      revenueManager: '0x7A292e5B8aEfcabD7EA709d08053B01c0414b256',
-      nftFactory: '0x38FfF955929fc3F47cA2D4E1d59FF70CBDB97Dc6'
+      raffleManager: '0x15479B8233779c4d935B8EFD9CA03d8aC9D1379E',
+      raffleDeployer: '0x240d3184F81BF7D3523f40E718220AE3eaACC8Da',
+      revenueManager: '0xa5558177cAb470C69aa9E701b7701F43Cec44ef0',
+      nftFactory: '0xB5cDac0B3CbA54b26498b6aAe726E14D82D16C2E'
     }
   },
   2020: {
     name: 'Ronin Mainnet',
     rpcUrl: 'https://ronin.drpc.org',
     explorer: 'https://app.roninchain.com/',
+    nativeCurrency: { name: 'Ronin', symbol: 'RON', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -124,6 +135,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'Ronin Saigon Testnet',
     rpcUrl: 'https://saigon-testnet.roninchain.com/rpc',
     explorer: 'https://saigon-app.roninchain.com/explorer',
+    nativeCurrency: { name: 'Ronin', symbol: 'RON', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -135,6 +147,7 @@ export const SUPPORTED_NETWORKS = {
     name: 'Arbitrum One',
     rpcUrl: 'https://arbitrum.drpc.org',
     explorer: 'https://arbiscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
       raffleManager: '0x...',
       raffleDeployer: '0x...',
@@ -146,11 +159,12 @@ export const SUPPORTED_NETWORKS = {
     name: 'Arbitrum Sepolia',
     rpcUrl: 'https://endpoints.omniatech.io/v1/arbitrum/sepolia/public',
     explorer: 'https://sepolia.arbiscan.io',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x98b20229665CFa296008c388b0cbD8b15a38A4C5',
-      raffleDeployer: '0x0e4fd77629Bb11D0a7298173C1C81b6C075Cb72A',
-      revenueManager: '0x6fC8B56e2939AC1098eed8FD194c5b301CBfb3AA',
-      nftFactory: '0x0b4F7b472aa07722D16d3368f1B9D66A18254D2B'
+      raffleManager: '0xF425Db442318D587f04280956F562C99e52818E3',
+      raffleDeployer: '0xa86aDF75CdE7BA7c23204cdfa095Cd498629091a',
+      revenueManager: '0xd496047e70CEafd89a05C1B63910F10d0180F283',
+      nftFactory: '0x1dF3590f141b6E0992EcE00D65d314Cf5B97D848'
     }
   },
 }; 

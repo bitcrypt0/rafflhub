@@ -5,6 +5,7 @@ import { useWallet } from './WalletContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
 import { safeContractCall, getPlatformConfig } from '../utils/contractCallUtils';
+import { handleError, extractRevertReason } from '../utils/errorHandling';
 
 const ContractContext = createContext();
 
@@ -161,23 +162,15 @@ export const ContractProvider = ({ children }) => {
         message = error.message;
       }
 
-      console.warn(`Contract call failed for ${methodName}:`, message);
-
-      // Only show toast for critical errors that users need to know about
-      // Suppress common read-only call failures that are expected
-      const isExpectedFailure =
-        message.toLowerCase().includes('no tickets purchased') ||
-        message.toLowerCase().includes('not found') ||
-        message.toLowerCase().includes('does not exist') ||
-        message.toLowerCase().includes('unavailable') ||
-        message.toLowerCase().includes('network connectivity issue') ||
-        methodName?.toLowerCase().includes('get') ||
-        methodName?.toLowerCase().includes('fetch') ||
-        methodName?.toLowerCase().includes('check');
-
-      if (!isExpectedFailure) {
-        toast.error(message);
-      }
+      // Use centralized error handling for consistent behavior
+      handleError(error, {
+        context: {
+          operation: methodName,
+          isReadOnly: true,
+          isContractCall: true
+        },
+        fallbackMessage: `${methodName} failed`
+      });
 
       return { success: false, error: message };
     }
