@@ -1618,8 +1618,8 @@ function ExistingERC721DropForm() {
     }
   };
 
-  // Helper for internal status check
-  const { status: internalStatus721, checking: checkingInternal721 } = useInternalCollectionStatus(formData.collection, contracts);
+  // Helper for whitelist status check
+  const { status: whitelistStatus721, checking: checkingWhitelist721 } = useCollectionWhitelistStatus(formData.collection, contracts);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
@@ -1649,14 +1649,14 @@ function ExistingERC721DropForm() {
               placeholder="0x..."
               required
             />
-            {formData.collection && !checkingInternal721 && internalStatus721 === true && (
-              <span className="text-xs text-green-600">Internal Collection</span>
+            {formData.collection && !checkingWhitelist721 && whitelistStatus721 === true && (
+              <span className="text-xs text-green-600">This collection is approved</span>
             )}
-            {formData.collection && !checkingInternal721 && internalStatus721 === false && (
-              <span className="text-xs text-red-600">Not internal</span>
+            {formData.collection && !checkingWhitelist721 && whitelistStatus721 === false && (
+              <span className="text-xs text-red-600">This collection is not approved</span>
             )}
-            {formData.collection && checkingInternal721 && (
-              <span className="text-xs text-muted-foreground">Checking internal status...</span>
+            {formData.collection && checkingWhitelist721 && (
+              <span className="text-xs text-muted-foreground">Checking collection approval status...</span>
             )}
           </div>
           <div>
@@ -1855,8 +1855,8 @@ function ExistingERC1155DropForm() {
     }
   };
 
-  // Helper for internal status check
-  const { status: internalStatus1155, checking: checkingInternal1155 } = useInternalCollectionStatus(formData.collectionAddress, contracts);
+  // Helper for whitelist status check
+  const { status: whitelistStatus1155, checking: checkingWhitelist1155 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
@@ -1886,14 +1886,14 @@ function ExistingERC1155DropForm() {
               placeholder="0x..."
               required
             />
-            {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === true && (
-              <span className="text-xs text-green-600">Internal Collection</span>
+            {formData.collectionAddress && !checkingWhitelist1155 && whitelistStatus1155 === true && (
+              <span className="text-xs text-green-600">This collection is approved</span>
             )}
-            {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === false && (
-              <span className="text-xs text-red-600">Not internal</span>
+            {formData.collectionAddress && !checkingWhitelist1155 && whitelistStatus1155 === false && (
+              <span className="text-xs text-red-600">This collection is not approved</span>
             )}
-            {formData.collectionAddress && checkingInternal1155 && (
-              <span className="text-xs text-muted-foreground">Checking internal status...</span>
+            {formData.collectionAddress && checkingWhitelist1155 && (
+              <span className="text-xs text-muted-foreground">Checking collection approval status...</span>
             )}
           </div>
           <div>
@@ -2380,10 +2380,10 @@ function LuckySaleERC721Form() {
               required
             />
             {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === true && (
-              <span className="text-xs text-green-600">Whitelisted</span>
+              <span className="text-xs text-green-600">This collection is approved</span>
             )}
             {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === false && (
-              <span className="text-xs text-red-600">Not whitelisted</span>
+              <span className="text-xs text-red-600">This collection is not approved</span>
             )}
             {formData.collectionAddress && checkingWhitelistLucky721 && (
               <span className="text-xs text-muted-foreground">Checking whitelist status...</span>
@@ -2649,10 +2649,10 @@ function LuckySaleERC1155Form() {
               required
             />
             {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === true && (
-              <span className="text-xs text-green-600">Whitelisted</span>
+              <span className="text-xs text-green-600">This collection is approved</span>
             )}
             {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === false && (
-              <span className="text-xs text-red-600">Not whitelisted</span>
+              <span className="text-xs text-red-600">This collection is not approved</span>
             )}
             {formData.collectionAddress && checkingWhitelistLucky1155 && (
               <span className="text-xs text-muted-foreground">Checking whitelist status...</span>
@@ -3808,9 +3808,10 @@ function useCollectionWhitelistStatus(address, contracts) {
       }
       setChecking(true);
       try {
-        const isWhite = await contracts.raffleManager.isWhitelisted(addr);
+        const isWhite = await contracts.raffleManager.isCollectionApproved(addr);
         if (!cancelled) setStatus(isWhite);
-      } catch {
+      } catch (error) {
+        console.warn('[useCollectionWhitelistStatus] Failed to check collection approval:', error.message);
         if (!cancelled) setStatus(false);
       } finally {
         if (!cancelled) setChecking(false);
