@@ -1066,7 +1066,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isMobile, onWinnerCountChang
 
   // WinnersSection is primarily for display - claim logic is handled by parent component
 
-  // Event listener for real-time winner updates with intelligent auto-refresh
+  // Event listener for real-time winner updates
   // Stop listening for winner selection events after raffle is completed
   const isRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 7; // Completed or Prizes Claimed
   const shouldListenForWinners = !!raffle && !isRaffleCompleted;
@@ -1107,13 +1107,8 @@ const WinnersSection = ({ raffle, isMintableERC721, isMobile, onWinnerCountChang
       }, 1000);
     },
     onRpcError: (error) => {
-      // WinnersSection specific RPC error handling
-      if (raffle?.stateNum === 2) { // Drawing state
-        // Trigger additional winner fetch attempt
-        setTimeout(() => {
-          fetchWinners();
-        }, 3000);
-      }
+      // Log RPC errors for debugging but rely on auto-refresh timer instead
+      console.warn('WinnersSection RPC error:', error);
     },
     enablePolling: true,
     pollingInterval: raffle?.stateNum === 2 ? 8000 : 12000, // Faster polling during Drawing state
@@ -1545,8 +1540,7 @@ const RaffleDetailPage = () => {
   const [checkingApproval, setCheckingApproval] = useState(false);
   const [approving, setApproving] = useState(false);
 
-  // Auto-refresh state for RPC issue detection
-  const [rpcIssueDetected, setRpcIssueDetected] = useState(false);
+  // Auto-refresh state for Drawing state monitoring
   const [lastDrawingStateTime, setLastDrawingStateTime] = useState(null);
   const [autoRefreshCount, setAutoRefreshCount] = useState(0);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
@@ -1643,7 +1637,7 @@ const RaffleDetailPage = () => {
   const stableAddress = useMemo(() => address, [address]);
   const stableRaffleAddress = useMemo(() => raffleAddress, [raffleAddress]);
 
-  // Event listener for raffle state changes with intelligent auto-refresh for RPC issues
+  // Event listener for raffle state changes
   // Stop listening for winner selection events after raffle is completed
   const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 7; // Completed or Prizes Claimed
   const shouldMainListenForWinners = !!raffle && !isMainRaffleCompleted;
@@ -1653,7 +1647,6 @@ const RaffleDetailPage = () => {
       toast.success(`Winners have been selected! ${winners.length} winner${winners.length !== 1 ? 's' : ''} chosen.`);
 
       // Reset auto-refresh monitoring since event was successfully received
-      setRpcIssueDetected(false);
       setAutoRefreshCount(0);
       setLastDrawingStateTime(null);
 
@@ -1670,7 +1663,6 @@ const RaffleDetailPage = () => {
 
       // Reset auto-refresh monitoring when state changes successfully
       if (newState !== 2) { // Not Drawing state
-        setRpcIssueDetected(false);
         setAutoRefreshCount(0);
         setLastDrawingStateTime(null);
       }
@@ -1694,25 +1686,8 @@ const RaffleDetailPage = () => {
       triggerRefresh();
     },
     onRpcError: (error) => {
-      // Detect RPC issues during Drawing state only (not after completion)
-      if (raffle?.stateNum === 2 && !rpcIssueDetected && !isMainRaffleCompleted) {
-        setRpcIssueDetected(true);
-
-        // Trigger immediate auto-refresh on RPC error
-        if (autoRefreshCount < 3) {
-          setIsAutoRefreshing(true);
-          setAutoRefreshCount(prev => prev + 1);
-
-          toast.info('Connection issue detected, auto-refreshing...', {
-            duration: 3000
-          });
-
-          setTimeout(() => {
-            triggerRefresh();
-            setIsAutoRefreshing(false);
-          }, 2000);
-        }
-      }
+      // Log RPC errors for debugging but don't trigger auto-refresh
+      console.warn('RPC error detected:', error);
     },
     enablePolling: true,
     pollingInterval: raffle?.stateNum === 2 ? 10000 : 15000, // Faster polling during Drawing state
@@ -2355,7 +2330,7 @@ const RaffleDetailPage = () => {
     checkWinnerStatus();
   }, [raffle, getContractInstance, address]);
 
-  // Auto-refresh logic for RPC issue detection during Drawing state
+  // Auto-refresh logic for Drawing state monitoring
   useEffect(() => {
     if (!raffle) return;
 
@@ -2363,51 +2338,50 @@ const RaffleDetailPage = () => {
     if (raffle.stateNum === 2) { // Drawing state
       if (!lastDrawingStateTime) {
         setLastDrawingStateTime(Date.now());
-
+        console.log('🎯 Raffle entered Drawing state - starting auto-refresh monitoring');
       }
     } else {
       // Reset when leaving Drawing state
       if (lastDrawingStateTime) {
         setLastDrawingStateTime(null);
         setAutoRefreshCount(0);
-        setRpcIssueDetected(false);
-
+        console.log('🎯 Raffle left Drawing state - stopping auto-refresh monitoring');
       }
     }
   }, [raffle?.stateNum, lastDrawingStateTime]);
 
-  // Auto-refresh timer for Drawing state
+  // Auto-refresh timer for Drawing state - triggers every 15 seconds
   useEffect(() => {
     if (!lastDrawingStateTime || raffle?.stateNum !== 2) return;
 
+    console.log('🔄 Starting auto-refresh timer for Drawing state (every 15 seconds)');
+
     const autoRefreshInterval = setInterval(() => {
-      const timeInDrawing = Date.now() - lastDrawingStateTime;
-      const maxDrawingTime = 120000; // 2 minutes
-      const refreshInterval = 30000; // 30 seconds
+      setIsAutoRefreshing(true);
+      setAutoRefreshCount(prev => prev + 1);
 
-      // If raffle has been in Drawing state for too long, trigger auto-refresh
-      if (timeInDrawing > maxDrawingTime && autoRefreshCount < 5) {
+      console.log(`🔄 Auto-refreshing raffle data in Drawing state (attempt ${autoRefreshCount + 1})`);
 
-        setRpcIssueDetected(true);
-        setIsAutoRefreshing(true);
-        setAutoRefreshCount(prev => prev + 1);
-
-        // Show user notification
-        toast.info(`Auto-refreshing raffle data... (${autoRefreshCount + 1}/5)`, {
-          duration: 3000
+      // Show user notification every few attempts to avoid spam
+      if ((autoRefreshCount + 1) % 4 === 1) { // Show notification every 4th attempt (every minute)
+        toast.info('Checking for winner selection...', {
+          duration: 2000
         });
-
-        // Trigger refresh
-        triggerRefresh();
-
-        // Reset auto-refresh flag after delay
-        setTimeout(() => {
-          setIsAutoRefreshing(false);
-        }, 5000);
       }
-    }, 30000); // Check every 30 seconds
 
-    return () => clearInterval(autoRefreshInterval);
+      // Trigger refresh
+      triggerRefresh();
+
+      // Reset auto-refresh flag after delay
+      setTimeout(() => {
+        setIsAutoRefreshing(false);
+      }, 3000);
+    }, 15000); // Refresh every 15 seconds
+
+    return () => {
+      console.log('🔄 Stopping auto-refresh timer for Drawing state');
+      clearInterval(autoRefreshInterval);
+    };
   }, [lastDrawingStateTime, raffle?.stateNum, autoRefreshCount, triggerRefresh]);
 
   const shouldShowClaimPrize = !!winnerData && raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7);
@@ -2584,10 +2558,10 @@ const RaffleDetailPage = () => {
             {getStatusBadge()}
 
             {/* Auto-refresh indicator */}
-            {(isAutoRefreshing || (raffle?.stateNum === 2 && rpcIssueDetected)) && (
+            {(isAutoRefreshing || (raffle?.stateNum === 2 && lastDrawingStateTime)) && (
               <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
                 <div className="animate-spin h-3 w-3 border border-blue-500 border-t-transparent rounded-full"></div>
-                {isMobile ? 'Auto-refreshing...' : 'Auto-refreshing data...'}
+                {isMobile ? 'Checking for winners...' : 'Checking for winner selection...'}
               </div>
             )}
 
