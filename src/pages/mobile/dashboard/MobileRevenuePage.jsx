@@ -90,7 +90,6 @@ const MobileRevenuePage = () => {
 
       toast.success('Raffle information loaded');
     } catch (error) {
-      console.error('Error fetching raffle info:', error);
       toast.error('Failed to fetch raffle information');
     } finally {
       setLoading(false);
@@ -154,7 +153,7 @@ const MobileRevenuePage = () => {
             });
           }
         } catch (error) {
-          console.log(`Error processing raffle ${i}:`, error);
+          // Silently handle individual raffle processing errors
         }
       }
 
@@ -192,7 +191,6 @@ const MobileRevenuePage = () => {
       fetchRaffleInfo(raffleAddress);
       fetchCreatedRaffles();
     } catch (error) {
-      console.error('Error withdrawing revenue:', error);
       toast.error('Failed to withdraw revenue');
     } finally {
       setLoading(false);
@@ -271,7 +269,6 @@ const MobileRevenuePage = () => {
 
       toast.success(`Collection loaded: ${name} (${detectedType.toUpperCase()})`);
     } catch (error) {
-      console.error('Error loading collection info:', error);
       toast.error('Failed to load collection information');
       setCollectionInfo(null);
     } finally {
@@ -340,7 +337,6 @@ const MobileRevenuePage = () => {
         tokenId: ''
       }));
     } catch (error) {
-      console.error('Error minting tokens:', error);
       toast.error('Failed to mint tokens');
     } finally {
       setMintLoading(false);

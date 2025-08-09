@@ -532,7 +532,6 @@ const DesktopProfilePage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Error deleting raffle:', error);
       toast.error(extractRevertReason(error));
     }
   };
@@ -572,7 +571,6 @@ const DesktopProfilePage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Error claiming prize:', error);
       toast.error(extractRevertReason(error));
     }
   };
@@ -603,7 +601,6 @@ const DesktopProfilePage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Error claiming refund:', error);
       toast.error(extractRevertReason(error));
     }
   };

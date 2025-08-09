@@ -71,7 +71,6 @@ const MobileMinterPage = () => {
 
       toast.success('Collection information loaded');
     } catch (error) {
-      console.error('Error fetching collection info:', error);
       toast.error('Failed to fetch collection information');
     } finally {
       setLoading(false);
@@ -105,7 +104,6 @@ const MobileMinterPage = () => {
 
       toast.success('Minter status checked');
     } catch (error) {
-      console.error('Error checking minter status:', error);
       toast.error('Failed to check minter status');
     } finally {
       setLoading(false);
@@ -136,7 +134,6 @@ const MobileMinterPage = () => {
       // Refresh minter status
       checkMinterStatus();
     } catch (error) {
-      console.error('Error approving minter:', error);
       toast.error('Failed to approve minter');
     } finally {
       setLoading(false);
@@ -167,7 +164,6 @@ const MobileMinterPage = () => {
       // Refresh minter status
       checkMinterStatus();
     } catch (error) {
-      console.error('Error revoking minter:', error);
       toast.error('Failed to revoke minter');
     } finally {
       setLoading(false);

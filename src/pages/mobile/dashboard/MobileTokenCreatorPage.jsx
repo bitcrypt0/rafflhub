@@ -70,7 +70,6 @@ const MobileTokenCreatorPage = () => {
 
       toast.success('Collection information loaded');
     } catch (error) {
-      console.error('Error fetching collection info:', error);
       toast.error('Failed to fetch collection information');
     } finally {
       setLoading(false);
@@ -142,7 +141,6 @@ const MobileTokenCreatorPage = () => {
       // Refresh collection info
       fetchCollectionInfo();
     } catch (error) {
-      console.error('Error creating token:', error);
       toast.error('Failed to create token');
     } finally {
       setLoading(false);
@@ -187,7 +185,6 @@ const MobileTokenCreatorPage = () => {
         metadataURI: ''
       });
     } catch (error) {
-      console.error('Error setting token URI:', error);
       toast.error('Failed to set token URI');
     } finally {
       setLoading(false);

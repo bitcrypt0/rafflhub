@@ -32,37 +32,78 @@ const RAFFLE_STATE_LABELS = [
   'Unengaged'
 ];
 
-// Use the same state badge function as RaffleCard component
-const getStatusBadge = (raffle) => {
-  // Debug logging to help identify state mapping issues
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🏷️ ProfileTabs getStatusBadge:', {
-      raffleName: raffle.name,
-      stateNum: raffle.stateNum,
-      stringState: raffle.state,
-      expectedLabel: RAFFLE_STATE_LABELS[raffle.stateNum]
-    });
-  }
+// Profile raffle card component with winner count support
+const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurrencySymbol }) => {
+  const { winnerCount } = useWinnerCount(raffle.address, raffle.stateNum);
 
-  const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
-  const colorMap = {
-    'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-    'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-    'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-    'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
-    'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+  const getStatusBadge = () => {
+
+
+    // Get dynamic label for Prizes Claimed state based on winner count
+    const getDynamicLabel = (stateNum) => {
+      const dynamicLabel = getDynamicPrizeLabel(stateNum, winnerCount);
+      if (dynamicLabel) {
+        return dynamicLabel;
+      }
+      return RAFFLE_STATE_LABELS[stateNum] || 'Unknown';
+    };
+
+    const label = getDynamicLabel(raffle.stateNum);
+    const colorMap = {
+      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Prize Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300', // Same styling for singular
+      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    };
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
-  return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm mb-1 truncate">{raffle.name}</h3>
+          <p className="text-xs text-muted-foreground">
+            Ends: {new Date(raffle.endTime * 1000).toLocaleDateString()}
+          </p>
+        </div>
+        {getStatusBadge()}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+        <div>
+          <span className="text-muted-foreground">Tickets Sold</span>
+          <p className="font-semibold">{raffle.ticketsSold || 0}/{raffle.maxTickets}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Revenue</span>
+          <p className="font-semibold text-green-600">
+            {formatRevenueAmount(raffle.revenue || 0)} {getCurrencySymbol()}
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onRaffleClick(raffle.address)}
+        className="w-full text-xs bg-primary/10 text-primary px-3 py-2 rounded hover:bg-primary/20 transition-colors"
+      >
+        View Details
+      </button>
+    </div>
+  );
 };
 
 // Removed individual component imports - now handled by UnifiedDashboardGrid
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
+import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import UnifiedMobileModal from './mobile/UnifiedMobileModal';
 import { initMobileKeyboardFix, cleanupMobileKeyboardFix } from '../utils/androidKeyboardFix';
 import UnifiedDashboardGrid from './dashboard/UnifiedDashboardGrid';
@@ -223,37 +264,13 @@ const ProfileTabs = ({
       ) : (
         <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {createdRaffles.map((raffle) => (
-            <Card key={raffle.address} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-1 px-3 pt-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm truncate">{raffle.name}</CardTitle>
-                  {getStatusBadge(raffle)}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 pt-0 px-3 pb-3">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-muted-foreground">Tickets Sold</p>
-                    <p className="font-medium">{raffle.ticketsSold}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Revenue</p>
-                    <p className="font-medium text-green-600">
-                      {formatRevenueAmount(raffle.revenue || 0)}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  size="sm"
-                  onClick={() => navigate(`/raffle/${raffle.address}`)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Raffle
-                </Button>
-              </CardContent>
-            </Card>
+            <ProfileRaffleCard
+              key={raffle.address}
+              raffle={raffle}
+              onRaffleClick={(address) => navigate(`/raffle/${address}`)}
+              formatRevenueAmount={formatRevenueAmount}
+              getCurrencySymbol={getCurrencySymbol}
+            />
           ))}
         </div>
       )}

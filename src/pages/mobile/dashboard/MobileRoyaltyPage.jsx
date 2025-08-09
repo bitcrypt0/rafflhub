@@ -91,7 +91,7 @@ const MobileRoyaltyPage = () => {
       try {
         revealStatus = await executeCall(contract, 'isRevealed', []);
       } catch (error) {
-        console.log('Could not fetch reveal status:', error.message);
+        // Silently handle reveal status fetch error
       }
 
       setFormData(prev => ({ ...prev, collectionType: type }));
@@ -109,7 +109,6 @@ const MobileRoyaltyPage = () => {
 
       toast.success('Collection information loaded');
     } catch (error) {
-      console.error('Error fetching collection info:', error);
       toast.error('Failed to fetch collection information');
     } finally {
       setLoading(false);
@@ -155,7 +154,6 @@ const MobileRoyaltyPage = () => {
         royaltyRecipient: ''
       }));
     } catch (error) {
-      console.error('Error updating royalty:', error);
       toast.error('Failed to update royalty settings');
     } finally {
       setLoading(false);
@@ -184,7 +182,6 @@ const MobileRoyaltyPage = () => {
       // Clear form
       setFormData(prev => ({ ...prev, baseURI: '' }));
     } catch (error) {
-      console.error('Error revealing collection:', error);
       toast.error('Failed to reveal collection');
     } finally {
       setLoading(false);

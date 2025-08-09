@@ -18,6 +18,7 @@ import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
 import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
 import { useRaffleFilters } from '../hooks/useRaffleFilters';
+import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -40,6 +41,7 @@ const RaffleCard = ({ raffle }) => {
   const { updateCollabStatus, setCollabLoading, getCollabStatus } = useCollabDetection();
   const { formatTicketPrice, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
   const [ticketsSold, setTicketsSold] = useState(null);
+  const { winnerCount } = useWinnerCount(raffle.address, raffle.stateNum);
   const [collectionName, setCollectionName] = useState(null);
   const [collectionSymbol, setCollectionSymbol] = useState(null);
   const [directContractValues, setDirectContractValues] = useState(null);
@@ -118,7 +120,6 @@ const RaffleCard = ({ raffle }) => {
             window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
           }
         } catch (error) {
-          console.warn('Failed to fetch ERC20 symbol:', error);
           if (isMounted) setErc20Symbol('TOKEN');
         }
       }
@@ -159,26 +160,14 @@ const RaffleCard = ({ raffle }) => {
       try {
         const raffleContract = getContractInstance(raffle.address, 'raffle');
         if (!raffleContract) {
-          console.warn('[RaffleCard] No contract instance for direct query:', raffle.address);
           return;
         }
 
-        console.log('[RaffleCard] Fetching direct contract values for NFT prize raffle:', raffle.address);
-
         // Fetch values directly like RaffleDetailPage does
         const [isExternallyPrizedDirect, usesCustomPriceDirect, isEscrowedPrizeDirect] = await Promise.all([
-          raffleContract.isExternallyPrized().catch((error) => {
-            console.warn('[RaffleCard] Direct isExternallyPrized failed:', error.message);
-            return null;
-          }),
-          raffleContract.usesCustomPrice().catch((error) => {
-            console.warn('[RaffleCard] Direct usesCustomPrice failed:', error.message);
-            return null;
-          }),
-          raffleContract.isEscrowedPrize().catch((error) => {
-            console.warn('[RaffleCard] Direct isEscrowedPrize failed:', error.message);
-            return null;
-          })
+          raffleContract.isExternallyPrized().catch(() => null),
+          raffleContract.usesCustomPrice().catch(() => null),
+          raffleContract.isEscrowedPrize().catch(() => null)
         ]);
 
         const directValues = {
@@ -187,22 +176,9 @@ const RaffleCard = ({ raffle }) => {
           isEscrowedPrize: isEscrowedPrizeDirect
         };
 
-        console.log('[RaffleCard] Direct contract values fetched:', {
-          address: raffle.address,
-          directValues,
-          raffleServiceValues: {
-            isExternallyPrized: raffle.isExternallyPrized,
-            usesCustomPrice: raffle.usesCustomPrice
-          },
-          comparison: {
-            isExternallyPrizedMatch: directValues.isExternallyPrized === raffle.isExternallyPrized,
-            usesCustomPriceMatch: directValues.usesCustomPrice === raffle.usesCustomPrice
-          }
-        });
-
         setDirectContractValues(directValues);
       } catch (error) {
-        console.error('[RaffleCard] Error fetching direct contract values:', error);
+        // Silently handle errors
       }
     }
 
@@ -223,39 +199,23 @@ const RaffleCard = ({ raffle }) => {
         let name = null;
         let symbol = null;
 
-        // Enhanced debugging
-        console.log(`[RaffleCard] Attempting to fetch collection info for ${raffle.address}:`, {
-          prizeCollection: raffle.prizeCollection,
-          standard: raffle.standard,
-          standardType: typeof raffle.standard,
-          standardDefined: typeof raffle.standard !== 'undefined'
-        });
-
         if (typeof raffle.standard !== 'undefined') {
           // Use standard if available (like RaffleDetailPage)
           const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
-          console.log(`[RaffleCard] Using standard-based contract type: ${contractType}`);
 
           contract = getContractInstance(raffle.prizeCollection, contractType);
           if (contract) {
-            console.log(`[RaffleCard] Got contract instance, fetching name...`);
             name = await contract.name();
-            console.log(`[RaffleCard] Name fetched: ${name}`);
 
             // Try to fetch symbol
             try {
               symbol = await contract.symbol();
-              console.log(`[RaffleCard] Symbol fetched: ${symbol}`);
             } catch (symbolError) {
-              console.warn(`[RaffleCard] Failed to fetch symbol:`, symbolError.message);
               symbol = null;
             }
-          } else {
-            console.warn(`[RaffleCard] Failed to get contract instance for ${contractType}`);
           }
         } else {
           // Fallback: Try both contract types if standard is undefined
-          console.log(`[RaffleCard] Standard undefined, trying ERC721 first...`);
           try {
             contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
             if (contract) {
@@ -265,10 +225,8 @@ const RaffleCard = ({ raffle }) => {
               } catch (symbolError) {
                 symbol = null;
               }
-              console.log(`[RaffleCard] ERC721 success - name: ${name}, symbol: ${symbol}`);
             }
           } catch (erc721Error) {
-            console.log(`[RaffleCard] ERC721 failed, trying ERC1155...`);
             try {
               contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
               if (contract) {
@@ -278,27 +236,16 @@ const RaffleCard = ({ raffle }) => {
                 } catch (symbolError) {
                   symbol = null;
                 }
-                console.log(`[RaffleCard] ERC1155 success - name: ${name}, symbol: ${symbol}`);
               }
             } catch (erc1155Error) {
-              console.warn('[RaffleCard] Both ERC721 and ERC1155 failed:', erc721Error.message, erc1155Error.message);
+              // Both failed, continue with null values
             }
           }
         }
 
         setCollectionName(name);
         setCollectionSymbol(symbol);
-
-        // Final debug logging
-        console.log(`[RaffleCard] Collection info result for ${raffle.address}:`, {
-          prizeCollection: raffle.prizeCollection,
-          standard: raffle.standard,
-          finalName: name,
-          finalSymbol: symbol,
-          success: !!name
-        });
       } catch (error) {
-        console.error(`[RaffleCard] Error fetching collection info for ${raffle.prizeCollection}:`, error);
         setCollectionName(null);
         setCollectionSymbol(null);
       }
@@ -338,7 +285,6 @@ const RaffleCard = ({ raffle }) => {
 
         } catch (error) {
           retryCount++;
-          console.warn(`Collab check attempt ${retryCount} failed for ${raffle.address}:`, error.message);
 
           if (retryCount >= maxRetries) {
             // After max retries, assume no holder token
@@ -380,7 +326,16 @@ const RaffleCard = ({ raffle }) => {
   }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
 
   const getStatusBadge = () => {
-    const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
+    // Get dynamic label for Prizes Claimed state based on winner count
+    const getDynamicLabel = (stateNum) => {
+      const dynamicLabel = getDynamicPrizeLabel(stateNum, winnerCount);
+      if (dynamicLabel) {
+        return dynamicLabel;
+      }
+      return RAFFLE_STATE_LABELS[stateNum] || 'Unknown';
+    };
+
+    const label = getDynamicLabel(raffle.stateNum);
     const colorMap = {
       'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
       'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
@@ -390,6 +345,7 @@ const RaffleCard = ({ raffle }) => {
       'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
       'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Prize Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300', // Same styling for singular
       'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
@@ -419,39 +375,7 @@ const RaffleCard = ({ raffle }) => {
     // We need to infer this from the available data since there's no direct isMintable flag
     const isMintable = !isEscrowedPrize; // If not escrowed, then it's mintable
 
-    // Enhanced debugging to investigate the issue
-    console.log('[RaffleCard] DETAILED DEBUG for raffle:', raffle.address, {
-      prizeCollection: raffle.prizeCollection,
-      raffleServiceValues: {
-        isExternallyPrized: raffle.isExternallyPrized,
-        usesCustomPrice: raffle.usesCustomPrice,
-        isEscrowedPrize: raffle.isEscrowedPrize
-      },
-      directContractValues: directContractValues,
-      finalValuesUsed: {
-        isExternallyPrized: isExternallyPrized,
-        usesCustomPrice: usesCustomPrice,
-        isEscrowedPrize: isEscrowedPrize,
-        isMintable: isMintable
-      },
-      ticketPrice: raffle.ticketPrice ? raffle.ticketPrice.toString() : 'undefined',
-      standard: raffle.standard
-    });
 
-    // Validation: isExternallyPrized should always be false when usesCustomPrice is true
-    if (usesCustomPrice && isExternallyPrized) {
-      console.warn('[RaffleCard] Invalid state: isExternallyPrized is true when usesCustomPrice is true for raffle:', raffle.address);
-    }
-
-    console.log('[RaffleCard] Logic determination:', {
-      isEscrowedPrize,
-      isMintable,
-      usesCustomPrice,
-      willReturn: isEscrowedPrize && usesCustomPrice ? 'Lucky NFT Sale' :
-                  isEscrowedPrize && !usesCustomPrice ? 'NFT Giveaway' :
-                  isMintable && !usesCustomPrice ? 'NFT Drop (Free Mint)' :
-                  isMintable && usesCustomPrice ? 'NFT Drop (Paid Mint)' : 'NFT Prize'
-    });
 
     // Apply the corrected logic based on your clarification
     if (isEscrowedPrize && usesCustomPrice) return 'Lucky NFT Sale';
@@ -483,14 +407,6 @@ const RaffleCard = ({ raffle }) => {
     // ✅ NEW: Enhanced NFT type detection
     const enhancedNFTType = getEnhancedNFTType();
     if (enhancedNFTType) {
-      // Add debugging log for enhanced NFT type detection
-      console.log('[RaffleCard] Enhanced NFT type detection:', {
-        address: raffle.address,
-        prizeCollection: raffle.prizeCollection,
-        isExternallyPrized: raffle.isExternallyPrized,
-        usesCustomPrice: raffle.usesCustomPrice,
-        resultType: enhancedNFTType
-      });
       return enhancedNFTType;
     }
 
@@ -562,13 +478,7 @@ const RaffleCard = ({ raffle }) => {
                 ? `${collectionName} ${prizeId}` // Fall back to name if no symbol
                 : `${raffle.prizeCollection?.slice(0, 10)}... ${prizeId}`; // Fall back to address
 
-            console.log(`[RaffleCard] Escrowed prize display for ${raffle.address}:`, {
-              prizeTokenId: raffle.prizeTokenId,
-              prizeId: prizeId,
-              collectionSymbol: collectionSymbol,
-              collectionName: collectionName,
-              displayValue: displayValue
-            });
+
 
             return (
               <div className="flex justify-between items-center text-sm">
@@ -592,16 +502,7 @@ const RaffleCard = ({ raffle }) => {
                   ? collectionName // ERC721 or likely ERC721: use name if available
                   : `${raffle.prizeCollection?.slice(0, 10)}...`); // Fallback to address
 
-            console.log(`[RaffleCard] Mintable prize display for ${raffle.address}:`, {
-              standard: raffle.standard,
-              isERC721: raffle.standard === 0,
-              isLikelyERC721: isLikelyERC721,
-              isDefinitelyERC1155: isDefinitelyERC1155,
-              hasCollectionName: hasCollectionName,
-              collectionName: collectionName,
-              prizeCollection: raffle.prizeCollection,
-              displayValue: displayValue
-            });
+
 
             return (
               <div className="flex justify-between items-center text-sm">

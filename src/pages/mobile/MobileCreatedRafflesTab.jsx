@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Users, DollarSign, Clock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useWinnerCount, getDynamicPrizeLabel } from '../../hooks/useWinnerCount';
 
 // Use the same state labels as RaffleCard component
 const RAFFLE_STATE_LABELS = [
@@ -15,6 +16,94 @@ const RAFFLE_STATE_LABELS = [
   'Prizes Claimed',
   'Unengaged'
 ];
+
+/**
+ * Individual raffle card component with winner count support
+ */
+const MobileRaffleCard = ({ raffle, onRaffleClick, onWithdrawRevenue, formatRevenueAmount, getCurrencySymbol, formatDate }) => {
+  const { winnerCount } = useWinnerCount(raffle.address, raffle.stateNum);
+
+  const getStatusBadge = () => {
+    // Get dynamic label for Prizes Claimed state based on winner count
+    const getDynamicLabel = (stateNum) => {
+      const dynamicLabel = getDynamicPrizeLabel(stateNum, winnerCount);
+      if (dynamicLabel) {
+        return dynamicLabel;
+      }
+      return RAFFLE_STATE_LABELS[stateNum] || 'Unknown';
+    };
+
+    const label = getDynamicLabel(raffle.stateNum);
+    const colorMap = {
+      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
+      'Prize Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300', // Same styling for singular
+      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    };
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+  };
+
+  return (
+    <div className="bg-muted/30 border border-border/50 rounded-lg p-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-foreground text-sm">
+            {raffle.name}
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {formatDate(raffle.endTime)}
+          </p>
+        </div>
+        {getStatusBadge()}
+      </div>
+
+      {/* Compact Stats */}
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">Sold</p>
+          <p className="text-xs font-semibold">
+            {raffle.ticketsSold}/{raffle.maxTickets}
+          </p>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">Revenue</p>
+          <p className="text-xs font-semibold">
+            {formatRevenueAmount(raffle.revenue)} {getCurrencySymbol()}
+          </p>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => onRaffleClick(raffle.address)}
+          className="flex-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
+        >
+          View
+        </button>
+
+        {raffle.revenue && parseFloat(raffle.revenue) > 0 && (
+          <button
+            onClick={() => onWithdrawRevenue(raffle)}
+            className="flex-1 text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors flex items-center justify-center gap-1"
+          >
+            <TrendingUp className="h-3 w-3" />
+            Withdraw
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 /**
  * Mobile-optimized created raffles tab with simple card layout
@@ -31,32 +120,7 @@ const MobileCreatedRafflesTab = ({
   const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
 
   // Use the same state badge function as RaffleCard component
-  const getStatusBadge = (raffle) => {
-    // Debug logging to help identify state mapping issues
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📱 MobileCreatedRafflesTab getStatusBadge:', {
-        raffleName: raffle.name,
-        stateNum: raffle.stateNum,
-        stringState: raffle.state,
-        expectedLabel: RAFFLE_STATE_LABELS[raffle.stateNum]
-      });
-    }
 
-    const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
-    const colorMap = {
-      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
-      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    };
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
-  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -119,59 +183,15 @@ const MobileCreatedRafflesTab = ({
 
       {/* Raffles List */}
       {raffles.slice(0, 5).map((raffle) => (
-        <div
+        <MobileRaffleCard
           key={raffle.address}
-          className="bg-muted/30 border border-border/50 rounded-lg p-3"
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground text-sm">
-                {raffle.name}
-              </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {formatDate(raffle.endTime)}
-              </p>
-            </div>
-            {getStatusBadge(raffle)}
-          </div>
-
-          {/* Compact Stats */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Sold</p>
-              <p className="text-xs font-semibold">
-                {raffle.ticketsSold}/{raffle.maxTickets}
-              </p>
-            </div>
-
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Revenue</p>
-              <p className="text-xs font-semibold text-green-600">
-                {formatRevenueAmount(raffle.revenue || 0)}
-              </p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-1">
-            <button
-              onClick={() => handleRaffleClick(raffle.address)}
-              className="flex-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary/20 transition-colors"
-            >
-              View
-            </button>
-
-            {(raffle.state === 'completed' || raffle.state === 'allPrizesClaimed') && parseFloat(raffle.revenue) > 0 && (
-              <button
-                onClick={() => handleWithdrawRevenue(raffle)}
-                className="flex-1 text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded hover:bg-green-500/20 transition-colors"
-              >
-                Withdraw
-              </button>
-            )}
-          </div>
-        </div>
+          raffle={raffle}
+          onRaffleClick={handleRaffleClick}
+          onWithdrawRevenue={handleWithdrawRevenue}
+          formatRevenueAmount={formatRevenueAmount}
+          getCurrencySymbol={getCurrencySymbol}
+          formatDate={formatDate}
+        />
       ))}
 
       {/* Simple Revenue Withdrawal Modal */}
