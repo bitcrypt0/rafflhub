@@ -25,13 +25,24 @@ export const ContractProvider = ({ children }) => {
   // Initialize contracts when wallet is connected and addresses are available
   useEffect(() => {
     if (connected && signer && isInitialized && !isReconnecting) {
-      initializeContracts();
-      setIsContractsReady(true);
+      // Reset contracts ready state immediately
+      setIsContractsReady(false);
+
+      // Initialize contracts with a small delay to ensure provider is stable
+      const timer = setTimeout(() => {
+        initializeContracts();
+        // Add additional delay before marking as ready to ensure contracts are fully initialized
+        setTimeout(() => {
+          setIsContractsReady(true);
+        }, 200);
+      }, 100);
+
+      return () => clearTimeout(timer);
     } else {
       setContracts({});
       setIsContractsReady(false);
     }
-  }, [connected, signer, isInitialized, isReconnecting]);
+  }, [connected, signer, isInitialized, isReconnecting, chainId]); // Added chainId to dependencies
 
   const initializeContracts = () => {
     const newContracts = {};

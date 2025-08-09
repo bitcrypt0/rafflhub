@@ -135,7 +135,7 @@ class RaffleService {
   }
 
   /**
-   * Retry wrapper for contract calls with mobile-specific optimizations
+   * Retry wrapper for contract calls with mobile-specific optimizations and network change detection
    */
   async withRetry(operation, context = '', config = {}) {
     const platformConfig = this.getPlatformConfig(config.isMobile);
@@ -144,6 +144,7 @@ class RaffleService {
     const timeout = config.timeout || platformConfig.timeout;
 
     let lastError;
+    const initialChainId = this.walletContext?.chainId;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {

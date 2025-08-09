@@ -50,6 +50,17 @@ export const useRaffleService = (options = {}) => {
     }
   }, [walletContext, contractContext]);
 
+  // Clear cache and reset state when network changes
+  useEffect(() => {
+    if (walletContext?.chainId) {
+      console.log('🔄 Network changed, clearing cache and resetting state');
+      raffleService.clearCache();
+      setRaffles([]);
+      setError(null);
+      setLastFetch(null);
+    }
+  }, [walletContext?.chainId]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -83,6 +94,28 @@ export const useRaffleService = (options = {}) => {
 
     if (!walletContext?.chainId) {
       console.log('⏸️ ChainId not yet available, skipping fetch');
+      return;
+    }
+
+    // Check if we're in the middle of reconnecting/network switching
+    if (walletContext?.isReconnecting) {
+      console.log('⏸️ Wallet is reconnecting, skipping fetch');
+      return;
+    }
+
+    // Check if contracts are ready before proceeding
+    if (!contractContext?.isContractsReady) {
+      console.log('⏸️ Contracts not ready yet, skipping fetch');
+      return;
+    }
+
+    // Verify contracts are available for the current network
+    if (!raffleService.areContractsAvailable()) {
+      console.log('⏸️ Contracts not available for current network, skipping fetch');
+      if (!isBackground) {
+        setError('CONTRACTS_NOT_AVAILABLE');
+        setRaffles([]);
+      }
       return;
     }
 
@@ -168,7 +201,7 @@ export const useRaffleService = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [walletContext?.connected, isMobile, useCache, maxRaffles]);
+  }, [walletContext?.connected, walletContext?.chainId, walletContext?.isReconnecting, contractContext?.isContractsReady, isMobile, useCache, maxRaffles]);
 
   /**
    * Search raffles
@@ -218,21 +251,34 @@ export const useRaffleService = (options = {}) => {
       autoFetch,
       connected: walletContext?.connected,
       chainId: walletContext?.chainId,
+      isReconnecting: walletContext?.isReconnecting,
+      isContractsReady: contractContext?.isContractsReady,
       environment: process.env.NODE_ENV
     });
 
-    if (autoFetch && walletContext?.connected && walletContext?.chainId) {
-      // Add a small delay to ensure wallet context is fully initialized
+    if (autoFetch &&
+        walletContext?.connected &&
+        walletContext?.chainId &&
+        !walletContext?.isReconnecting &&
+        contractContext?.isContractsReady) {
+
+      // Add a progressive delay to ensure all contexts are fully synchronized
       const timer = setTimeout(() => {
-        console.log('🚀 Triggering auto-fetch');
+        console.log('🚀 Triggering auto-fetch with full context ready');
         fetchRaffles();
-      }, 100);
+      }, 500); // Increased delay for better synchronization
 
       return () => clearTimeout(timer);
     } else {
-      console.log('⏸️ Auto-fetch conditions not met');
+      console.log('⏸️ Auto-fetch conditions not met:', {
+        autoFetch,
+        connected: walletContext?.connected,
+        chainId: walletContext?.chainId,
+        isReconnecting: walletContext?.isReconnecting,
+        isContractsReady: contractContext?.isContractsReady
+      });
     }
-  }, [autoFetch, walletContext?.connected, walletContext?.chainId, fetchRaffles]);
+  }, [autoFetch, walletContext?.connected, walletContext?.chainId, walletContext?.isReconnecting, contractContext?.isContractsReady, fetchRaffles]);
 
   // Setup polling
   useEffect(() => {

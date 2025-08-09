@@ -82,7 +82,7 @@ export const WalletProvider = ({ children }) => {
     setIsReconnecting(true);
     setChainId(parseInt(chainId, 16));
 
-    // Instead of reloading, gracefully reconnect
+    // Instead of reloading, gracefully reconnect with better timing
     setTimeout(async () => {
       try {
         if (window.ethereum) {
@@ -94,9 +94,12 @@ export const WalletProvider = ({ children }) => {
       } catch (error) {
         console.error('Error reconnecting after chain change:', error);
       } finally {
-        setIsReconnecting(false);
+        // Add extra delay to ensure all contexts are properly updated
+        setTimeout(() => {
+          setIsReconnecting(false);
+        }, 500);
       }
-    }, 1000);
+    }, 1500); // Increased delay for better stability
   };
 
   const connectWallet = async (walletType) => {
