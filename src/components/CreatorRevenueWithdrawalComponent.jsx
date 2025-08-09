@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, RefreshCw, AlertCircle, CheckCircle, Zap } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { toast } from './ui/sonner';
 import { ResponsiveAddressInput } from './ui/responsive-input';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
@@ -20,8 +21,166 @@ const CreatorRevenueWithdrawalComponent = () => {
   const [createdRaffles, setCreatedRaffles] = useState([]);
   const [loadingRaffles, setLoadingRaffles] = useState(false);
 
+  // Creator Mint state
+  const [mintData, setMintData] = useState({
+    collectionAddress: '',
+    collectionType: 'erc721', // erc721 or erc1155
+    recipient: '',
+    quantity: '',
+    tokenId: '' // Only for ERC1155
+  });
+  const [mintLoading, setMintLoading] = useState(false);
+  const [collectionInfo, setCollectionInfo] = useState(null);
+  const [loadingCollectionInfo, setLoadingCollectionInfo] = useState(false);
+
   const handleChange = (field, value) => {
     setRaffleData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMintChange = (field, value) => {
+    setMintData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Auto-detect collection type and load collection info for minting
+  const loadCollectionInfoForMint = async () => {
+    if (!mintData.collectionAddress || !connected) {
+      toast.error('Please enter a collection address and connect your wallet');
+      return;
+    }
+
+    setLoadingCollectionInfo(true);
+    try {
+      // Auto-detect collection type by trying both ERC721 and ERC1155
+      let contract = null;
+      let detectedType = null;
+
+      // Try ERC721 first
+      try {
+        const erc721Contract = getContractInstance(mintData.collectionAddress, 'erc721Prize');
+        if (erc721Contract) {
+          // Test if it's actually ERC721 by calling a specific method
+          await erc721Contract.name();
+          contract = erc721Contract;
+          detectedType = 'erc721';
+        }
+      } catch (error) {
+        // Not ERC721, try ERC1155
+      }
+
+      // If ERC721 failed, try ERC1155
+      if (!contract) {
+        try {
+          const erc1155Contract = getContractInstance(mintData.collectionAddress, 'erc1155Prize');
+          if (erc1155Contract) {
+            // Test if it's actually ERC1155 by calling a specific method
+            await erc1155Contract.name();
+            contract = erc1155Contract;
+            detectedType = 'erc1155';
+          }
+        } catch (error) {
+          // Neither worked
+        }
+      }
+
+      if (!contract || !detectedType) {
+        throw new Error('Invalid collection address or unsupported contract type');
+      }
+
+      // Update the collection type in state
+      setMintData(prev => ({ ...prev, collectionType: detectedType }));
+
+      // Get collection info
+      const name = await contract.name().catch(() => 'Unknown Collection');
+      const symbol = await contract.symbol().catch(() => 'Unknown');
+      const owner = await contract.owner().catch(() => 'Unknown');
+      const isOwner = owner.toLowerCase() === address.toLowerCase();
+
+      setCollectionInfo({
+        name,
+        symbol,
+        owner,
+        type: detectedType,
+        isOwner
+      });
+
+      toast.success(`Collection loaded: ${name} (${detectedType.toUpperCase()})`);
+    } catch (error) {
+      console.error('Error loading collection info:', error);
+      toast.error('Failed to load collection information: ' + error.message);
+      setCollectionInfo(null);
+    } finally {
+      setLoadingCollectionInfo(false);
+    }
+  };
+
+  // Handle creator mint
+  const handleCreatorMint = async () => {
+    if (!connected || !collectionInfo) {
+      toast.error('Please connect your wallet and load collection info first');
+      return;
+    }
+
+    if (!collectionInfo.isOwner) {
+      toast.error('You are not the owner of this collection');
+      return;
+    }
+
+    if (!mintData.recipient || !mintData.quantity) {
+      toast.error('Please fill in recipient address and quantity');
+      return;
+    }
+
+    if (mintData.collectionType === 'erc1155' && !mintData.tokenId) {
+      toast.error('Please specify token ID for ERC1155 minting');
+      return;
+    }
+
+    const quantity = parseInt(mintData.quantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+
+    setMintLoading(true);
+    try {
+      const contractType = mintData.collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(mintData.collectionAddress, contractType);
+
+      if (!contract) {
+        throw new Error('Failed to create contract instance');
+      }
+
+      let result;
+      if (mintData.collectionType === 'erc721') {
+        // ERC721: creatorMint(address to, uint256 quantity)
+        result = await executeTransaction(contract.creatorMint, mintData.recipient, quantity);
+      } else {
+        // ERC1155: creatorMint(address to, uint256 id, uint256 quantity)
+        const tokenId = parseInt(mintData.tokenId);
+        if (isNaN(tokenId)) {
+          throw new Error('Invalid token ID');
+        }
+        result = await executeTransaction(contract.creatorMint, mintData.recipient, tokenId, quantity);
+      }
+
+      if (result.success) {
+        toast.success(`Successfully minted ${quantity} token(s)! Transaction: ${result.hash}`);
+        // Clear form
+        setMintData(prev => ({
+          ...prev,
+          recipient: '',
+          quantity: '',
+          tokenId: ''
+        }));
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error minting tokens:', error);
+      toast.error('Error minting tokens: ' + error.message);
+    } finally {
+      setMintLoading(false);
+    }
   };
 
   const loadRaffleInfo = async (raffleAddress) => {
@@ -313,6 +472,117 @@ const CreatorRevenueWithdrawalComponent = () => {
             </p>
           </div>
         )}
+
+        {/* Creator Mint Section */}
+        <div className="space-y-4 border-t border-border pt-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Creator Mint</h3>
+          </div>
+
+          {/* Collection Address Input */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Collection Contract Address</label>
+              <div className="flex gap-2">
+                <ResponsiveAddressInput
+                  value={mintData.collectionAddress}
+                  onChange={(e) => handleMintChange('collectionAddress', e.target.value)}
+                  placeholder="0x..."
+                  className="flex-1"
+                />
+                <button
+                  onClick={loadCollectionInfoForMint}
+                  disabled={loadingCollectionInfo || !connected}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingCollectionInfo ? 'animate-spin' : ''}`} />
+                  {loadingCollectionInfo ? 'Loading...' : 'Load Info'}
+                </button>
+              </div>
+            </div>
+
+            {/* Collection Info Display */}
+            {collectionInfo && (
+              <div className="p-3 bg-muted/50 rounded-lg border">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> {collectionInfo.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
+                  </div>
+                  <div>
+                    <span className="font-medium">Type:</span> {collectionInfo.type.toUpperCase()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Owner:</span> {collectionInfo.isOwner ? 'You' : 'Other'}
+                  </div>
+                </div>
+
+                {!collectionInfo.isOwner && (
+                  <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
+                      You are not the owner of this collection and cannot mint tokens.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Mint Form */}
+            {collectionInfo && collectionInfo.isOwner && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Recipient Address</label>
+                    <ResponsiveAddressInput
+                      value={mintData.recipient}
+                      onChange={(e) => handleMintChange('recipient', e.target.value)}
+                      placeholder="0x..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Quantity</label>
+                    <input
+                      type="number"
+                      value={mintData.quantity}
+                      onChange={(e) => handleMintChange('quantity', e.target.value)}
+                      placeholder="1"
+                      min="1"
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    />
+                  </div>
+                </div>
+
+                {/* Token ID for ERC1155 */}
+                {collectionInfo.type === 'erc1155' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Token ID</label>
+                    <input
+                      type="number"
+                      value={mintData.tokenId}
+                      onChange={(e) => handleMintChange('tokenId', e.target.value)}
+                      placeholder="1"
+                      min="0"
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    />
+                  </div>
+                )}
+
+                {/* Mint Button */}
+                <button
+                  onClick={handleCreatorMint}
+                  disabled={mintLoading || !connected || !collectionInfo.isOwner || !mintData.recipient || !mintData.quantity || (collectionInfo.type === 'erc1155' && !mintData.tokenId)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Zap className="h-4 w-4" />
+                  {mintLoading ? 'Minting...' : `Mint ${collectionInfo.type.toUpperCase()} Token(s)`}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, AlertCircle, Gift, Coins, Filter } from 'lucide-react';
+import { Plus, Package, AlertCircle, Gift, Coins, CheckCircle, XCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -1618,8 +1618,19 @@ function ExistingERC721DropForm() {
     }
   };
 
-  // Helper for whitelist status check
-  const { status: whitelistStatus721, checking: checkingWhitelist721 } = useCollectionWhitelistStatus(formData.collection, contracts);
+  // Helper for internal collection status check
+  const { status: internalStatus721, checking: checkingInternal721 } = useInternalCollectionStatus(formData.collection, contracts);
+
+  // Show toast when status changes
+  useEffect(() => {
+    if (formData.collection && !checkingInternal721 && internalStatus721 !== null) {
+      if (internalStatus721) {
+        toast.success("This collection is approved");
+      } else {
+        toast.error("This collection is not approved");
+      }
+    }
+  }, [formData.collection, checkingInternal721, internalStatus721]);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
@@ -1641,23 +1652,22 @@ function ExistingERC721DropForm() {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Collection Address</label>
-            <input
-              type="text"
-              value={formData.collection || ''}
-              onChange={e => handleChange('collection', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
-              placeholder="0x..."
-              required
-            />
-            {formData.collection && !checkingWhitelist721 && whitelistStatus721 === true && (
-              <span className="text-xs text-green-600">This collection is approved</span>
-            )}
-            {formData.collection && !checkingWhitelist721 && whitelistStatus721 === false && (
-              <span className="text-xs text-red-600">This collection is not approved</span>
-            )}
-            {formData.collection && checkingWhitelist721 && (
-              <span className="text-xs text-muted-foreground">Checking collection approval status...</span>
-            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.collection || ''}
+                onChange={e => handleChange('collection', e.target.value)}
+                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
+              />
+              {formData.collection && !checkingInternal721 && internalStatus721 === true && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
+              )}
+              {formData.collection && !checkingInternal721 && internalStatus721 === false && (
+                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Start Time</label>
@@ -1855,8 +1865,19 @@ function ExistingERC1155DropForm() {
     }
   };
 
-  // Helper for whitelist status check
-  const { status: whitelistStatus1155, checking: checkingWhitelist1155 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
+  // Helper for internal collection status check
+  const { status: internalStatus1155, checking: checkingInternal1155 } = useInternalCollectionStatus(formData.collectionAddress, contracts);
+
+  // Show toast when status changes
+  useEffect(() => {
+    if (formData.collectionAddress && !checkingInternal1155 && internalStatus1155 !== null) {
+      if (internalStatus1155) {
+        toast.success("This collection is approved");
+      } else {
+        toast.error("This collection is not approved");
+      }
+    }
+  }, [formData.collectionAddress, checkingInternal1155, internalStatus1155]);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
@@ -1878,23 +1899,22 @@ function ExistingERC1155DropForm() {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Collection Address</label>
-            <input
-              type="text"
-              value={formData.collectionAddress || ''}
-              onChange={e => handleChange('collectionAddress', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
-              placeholder="0x..."
-              required
-            />
-            {formData.collectionAddress && !checkingWhitelist1155 && whitelistStatus1155 === true && (
-              <span className="text-xs text-green-600">This collection is approved</span>
-            )}
-            {formData.collectionAddress && !checkingWhitelist1155 && whitelistStatus1155 === false && (
-              <span className="text-xs text-red-600">This collection is not approved</span>
-            )}
-            {formData.collectionAddress && checkingWhitelist1155 && (
-              <span className="text-xs text-muted-foreground">Checking collection approval status...</span>
-            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.collectionAddress || ''}
+                onChange={e => handleChange('collectionAddress', e.target.value)}
+                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
+              />
+              {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === true && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
+              )}
+              {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === false && (
+                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
@@ -2140,6 +2160,9 @@ const CreateRafflePage = () => {
           <h1 className={`font-bold ${isMobile ? 'text-2xl mb-2' : 'text-4xl mb-4'}`}>
             Create an on-chain raffle for your community
           </h1>
+          <p className={`font-semibold ${isMobile ? 'text-base' : 'text-2xl'}`}>
+            Configure your raffle <a href="#" onClick={(e) => { e.preventDefault(); setIsFilterOpen(true); }} className="text-primary hover:text-primary/90 no-underline font-medium transition-colors">here</a>
+          </p>
         </div>
 
         {/* Filter Button and Form Section - Responsive Layout */}
@@ -2147,29 +2170,6 @@ const CreateRafflePage = () => {
           {isMobile ? (
             /* Mobile: Stacked Layout */
             <div className="space-y-4">
-              {/* Filter Toggle Button - above form on mobile */}
-              <div className="flex justify-start">
-                <Button
-                  variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
-                  onClick={() => setIsFilterOpen(true)}
-                  className={`flex items-center gap-2 ${
-                    raffleType !== 'Whitelist/Allowlist'
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                      : ''
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">
-                    {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
-                  </span>
-                  {raffleType !== 'Whitelist/Allowlist' && (
-                    <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
-                      Active
-                    </span>
-                  )}
-                </Button>
-              </div>
-
               {/* Form Section */}
               <div className="w-full">
                 {renderForm()}
@@ -2178,29 +2178,6 @@ const CreateRafflePage = () => {
           ) : (
             /* Desktop: Side by Side Layout */
             <div className="flex gap-2 items-start">
-              {/* Filter Toggle Button - positioned beside forms */}
-              <div className="flex-shrink-0">
-                <Button
-                  variant={raffleType !== 'Whitelist/Allowlist' ? "default" : "outline"}
-                  onClick={() => setIsFilterOpen(true)}
-                  className={`flex items-center gap-2 ${
-                    raffleType !== 'Whitelist/Allowlist'
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                      : ''
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">
-                    {raffleType !== 'Whitelist/Allowlist' ? 'Filters Applied' : 'Configure Your Raffle'}
-                  </span>
-                  {raffleType !== 'Whitelist/Allowlist' && (
-                    <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">
-                      Active
-                    </span>
-                  )}
-                </Button>
-              </div>
-
               {/* Form Section */}
               <div className="flex-1">
                 {renderForm()}
@@ -2351,6 +2328,17 @@ function LuckySaleERC721Form() {
   // Helper for whitelist status check
   const { status: whitelistStatusLucky721, checking: checkingWhitelistLucky721 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
 
+  // Show toast when status changes
+  useEffect(() => {
+    if (formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 !== null) {
+      if (whitelistStatusLucky721) {
+        toast.success("This collection is approved");
+      } else {
+        toast.error("This collection is not approved");
+      }
+    }
+  }, [formData.collectionAddress, checkingWhitelistLucky721, whitelistStatusLucky721]);
+
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -2371,23 +2359,22 @@ function LuckySaleERC721Form() {
           </div>
           <div>
             <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Prize Collection Address</label>
-            <input
-              type="text"
-              value={formData.collectionAddress || ''}
-              onChange={e => handleChange('collectionAddress', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
-              placeholder="0x..."
-              required
-            />
-            {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === true && (
-              <span className="text-xs text-green-600">This collection is approved</span>
-            )}
-            {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === false && (
-              <span className="text-xs text-red-600">This collection is not approved</span>
-            )}
-            {formData.collectionAddress && checkingWhitelistLucky721 && (
-              <span className="text-xs text-muted-foreground">Checking whitelist status...</span>
-            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.collectionAddress || ''}
+                onChange={e => handleChange('collectionAddress', e.target.value)}
+                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
+              />
+              {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === true && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
+              )}
+              {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === false && (
+                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
@@ -2620,6 +2607,17 @@ function LuckySaleERC1155Form() {
   // Helper for whitelist status check
   const { status: whitelistStatusLucky1155, checking: checkingWhitelistLucky1155 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
 
+  // Show toast when status changes
+  useEffect(() => {
+    if (formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 !== null) {
+      if (whitelistStatusLucky1155) {
+        toast.success("This collection is approved");
+      } else {
+        toast.error("This collection is not approved");
+      }
+    }
+  }, [formData.collectionAddress, checkingWhitelistLucky1155, whitelistStatusLucky1155]);
+
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -2640,23 +2638,22 @@ function LuckySaleERC1155Form() {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Collection Address</label>
-            <input
-              type="text"
-              value={formData.collectionAddress || ''}
-              onChange={e => handleChange('collectionAddress', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
-              placeholder="0x..."
-              required
-            />
-            {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === true && (
-              <span className="text-xs text-green-600">This collection is approved</span>
-            )}
-            {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === false && (
-              <span className="text-xs text-red-600">This collection is not approved</span>
-            )}
-            {formData.collectionAddress && checkingWhitelistLucky1155 && (
-              <span className="text-xs text-muted-foreground">Checking whitelist status...</span>
-            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.collectionAddress || ''}
+                onChange={e => handleChange('collectionAddress', e.target.value)}
+                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
+              />
+              {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === true && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
+              )}
+              {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === false && (
+                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>

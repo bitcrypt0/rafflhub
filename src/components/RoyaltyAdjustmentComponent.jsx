@@ -12,7 +12,7 @@ const RoyaltyAdjustmentComponent = () => {
   const [loading, setLoading] = useState(false);
   const [collectionData, setCollectionData] = useState({
     address: '',
-    type: 'erc721', // erc721 or erc1155
+    type: null, // Will be auto-detected
     royaltyPercentage: '',
     royaltyRecipient: ''
   });
@@ -30,16 +30,17 @@ const RoyaltyAdjustmentComponent = () => {
   const checkRevealedStatus = async (contract) => {
     try {
       if (!contract) return;
-      // Try revealed() function (bool)
-      const revealed = await contract.revealed();
+      // Use isRevealed() function (bool)
+      const revealed = await contract.isRevealed();
       setIsRevealed(!!revealed);
     } catch (e) {
-      // If revealed() does not exist, fallback to null
+      // If isRevealed() does not exist, fallback to null
+      console.log('Could not fetch reveal status:', e.message);
       setIsRevealed(null);
     }
   };
 
-  // Update loadCollectionInfo to check revealed status
+  // Auto-detect collection type and load collection info
   const loadCollectionInfo = async () => {
     if (!collectionData.address || !connected) {
       toast.error('Please enter a collection address and connect your wallet');
@@ -48,33 +49,66 @@ const RoyaltyAdjustmentComponent = () => {
 
     setLoadingInfo(true);
     try {
-      const contractType = collectionData.type === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
-      const contract = getContractInstance(collectionData.address, contractType);
-      if (!contract) {
-        throw new Error('Failed to create contract instance');
+      // Auto-detect collection type by trying both ERC721 and ERC1155
+      let contract = null;
+      let detectedType = null;
+
+      // Try ERC721 first
+      try {
+        const erc721Contract = getContractInstance(collectionData.address, 'erc721Prize');
+        if (erc721Contract) {
+          // Test if it's actually ERC721 by calling a specific method
+          await erc721Contract.name(); // This should work for ERC721
+          contract = erc721Contract;
+          detectedType = 'erc721';
+        }
+      } catch (error) {
+        // Not ERC721, try ERC1155
       }
+
+      // If ERC721 failed, try ERC1155
+      if (!contract) {
+        try {
+          const erc1155Contract = getContractInstance(collectionData.address, 'erc1155Prize');
+          if (erc1155Contract) {
+            // Test if it's actually ERC1155 by calling a specific method
+            await erc1155Contract.name(); // This should work for ERC1155
+            contract = erc1155Contract;
+            detectedType = 'erc1155';
+          }
+        } catch (error) {
+          // Neither worked
+        }
+      }
+
+      if (!contract || !detectedType) {
+        throw new Error('Invalid collection address or unsupported contract type');
+      }
+
+      // Update the collection type in state
+      setCollectionData(prev => ({ ...prev, type: detectedType }));
+
+      // Get collection info (same as Creator Mint UI)
+      const name = await contract.name().catch(() => 'Unknown Collection');
+      const symbol = await contract.symbol().catch(() => 'Unknown');
+      const owner = await contract.owner().catch(() => 'Unknown');
+      const isOwner = owner.toLowerCase() === address.toLowerCase();
 
       // Get current royalty info
       const royaltyInfo = await contract.royaltyInfo(1, 10000); // Query with token ID 1 and sale price 10000
       const royaltyPercentage = await contract.royaltyPercentage();
       const royaltyRecipient = await contract.royaltyRecipient();
 
-      // Check if current user is the owner (for permission validation)
-      let isOwner = false;
-      try {
-        const owner = await contract.owner();
-        isOwner = owner.toLowerCase() === address.toLowerCase();
-      } catch (error) {
-        console.warn('Could not check ownership:', error);
-      }
-
       setCollectionInfo({
         address: collectionData.address,
-        type: collectionData.type,
+        name,
+        symbol,
+        owner,
+        type: detectedType,
+        isOwner,
         currentRoyaltyPercentage: royaltyPercentage.toString(),
         currentRoyaltyRecipient: royaltyRecipient,
-        royaltyAmount: royaltyInfo[1].toString(),
-        isOwner
+        royaltyAmount: royaltyInfo[1].toString()
       });
 
       // Pre-fill form with current values
@@ -181,74 +215,82 @@ const RoyaltyAdjustmentComponent = () => {
     <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
         {/* Collection Lookup Section */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Collection Address</label>
+          <div>
+            <label className="block text-sm font-medium mb-1">Collection Address</label>
+            <div className="flex gap-2">
               <ResponsiveAddressInput
                 value={collectionData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
                 placeholder="0x..."
+                className="flex-1"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Collection Type</label>
-              <Select
-                value={collectionData.type}
-                onValueChange={(value) => handleChange('type', value)}
+              <button
+                onClick={loadCollectionInfo}
+                disabled={loadingInfo || !connected}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
               >
-                <SelectTrigger className="w-full px-3 py-2 border border-border rounded-md bg-background">
-                  <SelectValue placeholder="Select Collection Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="erc721">ERC721</SelectItem>
-                  <SelectItem value="erc1155">ERC1155</SelectItem>
-                </SelectContent>
-              </Select>
+                <Search className="h-4 w-4" />
+                {loadingInfo ? 'Loading...' : 'Load Info'}
+              </button>
             </div>
           </div>
-
-          <button
-            onClick={loadCollectionInfo}
-            disabled={loadingInfo || !connected}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
-          >
-            <Search className="h-4 w-4" />
-            {loadingInfo ? 'Loading...' : 'Load Collection Info'}
-          </button>
         </div>
 
         {/* Collection Info Display */}
         {collectionInfo && (
           <div className="p-4 bg-muted rounded-lg">
             <h4 className="font-semibold mb-3">Collection Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <span className="text-muted-foreground">Address:</span>
-                <div className="font-mono break-all">{collectionInfo.address}</div>
+                <span className="font-medium">Name:</span> {collectionInfo.name}
               </div>
               <div>
-                <span className="text-muted-foreground">Type:</span>
-                <div className="uppercase">{collectionInfo.type}</div>
+                <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
               </div>
               <div>
-                <span className="text-muted-foreground">Current Royalty:</span>
-                <div>{(parseInt(collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%</div>
+                <span className="font-medium">Type:</span> {collectionInfo.type.toUpperCase()}
               </div>
               <div>
-                <span className="text-muted-foreground">Current Recipient:</span>
-                <div className="font-mono break-all">{collectionInfo.currentRoyaltyRecipient}</div>
+                <span className="font-medium">Owner:</span> {collectionInfo.isOwner ? 'You' : 'Other'}
               </div>
-              {/* Reveal status and button */}
-              <div className="col-span-2 mt-2">
-                <span className="text-muted-foreground">Reveal Status:</span>
-                <span className="ml-2 font-semibold">
+              <div>
+                <span className="font-medium">Current Royalty:</span> {(parseInt(collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%
+              </div>
+              <div>
+                <span className="font-medium">Revealed:</span> {isRevealed === null ? 'Unknown' : isRevealed ? 'Yes' : 'No'}
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="text-sm">
+                <div className="mb-1">
+                  <span className="font-medium">Address:</span>
+                </div>
+                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
+                  {collectionInfo.address}
+                </div>
+              </div>
+              <div className="text-sm mt-2">
+                <div className="mb-1">
+                  <span className="font-medium">Royalty Recipient:</span>
+                </div>
+                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
+                  {collectionInfo.currentRoyaltyRecipient}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">Reveal Status:</span>
+                <span className="text-sm font-semibold">
                   {isRevealed === null ? 'Unknown' : isRevealed ? 'Revealed' : 'Not Revealed'}
                 </span>
                 <button
                   onClick={handleReveal}
                   disabled={revealing || isRevealed || !collectionInfo.isOwner}
-                  className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
                   title={!collectionInfo.isOwner ? "Only collection owner can reveal" : isRevealed ? "Collection already revealed" : "Reveal collection"}
                 >
                   {revealing ? 'Revealing...' : 'Reveal Collection'}

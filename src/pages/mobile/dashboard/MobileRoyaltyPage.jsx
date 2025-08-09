@@ -17,7 +17,7 @@ const MobileRoyaltyPage = () => {
   // Form state with standard HTML inputs
   const [formData, setFormData] = useState({
     collectionAddress: '',
-    collectionType: 'erc1155',
+    collectionType: null, // Will be auto-detected
     royaltyPercentage: '',
     royaltyRecipient: '',
     baseURI: ''
@@ -34,7 +34,7 @@ const MobileRoyaltyPage = () => {
     }));
   };
 
-  // Fetch collection information
+  // Fetch collection information with auto-detection
   const fetchCollectionInfo = async () => {
     if (!formData.collectionAddress || !connected) {
       return;
@@ -43,16 +43,39 @@ const MobileRoyaltyPage = () => {
     try {
       setLoading(true);
 
-      // Try ERC1155 first, then ERC721
-      let contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
-      let type = 'erc1155';
+      // Auto-detect collection type by trying both ERC721 and ERC1155
+      let contract = null;
+      let type = null;
 
-      if (!contract) {
-        contract = getContractInstance(formData.collectionAddress, 'erc721Prize');
-        type = 'erc721';
+      // Try ERC721 first
+      try {
+        const erc721Contract = getContractInstance(formData.collectionAddress, 'erc721Prize');
+        if (erc721Contract) {
+          // Test if it's actually ERC721 by calling a specific method
+          await executeCall(erc721Contract, 'name', []);
+          contract = erc721Contract;
+          type = 'erc721';
+        }
+      } catch (error) {
+        // Not ERC721, try ERC1155
       }
 
+      // If ERC721 failed, try ERC1155
       if (!contract) {
+        try {
+          const erc1155Contract = getContractInstance(formData.collectionAddress, 'erc1155Prize');
+          if (erc1155Contract) {
+            // Test if it's actually ERC1155 by calling a specific method
+            await executeCall(erc1155Contract, 'name', []);
+            contract = erc1155Contract;
+            type = 'erc1155';
+          }
+        } catch (error) {
+          // Neither worked
+        }
+      }
+
+      if (!contract || !type) {
         toast.error('Invalid collection address or unsupported contract type');
         return;
       }
@@ -63,15 +86,25 @@ const MobileRoyaltyPage = () => {
       const name = await executeCall(contract, 'name', []).catch(() => 'Unknown Collection');
       const symbol = await executeCall(contract, 'symbol', []).catch(() => 'Unknown');
 
+      // Check reveal status
+      let revealStatus = null;
+      try {
+        revealStatus = await executeCall(contract, 'isRevealed', []);
+      } catch (error) {
+        console.log('Could not fetch reveal status:', error.message);
+      }
+
       setFormData(prev => ({ ...prev, collectionType: type }));
       setCollectionInfo({
+        address: formData.collectionAddress,
         name,
         symbol,
         owner,
         type,
         isOwner: owner.toLowerCase() === address.toLowerCase(),
         currentRoyaltyRecipient: royaltyInfo ? royaltyInfo[0] : 'Unknown',
-        currentRoyaltyPercentage: royaltyInfo ? (royaltyInfo[1].toNumber() / 100).toString() : '0'
+        currentRoyaltyPercentage: royaltyInfo ? (royaltyInfo[1].toNumber() / 100).toString() : '0',
+        isRevealed: revealStatus
       });
 
       toast.success('Collection information loaded');
@@ -220,22 +253,53 @@ const MobileRoyaltyPage = () => {
             
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Name:</span>
-                <span className="font-medium">{collectionInfo.name}</span>
+                <span className="font-medium">Name:</span>
+                <span>{collectionInfo.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Owner:</span>
-                <span className="font-mono text-xs">{collectionInfo.owner.slice(0, 10)}...</span>
+                <span className="font-medium">Symbol:</span>
+                <span>{collectionInfo.symbol}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Current Royalty:</span>
-                <span className="font-medium">{collectionInfo.currentRoyaltyPercentage}%</span>
+                <span className="font-medium">Type:</span>
+                <span>{collectionInfo.type.toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Recipient:</span>
-                <span className="font-mono text-xs">{collectionInfo.currentRoyaltyRecipient.slice(0, 10)}...</span>
+                <span className="font-medium">Owner:</span>
+                <span>{collectionInfo.isOwner ? 'You' : 'Other'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Current Royalty:</span>
+                <span>{collectionInfo.currentRoyaltyPercentage}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Revealed:</span>
+                <span>{collectionInfo.isRevealed === null ? 'Unknown' : collectionInfo.isRevealed ? 'Yes' : 'No'}</span>
               </div>
             </div>
+
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
+              <div className="text-sm">
+                <div className="font-medium mb-1">Address:</div>
+                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
+                  {collectionInfo.address}
+                </div>
+              </div>
+              <div className="text-sm">
+                <div className="font-medium mb-1">Royalty Recipient:</div>
+                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
+                  {collectionInfo.currentRoyaltyRecipient}
+                </div>
+              </div>
+            </div>
+
+            {!collectionInfo.isOwner && (
+              <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">
+                  You are not the owner of this collection and cannot modify royalty settings.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

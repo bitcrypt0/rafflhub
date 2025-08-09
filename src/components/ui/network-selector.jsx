@@ -20,6 +20,18 @@ const NetworkSelector = () => {
   const { chainId, switchNetwork, addNetwork, isSupportedNetwork } = useWallet();
   const [pending, setPending] = React.useState(false);
 
+  // Filter networks to only show those with configured contract addresses
+  const getAvailableNetworks = () => {
+    return Object.entries(SUPPORTED_NETWORKS).filter(([id, network]) => {
+      const contractAddresses = network.contractAddresses;
+      // Check if essential contracts are configured (not placeholder '0x...')
+      return contractAddresses?.raffleManager &&
+             contractAddresses.raffleManager !== '0x...' &&
+             contractAddresses?.raffleDeployer &&
+             contractAddresses.raffleDeployer !== '0x...';
+    });
+  };
+
   const handleChange = async (value) => {
     const targetChainId = parseInt(value, 10);
     setPending(true);
@@ -86,16 +98,18 @@ const NetworkSelector = () => {
           <SelectValue placeholder="Select Network" />
         </SelectTrigger>
         <SelectContent>
-          {Object.entries(SUPPORTED_NETWORKS).map(([id, net]) => (
+          {getAvailableNetworks().map(([id, net]) => (
             <SelectItem key={id} value={id}>
               {net.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      {/* Only show warning if wallet is connected and network is unsupported */}
-      {chainId && !isSupportedNetwork && (
-        <span className="text-xs text-red-500 ml-2">Unsupported Network</span>
+      {/* Show warning if wallet is connected and network doesn't have contracts configured */}
+      {chainId && (!isSupportedNetwork || !getAvailableNetworks().some(([id]) => parseInt(id) === chainId)) && (
+        <span className="text-xs text-red-500 ml-2">
+          {!isSupportedNetwork ? 'Unsupported Network' : 'Contracts Not Available'}
+        </span>
       )}
     </div>
   );
