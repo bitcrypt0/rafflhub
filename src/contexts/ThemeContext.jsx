@@ -14,7 +14,7 @@ export const useTheme = () => {
 const AVAILABLE_THEMES = [
   { id: 'light', name: 'Light', icon: 'Sun' },
   { id: 'dark', name: 'Dark', icon: 'Moon' },
-  { id: 'dim-blue', name: 'Dim Blue', icon: 'Waves' }
+  { id: 'dim-blue', name: 'Dim Blue', icon: 'Monitor' }
 ];
 
 export const ThemeProvider = ({ children }) => {

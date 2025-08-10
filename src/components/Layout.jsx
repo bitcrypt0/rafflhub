@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Waves, Wallet, User, Plus, Search, Book, LogOut } from 'lucide-react';
+import { Moon, Sun, Monitor, Wallet, User, Plus, Search, Book, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -361,7 +361,7 @@ const Header = () => {
                 >
                   {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
                   {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
-                  {getCurrentTheme().icon === 'Waves' && <Waves className="h-5 w-5" />}
+                  {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-5 w-5" />}
                 </button>
                 {/* Network Selector */}
                 <NetworkSelector />

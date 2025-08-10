@@ -79,14 +79,12 @@ const MobileProfilePage = () => {
     {
       id: 'activity',
       label: 'Activity',
-      icon: Clock,
       component: MobileActivityTab,
       props: { activities: userActivity, claimRefund }
     },
     {
       id: 'created',
       label: 'My Raffles',
-      icon: Users,
       component: MobileCreatedRafflesTab,
       props: {
         raffles: createdRaffles,
@@ -100,7 +98,6 @@ const MobileProfilePage = () => {
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: Settings,
       component: MobileDashboardTab,
       props: { creatorStats }
     }

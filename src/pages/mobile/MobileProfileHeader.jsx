@@ -1,5 +1,4 @@
 import React from 'react';
-import { User, TrendingUp, Trophy, DollarSign } from 'lucide-react';
 
 /**
  * Mobile-optimized profile header with wallet info and key stats
@@ -17,7 +16,6 @@ const MobileProfileHeader = ({ address, activityStats, creatorStats }) => {
       <div className="p-4 pb-2">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <User className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-foreground">Profile</h1>
@@ -44,7 +42,6 @@ const MobileProfileHeader = ({ address, activityStats, creatorStats }) => {
           {/* Activity Stats */}
           <div className="bg-card/50 rounded-lg p-3 border border-border/50">
             <div className="flex items-center gap-2 mb-2">
-              <Trophy className="h-4 w-4 text-primary" />
               <span className="text-xs font-medium text-muted-foreground">
                 Activity
               </span>
@@ -68,7 +65,6 @@ const MobileProfileHeader = ({ address, activityStats, creatorStats }) => {
           {/* Creator Stats */}
           <div className="bg-card/50 rounded-lg p-3 border border-border/50">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs font-medium text-muted-foreground">
                 Creator
               </span>

@@ -295,7 +295,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                   <button
                     onClick={handleClaimPrize}
                     disabled={claimingPrize || !connected}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-yellow-600 hover:to-orange-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                   >
                     {claimingPrize
                       ? (isMintableERC721 && !isEscrowedPrize ? 'Minting...' : 'Claiming...')
@@ -306,7 +306,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                   <button
                     onClick={handleClaimRefund}
                     disabled={claimingRefund || !connected}
-                    className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                   >
                     {claimingRefund ? 'Claiming...' : 'Claim Refund'}
                   </button>
@@ -349,7 +349,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               <button
                 onClick={handleActivateRaffle}
                 disabled={activating}
-                className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {activating ? 'Activating...' : 'Activate Raffle'}
               </button>
@@ -364,7 +364,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                 <button
                   onClick={handleRequestRandomness}
                   disabled={requestingRandomness}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
                 </button>
@@ -383,7 +383,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               <button
                 onClick={handleEndRaffle}
                 disabled={endingRaffle}
-                    className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-lg hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {endingRaffle ? 'Ending...' : 'End Raffle'}
               </button>
@@ -954,7 +954,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
 
   return (
     <div className={`bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
-      isCurrentUser ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border hover:border-border/80'
+      isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-border hover:border-border/80'
     }`}>
       <div className="p-3">
         <div className="flex items-center justify-between mb-3">
@@ -967,7 +967,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                 {formatAddress(winner.address)}
               </div>
               {isCurrentUser && (
-                <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mt-0.5">
+                <div className="text-xs winner-text-highlight font-medium mt-0.5">
                   Your Address
                 </div>
               )}
@@ -2568,7 +2568,7 @@ const RaffleDetailPage = () => {
             {canDelete() && (
                 <Button
                 onClick={handleDeleteRaffle}
-                className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-[#614E41] text-white px-4 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm font-medium"
                 title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}
                   disabled={deletingRaffle}
               >
@@ -2588,7 +2588,7 @@ const RaffleDetailPage = () => {
                 {!showMintInput ? (
               <Button
                     onClick={() => setShowMintInput(true)}
-                className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 Mint to Winner
               </Button>
@@ -2605,7 +2605,7 @@ const RaffleDetailPage = () => {
                     <Button
                       onClick={handleMintToWinner}
                       disabled={mintingToWinner || !mintWinnerAddress || mintWinnerAddress.length !== 42}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
+                      className="bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {mintingToWinner ? 'Minting...' : 'Submit'}
                     </Button>
@@ -2643,7 +2643,7 @@ const RaffleDetailPage = () => {
                   {!showAssignPrizeInput ? (
                     <Button
                       onClick={() => setShowAssignPrizeInput(true)}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       Assign Prize
                     </Button>
@@ -2686,7 +2686,7 @@ const RaffleDetailPage = () => {
                       <Button
                         onClick={handleAssignPrize}
                         disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42 || (assignPrizeStandard !== 0 && (assignPrizeTokenId === "" || assignPrizeAmountPerWinner === ""))}
-                        className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
+                        className="bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                       >
                         {assigningPrize ? 'Assigning...' : 'Submit'}
                       </Button>
@@ -2852,7 +2852,7 @@ const RaffleDetailPage = () => {
                   </div>
 
                   {/* Prize Token ID for escrowed ERC721 and ERC1155 prizes */}
-                  {isEscrowedPrize && raffle.prizeTokenId && (
+                  {isEscrowedPrize && raffle.prizeTokenId !== undefined && raffle.prizeTokenId !== null && (
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Prize Token ID:</span>
                       <span className="font-mono font-semibold">

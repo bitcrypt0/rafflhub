@@ -34,7 +34,7 @@ const UnifiedDashboardGrid = ({
       id: 'royalty',
       title: 'Royalty & Reveal',
       description: 'Reveal your collection and manage royalties',
-      icon: '👑',
+
       component: RoyaltyAdjustmentComponent,
       priority: 1 // Higher priority components shown first on mobile
     },
@@ -42,7 +42,7 @@ const UnifiedDashboardGrid = ({
       id: 'minter',
       title: 'Minter Approval',
       description: 'Manage minter approvals for collections',
-      icon: '🔑',
+
       component: MinterApprovalComponent,
       priority: 2
     },
@@ -50,15 +50,15 @@ const UnifiedDashboardGrid = ({
       id: 'tokenCreator',
       title: 'Create New Token ID & Set Token URI',
       description: 'Add new token IDs to existing ERC1155 collections and set metadata URIs',
-      icon: '🆕',
+
       component: CreateNewTokenIDComponent,
       priority: 3
     },
     {
       id: 'revenue',
-      title: 'Revenue Withdrawal',
-      description: 'Withdraw revenue from your raffles',
-      icon: '💰',
+      title: 'Creator Mint & Revenue Withdrawal',
+      description: 'Mint tokens to winners and withdraw revenue from your raffles',
+
       component: CreatorRevenueWithdrawalComponent,
       priority: 4
     }
@@ -117,7 +117,7 @@ const UnifiedDashboardGrid = ({
             key={component.id}
             title={component.title}
             description={component.description}
-            icon={component.icon}
+
             component={component.component}
             // Always use external state management to prevent auto-close
             isExpanded={expandedCard === component.id}

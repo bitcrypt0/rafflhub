@@ -53,14 +53,29 @@ const RoyaltyAdjustmentComponent = () => {
       let contract = null;
       let detectedType = null;
 
-      // Try ERC721 first
+      // Try ERC721 first (most common)
       try {
         const erc721Contract = getContractInstance(collectionData.address, 'erc721Prize');
         if (erc721Contract) {
-          // Test if it's actually ERC721 by calling a specific method
-          await erc721Contract.name(); // This should work for ERC721
-          contract = erc721Contract;
-          detectedType = 'erc721';
+          // Test if it's actually ERC721 using proper detection methods
+          try {
+            // Check if it supports ERC721 interface
+            const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd'); // ERC721 interface ID
+            if (supportsERC721) {
+              contract = erc721Contract;
+              detectedType = 'erc721';
+            }
+          } catch (e) {
+            // Try alternative method - check for ERC721-specific function
+            try {
+              // Try calling totalSupply() - ERC721 specific
+              await erc721Contract.totalSupply();
+              contract = erc721Contract;
+              detectedType = 'erc721';
+            } catch (e2) {
+              // Not ERC721
+            }
+          }
         }
       } catch (error) {
         // Not ERC721, try ERC1155
@@ -71,10 +86,25 @@ const RoyaltyAdjustmentComponent = () => {
         try {
           const erc1155Contract = getContractInstance(collectionData.address, 'erc1155Prize');
           if (erc1155Contract) {
-            // Test if it's actually ERC1155 by calling a specific method
-            await erc1155Contract.name(); // This should work for ERC1155
-            contract = erc1155Contract;
-            detectedType = 'erc1155';
+            // Test if it's actually ERC1155 using proper detection methods
+            try {
+              // Check if it supports ERC1155 interface
+              const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26'); // ERC1155 interface ID
+              if (supportsERC1155) {
+                contract = erc1155Contract;
+                detectedType = 'erc1155';
+              }
+            } catch (e) {
+              // Try alternative method - check for ERC1155-specific function
+              try {
+                // Try calling uri(0) - ERC1155 specific
+                await erc1155Contract.uri(0);
+                contract = erc1155Contract;
+                detectedType = 'erc1155';
+              } catch (e2) {
+                // Not ERC1155
+              }
+            }
           }
         } catch (error) {
           // Neither worked
@@ -88,11 +118,36 @@ const RoyaltyAdjustmentComponent = () => {
       // Update the collection type in state
       setCollectionData(prev => ({ ...prev, type: detectedType }));
 
-      // Get collection info (same as Creator Mint UI)
-      const name = await contract.name().catch(() => 'Unknown Collection');
-      const symbol = await contract.symbol().catch(() => 'Unknown');
-      const owner = await contract.owner().catch(() => 'Unknown');
-      const isOwner = owner.toLowerCase() === address.toLowerCase();
+      // Get collection info (handle ERC1155 contracts that may not have name/symbol)
+      let name = 'Unknown Collection';
+      let symbol = 'Unknown';
+      let owner = 'Unknown';
+
+      try {
+        if (typeof contract.name === 'function') {
+          name = await contract.name();
+        }
+      } catch (e) {
+        // name() not available or failed
+      }
+
+      try {
+        if (typeof contract.symbol === 'function') {
+          symbol = await contract.symbol();
+        }
+      } catch (e) {
+        // symbol() not available or failed
+      }
+
+      try {
+        if (typeof contract.owner === 'function') {
+          owner = await contract.owner();
+        }
+      } catch (e) {
+        // owner() not available or failed
+      }
+
+      const isOwner = owner !== 'Unknown' && owner.toLowerCase() === address.toLowerCase();
 
       // Get current royalty info
       const royaltyInfo = await contract.royaltyInfo(1, 10000); // Query with token ID 1 and sale price 10000
@@ -143,8 +198,8 @@ const RoyaltyAdjustmentComponent = () => {
     }
 
     const royaltyPercentage = parseFloat(collectionData.royaltyPercentage);
-    if (isNaN(royaltyPercentage) || royaltyPercentage < 0 || royaltyPercentage > 10) {
-      toast.error('Please enter a valid royalty percentage (0-10%)');
+    if (isNaN(royaltyPercentage) || royaltyPercentage < 0) {
+      toast.error('Please enter a valid royalty percentage (minimum 0%)');
       return;
     }
 
@@ -227,7 +282,7 @@ const RoyaltyAdjustmentComponent = () => {
               <button
                 onClick={loadCollectionInfo}
                 disabled={loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
                 title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
               >
                 <Search className="h-4 w-4" />
@@ -242,12 +297,16 @@ const RoyaltyAdjustmentComponent = () => {
           <div className="p-4 bg-muted rounded-lg">
             <h4 className="font-semibold mb-3">Collection Information</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="font-medium">Name:</span> {collectionInfo.name}
-              </div>
-              <div>
-                <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
-              </div>
+              {collectionInfo.type === 'erc721' && (
+                <>
+                  <div>
+                    <span className="font-medium">Name:</span> {collectionInfo.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
+                  </div>
+                </>
+              )}
               <div>
                 <span className="font-medium">Type:</span> {collectionInfo.type.toUpperCase()}
               </div>
@@ -290,7 +349,7 @@ const RoyaltyAdjustmentComponent = () => {
                 <button
                   onClick={handleReveal}
                   disabled={revealing || isRevealed || !collectionInfo.isOwner}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                  className="px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
                   title={!collectionInfo.isOwner ? "Only collection owner can reveal" : isRevealed ? "Collection already revealed" : "Reveal collection"}
                 >
                   {revealing ? 'Revealing...' : 'Reveal Collection'}
@@ -342,7 +401,7 @@ const RoyaltyAdjustmentComponent = () => {
             <button
               onClick={handleUpdateRoyalty}
               disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
               title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !collectionData.royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
               <Settings className="h-4 w-4" />

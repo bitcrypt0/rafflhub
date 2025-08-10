@@ -249,14 +249,18 @@ const MobileRoyaltyPage = () => {
             </h3>
             
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="font-medium">Name:</span>
-                <span>{collectionInfo.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Symbol:</span>
-                <span>{collectionInfo.symbol}</span>
-              </div>
+              {collectionInfo.type === 'erc721' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Name:</span>
+                    <span>{collectionInfo.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Symbol:</span>
+                    <span>{collectionInfo.symbol}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between">
                 <span className="font-medium">Type:</span>
                 <span>{collectionInfo.type.toUpperCase()}</span>
@@ -342,7 +346,7 @@ const MobileRoyaltyPage = () => {
               <button
                 onClick={updateRoyalty}
                 disabled={loading || !formData.collectionAddress || !formData.royaltyPercentage || !formData.royaltyRecipient}
-                className="w-full bg-purple-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Updating...' : 'Update Royalty Settings'}
               </button>
@@ -375,7 +379,7 @@ const MobileRoyaltyPage = () => {
             <button
               onClick={revealCollection}
               disabled={loading || !formData.collectionAddress || !formData.baseURI}
-              className="w-full bg-purple-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Revealing...' : 'Reveal Collection'}
             </button>

@@ -281,7 +281,7 @@ const MobileMinterPage = () => {
             <button
               onClick={checkMinterStatus}
               disabled={loading || !formData.collectionAddress || !formData.minterAddress}
-              className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Checking...' : 'Check Minter Status'}
             </button>
@@ -324,7 +324,7 @@ const MobileMinterPage = () => {
               <button
                 onClick={approveMinter}
                 disabled={loading || !formData.collectionAddress || !formData.minterAddress}
-                className="w-full bg-green-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : 'Approve Minter'}
               </button>

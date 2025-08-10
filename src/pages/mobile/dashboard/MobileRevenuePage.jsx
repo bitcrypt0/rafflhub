@@ -267,7 +267,11 @@ const MobileRevenuePage = () => {
         isOwner
       });
 
-      toast.success(`Collection loaded: ${name} (${detectedType.toUpperCase()})`);
+      if (detectedType === 'erc1155') {
+        toast.success('Collection loaded');
+      } else {
+        toast.success(`Collection loaded: ${name} (${detectedType.toUpperCase()})`);
+      }
     } catch (error) {
       toast.error('Failed to load collection information');
       setCollectionInfo(null);
@@ -413,7 +417,7 @@ const MobileRevenuePage = () => {
                       <button
                         onClick={() => withdrawRevenue(raffle.address)}
                         disabled={loading}
-                        className="flex-1 text-xs bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                        className="flex-1 text-xs bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                       >
                         {loading ? 'Withdrawing...' : 'Withdraw'}
                       </button>
@@ -520,7 +524,7 @@ const MobileRevenuePage = () => {
             <button
               onClick={() => withdrawRevenue()}
               disabled={loading}
-              className="w-full bg-green-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Withdrawing...' : 'Withdraw Revenue'}
             </button>
@@ -580,7 +584,7 @@ const MobileRevenuePage = () => {
                 <button
                   onClick={loadCollectionInfoForMint}
                   disabled={loadingCollectionInfo || !connected}
-                  className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50"
+                  className="bg-[#614E41] text-white p-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 ${loadingCollectionInfo ? 'animate-spin' : ''}`} />
                 </button>
@@ -591,8 +595,12 @@ const MobileRevenuePage = () => {
             {collectionInfo && (
               <div className="bg-muted/50 rounded-lg p-3 border">
                 <div className="space-y-2 text-sm">
-                  <div><strong>Name:</strong> {collectionInfo.name}</div>
-                  <div><strong>Symbol:</strong> {collectionInfo.symbol}</div>
+                  {collectionInfo.type === 'erc721' && (
+                    <>
+                      <div><strong>Name:</strong> {collectionInfo.name}</div>
+                      <div><strong>Symbol:</strong> {collectionInfo.symbol}</div>
+                    </>
+                  )}
                   <div><strong>Type:</strong> {collectionInfo.type.toUpperCase()}</div>
                   <div><strong>Owner:</strong> {collectionInfo.isOwner ? 'You' : 'Other'}</div>
                 </div>
@@ -660,7 +668,7 @@ const MobileRevenuePage = () => {
                 <button
                   onClick={handleCreatorMint}
                   disabled={mintLoading || !connected || !collectionInfo.isOwner || !mintData.recipient || !mintData.quantity || (collectionInfo.type === 'erc1155' && !mintData.tokenId)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg font-medium hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {mintLoading ? 'Minting...' : `Mint ${collectionInfo.type.toUpperCase()} Token(s)`}
                 </button>

@@ -323,7 +323,7 @@ const MobileTokenCreatorPage = () => {
               <button
                 onClick={createToken}
                 disabled={loading || !formData.collectionAddress || !formData.tokenId || !formData.maxSupply || !collectionInfo?.isOwner}
-                className="w-full bg-green-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating...' : 'Create New Token ID'}
               </button>
@@ -375,7 +375,7 @@ const MobileTokenCreatorPage = () => {
               <button
                 onClick={setTokenURI}
                 disabled={loading || !formData.collectionAddress || !formData.tokenId || !formData.metadataURI}
-                className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#614E41] text-white p-3 rounded-lg font-medium hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Setting...' : 'Set Token URI'}
               </button>

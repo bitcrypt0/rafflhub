@@ -254,7 +254,7 @@ function ERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -721,7 +721,7 @@ const PrizedRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -900,7 +900,7 @@ const NonPrizedRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1117,7 +1117,7 @@ const WhitelistRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1502,7 +1502,7 @@ const NewERC721DropForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1750,7 +1750,7 @@ function ExistingERC721DropForm() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             Create Raffle
           </Button>
@@ -2023,7 +2023,7 @@ function ExistingERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2472,7 +2472,7 @@ function LuckySaleERC721Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2762,7 +2762,7 @@ function LuckySaleERC1155Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2980,7 +2980,7 @@ function ETHGiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -3036,6 +3036,17 @@ function ERC20GiveawayForm() {
     checkWhitelist(formData.tokenAddress);
     return () => { cancelled = true; };
   }, [formData.tokenAddress, contracts]);
+
+  // Show toast when whitelist status changes
+  useEffect(() => {
+    if (formData.tokenAddress && !checkingWhitelist && whitelistStatus !== null) {
+      if (whitelistStatus) {
+        toast.success("This token is approved");
+      } else {
+        toast.error("This token is not approved");
+      }
+    }
+  }, [formData.tokenAddress, checkingWhitelist, whitelistStatus]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -3147,23 +3158,22 @@ function ERC20GiveawayForm() {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">ERC20 Token Address</label>
-            <input
-              type="text"
-              value={formData.tokenAddress || ''}
-              onChange={e => handleChange('tokenAddress', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
-              placeholder="0x..."
-              required
-            />
-            {formData.tokenAddress && !checkingWhitelist && whitelistStatus === true && (
-              <span className="text-xs text-green-600">Whitelisted</span>
-            )}
-            {formData.tokenAddress && !checkingWhitelist && whitelistStatus === false && (
-              <span className="text-xs text-red-600">Not whitelisted</span>
-            )}
-            {formData.tokenAddress && checkingWhitelist && (
-              <span className="text-xs text-muted-foreground">Checking whitelist status...</span>
-            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.tokenAddress || ''}
+                onChange={e => handleChange('tokenAddress', e.target.value)}
+                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
+              />
+              {formData.tokenAddress && !checkingWhitelist && whitelistStatus === true && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
+              )}
+              {formData.tokenAddress && !checkingWhitelist && whitelistStatus === false && (
+                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Total Token Amount</label>
@@ -3251,7 +3261,7 @@ function ERC20GiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -3729,7 +3739,7 @@ function NewERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>

@@ -134,7 +134,7 @@ const TokenPreApprovalCard = () => {
           </div>
         )}
         <Button
-          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors disabled:opacity-50"
+          className="w-full bg-[#614E41] text-white py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
           onClick={handleApprove}
           disabled={loading || !connected}
         >

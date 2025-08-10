@@ -5,6 +5,8 @@ import { useContract } from '../contexts/ContractContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { toast } from './ui/sonner';
+import { extractRevertReason } from '../utils/errorHandling';
 
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
@@ -96,14 +98,22 @@ const MinterApprovalComponent = () => {
       // Fetch name and symbol only for ERC721
       if (isERC721) {
         try {
-      const name = await contract.name();
-          setCollectionName(name);
+          if (typeof contract.name === 'function') {
+            const name = await contract.name();
+            setCollectionName(name);
+          } else {
+            setCollectionName('N/A');
+          }
         } catch (e) {
           setCollectionName('N/A');
         }
         try {
-      const symbol = await contract.symbol();
-      setCollectionSymbol(symbol);
+          if (typeof contract.symbol === 'function') {
+            const symbol = await contract.symbol();
+            setCollectionSymbol(symbol);
+          } else {
+            setCollectionSymbol('N/A');
+          }
         } catch (e) {
           setCollectionSymbol('N/A');
         }
@@ -148,11 +158,11 @@ const MinterApprovalComponent = () => {
 
   const setMinterApproval = async (approved) => {
     if (!fetchedCollection || !minterAddress || !provider) {
-      setError('Please fetch a collection and enter a valid minter address');
+      toast.error('Please fetch a collection and enter a valid minter address');
       return;
     }
     if (!ethers.utils.isAddress(minterAddress)) {
-      setError('Please enter a valid Ethereum address');
+      toast.error('Please enter a valid Ethereum address');
       return;
     }
     try {
@@ -182,11 +192,11 @@ const MinterApprovalComponent = () => {
         tx = await contract.setMinterApproval(minterAddress, approved);
       }
       await tx.wait();
-      setSuccess(`Minter ${approved ? 'set' : 'removed'} successfully!`);
+      toast.success(`Minter ${approved ? 'set' : 'removed'} successfully!`);
       setIsApproved(approved);
       setMinterAddress('');
     } catch (err) {
-      setError('Failed to set minter approval: ' + err.message);
+      toast.error(`Failed to set minter approval: ${extractRevertReason(err)}`);
     } finally {
       setLoading(false);
     }
@@ -194,7 +204,7 @@ const MinterApprovalComponent = () => {
 
   const toggleMinterApprovalLock = async () => {
     if (!fetchedCollection || !provider) {
-      setError('Please fetch a collection first');
+      toast.error('Please fetch a collection first');
       return;
     }
     try {
@@ -218,11 +228,22 @@ const MinterApprovalComponent = () => {
       }
       
       // Check if the current user is the owner
-      const owner = await contract.owner();
+      let owner;
+      try {
+        if (typeof contract.owner === 'function') {
+          owner = await contract.owner();
+        } else {
+          toast.error('Contract does not support owner functionality');
+          return;
+        }
+      } catch (e) {
+        toast.error('Failed to get contract owner');
+        return;
+      }
       const currentAddress = await signer.getAddress();
       
       if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
-        setError('Only the contract owner can lock/unlock minter approval');
+        toast.error('Only the contract owner can lock/unlock minter approval');
         return;
       }
 
@@ -247,11 +268,11 @@ const MinterApprovalComponent = () => {
       
       console.log('Transaction sent:', tx.hash);
       await tx.wait();
-      setSuccess(`Minter approval ${isLocked ? 'unlocked' : 'locked'} successfully!`);
+      toast.success(`Minter approval ${isLocked ? 'unlocked' : 'locked'} successfully!`);
       setIsLocked(!isLocked);
     } catch (err) {
       console.error('Error in toggleMinterApprovalLock:', err);
-      setError(`Failed to ${isLocked ? 'unlock' : 'lock'} minter approval: ${err.message}`);
+      toast.error(`Failed to ${isLocked ? 'unlock' : 'lock'} minter approval: ${extractRevertReason(err)}`);
     } finally {
       setLoading(false);
     }
@@ -321,7 +342,7 @@ const MinterApprovalComponent = () => {
             <Button
               onClick={fetchCollection}
               disabled={loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 h-10 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               title={!connected ? "Please connect your wallet" : !collectionAddress ? "Please enter a collection address" : "Load collection information"}
             >
               <Search className="h-4 w-4" />
@@ -416,7 +437,7 @@ const MinterApprovalComponent = () => {
               <Button
                 onClick={() => setMinterApproval(true)}
                 disabled={loading || isApproved || isLocked}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {loading ? (
@@ -429,7 +450,7 @@ const MinterApprovalComponent = () => {
               <Button
                 onClick={() => setMinterApproval(false)}
                 disabled={loading || !isApproved || isLocked}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {loading ? (
@@ -447,8 +468,8 @@ const MinterApprovalComponent = () => {
               variant={isLocked ? "default" : "outline"}
               className={`w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isLocked
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700'
-                  : 'border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                  ? 'bg-[#614E41] text-white hover:bg-[#4a3a30]'
+                  : 'border-[#614E41] text-[#614E41] hover:bg-[#614E41]/10'
               }`}
               title={isLocked ? "Unlock minter approval to allow changes" : "Lock minter approval to prevent changes"}
             >

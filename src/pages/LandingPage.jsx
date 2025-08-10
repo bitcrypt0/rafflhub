@@ -205,11 +205,19 @@ const RaffleCard = ({ raffle }) => {
 
           contract = getContractInstance(raffle.prizeCollection, contractType);
           if (contract) {
-            name = await contract.name();
+            try {
+              if (typeof contract.name === 'function') {
+                name = await contract.name();
+              }
+            } catch (nameError) {
+              name = null;
+            }
 
             // Try to fetch symbol
             try {
-              symbol = await contract.symbol();
+              if (typeof contract.symbol === 'function') {
+                symbol = await contract.symbol();
+              }
             } catch (symbolError) {
               symbol = null;
             }
@@ -219,9 +227,17 @@ const RaffleCard = ({ raffle }) => {
           try {
             contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
             if (contract) {
-              name = await contract.name();
               try {
-                symbol = await contract.symbol();
+                if (typeof contract.name === 'function') {
+                  name = await contract.name();
+                }
+              } catch (nameError) {
+                name = null;
+              }
+              try {
+                if (typeof contract.symbol === 'function') {
+                  symbol = await contract.symbol();
+                }
               } catch (symbolError) {
                 symbol = null;
               }
@@ -230,9 +246,17 @@ const RaffleCard = ({ raffle }) => {
             try {
               contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
               if (contract) {
-                name = await contract.name();
                 try {
-                  symbol = await contract.symbol();
+                  if (typeof contract.name === 'function') {
+                    name = await contract.name();
+                  }
+                } catch (nameError) {
+                  name = null;
+                }
+                try {
+                  if (typeof contract.symbol === 'function') {
+                    symbol = await contract.symbol();
+                  }
                 } catch (symbolError) {
                   symbol = null;
                 }
@@ -543,7 +567,7 @@ const RaffleCard = ({ raffle }) => {
       
       <Button
         onClick={handleViewRaffle}
-        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 border-0"
+        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0"
       >
         Visit Raffle Page
       </Button>

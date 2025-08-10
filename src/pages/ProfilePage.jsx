@@ -35,27 +35,8 @@ const ActivityCard = ({ activity }) => {
   const { getCurrencySymbol } = useNativeCurrency();
   
   const getActivityIcon = () => {
-    switch (activity.type) {
-      case 'ticket_purchase':
-        return <Ticket className="h-5 w-5 text-blue-500" />;
-      case 'raffle_created':
-        return <Plus className="h-5 w-5 text-green-500" />;
-      case 'raffle_deleted':
-        return <Trash2 className="h-5 w-5 text-red-500" />;
-      case 'prize_won':
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 'prize_claimed':
-        return <Gift className="h-5 w-5 text-purple-500" />;
-      case 'refund_claimed':
-        return <Minus className="h-5 w-5 text-orange-500" />;
-      case 'revenue_withdrawn':
-        return <DollarSign className="h-5 w-5 text-emerald-500" />;
-      case 'admin_withdrawn':
-        return <DollarSign className="h-5 w-5 text-indigo-500" />;
-
-      default:
-        return <Clock className="h-5 w-5 text-gray-500" />;
-    }
+    // Icons removed as requested
+    return null;
   };
 
   const getActivityDescription = () => {
@@ -232,14 +213,14 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       <div className="flex gap-2">
         <Button
           onClick={() => navigate(`/raffle/${raffle.address}`)}
-          className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm"
+          className="flex-1 bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           View
         </Button>
         <Button
           onClick={() => onViewRevenue(raffle)}
           disabled={!raffle.totalRevenue || parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) <= 0}
-          className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title={raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 ? "View revenue details" : "No revenue available"}
         >
           Revenue
@@ -247,7 +228,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         <Button
           onClick={() => onDelete(raffle)}
           disabled={!canDelete()}
-          className="px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           title={canDelete() ? (raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle") : "Cannot delete: Raffle is not in pending or active state"}
         >
           Delete
@@ -269,7 +250,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
             }
           }}
           disabled={!raffle.isCreator}
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+          className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
           title={raffle.isCreator ? "Mint NFT to winner" : "Only raffle creator can mint to winner"}
         >
           Mint to Winner
@@ -339,7 +320,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
       <div className="flex gap-2">
         <Button
           onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
-          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm"
+          className="w-full bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           Visit Raffle Page
         </Button>
@@ -347,7 +328,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         <Button
           onClick={() => onClaimPrize(ticket)}
           disabled={!canClaimPrize()}
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-purple-600 hover:to-purple-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title={canClaimPrize() ? "Claim your prize" : "Prize not available for claiming"}
         >
           Claim Prize
@@ -356,7 +337,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         {canClaimRefund() && (
           <button
             onClick={() => onClaimRefund(ticket)}
-            className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-3 py-2 rounded-md hover:from-orange-600 hover:to-amber-700 transition-colors text-sm"
+            className="bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
           >
             Claim Refund
           </button>
@@ -609,7 +590,7 @@ const DesktopProfilePage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+
           <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
           <p className="text-muted-foreground">
             Please connect your wallet to view your profile and activity.
@@ -768,7 +749,7 @@ const DesktopProfilePage = () => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowRevenueModal(false)}
-                  className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors"
+                  className="flex-1 bg-[#614E41] text-white px-4 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
                 >
                   Close
                 </button>
@@ -777,7 +758,7 @@ const DesktopProfilePage = () => {
                     // Handle revenue withdrawal
                     setShowRevenueModal(false);
                   }}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors"
+                  className="flex-1 bg-[#614E41] text-white px-4 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
                 >
                   Withdraw
                 </button>

@@ -1047,3 +1047,29 @@ body, #root {
   background: var(--background) !important;
   color: var(--foreground) !important;
 }
+
+/* Winner card highlighting for all themes */
+.winner-card-highlight {
+  background-color: rgb(254 240 138 / 0.5); /* yellow-50/50 for light theme */
+}
+
+.dark .winner-card-highlight {
+  background-color: rgb(180 83 9 / 0.1); /* yellow-900/10 for dark theme */
+}
+
+html.dim-blue .winner-card-highlight {
+  background-color: rgb(180 83 9 / 0.2); /* yellow-900/20 for dim-blue theme - more visible */
+}
+
+/* Winner text highlighting for all themes */
+.winner-text-highlight {
+  color: rgb(217 119 6); /* yellow-600 for light theme */
+}
+
+.dark .winner-text-highlight {
+  color: rgb(251 191 36); /* yellow-400 for dark theme */
+}
+
+html.dim-blue .winner-text-highlight {
+  color: rgb(251 191 36); /* yellow-400 for dim-blue theme */
+}

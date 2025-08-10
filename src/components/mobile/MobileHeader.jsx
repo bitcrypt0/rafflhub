@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, Search, Wallet, Sun, Moon, Waves } from 'lucide-react';
+import { Menu, X, Search, Wallet, Sun, Moon, Monitor } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { useWallet } from '../../contexts/WalletContext';
@@ -231,7 +231,7 @@ const MobileHeader = () => {
                       >
                         {getCurrentTheme().icon === 'Sun' && <Sun className="h-3 w-3" />}
                         {getCurrentTheme().icon === 'Moon' && <Moon className="h-3 w-3" />}
-                        {getCurrentTheme().icon === 'Waves' && <Waves className="h-3 w-3" />}
+                        {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-3 w-3" />}
                       </Button>
                     </div>
 

@@ -251,11 +251,11 @@ const ProfileTabs = ({
       {createdRaffles.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
-            <Plus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+
             <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
             <Button
               onClick={() => navigate('/create-raffle')}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+              className="bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
             >
               Create Your First Raffle
             </Button>
@@ -291,7 +291,7 @@ const ProfileTabs = ({
             <p className="text-muted-foreground mb-4">You haven't purchased any tickets yet</p>
             <Button
               onClick={() => navigate('/')}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
+              className="bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
             >
               Browse Raffles
             </Button>
@@ -433,7 +433,6 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <Activity className="h-5 w-5" />
             <span className="text-sm font-medium">Activity</span>
           </button>
           <button
@@ -444,7 +443,6 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <Plus className="h-5 w-5" />
             <span className="text-sm font-medium">Created</span>
           </button>
           <button
@@ -455,7 +453,6 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <Ticket className="h-5 w-5" />
             <span className="text-sm font-medium">Purchased Tickets</span>
           </button>
           <button
@@ -466,27 +463,22 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <BarChart3 className="h-5 w-5" />
             <span className="text-sm font-medium">Dashboard</span>
           </button>
         </div>
       ) : (
         // Desktop: horizontal tabs
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activity" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
+          <TabsTrigger value="activity">
             Activity
           </TabsTrigger>
-          <TabsTrigger value="created" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
+          <TabsTrigger value="created">
             My Raffles
           </TabsTrigger>
-          <TabsTrigger value="purchased" className="flex items-center gap-2">
-            <Ticket className="h-4 w-4" />
+          <TabsTrigger value="purchased">
             Purchased Tickets
           </TabsTrigger>
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+          <TabsTrigger value="dashboard">
             Dashboard
           </TabsTrigger>
         </TabsList>

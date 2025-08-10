@@ -9,16 +9,8 @@ const MobileActivityTab = ({ activities, claimRefund }) => {
   const navigate = useNavigate();
 
   const getActivityIcon = (type) => {
-    switch (type) {
-      case 'ticket_purchase':
-        return <Ticket className="h-4 w-4 text-blue-500" />;
-      case 'prize_won':
-        return <Trophy className="h-4 w-4 text-yellow-500" />;
-      case 'refund_claimed':
-        return <RefreshCw className="h-4 w-4 text-green-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
+    // Icons removed as requested
+    return null;
   };
 
   const getActivityTitle = (activity) => {
