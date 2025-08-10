@@ -16,8 +16,8 @@ function Switch({
       thumb: "h-4 w-4 rounded-full data-[state=checked]:translate-x-4"
     },
     mobile: {
-      root: "h-6 w-11 rounded-lg",
-      thumb: "h-4 w-4 rounded-md data-[state=checked]:translate-x-5"
+      root: "h-7 w-12 rounded-full",
+      thumb: "h-5 w-5 rounded-full data-[state=checked]:translate-x-5"
     },
     large: {
       root: "h-8 w-14 rounded-full",
@@ -31,7 +31,7 @@ function Switch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        "peer inline-flex shrink-0 cursor-pointer items-center border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted",
+        "peer inline-flex shrink-0 cursor-pointer items-center border-2 border-transparent transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted hover:data-[state=unchecked]:bg-muted/80 active:scale-95",
         currentSize.root,
         className
       )}
@@ -39,7 +39,7 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block bg-background shadow-lg ring-0 transition-transform data-[state=unchecked]:translate-x-0",
+          "pointer-events-none block bg-background shadow-lg ring-0 transition-all duration-200 ease-in-out data-[state=unchecked]:translate-x-0 data-[state=checked]:shadow-xl",
           currentSize.thumb
         )} />
     </SwitchPrimitive.Root>

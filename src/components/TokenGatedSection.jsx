@@ -21,15 +21,26 @@ const TokenGatedSection = ({
   return (
     <>
       {/* Token-Gated Toggle */}
-      <div className={`${isMobile ? 'p-4 bg-muted/5 rounded-lg border border-border mb-4' : 'mb-2'}`}>
-        <div className={`flex items-center ${isMobile ? 'gap-4' : 'gap-3'}`}>
-          <Switch
-            checked={isEnabled}
-            onCheckedChange={handleToggleChange}
-            size={isMobile ? "mobile" : "default"}
-          />
-          <div className="flex-1">
-            <label className={`font-medium block ${isMobile ? 'text-base mb-1' : 'text-sm'}`}>
+      <div className={`${isMobile ? 'p-4 bg-card/50 rounded-xl border border-border/50 mb-4 shadow-sm' : 'mb-2'}`}>
+        <div className={`flex items-center justify-between ${isMobile ? 'gap-4' : 'gap-3'}`}>
+          <div
+            className={`flex-1 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              isMobile
+                ? 'hover:bg-muted/10 active:bg-muted/20 rounded-lg p-1 -m-1'
+                : 'hover:text-foreground/80 active:text-foreground'
+            }`}
+            onClick={() => handleToggleChange(!isEnabled)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleToggleChange(!isEnabled);
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label={`${isEnabled ? 'Disable' : 'Enable'} token-gated access`}
+          >
+            <label className={`font-medium block cursor-pointer ${isMobile ? 'text-base mb-1' : 'text-sm'}`}>
               Enable Token-Gated Access
             </label>
             {isMobile && (
@@ -38,6 +49,11 @@ const TokenGatedSection = ({
               </p>
             )}
           </div>
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={handleToggleChange}
+            size={isMobile ? "mobile" : "default"}
+          />
         </div>
       </div>
 
