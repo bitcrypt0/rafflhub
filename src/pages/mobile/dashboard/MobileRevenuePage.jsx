@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, DollarSign, Search, AlertCircle, CheckCircle, TrendingUp, Zap, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../../contexts/WalletContext';
 import { useContract } from '../../../contexts/ContractContext';
@@ -363,10 +362,9 @@ const MobileRevenuePage = () => {
             onClick={() => navigate('/profile')}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-5 w-5" />
+            ←
           </button>
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-semibold">Withdraw Revenue</h1>
           </div>
         </div>
@@ -377,8 +375,7 @@ const MobileRevenuePage = () => {
         {/* Your Created Raffles */}
         {createdRaffles.length > 0 && (
           <div className="bg-card border border-border rounded-lg p-4">
-            <h2 className="font-medium mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+            <h2 className="font-medium mb-4">
               Your Created Raffles
             </h2>
             
@@ -431,8 +428,7 @@ const MobileRevenuePage = () => {
 
         {/* Manual Raffle Lookup */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="font-medium mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4" />
+          <h2 className="font-medium mb-4">
             Manual Raffle Lookup
           </h2>
           
@@ -464,8 +460,7 @@ const MobileRevenuePage = () => {
         {/* Raffle Information */}
         {raffleInfo && (
           <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <h3 className="font-medium mb-3">
               Raffle Information
             </h3>
             
@@ -535,7 +530,6 @@ const MobileRevenuePage = () => {
         {raffleInfo && !raffleInfo.isCreator && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-medium text-red-800 mb-1">Access Denied</h3>
                 <p className="text-sm text-red-700">
@@ -549,7 +543,6 @@ const MobileRevenuePage = () => {
         {/* Information */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-blue-800 mb-1">Revenue Withdrawal</h3>
               <p className="text-sm text-blue-700">
@@ -586,7 +579,7 @@ const MobileRevenuePage = () => {
                   disabled={loadingCollectionInfo || !connected}
                   className="bg-[#614E41] text-white p-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                 >
-                  <RefreshCw className={`h-4 w-4 ${loadingCollectionInfo ? 'animate-spin' : ''}`} />
+                  {loadingCollectionInfo ? '⟳' : '↻'}
                 </button>
               </div>
             </div>

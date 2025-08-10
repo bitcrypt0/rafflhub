@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Key, Search, AlertCircle, CheckCircle, UserCheck, UserX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../../contexts/WalletContext';
 import { useContract } from '../../../contexts/ContractContext';
@@ -181,10 +180,9 @@ const MobileMinterPage = () => {
             onClick={() => navigate('/profile')}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-5 w-5" />
+            ←
           </button>
           <div className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-semibold">Minter Approval</h1>
           </div>
         </div>
@@ -194,8 +192,7 @@ const MobileMinterPage = () => {
       <div className="p-4 space-y-6">
         {/* Collection Lookup */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="font-medium mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4" />
+          <h2 className="font-medium mb-4">
             Collection Lookup
           </h2>
           
@@ -227,8 +224,7 @@ const MobileMinterPage = () => {
         {/* Collection Information */}
         {collectionInfo && (
           <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <h3 className="font-medium mb-3">
               Collection Information
             </h3>
 
@@ -291,12 +287,7 @@ const MobileMinterPage = () => {
         {/* Minter Status */}
         {minterStatus && (
           <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              {minterStatus.isApproved ? (
-                <UserCheck className="h-4 w-4 text-green-600" />
-              ) : (
-                <UserX className="h-4 w-4 text-red-600" />
-              )}
+            <h3 className="font-medium mb-3">
               Minter Status
             </h3>
             
@@ -345,7 +336,6 @@ const MobileMinterPage = () => {
         {/* Warning */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-yellow-800 mb-1">Important</h3>
               <p className="text-sm text-yellow-700">

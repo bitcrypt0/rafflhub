@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Clock, Users, Settings } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import MobileProfileHeader from './MobileProfileHeader';
@@ -64,7 +63,9 @@ const MobileProfilePage = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <div className="h-16 w-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl text-muted-foreground">👤</span>
+          </div>
           <h2 className="text-xl font-semibold mb-2">Connect Your Wallet</h2>
           <p className="text-muted-foreground text-sm">
             Please connect your wallet to view your profile and activity.

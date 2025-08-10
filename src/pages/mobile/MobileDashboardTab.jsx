@@ -1,5 +1,4 @@
 import React from 'react';
-import { Settings, Crown, Key, Plus, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
