@@ -3375,8 +3375,6 @@ function NewERC1155DropForm() {
     winnersCount: '',
     maxTicketsPerParticipant: '',
     customTicketPrice: '',
-    collectionName: '',
-    collectionSymbol: '',
     baseURI: '',
     maxSupply: '',
     royaltyPercentage: '',
@@ -3445,8 +3443,8 @@ function NewERC1155DropForm() {
         standard: 1, // ERC1155
         prizeTokenId: parseInt(formData.prizeTokenId),
         amountPerWinner: parseInt(formData.amountPerWinner),
-        collectionName: formData.collectionName,
-        collectionSymbol: formData.collectionSymbol,
+        collectionName: '',
+        collectionSymbol: '',
         collectionBaseURI: formData.baseURI,
         creator: address,
         royaltyPercentage: formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0, // percent to bps
@@ -3478,8 +3476,6 @@ function NewERC1155DropForm() {
         winnersCount: '',
         maxTicketsPerParticipant: '',
         customTicketPrice: '',
-        collectionName: '',
-        collectionSymbol: '',
         baseURI: '',
         maxSupply: '',
         royaltyPercentage: '',
@@ -3621,26 +3617,6 @@ function NewERC1155DropForm() {
         <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4">
           <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-base font-medium mb-2">Collection Name</label>
-              <input
-                type="text"
-                value={formData.collectionName || ''}
-                onChange={e => handleChange('collectionName', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium mb-2">Collection Symbol</label>
-              <input
-                type="text"
-                value={formData.collectionSymbol || ''}
-                onChange={e => handleChange('collectionSymbol', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
             <div>
               <label className="block text-base font-medium mb-2">Base URI</label>
               <input

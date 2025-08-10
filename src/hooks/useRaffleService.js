@@ -215,7 +215,7 @@ export const useRaffleService = (options = {}) => {
       const searchOptions = {
         isMobile,
         useCache: true, // Always use cache for search
-        maxRaffles: isMobile ? 50 : 100 // More results for search
+        maxRaffles: null // No limits for search - search all available raffles
       };
 
       return await raffleService.searchRaffles(searchTerm, searchOptions);

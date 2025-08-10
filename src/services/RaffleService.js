@@ -37,7 +37,7 @@ class RaffleService {
     const isActuallyMobile = isMobile || isMobileBrowser;
 
     return {
-      maxRafflesToFetch: isActuallyMobile ? 8 : 20, // Even smaller batch on mobile
+      maxRafflesToFetch: isActuallyMobile ? 25 : 30, // Increased mobile limit to match desktop
       timeout: isActuallyMobile ? 20000 : 12000, // Longer timeout on mobile
       concurrency: isActuallyMobile ? 2 : 4, // Fewer concurrent requests on mobile
       batchDelay: isActuallyMobile ? 200 : 100, // Longer delay between batches

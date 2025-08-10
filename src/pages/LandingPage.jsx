@@ -448,36 +448,38 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold truncate flex-1 mr-2">{raffle.name}</h3>
-        {getStatusBadge()}
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
+      <div className="flex items-center justify-between mb-4 min-w-0">
+        <h3 className="text-base sm:text-lg font-semibold truncate flex-1 mr-2 min-w-0">{raffle.name}</h3>
+        <div className="flex-shrink-0">
+          {getStatusBadge()}
+        </div>
       </div>
       
-      <div className="space-y-2 mb-4">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Creator:</span>
-          <span className="font-mono">{raffle.creator?.slice(0, 10)}...</span>
+      <div className="space-y-2 mb-4 min-w-0">
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">Creator:</span>
+          <span className="font-mono truncate ml-2">{raffle.creator?.slice(0, 10)}...</span>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Ticket Fee:</span>
-          <span>{formatTicketPrice(raffle.ticketPrice || '0')}</span>
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">Ticket Fee:</span>
+          <span className="truncate ml-2">{formatTicketPrice(raffle.ticketPrice || '0')}</span>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Tickets Sold:</span>
-          <span>{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">Tickets Sold:</span>
+          <span className="truncate ml-2">{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Winners:</span>
-          <span>{raffle.winnersCount}</span>
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">Winners:</span>
+          <span className="truncate ml-2">{raffle.winnersCount}</span>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">{timeLabel}:</span>
-          <span>{timeRemaining}</span>
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">{timeLabel}:</span>
+          <span className="truncate ml-2">{timeRemaining}</span>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Type:</span>
-          <span className="px-2 py-1 rounded-full text-sm bg-muted/20">{getPrizeType()}</span>
+        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <span className="text-muted-foreground flex-shrink-0">Type:</span>
+          <span className="px-2 py-1 rounded-full text-xs sm:text-sm bg-muted/20 truncate ml-2">{getPrizeType()}</span>
         </div>
         {(() => {
           const prizeType = getPrizeType();
@@ -505,9 +507,9 @@ const RaffleCard = ({ raffle }) => {
 
 
             return (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Prize Token ID:</span>
-                <span className={collectionSymbol || collectionName ? '' : 'font-mono'}>
+              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+                <span className="text-muted-foreground flex-shrink-0">Prize Token ID:</span>
+                <span className={`truncate ml-2 ${collectionSymbol || collectionName ? '' : 'font-mono'}`}>
                   {displayValue}
                 </span>
               </div>
@@ -529,9 +531,9 @@ const RaffleCard = ({ raffle }) => {
 
 
             return (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Prize Collection:</span>
-                <span className={hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}>
+              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+                <span className="text-muted-foreground flex-shrink-0">Prize Collection:</span>
+                <span className={`truncate ml-2 ${hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}`}>
                   {displayValue}
                 </span>
               </div>
@@ -554,9 +556,9 @@ const RaffleCard = ({ raffle }) => {
           // Show Prize Amount for Token Giveaways and other giveaways
           if (prizeType === 'Token Giveaway' || prizeType.includes('Giveaway')) {
             return (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Prize Amount:</span>
-                <span>{getPrizeAmount()}</span>
+              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+                <span className="text-muted-foreground flex-shrink-0">Prize Amount:</span>
+                <span className="truncate ml-2">{getPrizeAmount()}</span>
               </div>
             );
           }
@@ -567,7 +569,7 @@ const RaffleCard = ({ raffle }) => {
       
       <Button
         onClick={handleViewRaffle}
-        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0"
+        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0 text-sm sm:text-base py-2 sm:py-3"
       >
         Visit Raffle Page
       </Button>
@@ -593,7 +595,7 @@ const LandingPage = () => {
     autoFetch: true,
     enablePolling: true,
     pollingInterval: 120000, // 2 minutes
-    maxRaffles: isMobile ? 15 : 25 // Limit based on platform
+    maxRaffles: null // No platform-based limits - fetch all raffles
   });
 
   // Use filter system
