@@ -348,10 +348,29 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
 };
 
 const ProfilePage = () => {
-  const { isMobile } = useMobileBreakpoints();
+  const { isMobile, isInitialized } = useMobileBreakpoints();
 
   // Use stable mobile detection to prevent switching between implementations
-  const [isMobileStable] = useState(isMobile);
+  const [isMobileStable, setIsMobileStable] = useState(null);
+
+  // Set stable mobile state once initialized
+  useEffect(() => {
+    if (isInitialized && isMobileStable === null) {
+      setIsMobileStable(isMobile);
+    }
+  }, [isMobile, isInitialized, isMobileStable]);
+
+  // Show loading state until mobile detection is stable
+  if (isMobileStable === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Route to mobile implementation for mobile devices
   if (isMobileStable) {

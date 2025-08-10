@@ -55,18 +55,25 @@ export const useMobileBreakpoints = () => {
         isInitialized: true
       };
 
-      // Debug logging for mobile issues
-      if (width < 768) {
-        console.log('Mobile detected:', {
-          width,
-          height,
-          userAgent: navigator.userAgent,
-          touchDevice: newBreakpoints.isTouchDevice,
-          isKeyboardResize: isLikelyKeyboardResize
-        });
-      }
+      // Only update if breakpoints actually changed to prevent infinite re-renders
+      if (newBreakpoints.isMobile !== breakpoints.isMobile ||
+          newBreakpoints.isTablet !== breakpoints.isTablet ||
+          newBreakpoints.isDesktop !== breakpoints.isDesktop ||
+          Math.abs(newBreakpoints.screenWidth - breakpoints.screenWidth) > 10) {
 
-      setBreakpoints(newBreakpoints);
+        // Debug logging for mobile issues
+        if (width < 768) {
+          console.log('Mobile detected:', {
+            width,
+            height,
+            userAgent: navigator.userAgent,
+            touchDevice: newBreakpoints.isTouchDevice,
+            isKeyboardResize: isLikelyKeyboardResize
+          });
+        }
+
+        setBreakpoints(newBreakpoints);
+      }
     };
 
     // Ensure we have the correct initial state
@@ -85,7 +92,7 @@ export const useMobileBreakpoints = () => {
       window.removeEventListener('resize', debouncedUpdate);
       clearTimeout(resizeTimeout);
     };
-  }, [breakpoints.isMobile, breakpoints.screenWidth]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   return breakpoints;
 };
