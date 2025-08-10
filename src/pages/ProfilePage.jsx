@@ -10,7 +10,7 @@ import MinterApprovalComponent from '../components/MinterApprovalComponent';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
-import ProfileTabs from '../components/ProfileTabs';
+// Import ProfileTabs only when needed for desktop
 import { toast } from '../components/ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
@@ -388,6 +388,9 @@ const ProfilePage = () => {
 
 // Desktop/Tablet ProfilePage implementation (original)
 const DesktopProfilePage = () => {
+  // Lazy import ProfileTabs to prevent it from being loaded on mobile
+  const ProfileTabs = React.lazy(() => import('../components/ProfileTabs'));
+
   const { connected, address, provider, chainId } = useWallet();
   const { contracts, getContractInstance, executeTransaction, executeCall } = useContract();
   const navigate = useNavigate();
@@ -730,12 +733,20 @@ const DesktopProfilePage = () => {
             <p className="text-gray-500 dark:text-gray-400">Loading...</p>
           </div>
         ) : (
-          <ProfileTabs
-            activities={transformedActivities}
-            createdRaffles={createdRaffles}
-            purchasedTickets={purchasedTickets}
-            creatorStats={{
-              totalRaffles: createdRaffles.length,
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground text-sm">Loading...</p>
+              </div>
+            </div>
+          }>
+            <ProfileTabs
+              activities={transformedActivities}
+              createdRaffles={createdRaffles}
+              purchasedTickets={purchasedTickets}
+              creatorStats={{
+                totalRaffles: createdRaffles.length,
               activeRaffles: createdRaffles.filter(r => r.state === 'active').length,
               totalRevenue: createdRaffles.reduce((sum, r) => sum + (r.ticketsSold * parseFloat(r.ticketPrice) / 1e18), 0).toFixed(4),
               monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
@@ -749,6 +760,7 @@ const DesktopProfilePage = () => {
                         onClaimPrize={handleClaimPrize}
                         onClaimRefund={handleClaimRefund}
                       />
+          </React.Suspense>
         )}
 
         {/* Revenue Modal */}

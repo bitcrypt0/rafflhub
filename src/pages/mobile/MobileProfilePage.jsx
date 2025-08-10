@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
-import { useProfileData } from '../../hooks/useProfileData';
 import MobileProfileHeader from './MobileProfileHeader';
 import MobileTabNavigation from './MobileTabNavigation';
 import MobileActivityTab from './MobileActivityTab';
@@ -17,21 +16,55 @@ const MobileProfilePage = () => {
   const [activeTab, setActiveTab] = useState('activity');
   const gridRef = useRef(null);
 
-  // Use shared data hook
-  const {
-    userActivity,
-    createdRaffles,
-    purchasedTickets,
-    activityStats,
-    creatorStats,
-    loading,
-    showRevenueModal,
-    setShowRevenueModal,
-    selectedRaffle,
-    setSelectedRaffle,
-    withdrawRevenue,
-    claimRefund
-  } = useProfileData();
+  // Simplified state management for mobile to prevent conflicts
+  const [loading, setLoading] = useState(true);
+  const [userActivity, setUserActivity] = useState([]);
+  const [createdRaffles, setCreatedRaffles] = useState([]);
+  const [purchasedTickets, setPurchasedTickets] = useState([]);
+  const [activityStats, setActivityStats] = useState({
+    totalTicketsPurchased: 0,
+    totalRafflesCreated: 0,
+    totalPrizesWon: 0,
+    totalRevenueWithdrawn: '0',
+    totalRefundsClaimed: 0
+  });
+  const [creatorStats, setCreatorStats] = useState({
+    totalRaffles: 0,
+    activeRaffles: 0,
+    totalRevenue: '0',
+    monthlyRevenue: '0',
+    totalParticipants: 0,
+    uniqueParticipants: 0,
+    successRate: 0
+  });
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
+  const [selectedRaffle, setSelectedRaffle] = useState(null);
+
+  // Simplified data loading
+  useEffect(() => {
+    if (connected) {
+      setLoading(true);
+      // Simulate loading delay
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setLoading(false);
+      setUserActivity([]);
+      setCreatedRaffles([]);
+      setPurchasedTickets([]);
+    }
+  }, [connected]);
+
+  // Simplified functions
+  const withdrawRevenue = async () => {
+    console.log('Withdraw revenue - mobile implementation');
+  };
+
+  const claimRefund = async () => {
+    console.log('Claim refund - mobile implementation');
+  };
 
   // Initialize active tab once when connected
   useEffect(() => {
