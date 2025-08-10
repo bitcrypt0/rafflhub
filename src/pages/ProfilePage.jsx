@@ -17,6 +17,7 @@ import { useProfileData } from '../hooks/useProfileData';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import MobileProfilePage from './mobile/MobileProfilePage';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -374,7 +375,11 @@ const ProfilePage = () => {
 
   // Route to mobile implementation for mobile devices
   if (isMobileStable) {
-    return <MobileProfilePage />;
+    return (
+      <ErrorBoundary>
+        <MobileProfilePage />
+      </ErrorBoundary>
+    );
   }
 
   // Desktop/Tablet implementation continues below

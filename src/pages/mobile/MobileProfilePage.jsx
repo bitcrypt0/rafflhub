@@ -33,30 +33,32 @@ const MobileProfilePage = () => {
     claimRefund
   } = useProfileData();
 
-  // Auto-close functionality when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Only close if we have an active tab and the click is outside the grid
-      if (activeTab && gridRef.current && !gridRef.current.contains(event.target)) {
-        setActiveTab(null); // Close all tabs when clicking outside
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [activeTab]); // Add activeTab as dependency
-
-  // Reset active tab when returning to page (fixes disappearing components)
+  // Initialize active tab once when connected
   useEffect(() => {
     if (connected && !activeTab) {
       setActiveTab('activity'); // Default to activity tab
     }
-  }, [connected, activeTab]);
+  }, [connected]); // Remove activeTab dependency to prevent loops
+
+  // Auto-close functionality when clicking outside (simplified)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only close if we have an active tab and the click is outside the grid
+      if (activeTab && gridRef.current && !gridRef.current.contains(event.target)) {
+        setActiveTab('activity'); // Reset to activity instead of null
+      }
+    };
+
+    if (activeTab) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }
+  }, [activeTab]);
 
   // Show connect wallet message if not connected
   if (!connected) {
