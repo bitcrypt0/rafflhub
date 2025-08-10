@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch } from './ui/switch';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
+import { CheckCircle } from 'lucide-react';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const TokenGatedSection = ({
@@ -21,14 +22,10 @@ const TokenGatedSection = ({
   return (
     <>
       {/* Token-Gated Toggle */}
-      <div className={`${isMobile ? 'p-4 bg-card/50 rounded-xl border border-border/50 mb-4 shadow-sm' : 'mb-2'}`}>
-        <div className={`flex items-center justify-between ${isMobile ? 'gap-4' : 'gap-3'}`}>
+      {isMobile ? (
+        <div className="p-4 bg-card/50 rounded-xl border border-border/50 mb-4 shadow-sm">
           <div
-            className={`flex-1 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-              isMobile
-                ? 'hover:bg-muted/10 active:bg-muted/20 rounded-lg p-1 -m-1'
-                : 'hover:text-foreground/80 active:text-foreground'
-            }`}
+            className="flex items-center justify-between gap-4 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted/10 active:bg-muted/20 rounded-lg p-1 -m-1"
             onClick={() => handleToggleChange(!isEnabled)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -40,22 +37,51 @@ const TokenGatedSection = ({
             role="button"
             aria-label={`${isEnabled ? 'Disable' : 'Enable'} token-gated access`}
           >
-            <label className={`font-medium block cursor-pointer ${isMobile ? 'text-base mb-1' : 'text-sm'}`}>
-              Enable Token-Gated Access
-            </label>
-            {isMobile && (
+            <div className="flex-1">
+              <label className="font-medium block cursor-pointer text-base mb-1">
+                Enable Token-Gated Access
+              </label>
               <p className="text-xs text-muted-foreground">
                 Restrict raffle participation to token holders
               </p>
-            )}
+            </div>
+            <CheckCircle
+              className={`h-6 w-6 transition-colors duration-200 ${
+                isEnabled
+                  ? 'text-green-600'
+                  : 'text-muted-foreground/40'
+              }`}
+            />
           </div>
-          <Switch
-            checked={isEnabled}
-            onCheckedChange={handleToggleChange}
-            size={isMobile ? "mobile" : "default"}
-          />
         </div>
-      </div>
+      ) : (
+        <div className="mb-2">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={isEnabled}
+              onCheckedChange={handleToggleChange}
+              size="default"
+            />
+            <div
+              className="flex-1 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:text-foreground/80 active:text-foreground"
+              onClick={() => handleToggleChange(!isEnabled)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleToggleChange(!isEnabled);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`${isEnabled ? 'Disable' : 'Enable'} token-gated access`}
+            >
+              <label className="font-medium block cursor-pointer text-sm">
+                Enable Token-Gated Access
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Token-Gated Fields */}
       {isEnabled && (
