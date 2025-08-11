@@ -105,7 +105,7 @@ import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import UnifiedMobileModal from './mobile/UnifiedMobileModal';
-
+import { initMobileKeyboardFix, cleanupMobileKeyboardFix } from '../utils/androidKeyboardFix';
 import UnifiedDashboardGrid from './dashboard/UnifiedDashboardGrid';
 
 const ProfileTabs = ({
@@ -123,7 +123,11 @@ const ProfileTabs = ({
   const { isMobile } = useMobileBreakpoints();
   const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
 
-
+  // Initialize mobile keyboard fix
+  useEffect(() => {
+    initMobileKeyboardFix();
+    return () => cleanupMobileKeyboardFix();
+  }, []);
 
   // Modal state management for desktop only
   const [modals, setModals] = useState({

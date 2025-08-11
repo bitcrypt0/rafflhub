@@ -10,15 +10,15 @@ const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test
 // Simplified initialization for backward compatibility
 export const initMobileKeyboardFix = () => {
   if (!isMobile) return;
-
-  // Silent initialization - no console logging to prevent noise
+  
+  console.log('Mobile keyboard fix initialized (simplified version)');
   // The new UnifiedDashboardGrid handles keyboard issues through responsive design
   // This function is kept for backward compatibility
 };
 
 // Cleanup function for backward compatibility
 export const cleanupMobileKeyboardFix = () => {
-  // Silent cleanup - no console logging to prevent noise
+  console.log('Mobile keyboard fix cleanup (simplified version)');
   // No complex cleanup needed with the new approach
 };
 

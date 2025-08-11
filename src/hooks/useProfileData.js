@@ -886,24 +886,13 @@ export const useProfileData = () => {
       const loadAllData = async () => {
         setLoading(true);
         try {
-          // Add timeout to prevent hanging
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Data loading timeout')), 30000)
-          );
-
-          await Promise.race([
-            Promise.all([
-              fetchOnChainActivity(),
-              fetchCreatedRaffles(),
-              fetchPurchasedTickets()
-            ]),
-            timeoutPromise
+          await Promise.all([
+            fetchOnChainActivity(),
+            fetchCreatedRaffles(),
+            fetchPurchasedTickets()
           ]);
         } catch (error) {
           console.error('Error loading profile data:', error);
-          if (error.message === 'Data loading timeout') {
-            console.log('checkResult :>> receive response timeout');
-          }
         } finally {
           setLoading(false);
         }

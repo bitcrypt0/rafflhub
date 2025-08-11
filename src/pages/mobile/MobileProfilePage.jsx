@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { User, Clock, Users, Settings } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
+import { useProfileData } from '../../hooks/useProfileData';
 import MobileProfileHeader from './MobileProfileHeader';
 import MobileTabNavigation from './MobileTabNavigation';
 import MobileActivityTab from './MobileActivityTab';
@@ -16,91 +18,53 @@ const MobileProfilePage = () => {
   const [activeTab, setActiveTab] = useState('activity');
   const gridRef = useRef(null);
 
-  // Simplified state management for mobile to prevent conflicts
-  const [loading, setLoading] = useState(true);
-  const [userActivity, setUserActivity] = useState([]);
-  const [createdRaffles, setCreatedRaffles] = useState([]);
-  const [purchasedTickets, setPurchasedTickets] = useState([]);
-  const [activityStats, setActivityStats] = useState({
-    totalTicketsPurchased: 0,
-    totalRafflesCreated: 0,
-    totalPrizesWon: 0,
-    totalRevenueWithdrawn: '0',
-    totalRefundsClaimed: 0
-  });
-  const [creatorStats, setCreatorStats] = useState({
-    totalRaffles: 0,
-    activeRaffles: 0,
-    totalRevenue: '0',
-    monthlyRevenue: '0',
-    totalParticipants: 0,
-    uniqueParticipants: 0,
-    successRate: 0
-  });
-  const [showRevenueModal, setShowRevenueModal] = useState(false);
-  const [selectedRaffle, setSelectedRaffle] = useState(null);
+  // Use shared data hook
+  const {
+    userActivity,
+    createdRaffles,
+    purchasedTickets,
+    activityStats,
+    creatorStats,
+    loading,
+    showRevenueModal,
+    setShowRevenueModal,
+    selectedRaffle,
+    setSelectedRaffle,
+    withdrawRevenue,
+    claimRefund
+  } = useProfileData();
 
-  // Simplified data loading
-  useEffect(() => {
-    if (connected) {
-      setLoading(true);
-      // Simulate loading delay
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setLoading(false);
-      setUserActivity([]);
-      setCreatedRaffles([]);
-      setPurchasedTickets([]);
-    }
-  }, [connected]);
-
-  // Simplified functions
-  const withdrawRevenue = async () => {
-    console.log('Withdraw revenue - mobile implementation');
-  };
-
-  const claimRefund = async () => {
-    console.log('Claim refund - mobile implementation');
-  };
-
-  // Initialize active tab once when connected
-  useEffect(() => {
-    if (connected && !activeTab) {
-      setActiveTab('activity'); // Default to activity tab
-    }
-  }, [connected]); // Remove activeTab dependency to prevent loops
-
-  // Auto-close functionality when clicking outside (simplified)
+  // Auto-close functionality when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Only close if we have an active tab and the click is outside the grid
       if (activeTab && gridRef.current && !gridRef.current.contains(event.target)) {
-        setActiveTab('activity'); // Reset to activity instead of null
+        setActiveTab(null); // Close all tabs when clicking outside
       }
     };
 
-    if (activeTab) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
 
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-        document.removeEventListener('touchstart', handleClickOutside);
-      };
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [activeTab]); // Add activeTab as dependency
+
+  // Reset active tab when returning to page (fixes disappearing components)
+  useEffect(() => {
+    if (connected && !activeTab) {
+      setActiveTab('activity'); // Default to activity tab
     }
-  }, [activeTab]);
+  }, [connected, activeTab]);
 
   // Show connect wallet message if not connected
   if (!connected) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="h-16 w-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-muted-foreground">👤</span>
-          </div>
+          <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Connect Your Wallet</h2>
           <p className="text-muted-foreground text-sm">
             Please connect your wallet to view your profile and activity.

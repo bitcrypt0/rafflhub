@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeft, Plus, Search, AlertCircle, CheckCircle, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../../contexts/WalletContext';
 import { useContract } from '../../../contexts/ContractContext';
@@ -201,9 +202,10 @@ const MobileTokenCreatorPage = () => {
             onClick={() => navigate('/profile')}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
-            ←
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-semibold">Create New Token ID & Set Token URI</h1>
           </div>
         </div>
@@ -213,7 +215,8 @@ const MobileTokenCreatorPage = () => {
       <div className="p-4 space-y-6">
         {/* Collection Lookup */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="font-medium mb-4">
+          <h2 className="font-medium mb-4 flex items-center gap-2">
+            <Search className="h-4 w-4" />
             Collection Lookup
           </h2>
           
@@ -245,7 +248,8 @@ const MobileTokenCreatorPage = () => {
         {/* Collection Information */}
         {collectionInfo && (
           <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <h3 className="font-medium mb-3">
+            <h3 className="font-medium mb-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
               Collection Information
             </h3>
             
@@ -330,7 +334,8 @@ const MobileTokenCreatorPage = () => {
         {/* Set Token URI */}
         {canCreateTokens && (
           <div className="bg-card border border-border rounded-lg p-4">
-            <h2 className="font-medium mb-4">
+            <h2 className="font-medium mb-4 flex items-center gap-2">
+              <Image className="h-4 w-4" />
               Set Token Metadata URI
             </h2>
             
@@ -382,6 +387,7 @@ const MobileTokenCreatorPage = () => {
         {collectionInfo && !collectionInfo.isOwner && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-medium text-red-800 mb-1">Access Denied</h3>
                 <p className="text-sm text-red-700">
@@ -395,6 +401,7 @@ const MobileTokenCreatorPage = () => {
         {/* Information */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-blue-800 mb-1">How it works</h3>
               <p className="text-sm text-blue-700">
