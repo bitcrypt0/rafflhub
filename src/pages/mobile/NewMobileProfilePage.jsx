@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -24,10 +24,11 @@ const NewMobileProfilePage = () => {
   const [activeDashboardComponent, setActiveDashboardComponent] = useState(null);
   const { getCurrencySymbol } = useNativeCurrency();
 
-  // Use existing data hook
+  // Use existing data hook - match desktop data usage
   const {
     userActivity,
     createdRaffles,
+    purchasedTickets,
     activityStats,
     loading,
     claimRefund,
@@ -52,7 +53,11 @@ const NewMobileProfilePage = () => {
       isLocked: false,
       currentMinter: '',
       collectionName: '',
-      collectionSymbol: ''
+      collectionSymbol: '',
+      collectionType: null, // 'erc721' or 'erc1155'
+      fetchedCollection: '',
+      error: '',
+      success: ''
     },
     tokenCreator: {
       loading: false,
@@ -65,7 +70,16 @@ const NewMobileProfilePage = () => {
     revenue: {
       loading: false,
       raffleData: { address: '', isCreator: false, revenueAmount: '0', raffleState: 'unknown' },
-      createdRaffles: []
+      createdRaffles: [],
+      // Creator Mint state
+      mintData: {
+        collectionAddress: '',
+        collectionType: 'erc721', // erc721 or erc1155
+        recipient: '',
+        quantity: '',
+        tokenId: '' // Only for ERC1155
+      },
+      mintLoading: false
     }
   });
 
@@ -258,22 +272,27 @@ const NewMobileProfilePage = () => {
           )}
         </div>
 
-        {/* Creator Stats */}
+        {/* Creator Stats - Match Desktop Calculations Exactly */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-lg p-4">
-            <div className="text-2xl font-bold">{creatorStats.totalRaffles}</div>
+            <div className="text-2xl font-bold">{createdRaffles.length}</div>
             <div className="text-sm text-muted-foreground">Total Raffles</div>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
-            <div className="text-2xl font-bold">{creatorStats.activeRaffles}</div>
+            <div className="text-2xl font-bold">{createdRaffles.filter(r => r.state === 'active').length}</div>
             <div className="text-sm text-muted-foreground">Active Raffles</div>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
-            <div className="text-2xl font-bold">{creatorStats.totalRevenue} {getCurrencySymbol()}</div>
+            <div className="text-2xl font-bold">
+              {createdRaffles.reduce((sum, r) => sum + (parseInt(r.ticketsSold || 0) * parseFloat(r.ticketPrice || 0)), 0).toFixed(4)} {getCurrencySymbol()}
+            </div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
-            <div className="text-2xl font-bold">{creatorStats.successRate}%</div>
+            <div className="text-2xl font-bold">
+              {createdRaffles.length > 0 ?
+                Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0}%
+            </div>
             <div className="text-sm text-muted-foreground">Success Rate</div>
           </div>
         </div>
@@ -454,11 +473,14 @@ const NewMobileProfilePage = () => {
           }
         });
 
-        // Check revealed status
+        // Check revealed status - match desktop implementation
         try {
-          const revealed = await contract.revealed();
-          updateRoyaltyState({ isRevealed: revealed });
+          // Use isRevealed() function (bool) - matches desktop
+          const revealed = await contract.isRevealed();
+          updateRoyaltyState({ isRevealed: !!revealed });
         } catch (e) {
+          // If isRevealed() does not exist, fallback to null
+          console.log('Could not fetch reveal status:', e.message);
           updateRoyaltyState({ isRevealed: null });
         }
 
@@ -658,7 +680,7 @@ const NewMobileProfilePage = () => {
     );
   };
 
-  // Minter Approval Component
+  // Minter Approval Component - Desktop Parity Implementation
   const renderMinterComponent = (handleBack) => {
     const state = dashboardStates.minter;
 
@@ -670,84 +692,248 @@ const NewMobileProfilePage = () => {
     };
 
     const validateAddress = (address) => {
-      return /^0x[a-fA-F0-9]{40}$/.test(address);
+      return ethers.utils.isAddress(address);
     };
 
-    const loadCollectionInfo = async () => {
-      if (!state.collectionAddress || !connected) {
-        toast.error('Please enter a collection address');
+    const extractRevertReason = (error) => {
+      if (error?.reason) return error.reason;
+      if (error?.message) {
+        const match = error.message.match(/reason="([^"]+)"/);
+        if (match) return match[1];
+        return error.message;
+      }
+      return 'Transaction failed';
+    };
+
+    // Fetch collection details by address - matches desktop implementation
+    const fetchCollection = async () => {
+      updateMinterState({
+        error: '',
+        success: '',
+        fetchedCollection: '',
+        isLocked: false,
+        currentMinter: '',
+        isApproved: false,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionType: null
+      });
+
+      if (!validateAddress(state.collectionAddress)) {
+        updateMinterState({ error: 'Please enter a valid Ethereum contract address.' });
         return;
       }
 
-      updateMinterState({ loading: true });
+      if (!provider) {
+        updateMinterState({ error: 'Provider not available.' });
+        return;
+      }
+
       try {
-        // Try ERC721 first
-        let contract, collectionType;
+        updateMinterState({ loading: true });
+
+        // Try fetching with ERC721 ABI first
+        let contract = new ethers.Contract(
+          state.collectionAddress,
+          contractABIs.erc721Prize,
+          provider
+        );
+
+        let collectionName = '';
+        let collectionSymbol = '';
+        let collectionType = 'erc721';
+
         try {
-          const erc721Contract = getContractInstance(state.collectionAddress, 'erc721Prize');
-          const name = await erc721Contract.name();
-          const symbol = await erc721Contract.symbol();
-          contract = erc721Contract;
-          collectionType = 'erc721';
-          updateMinterState({ collectionName: name, collectionSymbol: symbol });
-        } catch (e) {
-          // Try ERC1155
+          collectionName = await contract.name();
+          collectionSymbol = await contract.symbol();
+
+          // Check if it's actually ERC721 by calling a specific function
+          await contract.totalSupply();
+        } catch (erc721Error) {
+          // If ERC721 fails, try ERC1155
           try {
-            const erc1155Contract = getContractInstance(state.collectionAddress, 'erc1155Prize');
-            const name = await erc1155Contract.name();
-            contract = erc1155Contract;
+            contract = new ethers.Contract(
+              state.collectionAddress,
+              contractABIs.erc1155Prize,
+              provider
+            );
+            collectionName = await contract.name();
             collectionType = 'erc1155';
-            updateMinterState({ collectionName: name, collectionSymbol: '' });
-          } catch (e2) {
-            throw new Error('Unable to detect collection type');
+            collectionSymbol = ''; // ERC1155 typically doesn't have symbol
+          } catch (erc1155Error) {
+            throw new Error('Contract is neither ERC721 nor ERC1155 compatible');
           }
         }
 
-        // Get current minter info
+        // Get minter info
         const currentMinter = await contract.minter();
         const isLocked = await contract.minterLocked();
 
         updateMinterState({
+          fetchedCollection: state.collectionAddress,
+          collectionName,
+          collectionSymbol,
+          collectionType,
           currentMinter,
           isLocked,
+          success: `${collectionType.toUpperCase()} collection loaded successfully!`,
           loading: false
         });
 
-        toast.success('Collection loaded successfully!');
       } catch (error) {
-        console.error('Error loading collection:', error);
-        toast.error('Error loading collection: ' + error.message);
-        updateMinterState({ loading: false });
+        console.error('Error fetching collection:', error);
+        updateMinterState({
+          error: 'Failed to fetch collection: ' + error.message,
+          loading: false
+        });
       }
     };
 
+    // Load collection details when minter address changes
+    const loadCollectionDetails = async () => {
+      if (!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || !provider) {
+        return;
+      }
+
+      try {
+        updateMinterState({ loading: true, error: '' });
+
+        const contract = new ethers.Contract(
+          state.fetchedCollection,
+          state.collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+          provider
+        );
+
+        const currentMinter = await contract.minter();
+        updateMinterState({
+          isApproved: currentMinter.toLowerCase() === state.minterAddress.toLowerCase(),
+          currentMinter,
+          loading: false
+        });
+      } catch (err) {
+        updateMinterState({
+          error: 'Failed to load collection details: ' + err.message,
+          loading: false
+        });
+      }
+    };
+
+    // Set minter approval - matches desktop implementation
     const setMinterApproval = async (approved) => {
+      if (!state.fetchedCollection || !provider) {
+        toast.error('Please fetch a collection first');
+        return;
+      }
+
       if (!state.minterAddress || !validateAddress(state.minterAddress)) {
         toast.error('Please enter a valid minter address');
         return;
       }
 
-      updateMinterState({ loading: true });
       try {
+        updateMinterState({ loading: true, error: '', success: '' });
+
         const signer = provider.getSigner();
-        const contract = new ethers.Contract(
-          state.collectionAddress,
-          contractABIs.erc721Prize, // Use ERC721 ABI for now - could be enhanced to detect type
-          signer
-        );
+        let contract;
+
+        if (state.collectionType === 'erc721') {
+          contract = new ethers.Contract(
+            state.fetchedCollection,
+            contractABIs.erc721Prize,
+            signer
+          );
+        } else if (state.collectionType === 'erc1155') {
+          contract = new ethers.Contract(
+            state.fetchedCollection,
+            contractABIs.erc1155Prize,
+            signer
+          );
+        }
 
         const tx = await contract.setMinterApproval(state.minterAddress, approved);
         await tx.wait();
 
-        toast.success(`Minter ${approved ? 'approved' : 'revoked'} successfully!`);
-        await loadCollectionInfo();
-      } catch (error) {
-        console.error('Error setting minter approval:', error);
-        toast.error('Error setting minter approval: ' + error.message);
-      } finally {
+        toast.success(`Minter ${approved ? 'set' : 'removed'} successfully!`);
+        updateMinterState({
+          isApproved: approved,
+          minterAddress: '',
+          loading: false
+        });
+
+      } catch (err) {
+        toast.error(`Failed to set minter approval: ${extractRevertReason(err)}`);
         updateMinterState({ loading: false });
       }
     };
+
+    // Toggle minter approval lock - matches desktop implementation
+    const toggleMinterApprovalLock = async () => {
+      if (!state.fetchedCollection || !provider) {
+        toast.error('Please fetch a collection first');
+        return;
+      }
+
+      try {
+        updateMinterState({ loading: true, error: '', success: '' });
+
+        const signer = provider.getSigner();
+        let contract;
+
+        if (state.collectionType === 'erc721') {
+          contract = new ethers.Contract(
+            state.fetchedCollection,
+            contractABIs.erc721Prize,
+            signer
+          );
+        } else if (state.collectionType === 'erc1155') {
+          contract = new ethers.Contract(
+            state.fetchedCollection,
+            contractABIs.erc1155Prize,
+            signer
+          );
+        }
+
+        // Check if the current user is the owner
+        let owner;
+        try {
+          if (typeof contract.owner === 'function') {
+            owner = await contract.owner();
+          } else {
+            toast.error('Contract does not support owner functionality');
+            return;
+          }
+        } catch (e) {
+          toast.error('Failed to get contract owner');
+          return;
+        }
+
+        if (owner.toLowerCase() !== address.toLowerCase()) {
+          toast.error('Only the contract owner can lock/unlock minter approval');
+          return;
+        }
+
+        const tx = await contract.toggleMinterApprovalLock();
+        await tx.wait();
+
+        const newLockState = !state.isLocked;
+        toast.success(`Minter approval ${newLockState ? 'locked' : 'unlocked'} successfully!`);
+        updateMinterState({
+          isLocked: newLockState,
+          loading: false
+        });
+
+      } catch (err) {
+        toast.error(`Failed to toggle minter lock: ${extractRevertReason(err)}`);
+        updateMinterState({ loading: false });
+      }
+    };
+
+    // Auto-load collection details when minter address changes
+    React.useEffect(() => {
+      if (state.fetchedCollection && state.minterAddress && validateAddress(state.minterAddress) && provider) {
+        loadCollectionDetails();
+      }
+    }, [state.minterAddress, state.fetchedCollection]);
 
     return (
       <div className="p-4 space-y-4">
@@ -755,8 +941,24 @@ const NewMobileProfilePage = () => {
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
           </button>
-          <h3 className="text-lg font-semibold">Minter Approval</h3>
+          <h3 className="text-lg font-semibold">Minter Approval Management</h3>
         </div>
+
+        {/* Error/Success Messages */}
+        {state.error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <span className="text-sm text-red-800">{state.error}</span>
+            </div>
+          </div>
+        )}
+
+        {state.success && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="text-sm text-green-800">{state.success}</div>
+          </div>
+        )}
 
         {/* Collection Lookup */}
         <div className="space-y-4">
@@ -770,34 +972,47 @@ const NewMobileProfilePage = () => {
                 className="flex-1"
               />
               <button
-                onClick={loadCollectionInfo}
+                onClick={fetchCollection}
                 disabled={state.loading || !connected}
                 className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
               >
                 <Search className="h-4 w-4" />
-                {state.loading ? 'Loading...' : 'Load'}
+                {state.loading ? 'Loading...' : 'Fetch Collection'}
               </button>
             </div>
           </div>
         </div>
 
         {/* Collection Info */}
-        {state.collectionName && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
+        {state.fetchedCollection && (
+          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Collection Information</h4>
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-2">
+              <div><span className="font-medium">Address:</span> {state.fetchedCollection}</div>
               <div><span className="font-medium">Name:</span> {state.collectionName}</div>
               {state.collectionSymbol && (
                 <div><span className="font-medium">Symbol:</span> {state.collectionSymbol}</div>
               )}
+              <div><span className="font-medium">Type:</span> {state.collectionType?.toUpperCase()}</div>
               <div><span className="font-medium">Current Minter:</span> {state.currentMinter || 'None'}</div>
               <div><span className="font-medium">Minter Locked:</span> {state.isLocked ? 'Yes' : 'No'}</div>
+            </div>
+
+            {/* Lock/Unlock Button */}
+            <div className="pt-2 border-t border-border">
+              <button
+                onClick={toggleMinterApprovalLock}
+                disabled={state.loading || !connected}
+                className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
+              </button>
             </div>
           </div>
         )}
 
         {/* Minter Management */}
-        {state.collectionName && !state.isLocked && (
+        {state.fetchedCollection && (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Minter Address</label>
@@ -806,33 +1021,50 @@ const NewMobileProfilePage = () => {
                 onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
                 placeholder="0x..."
               />
+              {state.minterAddress && state.isApproved && (
+                <p className="text-sm text-green-600 mt-1">✓ This address is currently the minter</p>
+              )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => setMinterApproval(true)}
-                disabled={state.loading || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="flex-1 bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={state.loading || state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
+                className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : state.isApproved ? "Address is already the minter" : state.isLocked ? "Minter approval is locked" : "Set as minter"}
               >
-                <UserPlus className="h-4 w-4" />
-                {state.loading ? 'Setting...' : 'Set as Minter'}
+                {state.loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <UserPlus className="h-4 w-4" />
+                )}
+                Set Minter
               </button>
+
               <button
                 onClick={() => setMinterApproval(false)}
-                disabled={state.loading || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={state.loading || !state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
+                className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : !state.isApproved ? "Address is not currently the minter" : state.isLocked ? "Minter approval is locked" : "Remove minter"}
               >
-                {state.loading ? 'Revoking...' : 'Revoke Minter'}
+                {state.loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <UserPlus className="h-4 w-4" />
+                )}
+                Remove Minter
               </button>
             </div>
           </div>
         )}
 
-        {state.isLocked && (
+        {state.isLocked && state.fetchedCollection && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-800">Minter approval is locked for this collection.</span>
+              <span className="text-sm text-yellow-800">
+                Minter approval is locked for this collection. Use the unlock button above to enable changes.
+              </span>
             </div>
           </div>
         )}
@@ -912,9 +1144,13 @@ const NewMobileProfilePage = () => {
         const contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
 
         const result = await executeTransaction(
-          contract.createNewToken,
-          tokenId,
-          maxSupply
+          contract,
+          'createNewToken',
+          [tokenId, maxSupply],
+          {
+            description: `Creating new token ID ${tokenId} with max supply ${maxSupply}`,
+            successMessage: `Token ID ${tokenId} created successfully!`
+          }
         );
 
         if (result.success) {
@@ -955,9 +1191,13 @@ const NewMobileProfilePage = () => {
         const contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
 
         const result = await executeTransaction(
-          contract.setURI,
-          tokenId,
-          state.uriData.tokenURI
+          contract,
+          'setURI',
+          [tokenId, state.uriData.tokenURI],
+          {
+            description: `Setting URI for token ID ${tokenId}`,
+            successMessage: `Token URI set successfully for token ID ${tokenId}!`
+          }
         );
 
         if (result.success) {
@@ -1207,6 +1447,79 @@ const NewMobileProfilePage = () => {
       }
     };
 
+    // Creator Mint functionality - matches desktop implementation
+    const handleMintDataChange = (field, value) => {
+      updateRevenueState({
+        mintData: { ...state.mintData, [field]: value }
+      });
+    };
+
+    const handleCreatorMint = async () => {
+      if (!connected || !address) {
+        toast.error('Please connect your wallet');
+        return;
+      }
+
+      if (!state.mintData.collectionAddress || !state.mintData.recipient || !state.mintData.quantity) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      const quantity = parseInt(state.mintData.quantity);
+      if (isNaN(quantity) || quantity <= 0) {
+        toast.error('Please enter a valid quantity');
+        return;
+      }
+
+      if (state.mintData.collectionType === 'erc1155') {
+        const tokenId = parseInt(state.mintData.tokenId);
+        if (isNaN(tokenId) || tokenId < 0) {
+          toast.error('Please enter a valid token ID for ERC1155');
+          return;
+        }
+      }
+
+      updateRevenueState({ mintLoading: true });
+      try {
+        const contractType = state.mintData.collectionType === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+        const contract = getContractInstance(state.mintData.collectionAddress, contractType);
+
+        if (!contract) {
+          throw new Error('Failed to create contract instance');
+        }
+
+        let result;
+        if (state.mintData.collectionType === 'erc721') {
+          // ERC721: creatorMint(address to, uint256 quantity)
+          result = await executeTransaction(contract.creatorMint, state.mintData.recipient, quantity);
+        } else {
+          // ERC1155: creatorMint(address to, uint256 id, uint256 quantity)
+          const tokenId = parseInt(state.mintData.tokenId);
+          result = await executeTransaction(contract.creatorMint, state.mintData.recipient, tokenId, quantity);
+        }
+
+        if (result.success) {
+          toast.success(`Successfully minted ${quantity} token(s)! Transaction: ${result.hash}`);
+          // Clear form
+          updateRevenueState({
+            mintData: {
+              ...state.mintData,
+              recipient: '',
+              quantity: '',
+              tokenId: ''
+            }
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error('Error minting tokens:', error);
+        toast.error('Error minting tokens: ' + error.message);
+      } finally {
+        updateRevenueState({ mintLoading: false });
+      }
+    };
+
     const canWithdraw = state.raffleData.isCreator &&
                        parseFloat(state.raffleData.revenueAmount) > 0 &&
                        ['Completed', 'AllPrizesClaimed', 'Ended'].includes(state.raffleData.raffleState);
@@ -1310,6 +1623,251 @@ const NewMobileProfilePage = () => {
             {state.loading ? 'Withdrawing...' : `Withdraw ${state.raffleData.revenueAmount} ${getCurrencySymbol()}`}
           </button>
         )}
+
+        {/* Creator Mint Section - matches desktop implementation */}
+        <div className="space-y-4 border-t border-border pt-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Creator Mint</h3>
+            <p className="text-sm text-muted-foreground">
+              Mint tokens directly to winners or any address
+            </p>
+          </div>
+
+          {/* Collection Type Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Collection Type</label>
+            <Select
+              value={state.mintData.collectionType}
+              onValueChange={(value) => handleMintDataChange('collectionType', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select collection type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="erc721">ERC721</SelectItem>
+                <SelectItem value="erc1155">ERC1155</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Collection Address */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Collection Address</label>
+            <ResponsiveAddressInput
+              value={state.mintData.collectionAddress}
+              onChange={(e) => handleMintDataChange('collectionAddress', e.target.value)}
+              placeholder="0x..."
+            />
+          </div>
+
+          {/* Recipient Address */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Recipient Address</label>
+            <ResponsiveAddressInput
+              value={state.mintData.recipient}
+              onChange={(e) => handleMintDataChange('recipient', e.target.value)}
+              placeholder="0x..."
+            />
+          </div>
+
+          {/* Token ID (ERC1155 only) */}
+          {state.mintData.collectionType === 'erc1155' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Token ID</label>
+              <ResponsiveNumberInput
+                min="0"
+                value={state.mintData.tokenId}
+                onChange={(e) => handleMintDataChange('tokenId', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          )}
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Quantity</label>
+            <ResponsiveNumberInput
+              min="1"
+              value={state.mintData.quantity}
+              onChange={(e) => handleMintDataChange('quantity', e.target.value)}
+              placeholder="1"
+            />
+          </div>
+
+          {/* Mint Button */}
+          <button
+            onClick={handleCreatorMint}
+            disabled={state.mintLoading || !connected || !state.mintData.collectionAddress || !state.mintData.recipient || !state.mintData.quantity || (state.mintData.collectionType === 'erc1155' && !state.mintData.tokenId)}
+            className="w-full bg-green-600 text-white px-6 py-2.5 h-10 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}
+          </button>
+
+          {!connected && (
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <p className="text-muted-foreground text-sm">
+                Please connect your wallet to use creator mint functionality.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // My Raffles section rendering - matches desktop functionality
+  const renderMyRafflesSection = () => {
+    const handleRaffleClick = (raffleAddress) => {
+      navigate(`/raffle/${raffleAddress}`);
+    };
+
+    if (!createdRaffles || createdRaffles.length === 0) {
+      return (
+        <div className="p-6">
+          <div className="text-center py-12">
+            <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Raffles Created Yet</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              You haven't created any raffles yet. Start by creating your first raffle!
+            </p>
+            <button
+              onClick={() => navigate('/create-raffle')}
+              className="bg-[#614E41] text-white px-6 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors"
+            >
+              Create Your First Raffle
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">My Raffles</h3>
+          <span className="text-sm text-muted-foreground">{createdRaffles.length} raffles</span>
+        </div>
+
+        {createdRaffles.map((raffle) => (
+          <div
+            key={raffle.address}
+            className="bg-card border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-foreground text-sm mb-1">
+                  {raffle.name || `Raffle ${raffle.address.slice(0, 8)}...`}
+                </h4>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">State:</span> {raffle.state}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Tickets Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Revenue:</span> {raffle.revenue || '0'} {getCurrencySymbol()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  raffle.state === 'active' ? 'bg-green-100 text-green-800' :
+                  raffle.state === 'completed' ? 'bg-blue-100 text-blue-800' :
+                  raffle.state === 'ended' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {raffle.state}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => handleRaffleClick(raffle.address)}
+                className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Purchased Tickets section rendering - matches desktop functionality
+  const renderPurchasedTicketsSection = () => {
+    const handleRaffleClick = (raffleAddress) => {
+      navigate(`/raffle/${raffleAddress}`);
+    };
+
+    if (!purchasedTickets || purchasedTickets.length === 0) {
+      return (
+        <div className="p-6">
+          <div className="text-center py-12">
+            <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Tickets Purchased Yet</h3>
+            <p className="text-muted-foreground text-sm">
+              You haven't purchased any raffle tickets yet. Browse active raffles to get started!
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Purchased Tickets</h3>
+          <span className="text-sm text-muted-foreground">{purchasedTickets.length} tickets</span>
+        </div>
+
+        {purchasedTickets.map((ticket, index) => (
+          <div
+            key={ticket.id || index}
+            className="bg-card border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-foreground text-sm mb-1">
+                  {ticket.raffleName || `Raffle ${ticket.raffleAddress?.slice(0, 8)}...`}
+                </h4>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Tickets:</span> {ticket.quantity || ticket.ticketCount || 1}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Amount Paid:</span> {ticket.amount || '0'} {getCurrencySymbol()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">State:</span> {ticket.state || 'Unknown'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => handleRaffleClick(ticket.raffleAddress)}
+                className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+              >
+                View Raffle
+              </button>
+
+              {ticket.state === 'ended' && (
+                <button
+                  onClick={() => claimRefund(ticket.raffleAddress)}
+                  className="text-sm bg-green-500/10 text-green-600 px-3 py-1.5 rounded-md hover:bg-green-500/20 transition-colors"
+                >
+                  Claim Refund
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     );
   };
@@ -1317,6 +1875,8 @@ const NewMobileProfilePage = () => {
   // Main content rendering based on active tab
   const renderContent = () => {
     if (activeTab === 'activity') return renderActivitySection();
+    if (activeTab === 'created') return renderMyRafflesSection();
+    if (activeTab === 'purchased') return renderPurchasedTicketsSection();
     if (activeTab === 'dashboard') return renderDashboardSection();
     return renderActivitySection(); // Default fallback
   };
@@ -1335,7 +1895,7 @@ const NewMobileProfilePage = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - 4 tabs to match desktop */}
       <div className="p-4">
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
@@ -1347,6 +1907,26 @@ const NewMobileProfilePage = () => {
             }`}
           >
             <span className="text-sm font-medium">Activity</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('created')}
+            className={`p-4 rounded-lg border transition-colors ${
+              activeTab === 'created'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <span className="text-sm font-medium">My Raffles</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('purchased')}
+            className={`p-4 rounded-lg border transition-colors ${
+              activeTab === 'purchased'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background hover:bg-muted text-foreground'
+            }`}
+          >
+            <span className="text-sm font-medium">Tickets</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}

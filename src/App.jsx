@@ -21,10 +21,6 @@ if (process.env.NODE_ENV === 'development') {
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
-import MobileRoyaltyPage from './pages/mobile/dashboard/MobileRoyaltyPage';
-import MobileMinterPage from './pages/mobile/dashboard/MobileMinterPage';
-import MobileTokenCreatorPage from './pages/mobile/dashboard/MobileTokenCreatorPage';
-import MobileRevenuePage from './pages/mobile/dashboard/MobileRevenuePage';
 
 
 import './App.css';
@@ -68,12 +64,6 @@ const AppContent = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-
-          {/* Mobile Dashboard Utility Routes */}
-          <Route path="/profile/mobile/royalty" element={<MobileRoyaltyPage />} />
-          <Route path="/profile/mobile/minter" element={<MobileMinterPage />} />
-          <Route path="/profile/mobile/tokens" element={<MobileTokenCreatorPage />} />
-          <Route path="/profile/mobile/revenue" element={<MobileRevenuePage />} />
 
         </Routes>
       </main>
