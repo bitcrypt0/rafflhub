@@ -16,7 +16,7 @@ import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
-import MobileProfilePage from './mobile/MobileProfilePage';
+import NewMobileProfilePage from './mobile/NewMobileProfilePage';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -367,7 +367,7 @@ const ProfilePage = () => {
 
   // Now safe to route based on mobile detection after hydration is complete
   if (isMobile) {
-    return <MobileProfilePage />;
+    return <NewMobileProfilePage />;
   }
 
   // Desktop/Tablet implementation continues below
