@@ -14,6 +14,12 @@ import MobileDashboardTab from './MobileDashboardTab';
  * Uses full-screen navigation and simple forms to avoid Android keyboard issues
  */
 const MobileProfilePage = () => {
+  // Explicitly preserve component references to prevent tree-shaking in production
+  const componentRegistry = {
+    MobileActivityTab,
+    MobileCreatedRafflesTab,
+    MobileDashboardTab
+  };
   const { connected, address } = useWallet();
   const [activeTab, setActiveTab] = useState('activity');
   const gridRef = useRef(null);
@@ -74,37 +80,46 @@ const MobileProfilePage = () => {
     );
   }
 
-  // Tab configuration
-  const tabs = [
-    {
-      id: 'activity',
-      label: 'Activity',
-      component: MobileActivityTab,
-      props: { activities: userActivity, claimRefund }
-    },
-    {
-      id: 'created',
-      label: 'My Raffles',
-      component: MobileCreatedRafflesTab,
-      props: {
-        raffles: createdRaffles,
-        showRevenueModal,
-        setShowRevenueModal,
-        selectedRaffle,
-        setSelectedRaffle,
-        withdrawRevenue
-      }
-    },
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      component: MobileDashboardTab,
-      props: { creatorStats }
-    }
-  ];
+  // Direct component rendering to prevent tree-shaking issues in production
+  const renderActiveComponent = () => {
+    const commonProps = { key: activeTab }; // Add key to force re-render when tab changes
 
-  const activeTabData = tabs.find(tab => tab.id === activeTab);
-  const ActiveComponent = activeTabData?.component;
+    // Debug logging for production troubleshooting
+    console.log('MobileProfilePage: Rendering component for tab:', activeTab, {
+      componentRegistry: Object.keys(componentRegistry),
+      userActivity: !!userActivity,
+      createdRaffles: !!createdRaffles,
+      creatorStats: !!creatorStats
+    });
+
+    switch (activeTab) {
+      case 'activity':
+        return <MobileActivityTab {...commonProps} activities={userActivity} claimRefund={claimRefund} />;
+      case 'created':
+        return (
+          <MobileCreatedRafflesTab
+            {...commonProps}
+            raffles={createdRaffles}
+            showRevenueModal={showRevenueModal}
+            setShowRevenueModal={setShowRevenueModal}
+            selectedRaffle={selectedRaffle}
+            setSelectedRaffle={setSelectedRaffle}
+            withdrawRevenue={withdrawRevenue}
+          />
+        );
+      case 'dashboard':
+        return <MobileDashboardTab {...commonProps} creatorStats={creatorStats} />;
+      default:
+        return <MobileActivityTab {...commonProps} activities={userActivity} claimRefund={claimRefund} />;
+    }
+  };
+
+  // Tab configuration for navigation only
+  const tabs = [
+    { id: 'activity', label: 'Activity' },
+    { id: 'created', label: 'My Raffles' },
+    { id: 'dashboard', label: 'Dashboard' }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,7 +145,6 @@ const MobileProfilePage = () => {
             {/* Tab Navigation Grid - 3 tabs layout */}
             <div className="grid grid-cols-3 gap-3">
               {tabs.map((tab) => {
-                const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 
                 return (
@@ -139,14 +153,13 @@ const MobileProfilePage = () => {
                     onClick={() => setActiveTab(isActive ? null : tab.id)}
                     className={`
                       p-4 bg-card border rounded-lg transition-all duration-200
-                      flex items-center gap-3 text-left
+                      flex items-center justify-center text-center
                       ${isActive
                         ? 'border-primary shadow-md ring-1 ring-primary/20 bg-primary/5'
                         : 'border-border hover:border-primary/50 hover:bg-muted/30'
                       }
                     `}
                   >
-                    <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>
                       {tab.label}
                     </span>
@@ -175,11 +188,7 @@ const MobileProfilePage = () => {
                   </div>
                 </div>
                 <div className="min-h-[200px] max-h-[70vh] overflow-y-auto">
-                  {(() => {
-                    const activeTabData = tabs.find(tab => tab.id === activeTab);
-                    const Component = activeTabData?.component;
-                    return Component ? <Component {...(activeTabData.props || {})} /> : null;
-                  })()}
+                  {renderActiveComponent()}
                 </div>
               </div>
             )}
