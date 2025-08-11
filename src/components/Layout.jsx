@@ -70,20 +70,17 @@ const Header = () => {
   const hasFetchedRaffles = useRef(false);
 
   useEffect(() => {
-    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
-    if (location.pathname === '/profile') {
-      return;
-    }
-
     const handleClickOutside = (event) => {
-      // Exclude dashboard components and profile page interactions
+      // More targeted exclusions - only exclude specific dashboard interactions, not all profile page interactions
       const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
                                    event.target.closest('[data-dashboard-card]') ||
                                    event.target.closest('[data-profile-tab]') ||
-                                   event.target.closest('input') ||
-                                   event.target.closest('textarea') ||
-                                   event.target.closest('button') ||
-                                   event.target.closest('select');
+                                   event.target.closest('.dashboard-component') ||
+                                   event.target.closest('.profile-dashboard');
+
+      // Allow search field to close when clicking on other profile page elements
+      const isSearchRelated = event.target.closest('[data-search-container]') ||
+                             (searchInputWrapperRef.current && searchInputWrapperRef.current.contains(event.target));
 
       if (isDashboardInteraction) {
         return; // Don't close search when interacting with dashboard components
@@ -91,11 +88,11 @@ const Header = () => {
 
       if (
         showSearch &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target) &&
+        !isSearchRelated &&
         !mouseInDropdown
       ) {
         setShowSearch(false);
+        setInputFullyOpen(false);
         setSearchTerm('');
         setSearchResults([]);
       }
@@ -104,7 +101,7 @@ const Header = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showSearch, mouseInDropdown, location.pathname]);
+  }, [showSearch, mouseInDropdown]);
 
   // Fetch all raffles once for searching
   useEffect(() => {
@@ -190,42 +187,7 @@ const Header = () => {
     }, 150);
   };
 
-  // Close search field when clicking outside
-  useEffect(() => {
-    if (!showSearch) return;
-
-    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
-    if (location.pathname === '/profile') {
-      return;
-    }
-
-    function handleClickOutside(event) {
-      // Exclude dashboard components and profile page interactions
-      const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
-                                   event.target.closest('[data-dashboard-card]') ||
-                                   event.target.closest('[data-profile-tab]') ||
-                                   event.target.closest('input') ||
-                                   event.target.closest('textarea') ||
-                                   event.target.closest('button') ||
-                                   event.target.closest('select');
-
-      if (isDashboardInteraction) {
-        return; // Don't close search when interacting with dashboard components
-      }
-
-      if (
-        searchInputWrapperRef.current &&
-        !searchInputWrapperRef.current.contains(event.target)
-      ) {
-        setShowSearch(false);
-        setInputFullyOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showSearch, location.pathname]);
+  // This duplicate click-outside handler is now removed since we have the main one above
 
   useEffect(() => {
     hasFetchedRaffles.current = false;
@@ -267,6 +229,7 @@ const Header = () => {
                   </button>
                   <div
                     ref={searchInputWrapperRef}
+                    data-search-container
                     className="overflow-visible transition-all duration-300 rounded-md bg-background"
                     style={{ 
                       width: showSearch ? '16rem' : '0', 

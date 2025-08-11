@@ -46,29 +46,23 @@ const MobileHeader = () => {
   useEffect(() => {
     if (!showSearch) return;
 
-    // Completely disable click-outside handlers on ProfilePage to prevent dashboard interference
-    if (location.pathname === '/profile') {
-      return;
-    }
-
     const handleClickOutside = (event) => {
-      // Exclude dashboard components and profile page interactions
+      // More targeted exclusions - only exclude specific dashboard interactions, not all profile page interactions
       const isDashboardInteraction = event.target.closest('.mobile-component-container') ||
                                    event.target.closest('[data-dashboard-card]') ||
                                    event.target.closest('[data-profile-tab]') ||
-                                   event.target.closest('input') ||
-                                   event.target.closest('textarea') ||
-                                   event.target.closest('button') ||
-                                   event.target.closest('select');
+                                   event.target.closest('.dashboard-component') ||
+                                   event.target.closest('.profile-dashboard');
+
+      // Allow search field to close when clicking on other profile page elements
+      const isSearchRelated = event.target.closest('[data-search-container]') ||
+                             searchContainerRef.current?.contains(event.target);
 
       if (isDashboardInteraction) {
         return; // Don't close search when interacting with dashboard components
       }
 
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target)
-      ) {
+      if (!isSearchRelated) {
         setShowSearch(false);
         setSearchTerm('');
         clearSearch();
@@ -83,7 +77,7 @@ const MobileHeader = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [showSearch, clearSearch, location.pathname]);
+  }, [showSearch, clearSearch]);
 
   const handleConnectWallet = async () => {
     try {
@@ -253,6 +247,7 @@ const MobileHeader = () => {
         {showSearch && (
           <div
             ref={searchContainerRef}
+            data-search-container
             className="px-4 pb-3 border-t border-border/50 animate-in slide-in-from-top-2 duration-200"
           >
             <div className="relative">
