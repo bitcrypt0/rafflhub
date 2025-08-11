@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -398,59 +398,116 @@ const NewMobileProfilePage = () => {
 
     const loadCollectionInfo = async () => {
       if (!state.collectionData.address || !connected) {
-        toast.error('Please enter a collection address');
+        toast.error('Please enter a collection address and connect your wallet');
         return;
       }
 
       updateRoyaltyState({ loadingInfo: true });
       try {
-        // Auto-detect collection type
-        const erc721Contract = getContractInstance(state.collectionData.address, 'erc721Prize');
-        const erc1155Contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
+        // Auto-detect collection type by trying both ERC721 and ERC1155 - matches desktop
+        let contract = null;
+        let detectedType = null;
 
-        let contract, detectedType, name = 'Unknown', symbol = 'Unknown';
-
+        // Try ERC721 first
         try {
-          if (erc721Contract && typeof erc721Contract.name === 'function') {
-            name = await erc721Contract.name();
-            symbol = await erc721Contract.symbol();
-            contract = erc721Contract;
-            detectedType = 'erc721';
-          }
-        } catch (e) {
-          try {
-            if (erc1155Contract && typeof erc1155Contract.name === 'function') {
-              name = await erc1155Contract.name();
-              contract = erc1155Contract;
-              detectedType = 'erc1155';
+          const erc721Contract = getContractInstance(state.collectionData.address, 'erc721Prize');
+          if (erc721Contract) {
+            // Test if it's actually ERC721 using proper detection methods
+            try {
+              // Check if it supports ERC721 interface
+              const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd'); // ERC721 interface ID
+              if (supportsERC721) {
+                contract = erc721Contract;
+                detectedType = 'erc721';
+              }
+            } catch (e) {
+              // Try alternative method - check for ERC721-specific function
+              try {
+                // Try calling balanceOf with one parameter (address) - ERC721 specific
+                await erc721Contract.balanceOf(state.collectionData.address);
+                contract = erc721Contract;
+                detectedType = 'erc721';
+              } catch (e2) {
+                // Not ERC721
+              }
             }
-          } catch (e2) {
-            throw new Error('Unable to detect collection type');
+          }
+        } catch (error) {
+          // ERC721 failed, continue to ERC1155
+        }
+
+        // If ERC721 failed, try ERC1155
+        if (!contract) {
+          try {
+            const erc1155Contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
+            if (erc1155Contract) {
+              // Test if it's actually ERC1155 using proper detection methods
+              try {
+                // Check if it supports ERC1155 interface
+                const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26'); // ERC1155 interface ID
+                if (supportsERC1155) {
+                  contract = erc1155Contract;
+                  detectedType = 'erc1155';
+                }
+              } catch (e) {
+                // Try alternative method - check for ERC1155-specific function
+                try {
+                  // Try calling uri(0) - ERC1155 specific
+                  await erc1155Contract.uri(0);
+                  contract = erc1155Contract;
+                  detectedType = 'erc1155';
+                } catch (e2) {
+                  // Not ERC1155
+                }
+              }
+            }
+          } catch (error) {
+            // Neither worked
           }
         }
 
-        if (!contract) {
-          throw new Error('Failed to create contract instance');
+        if (!contract || !detectedType) {
+          throw new Error('Invalid collection address or unsupported contract type');
         }
 
+        // Update the collection type in state
         updateRoyaltyState({
           collectionData: { ...state.collectionData, type: detectedType }
         });
 
-        // Get owner
+        // Get collection info (handle ERC1155 contracts that may not have name/symbol)
+        let name = 'Unknown Collection';
+        let symbol = 'Unknown';
         let owner = 'Unknown';
+
+        try {
+          if (typeof contract.name === 'function') {
+            name = await contract.name();
+          }
+        } catch (e) {
+          // name() not available or failed
+        }
+
+        try {
+          if (typeof contract.symbol === 'function') {
+            symbol = await contract.symbol();
+          }
+        } catch (e) {
+          // symbol() not available or failed
+        }
+
         try {
           if (typeof contract.owner === 'function') {
             owner = await contract.owner();
           }
         } catch (e) {
-          // owner() not available
+          // owner() not available or failed
         }
 
         const isOwner = owner !== 'Unknown' && owner.toLowerCase() === address.toLowerCase();
 
         // Get current royalty info
-        const royaltyInfo = await contract.royaltyInfo(1, 10000);
+        const royaltyInfo = await contract.royaltyInfo(1, 10000); // Query with token ID 1 and sale price 10000
         const royaltyPercentage = await contract.royaltyPercentage();
         const royaltyRecipient = await contract.royaltyRecipient();
 
@@ -574,7 +631,7 @@ const NewMobileProfilePage = () => {
     };
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -610,14 +667,20 @@ const NewMobileProfilePage = () => {
           <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Collection Information</h4>
             <div className="space-y-2 text-sm">
-              <div><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
+              <div className="break-words"><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
               {state.collectionInfo.symbol && (
-                <div><span className="font-medium">Symbol:</span> {state.collectionInfo.symbol}</div>
+                <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionInfo.symbol}</div>
               )}
               <div><span className="font-medium">Type:</span> {state.collectionInfo.type?.toUpperCase()}</div>
-              <div><span className="font-medium">Owner:</span> {state.collectionInfo.owner}</div>
+              <div className="break-all">
+                <span className="font-medium">Owner:</span>
+                <span className="ml-1 font-mono text-xs">{state.collectionInfo.owner}</span>
+              </div>
               <div><span className="font-medium">Current Royalty:</span> {(parseFloat(state.collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%</div>
-              <div><span className="font-medium">Royalty Recipient:</span> {state.collectionInfo.currentRoyaltyRecipient}</div>
+              <div className="break-all">
+                <span className="font-medium">Royalty Recipient:</span>
+                <span className="ml-1 font-mono text-xs">{state.collectionInfo.currentRoyaltyRecipient}</span>
+              </div>
               {state.isRevealed !== null && (
                 <div><span className="font-medium">Revealed:</span> {state.isRevealed ? 'Yes' : 'No'}</div>
               )}
@@ -928,15 +991,11 @@ const NewMobileProfilePage = () => {
       }
     };
 
-    // Auto-load collection details when minter address changes
-    React.useEffect(() => {
-      if (state.fetchedCollection && state.minterAddress && validateAddress(state.minterAddress) && provider) {
-        loadCollectionDetails();
-      }
-    }, [state.minterAddress, state.fetchedCollection]);
+    // Auto-load collection details when minter address changes - removed useEffect to prevent dependency issues
+    // Users can manually check minter status by re-fetching collection if needed
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -988,13 +1047,19 @@ const NewMobileProfilePage = () => {
           <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Collection Information</h4>
             <div className="text-sm space-y-2">
-              <div><span className="font-medium">Address:</span> {state.fetchedCollection}</div>
-              <div><span className="font-medium">Name:</span> {state.collectionName}</div>
+              <div className="break-all">
+                <span className="font-medium">Address:</span>
+                <span className="ml-1 font-mono text-xs">{state.fetchedCollection}</span>
+              </div>
+              <div className="break-words"><span className="font-medium">Name:</span> {state.collectionName}</div>
               {state.collectionSymbol && (
-                <div><span className="font-medium">Symbol:</span> {state.collectionSymbol}</div>
+                <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionSymbol}</div>
               )}
               <div><span className="font-medium">Type:</span> {state.collectionType?.toUpperCase()}</div>
-              <div><span className="font-medium">Current Minter:</span> {state.currentMinter || 'None'}</div>
+              <div className="break-all">
+                <span className="font-medium">Current Minter:</span>
+                <span className="ml-1 font-mono text-xs">{state.currentMinter || 'None'}</span>
+              </div>
               <div><span className="font-medium">Minter Locked:</span> {state.isLocked ? 'Yes' : 'No'}</div>
             </div>
 
@@ -1083,6 +1148,57 @@ const NewMobileProfilePage = () => {
       }));
     };
 
+    // Detect contract type (ERC721 vs ERC1155) - matches desktop implementation
+    const detectContractType = async (contractAddress) => {
+      try {
+        // Try ERC1155 first - check for ERC1155-specific functions
+        const erc1155Contract = getContractInstance(contractAddress, 'erc1155Prize');
+        if (erc1155Contract) {
+          try {
+            // Check if it supports ERC1155 interface
+            const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26'); // ERC1155 interface ID
+            if (supportsERC1155) {
+              return { type: 'erc1155', contract: erc1155Contract };
+            }
+          } catch (e) {
+            // Try alternative method - check for ERC1155-specific function
+            try {
+              // Try calling balanceOf with two parameters (address, tokenId) - ERC1155 specific
+              await erc1155Contract.balanceOf(contractAddress, 0);
+              return { type: 'erc1155', contract: erc1155Contract };
+            } catch (e2) {
+              // Not ERC1155
+            }
+          }
+        }
+
+        // Try ERC721 - check for ERC721-specific functions
+        const erc721Contract = getContractInstance(contractAddress, 'erc721Prize');
+        if (erc721Contract) {
+          try {
+            // Check if it supports ERC721 interface
+            const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd'); // ERC721 interface ID
+            if (supportsERC721) {
+              return { type: 'erc721', contract: erc721Contract };
+            }
+          } catch (e) {
+            // Try alternative method - check for ERC721-specific function
+            try {
+              // Try calling balanceOf with one parameter (address) - ERC721 specific
+              await erc721Contract.balanceOf(contractAddress);
+              return { type: 'erc721', contract: erc721Contract };
+            } catch (e2) {
+              // Not ERC721
+            }
+          }
+        }
+
+        throw new Error('Contract is neither ERC721 nor ERC1155 compatible');
+      } catch (error) {
+        throw new Error(`Failed to detect contract type: ${error.message}`);
+      }
+    };
+
     const loadCollectionInfo = async () => {
       if (!state.collectionData.address || !connected) {
         toast.error('Please enter a collection address');
@@ -1091,21 +1207,38 @@ const NewMobileProfilePage = () => {
 
       updateTokenCreatorState({ loadingInfo: true });
       try {
-        const contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
-        if (!contract) throw new Error('Failed to create ERC1155 contract instance');
+        // First detect the contract type
+        const { type, contract } = await detectContractType(state.collectionData.address);
 
+        // This component is only for ERC1155 collections
+        if (type !== 'erc1155') {
+          toast.error('❌ This component is only for ERC1155 collections. The provided address appears to be an ERC721 collection. Please use the appropriate component for ERC721 collections.');
+          updateTokenCreatorState({
+            collectionInfo: {
+              address: state.collectionData.address,
+              isOwner: false,
+              owner: 'N/A',
+              type: 'erc721',
+              isBlocked: true
+            },
+            loadingInfo: false
+          });
+          return;
+        }
+
+        // Get collection info for ERC1155
         const name = await contract.name();
         const owner = await contract.owner();
         const isOwner = owner.toLowerCase() === address.toLowerCase();
-        const isBlocked = await contract.blocked();
 
         updateTokenCreatorState({
           collectionInfo: {
             address: state.collectionData.address,
             name,
             owner,
+            type: 'erc1155',
             isOwner,
-            isBlocked
+            isBlocked: false
           },
           collectionData: { ...state.collectionData, type: 'erc1155' }
         });
@@ -1217,7 +1350,7 @@ const NewMobileProfilePage = () => {
     };
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -1525,7 +1658,7 @@ const NewMobileProfilePage = () => {
                        ['Completed', 'AllPrizesClaimed', 'Ended'].includes(state.raffleData.raffleState);
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -1582,7 +1715,10 @@ const NewMobileProfilePage = () => {
           <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Raffle Information</h4>
             <div className="space-y-2 text-sm">
-              <div><span className="font-medium">Address:</span> {state.raffleData.address}</div>
+              <div className="break-all">
+                <span className="font-medium">Address:</span>
+                <span className="ml-1 font-mono text-xs">{state.raffleData.address}</span>
+              </div>
               <div><span className="font-medium">State:</span> {state.raffleData.raffleState}</div>
               <div><span className="font-medium">You are creator:</span> {state.raffleData.isCreator ? 'Yes' : 'No'}</div>
               <div><span className="font-medium">Available Revenue:</span> {state.raffleData.revenueAmount} {getCurrencySymbol()}</div>
@@ -1882,7 +2018,7 @@ const NewMobileProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <div className="bg-card border-b border-border p-4">
         <h1 className="text-2xl font-bold mb-2">Profile</h1>
