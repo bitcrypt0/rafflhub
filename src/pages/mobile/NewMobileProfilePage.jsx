@@ -525,6 +525,7 @@ const NewMobileProfilePage = () => {
           },
           collectionData: {
             ...state.collectionData,
+            type: detectedType,
             royaltyPercentage: (royaltyPercentage.toNumber() / 100).toString(),
             royaltyRecipient: royaltyRecipient
           }
@@ -768,7 +769,7 @@ const NewMobileProfilePage = () => {
       return 'Transaction failed';
     };
 
-    // Fetch collection details by address - matches desktop implementation
+    // Fetch collection details by address - matches desktop implementation exactly
     const fetchCollection = async () => {
       updateMinterState({
         error: '',
@@ -795,51 +796,84 @@ const NewMobileProfilePage = () => {
       try {
         updateMinterState({ loading: true });
 
-        // Try fetching with ERC721 ABI first
+        // Try fetching with ERC721 ABI first - matches desktop exactly
         let contract = new ethers.Contract(
           state.collectionAddress,
           contractABIs.erc721Prize,
           provider
         );
 
+        let isERC721 = false;
         let collectionName = '';
         let collectionSymbol = '';
-        let collectionType = 'erc721';
 
         try {
-          collectionName = await contract.name();
-          collectionSymbol = await contract.symbol();
+          // Test ERC721 compatibility by calling minter functions - matches desktop
+          const locked = await contract.minterLocked();
+          const currentMinter = await contract.minter();
 
-          // Check if it's actually ERC721 by calling a specific function
-          await contract.totalSupply();
-        } catch (erc721Error) {
-          // If ERC721 fails, try ERC1155
+          updateMinterState({
+            isLocked: locked,
+            currentMinter,
+            collectionType: 'erc721'
+          });
+          isERC721 = true;
+        } catch (err) {
+          // If ERC721 ABI fails, try ERC1155 ABI - matches desktop
+          contract = new ethers.Contract(
+            state.collectionAddress,
+            contractABIs.erc1155Prize,
+            provider
+          );
           try {
-            contract = new ethers.Contract(
-              state.collectionAddress,
-              contractABIs.erc1155Prize,
-              provider
-            );
-            collectionName = await contract.name();
-            collectionType = 'erc1155';
-            collectionSymbol = ''; // ERC1155 typically doesn't have symbol
-          } catch (erc1155Error) {
-            throw new Error('Contract is neither ERC721 nor ERC1155 compatible');
+            const locked = await contract.minterLocked();
+            const currentMinter = await contract.minter();
+
+            updateMinterState({
+              isLocked: locked,
+              currentMinter,
+              collectionType: 'erc1155'
+            });
+          } catch (err) {
+            updateMinterState({
+              error: 'Failed to fetch collection: ' + err.message,
+              collectionType: null,
+              loading: false
+            });
+            return;
           }
         }
 
-        // Get minter info
-        const currentMinter = await contract.minter();
-        const isLocked = await contract.minterLocked();
+        // Fetch name and symbol only for ERC721 - matches desktop
+        if (isERC721) {
+          try {
+            if (typeof contract.name === 'function') {
+              collectionName = await contract.name();
+            } else {
+              collectionName = 'N/A';
+            }
+          } catch (e) {
+            collectionName = 'N/A';
+          }
+          try {
+            if (typeof contract.symbol === 'function') {
+              collectionSymbol = await contract.symbol();
+            } else {
+              collectionSymbol = 'N/A';
+            }
+          } catch (e) {
+            collectionSymbol = 'N/A';
+          }
+        } else {
+          collectionName = 'ERC1155 Collection';
+          collectionSymbol = 'N/A';
+        }
 
         updateMinterState({
           fetchedCollection: state.collectionAddress,
           collectionName,
           collectionSymbol,
-          collectionType,
-          currentMinter,
-          isLocked,
-          success: `${collectionType.toUpperCase()} collection loaded successfully!`,
+          success: `Collection loaded successfully!`,
           loading: false
         });
 
@@ -1226,27 +1260,29 @@ const NewMobileProfilePage = () => {
           return;
         }
 
-        // Get collection info for ERC1155
-        const name = await contract.name();
+        // Check if user is owner - matches desktop implementation
         const owner = await contract.owner();
         const isOwner = owner.toLowerCase() === address.toLowerCase();
 
         updateTokenCreatorState({
           collectionInfo: {
             address: state.collectionData.address,
-            name,
-            owner,
-            type: 'erc1155',
             isOwner,
-            isBlocked: false
+            owner,
+            type: 'erc1155'
           },
           collectionData: { ...state.collectionData, type: 'erc1155' }
         });
 
-        toast.success('ERC1155 collection loaded successfully!');
+        if (!isOwner) {
+          toast.error('You are not the owner of this collection');
+        } else {
+          toast.success('ERC1155 collection loaded successfully');
+        }
+
       } catch (error) {
-        console.error('Error loading collection:', error);
-        toast.error('Error loading collection: ' + error.message);
+        console.error('Error loading collection info:', error);
+        toast.error('Failed to load collection info. Please verify the address is a valid ERC1155 collection.');
         updateTokenCreatorState({ collectionInfo: null });
       } finally {
         updateTokenCreatorState({ loadingInfo: false });
@@ -1383,15 +1419,34 @@ const NewMobileProfilePage = () => {
           </div>
         </div>
 
-        {/* Collection Info */}
+        {/* Collection Info Display */}
         {state.collectionInfo && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
-            <h4 className="font-semibold">Collection Information</h4>
-            <div className="text-sm space-y-1">
-              <div><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
-              <div><span className="font-medium">Owner:</span> {state.collectionInfo.owner}</div>
-              <div><span className="font-medium">Blocked:</span> {state.collectionInfo.isBlocked ? 'Yes' : 'No'}</div>
+          <div className={`p-4 rounded-lg border ${state.collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-muted/50'}`}>
+            <h4 className="text-sm text-muted-foreground mb-2">Collection Information</h4>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p className="break-all"><span className="text-muted-foreground">Address:</span> {state.collectionInfo.address}</p>
+              <p className="break-all"><span className="text-muted-foreground">Owner:</span> {state.collectionInfo.owner}</p>
+              <p><span className="text-muted-foreground">You are owner:</span> {state.collectionInfo.isOwner ? '✅ Yes' : '❌ No'}</p>
+              <p><span className="text-muted-foreground">Type:</span> {state.collectionInfo.type === 'erc721' ? '❌ ERC721 Collection (Incompatible)' : '✅ ERC1155 Collection'}</p>
             </div>
+
+            {state.collectionInfo.isBlocked && (
+              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <span className="text-sm text-destructive">
+                  This component only works with ERC1155 collections. The provided address is an ERC721 collection. Please use the appropriate component for ERC721 collections.
+                </span>
+              </div>
+            )}
+
+            {!state.collectionInfo.isBlocked && !state.collectionInfo.isOwner && (
+              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <span className="text-sm text-destructive">
+                  You are not the owner of this collection and cannot create new tokens.
+                </span>
+              </div>
+            )}
           </div>
         )}
 
