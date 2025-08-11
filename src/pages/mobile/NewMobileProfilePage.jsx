@@ -918,12 +918,12 @@ const NewMobileProfilePage = () => {
     // Set minter approval - matches desktop implementation
     const setMinterApproval = async (approved) => {
       if (!state.fetchedCollection || !provider) {
-        toast.error('Please fetch a collection first');
+        toast.error('Please fetch a collection and enter a valid minter address');
         return;
       }
 
       if (!state.minterAddress || !validateAddress(state.minterAddress)) {
-        toast.error('Please enter a valid minter address');
+        toast.error('Please enter a valid Ethereum address');
         return;
       }
 
@@ -953,12 +953,12 @@ const NewMobileProfilePage = () => {
         toast.success(`Minter ${approved ? 'set' : 'removed'} successfully!`);
         updateMinterState({
           isApproved: approved,
-          minterAddress: '',
-          loading: false
+          minterAddress: ''
         });
 
       } catch (err) {
         toast.error(`Failed to set minter approval: ${extractRevertReason(err)}`);
+      } finally {
         updateMinterState({ loading: false });
       }
     };
@@ -997,30 +997,53 @@ const NewMobileProfilePage = () => {
             owner = await contract.owner();
           } else {
             toast.error('Contract does not support owner functionality');
+            updateMinterState({ loading: false });
             return;
           }
         } catch (e) {
           toast.error('Failed to get contract owner');
+          updateMinterState({ loading: false });
           return;
         }
 
-        if (owner.toLowerCase() !== address.toLowerCase()) {
+        const currentAddress = await signer.getAddress();
+
+        if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
           toast.error('Only the contract owner can lock/unlock minter approval');
+          updateMinterState({ loading: false });
           return;
         }
 
-        const tx = await contract.toggleMinterApprovalLock();
-        await tx.wait();
+        let tx;
+        if (state.collectionType === 'erc721') {
+          if (state.isLocked) {
+            console.log('Attempting to unlock minter approval...');
+            tx = await contract.unlockMinterApproval();
+          } else {
+            console.log('Attempting to lock minter approval...');
+            tx = await contract.lockMinterApproval();
+          }
+        } else if (state.collectionType === 'erc1155') {
+          if (state.isLocked) {
+            console.log('Attempting to unlock minter approval...');
+            tx = await contract.unlockMinterApproval();
+          } else {
+            console.log('Attempting to lock minter approval...');
+            tx = await contract.lockMinterApproval();
+          }
+        }
 
-        const newLockState = !state.isLocked;
-        toast.success(`Minter approval ${newLockState ? 'locked' : 'unlocked'} successfully!`);
+        console.log('Transaction sent:', tx.hash);
+        await tx.wait();
+        toast.success(`Minter approval ${state.isLocked ? 'unlocked' : 'locked'} successfully!`);
         updateMinterState({
-          isLocked: newLockState,
-          loading: false
+          isLocked: !state.isLocked
         });
 
       } catch (err) {
-        toast.error(`Failed to toggle minter lock: ${extractRevertReason(err)}`);
+        console.error('Error in toggleMinterApprovalLock:', err);
+        toast.error(`Failed to ${state.isLocked ? 'unlock' : 'lock'} minter approval: ${extractRevertReason(err)}`);
+      } finally {
         updateMinterState({ loading: false });
       }
     };
@@ -1545,47 +1568,65 @@ const NewMobileProfilePage = () => {
 
     const loadRaffleInfo = async (raffleAddress) => {
       if (!raffleAddress || !connected) {
-        toast.error('Please enter a raffle address');
+        toast.error('Please enter a raffle address and connect your wallet');
         return;
       }
 
       updateRevenueState({ loading: true });
       try {
         const contract = getContractInstance(raffleAddress, 'raffle');
-        if (!contract) throw new Error('Failed to create raffle contract instance');
 
-        const creator = await contract.creator();
+        if (!contract) {
+          throw new Error('Failed to create raffle contract instance');
+        }
+
+        // Get raffle information - matches desktop implementation
+        const [
+          creator,
+          totalRevenue,
+          state
+        ] = await Promise.all([
+          contract.creator(),
+          contract.totalCreatorRevenue(),
+          contract.state()
+        ]);
+
         const isCreator = creator.toLowerCase() === address.toLowerCase();
 
-        // Get raffle state
-        const state = await contract.raffleState();
-        const stateNames = ['Active', 'Ended', 'Completed', 'AllPrizesClaimed'];
-        const raffleState = stateNames[state] || 'Unknown';
-
-        // Get revenue amount
-        let revenueAmount = '0';
-        try {
-          const revenue = await contract.creatorRevenue();
-          revenueAmount = ethers.utils.formatEther(revenue);
-        } catch (e) {
-          console.log('Could not fetch revenue amount:', e);
-        }
+        // Map state number to readable state - matches desktop exactly
+        const stateNames = [
+          'Pending',           // 0
+          'Active',            // 1
+          'Ended',             // 2
+          'Drawing',           // 3
+          'Completed',         // 4
+          'Deleted',           // 5
+          'ActivationFailed',  // 6
+          'AllPrizesClaimed',  // 7
+          'Unengaged'          // 8
+        ];
+        const stateName = stateNames[state] || 'Unknown';
 
         updateRevenueState({
           raffleData: {
             address: raffleAddress,
+            revenueAmount: ethers.utils.formatEther(totalRevenue),
             isCreator,
-            revenueAmount,
-            raffleState
+            raffleState: stateName,
+            totalRevenue
           }
         });
 
-        toast.success('Raffle info loaded successfully!');
       } catch (error) {
         console.error('Error loading raffle info:', error);
         toast.error('Error loading raffle info: ' + error.message);
         updateRevenueState({
-          raffleData: { address: '', isCreator: false, revenueAmount: '0', raffleState: 'unknown' }
+          raffleData: {
+            address: raffleAddress,
+            revenueAmount: '0',
+            isCreator: false,
+            raffleState: 'error'
+          }
         });
       } finally {
         updateRevenueState({ loading: false });
