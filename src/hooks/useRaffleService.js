@@ -485,10 +485,10 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
 
     // Listen when raffle is in states where events are likely:
     // 1 = Active (for TicketsPurchased events)
-    // 2 = Drawing (for WinnersSelected events - this is key!)
-    // 3 = Completed (for PrizeClaimed events)
-    // 4 = Prizes Claimed (for PrizeClaimed events)
-    const activeStates = [1, 2, 3, 4];
+    // 3 = Drawing (for WinnersSelected events - this is key!)
+    // 4 = Completed (for PrizeClaimed events)
+    // 7 = Prizes Claimed (for PrizeClaimed events)
+    const activeStates = [1, 3, 4, 7];
     const shouldListenNow = currentRaffleState === null || activeStates.includes(currentRaffleState);
 
     console.log(`🎧 Should listen check: state=${currentRaffleState}, shouldListen=${shouldListenNow}, stopOnCompletion=${stopOnCompletion}`);

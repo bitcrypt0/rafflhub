@@ -259,7 +259,7 @@ const NewMobileProfilePage = () => {
     }
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 mobile-component-container">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Creator Dashboard</h3>
           {activeDashboardComponent && (
@@ -304,6 +304,7 @@ const NewMobileProfilePage = () => {
           {/* Royalty & Reveal */}
           <button
             onClick={() => setActiveDashboardComponent('royalty')}
+            data-dashboard-card
             className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -318,6 +319,7 @@ const NewMobileProfilePage = () => {
           {/* Minter Approval */}
           <button
             onClick={() => setActiveDashboardComponent('minter')}
+            data-dashboard-card
             className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -332,6 +334,7 @@ const NewMobileProfilePage = () => {
           {/* Create New Token ID & Set Token URI */}
           <button
             onClick={() => setActiveDashboardComponent('tokenCreator')}
+            data-dashboard-card
             className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -346,6 +349,7 @@ const NewMobileProfilePage = () => {
           {/* Creator Mint & Revenue Withdrawal */}
           <button
             onClick={() => setActiveDashboardComponent('revenue')}
+            data-dashboard-card
             className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -632,7 +636,7 @@ const NewMobileProfilePage = () => {
     };
 
     return (
-      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -1052,7 +1056,7 @@ const NewMobileProfilePage = () => {
     // Users can manually check minter status by re-fetching collection if needed
 
     return (
-      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -1409,7 +1413,7 @@ const NewMobileProfilePage = () => {
     };
 
     return (
-      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -1754,7 +1758,7 @@ const NewMobileProfilePage = () => {
                        ['Completed', 'AllPrizesClaimed', 'Ended'].includes(state.raffleData.raffleState);
 
     return (
-      <div className="p-4 space-y-4 max-w-full overflow-x-hidden">
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={handleBack} className="text-primary hover:text-primary/80">
             ← Back
@@ -2132,6 +2136,7 @@ const NewMobileProfilePage = () => {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             onClick={() => setActiveTab('activity')}
+            data-profile-tab
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'activity'
                 ? 'border-primary bg-primary/10 text-primary'
@@ -2142,6 +2147,7 @@ const NewMobileProfilePage = () => {
           </button>
           <button
             onClick={() => setActiveTab('created')}
+            data-profile-tab
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'created'
                 ? 'border-primary bg-primary/10 text-primary'
@@ -2152,6 +2158,7 @@ const NewMobileProfilePage = () => {
           </button>
           <button
             onClick={() => setActiveTab('purchased')}
+            data-profile-tab
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'purchased'
                 ? 'border-primary bg-primary/10 text-primary'
@@ -2162,6 +2169,7 @@ const NewMobileProfilePage = () => {
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}
+            data-profile-tab
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'dashboard'
                 ? 'border-primary bg-primary/10 text-primary'

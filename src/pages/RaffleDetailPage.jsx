@@ -850,10 +850,13 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
 };
 
 // Enhanced Winner Card Component with improved styling
-const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName }) => {
+const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName, isEscrowedPrize }) => {
   const isCurrentUser = connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase();
   const { formatPrizeAmount } = useNativeCurrency();
   const [erc20Symbol, setErc20Symbol] = React.useState('TOKEN');
+  const [actualAmountPerWinner, setActualAmountPerWinner] = React.useState(null);
+  const [collectionSymbol, setCollectionSymbol] = React.useState(null);
+  const { getContractInstance } = useContract();
 
   // Fetch ERC20 token symbol if needed
   React.useEffect(() => {
@@ -888,6 +891,105 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
     return () => { isMounted = false; };
   }, [raffle.erc20PrizeToken]);
 
+  // Fetch actual amountPerWinner from contract for all prize types
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const fetchAmountPerWinner = async () => {
+      if (!raffle.isPrized) {
+        if (isMounted) setActualAmountPerWinner(null);
+        return;
+      }
+
+      try {
+        const raffleContract = getContractInstance(raffle.address, 'raffle');
+        if (!raffleContract) {
+          console.warn('Failed to get raffle contract instance');
+          if (isMounted) setActualAmountPerWinner(raffle.amountPerWinner || 1);
+          return;
+        }
+
+        // Try to call amountPerWinner() function from contract
+        const contractAmountPerWinner = await raffleContract.amountPerWinner();
+        const amount = contractAmountPerWinner.toNumber ? contractAmountPerWinner.toNumber() : Number(contractAmountPerWinner);
+
+        if (isMounted) {
+          setActualAmountPerWinner(amount);
+          console.log(`✅ Successfully fetched amountPerWinner from contract ${raffle.address}:`, amount);
+        }
+      } catch (error) {
+        console.warn(`❌ Failed to fetch amountPerWinner from contract ${raffle.address}, using fallback:`, error.message);
+        // Fallback to raffle data or default value
+        if (isMounted) {
+          const fallbackAmount = raffle.amountPerWinner || 1;
+          setActualAmountPerWinner(fallbackAmount);
+          console.log(`📋 Using fallback amountPerWinner for ${raffle.address}:`, fallbackAmount);
+        }
+      }
+    };
+
+    fetchAmountPerWinner();
+    return () => { isMounted = false; };
+  }, [raffle.address, raffle.isPrized, raffle.amountPerWinner, getContractInstance]);
+
+  // Fetch collection symbol for NFT prizes (similar to RaffleCard)
+  React.useEffect(() => {
+    const fetchCollectionSymbol = async () => {
+      if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
+        setCollectionSymbol(null);
+        return;
+      }
+
+      try {
+        let contract = null;
+        let symbol = null;
+
+        if (typeof raffle.standard !== 'undefined') {
+          // Use standard if available (like RaffleCard)
+          const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+
+          contract = getContractInstance(raffle.prizeCollection, contractType);
+          if (contract) {
+            try {
+              if (typeof contract.symbol === 'function') {
+                symbol = await contract.symbol();
+              }
+            } catch (symbolError) {
+              symbol = null;
+            }
+          }
+        } else {
+          // Fallback: try both ERC721 and ERC1155 (like RaffleCard)
+          try {
+            contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
+            if (contract && typeof contract.symbol === 'function') {
+              symbol = await contract.symbol();
+            }
+          } catch (erc721Error) {
+            try {
+              contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
+              if (contract && typeof contract.symbol === 'function') {
+                symbol = await contract.symbol();
+              }
+            } catch (erc1155Error) {
+              // Both failed, continue with null symbol
+            }
+          }
+        }
+
+        setCollectionSymbol(symbol);
+        if (symbol) {
+          console.log(`✅ Successfully fetched collection symbol for ${raffle.prizeCollection}:`, symbol);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch collection symbol:', error);
+        setCollectionSymbol(null);
+      }
+    };
+
+    fetchCollectionSymbol();
+  }, [raffle, getContractInstance]);
+
   const formatAddress = (address) => {
     return address; // Display full address instead of truncated
   };
@@ -895,34 +997,104 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   const getPrizeInfo = () => {
     if (!raffle.isPrized) return 'No Prize';
 
-    const winnersCount = raffle.winnersCount || 1; // Fallback to 1 to avoid division by zero
-
-    // Native Prize - Divide total amount by number of winners
-    if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
-      const prizePerWinner = raffle.nativePrizeAmount.div(winnersCount);
-      return formatPrizeAmount(prizePerWinner);
+    // Show loading state while fetching amountPerWinner from contract
+    if (actualAmountPerWinner === null && raffle.isPrized) {
+      return 'Loading prize info...';
     }
 
-    // ERC20 Prize - Divide total amount by number of winners
+    // Use actualAmountPerWinner from contract if available, otherwise fallback to raffle data
+    const amountPerWinner = actualAmountPerWinner !== null ? actualAmountPerWinner : (raffle.amountPerWinner || 1);
+
+    // Native Prize - Calculate from total amount divided by winners
+    if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+
+      console.log(`🔍 Native Prize Debug:`, {
+        totalPrizeAmount: raffle.nativePrizeAmount.toString(),
+        winnersCount: raffle.winnersCount,
+        amountPerWinnerFromContract: amountPerWinner,
+        amountPerWinnerType: typeof amountPerWinner
+      });
+
+      // For native currency, always calculate from total amount divided by winners
+      // This ensures accuracy regardless of what amountPerWinner() returns
+      const winnersCount = raffle.winnersCount || 1;
+      const prizePerWinner = raffle.nativePrizeAmount.div(winnersCount);
+
+      console.log(`💰 Native calculation: ${raffle.nativePrizeAmount.toString()} / ${winnersCount} = ${prizePerWinner.toString()}`);
+
+      const result = formatPrizeAmount(prizePerWinner);
+      console.log(`💰 Native prize display: ${result} (prizePerWinner: ${prizePerWinner.toString()})`);
+      return result;
+    }
+
+    // ERC20 Prize - Use amountPerWinner from contract
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
         raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+
+      console.log(`🔍 ERC20 Prize Debug:`, {
+        totalPrizeAmount: raffle.erc20PrizeAmount.toString(),
+        winnersCount: raffle.winnersCount,
+        amountPerWinnerFromContract: amountPerWinner,
+        amountPerWinnerType: typeof amountPerWinner
+      });
+
+      // For ERC20 tokens, always calculate from total amount divided by winners
+      // This ensures accuracy regardless of what amountPerWinner() returns
+      const winnersCount = raffle.winnersCount || 1;
       const prizePerWinner = raffle.erc20PrizeAmount.div(winnersCount);
-      return `${ethers.utils.formatUnits(prizePerWinner, 18)} ${erc20Symbol}`;
+
+      console.log(`💰 ERC20 calculation: ${raffle.erc20PrizeAmount.toString()} / ${winnersCount} = ${prizePerWinner.toString()}`);
+
+      const formattedAmount = ethers.utils.formatUnits(prizePerWinner, 18);
+      const result = `${formattedAmount} ${erc20Symbol}`;
+      console.log(`💰 ERC20 prize display: ${result} (prizePerWinner: ${prizePerWinner.toString()}, formatted: ${formattedAmount})`);
+      return result;
     }
 
-    // NFT Prizes (ERC721/ERC1155)
+    // NFT Prizes (ERC721/ERC1155) - Use amountPerWinner from contract
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
       if (raffle.standard === 0) {
-        // ERC721: Each winner gets exactly 1 NFT (amountPerWinner should be 1)
-        const amount = raffle.amountPerWinner || 1;
-        const name = collectionName || 'ERC721 NFT';
-        return `${amount} ${name}`;
+        // ERC721: Different display logic for escrowed vs mintable
+        // Use isEscrowedPrize prop passed from parent component
+
+        if (isEscrowedPrize) {
+          // For escrowed ERC721 prizes: show symbol + token ID (e.g., "BAYC #23") - NO amount
+          const tokenId = raffle.prizeTokenId?.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId;
+          const prizeId = (tokenId !== undefined && tokenId !== null && tokenId !== '0')
+            ? `#${tokenId}`
+            : '#Unknown';
+
+          console.log(`🔍 Escrowed ERC721 token ID debug:`, {
+            rawTokenId: raffle.prizeTokenId,
+            stringTokenId: tokenId,
+            prizeId: prizeId,
+            isEscrowedPrize: isEscrowedPrize
+          });
+
+          let result;
+          if (collectionSymbol) {
+            result = `${collectionSymbol} ${prizeId}`; // Use symbol if available (e.g., "BAYC #23")
+          } else if (collectionName) {
+            result = `${collectionName} ${prizeId}`; // Fall back to name if no symbol
+          } else {
+            result = `ERC721 NFT ${prizeId}`; // Final fallback
+          }
+
+          console.log(`🏆 Escrowed ERC721 prize display: ${result} (symbol: ${collectionSymbol}, name: ${collectionName}, tokenId: ${raffle.prizeTokenId})`);
+          return result;
+        } else {
+          // For mintable ERC721 prizes: show amount + symbol (e.g., "1 BAYC")
+          const displayName = collectionSymbol || collectionName || 'ERC721 NFT';
+          const result = `${amountPerWinner} ${displayName}`;
+
+          console.log(`🎨 Mintable ERC721 prize display: ${result} (symbol: ${collectionSymbol}, name: ${collectionName}, amount: ${amountPerWinner})`);
+          return result;
+        }
       }
       if (raffle.standard === 1) {
-        // ERC1155: Use amountPerWinner as specified in the contract
-        const amount = raffle.amountPerWinner || 1;
+        // ERC1155: Use amountPerWinner from contract (variable amount per winner)
         const name = collectionName || 'ERC1155 Token';
-        return `${amount} ${name}`;
+        return `${amountPerWinner} ${name}`;
       }
     }
 
@@ -1052,7 +1224,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   );
 };
 
-const WinnersSection = ({ raffle, isMintableERC721, isMobile, onWinnerCountChange }) => {
+const WinnersSection = ({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange }) => {
   const { getContractInstance, executeTransaction } = useContract();
   const { address: connectedAddress } = useWallet();
   const { formatPrizeAmount } = useNativeCurrency();
@@ -1111,7 +1283,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isMobile, onWinnerCountChang
       console.warn('WinnersSection RPC error:', error);
     },
     enablePolling: true,
-    pollingInterval: raffle?.stateNum === 2 ? 8000 : 12000, // Faster polling during Drawing state
+    pollingInterval: raffle?.stateNum === 3 ? 8000 : 12000, // Faster polling during Drawing state
     autoStart: shouldListenForWinners, // Stop listening after completion
     raffleState: raffle?.stateNum || null,
     enableStateConditionalListening: true,
@@ -1304,6 +1476,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isMobile, onWinnerCountChang
                         stats={winnerStats[winner.address]}
                         onLoadStats={handleToggleExpand}
                         collectionName={collectionName}
+                        isEscrowedPrize={isEscrowedPrize}
                       />
                     ))}
                   </div>
@@ -1662,7 +1835,7 @@ const RaffleDetailPage = () => {
 
 
       // Reset auto-refresh monitoring when state changes successfully
-      if (newState !== 2) { // Not Drawing state
+      if (newState !== 3) { // Not Drawing state
         setAutoRefreshCount(0);
         setLastDrawingStateTime(null);
       }
@@ -1690,7 +1863,7 @@ const RaffleDetailPage = () => {
       console.warn('RPC error detected:', error);
     },
     enablePolling: true,
-    pollingInterval: raffle?.stateNum === 2 ? 10000 : 15000, // Faster polling during Drawing state
+    pollingInterval: raffle?.stateNum === 3 ? 10000 : 15000, // Faster polling during Drawing state
     autoStart: shouldMainListenForWinners, // Stop listening for winners after completion
     raffleState: raffle?.stateNum || null,
     enableStateConditionalListening: true,
@@ -2335,7 +2508,7 @@ const RaffleDetailPage = () => {
     if (!raffle) return;
 
     // Track when raffle enters Drawing state
-    if (raffle.stateNum === 2) { // Drawing state
+    if (raffle.stateNum === 3) { // Drawing state
       if (!lastDrawingStateTime) {
         setLastDrawingStateTime(Date.now());
         console.log('🎯 Raffle entered Drawing state - starting auto-refresh monitoring');
@@ -2352,7 +2525,7 @@ const RaffleDetailPage = () => {
 
   // Auto-refresh timer for Drawing state - triggers every 15 seconds
   useEffect(() => {
-    if (!lastDrawingStateTime || raffle?.stateNum !== 2) return;
+    if (!lastDrawingStateTime || raffle?.stateNum !== 3) return;
 
     console.log('🔄 Starting auto-refresh timer for Drawing state (every 15 seconds)');
 
@@ -2558,7 +2731,7 @@ const RaffleDetailPage = () => {
             {getStatusBadge()}
 
             {/* Auto-refresh indicator */}
-            {(isAutoRefreshing || (raffle?.stateNum === 2 && lastDrawingStateTime)) && (
+            {(isAutoRefreshing || (raffle?.stateNum === 3 && lastDrawingStateTime)) && (
               <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
                 <div className="animate-spin h-3 w-3 border border-blue-500 border-t-transparent rounded-full"></div>
                 {isMobile ? 'Checking for winners...' : 'Checking for winner selection...'}
@@ -2783,6 +2956,7 @@ const RaffleDetailPage = () => {
           <WinnersSection
             raffle={raffle}
             isMintableERC721={isMintableERC721}
+            isEscrowedPrize={isEscrowedPrize}
             isMobile={isMobile}
             onWinnerCountChange={setWinnerCount}
           />
