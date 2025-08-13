@@ -35,10 +35,13 @@ export const useRaffleService = (options = {}) => {
   const { isMobile } = useMobileBreakpoints();
   
   const [raffles, setRaffles] = useState([]);
+  const [allRaffleMetadata, setAllRaffleMetadata] = useState([]); // Mobile: metadata for filtering
   const [loading, setLoading] = useState(false);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [progressiveLoading, setProgressiveLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastFetch, setLastFetch] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
   
   const pollingRef = useRef(null);
   const mountedRef = useRef(true);
@@ -132,16 +135,119 @@ export const useRaffleService = (options = {}) => {
         setError(null);
       }
 
+      // MOBILE HYBRID APPROACH: Fast metadata + Progressive details
+      if (isMobile && !isBackground) {
+        console.log('🚀 Mobile: Starting hybrid loading approach');
+
+        // 1. FAST: Load metadata for ALL raffles (for filtering)
+        console.log('📊 Mobile: Fetching metadata for filtering...');
+        const metadataOptions = { isMobile: true, useCache };
+        const allMetadata = await raffleService.fetchAllRaffleMetadata(metadataOptions);
+
+        if (!mountedRef.current) return;
+
+        console.log(`✅ Mobile: Metadata loaded for ${allMetadata.length} raffles`);
+        setAllRaffleMetadata(allMetadata);
+
+        // 2. PROGRESSIVE: Load full details for display
+        const initialBatchSize = 8; // Show first 8 raffles immediately
+        const initialAddresses = allMetadata.slice(0, initialBatchSize).map(r => r.address);
+
+        if (initialAddresses.length > 0) {
+          console.log(`🎯 Mobile: Loading initial batch of ${initialAddresses.length} raffles...`);
+          setProgressiveLoading(true);
+          setLoadingProgress({ loaded: 0, total: allMetadata.length });
+
+          const initialRaffles = await raffleService.fetchRaffleDetailsProgressively(
+            initialAddresses,
+            {
+              isMobile: true,
+              batchSize: 2,
+              onProgress: (loaded, total, newRaffles) => {
+                if (mountedRef.current) {
+                  setLoadingProgress({ loaded, total: allMetadata.length });
+                  // Add new raffles as they load
+                  if (newRaffles && newRaffles.length > 0) {
+                    setRaffles(prev => {
+                      const existingAddresses = new Set(prev.map(r => r.address));
+                      const uniqueNew = newRaffles.filter(r => !existingAddresses.has(r.address));
+                      return [...prev, ...uniqueNew];
+                    });
+                  }
+                }
+              }
+            }
+          );
+
+          if (!mountedRef.current) return;
+
+          console.log(`✅ Mobile: Initial batch loaded (${initialRaffles.length} raffles)`);
+          setLoading(false); // Show initial content
+
+          // 3. BACKGROUND: Load remaining raffles
+          const remainingAddresses = allMetadata.slice(initialBatchSize).map(r => r.address);
+          if (remainingAddresses.length > 0) {
+            console.log(`🔄 Mobile: Loading remaining ${remainingAddresses.length} raffles in background...`);
+
+            // Load remaining raffles in background
+            setTimeout(async () => {
+              try {
+                const remainingRaffles = await raffleService.fetchRaffleDetailsProgressively(
+                  remainingAddresses,
+                  {
+                    isMobile: true,
+                    batchSize: 2,
+                    onProgress: (loaded, total, newRaffles) => {
+                      if (mountedRef.current) {
+                        setLoadingProgress({ loaded: initialBatchSize + loaded, total: allMetadata.length });
+                        // Add new raffles as they load
+                        if (newRaffles && newRaffles.length > 0) {
+                          setRaffles(prev => {
+                            const existingAddresses = new Set(prev.map(r => r.address));
+                            const uniqueNew = newRaffles.filter(r => !existingAddresses.has(r.address));
+                            return [...prev, ...uniqueNew];
+                          });
+                        }
+                      }
+                    }
+                  }
+                );
+
+                if (mountedRef.current) {
+                  console.log(`✅ Mobile: Background loading complete (${remainingRaffles.length} additional raffles)`);
+                  setProgressiveLoading(false);
+                }
+              } catch (error) {
+                if (mountedRef.current) {
+                  console.error('Mobile: Background loading failed:', error);
+                  setProgressiveLoading(false);
+                }
+              }
+            }, 1000); // Start background loading after 1 second
+          } else {
+            setProgressiveLoading(false);
+          }
+        } else {
+          // No raffles found
+          setRaffles([]);
+          setLoading(false);
+        }
+
+        setLastFetch(Date.now());
+        return; // Exit early for mobile hybrid approach
+      }
+
+      // DESKTOP: Use existing approach
       const fetchOptions = {
         isMobile,
         useCache,
         maxRaffles
       };
 
-      console.log('🚀 Calling raffleService.fetchAllRaffles with options:', fetchOptions);
+      console.log('🚀 Desktop: Calling raffleService.fetchAllRaffles with options:', fetchOptions);
       const fetchedRaffles = await raffleService.fetchAllRaffles(fetchOptions);
 
-      console.log('✅ fetchAllRaffles completed:', {
+      console.log('✅ Desktop: fetchAllRaffles completed:', {
         count: fetchedRaffles?.length || 0,
         firstRaffle: fetchedRaffles?.[0]?.name || 'N/A'
       });
@@ -338,23 +444,26 @@ export const useRaffleService = (options = {}) => {
   return {
     // Data
     raffles,
+    allRaffleMetadata, // Mobile: metadata for filtering
     categorizedRaffles: categorizedRaffles(),
-    
+
     // Loading states
     loading,
     backgroundLoading,
+    progressiveLoading, // Mobile: progressive loading state
     error,
     lastFetch,
-    
+    loadingProgress, // Mobile: progress tracking
+
     // Actions
     fetchRaffles,
     refreshRaffles,
     searchRaffles,
     getRaffleDetails,
-    
+
     // Utilities
     getCacheStats,
-    
+
     // Service instance (for advanced usage)
     service: raffleService
   };
