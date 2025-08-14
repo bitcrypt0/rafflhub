@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { 
-  Activity, 
-  Plus, 
-  Ticket, 
-  BarChart3, 
-  Users, 
+import {
+  Activity,
+  Plus,
+  Ticket,
+  BarChart3,
+  Users,
   TrendingUp,
   DollarSign,
   Award,
@@ -31,6 +31,27 @@ const RAFFLE_STATE_LABELS = [
   'Prizes Claimed',
   'Unengaged'
 ];
+
+// Date/time formatting helper to robustly handle Date objects, ms and seconds
+const formatDateTimeDisplay = (value) => {
+  try {
+    if (!value) return 'Unknown';
+    let d;
+    if (value instanceof Date) {
+      d = value;
+    } else if (typeof value === 'number') {
+      // If it's likely seconds, scale to ms
+      d = new Date(value < 1e12 ? value * 1000 : value);
+    } else {
+      d = new Date(value);
+    }
+    if (isNaN(d.getTime())) return 'Unknown';
+    return d.toLocaleString();
+  } catch (_) {
+    return 'Unknown';
+  }
+};
+
 
 // Profile raffle card component with winner count support
 const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurrencySymbol }) => {
@@ -66,12 +87,12 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow min-h-[160px]">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm mb-1 truncate">{raffle.name}</h3>
           <p className="text-xs text-muted-foreground">
-            Ends: {new Date(raffle.endTime * 1000).toLocaleDateString()}
+            Ends: {formatDateTimeDisplay(raffle.endTime)}
           </p>
         </div>
         {getStatusBadge()}
@@ -85,16 +106,16 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
         <div>
           <span className="text-muted-foreground">Revenue</span>
           <p className="font-semibold text-green-600">
-            {formatRevenueAmount(raffle.revenue || 0)} {getCurrencySymbol()}
+            {formatRevenueAmount(raffle.revenue || 0)}
           </p>
         </div>
       </div>
 
       <button
         onClick={() => onRaffleClick(raffle.address)}
-        className="w-full text-xs bg-primary/10 text-primary px-3 py-2 rounded hover:bg-primary/20 transition-colors"
+        className="w-full text-sm bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
       >
-        View Details
+        View Raffle
       </button>
     </div>
   );
@@ -320,7 +341,7 @@ const ProfileTabs = ({
                         </p>
                       </div>
                       <span className="text-sm text-muted-foreground flex-shrink-0">
-                        {new Date(ticket.purchaseTime * 1000).toLocaleDateString()}
+                        {formatDateTimeDisplay(ticket.purchaseTime)}
                       </span>
                     </div>
 
@@ -328,20 +349,11 @@ const ProfileTabs = ({
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/raffle/${ticket.address}`)}
-                    className="flex-1"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
                   {ticket.canClaimPrize && (
                     <Button
                       size="sm"
                       onClick={() => onClaimPrize(ticket)}
-                      className="flex-1"
+                      className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
                     >
                       <Award className="h-4 w-4 mr-1" />
                       Claim Prize
@@ -379,7 +391,7 @@ const ProfileTabs = ({
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{creatorStats.totalRevenue} {getCurrencySymbol()}</div>
+            <div className="text-2xl font-bold">{formatRevenueAmount(creatorStats.totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">
               +{creatorStats.monthlyRevenue} this month
             </p>
@@ -504,4 +516,4 @@ const ProfileTabs = ({
   );
 };
 
-export default ProfileTabs; 
+export default ProfileTabs;

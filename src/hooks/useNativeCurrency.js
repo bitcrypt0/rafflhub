@@ -22,44 +22,61 @@ export const useNativeCurrency = () => {
   // Format amount with native currency symbol
   const formatAmount = useMemo(() => {
     return (amount, options = {}) => {
-      const { 
-        showSymbol = true, 
+      const {
+        showSymbol = true,
         decimals = 4,
-        fallbackSymbol = 'ETH'
+        fallbackSymbol = nativeCurrency.symbol
       } = options;
 
-      if (!amount) return showSymbol ? `0 ${nativeCurrency.symbol}` : '0';
+      if (amount === undefined || amount === null || amount === '') {
+        return showSymbol ? `0 ${nativeCurrency.symbol}` : '0';
+      }
 
       try {
-        // Handle BigNumber or string amounts
-        const formattedAmount = ethers.utils.formatEther(amount);
-        const numericAmount = parseFloat(formattedAmount);
-        
+        // Normalize to an ether-denominated numeric string
+        let etherStr;
+        if (ethers.BigNumber.isBigNumber(amount)) {
+          etherStr = ethers.utils.formatEther(amount);
+        } else if (typeof amount === 'string') {
+          // Hex or integer string => wei
+          if (/^0x/i.test(amount) || /^[0-9]+$/.test(amount)) {
+            etherStr = ethers.utils.formatEther(amount);
+          } else {
+            // Contains decimal or non-integer => assume already in ether units
+            etherStr = amount;
+          }
+        } else if (typeof amount === 'number') {
+          // Assume already ether units
+          etherStr = amount.toString();
+        } else {
+          // Fallback: try to format as wei, may throw
+          etherStr = ethers.utils.formatEther(amount);
+        }
+
+        const numericAmount = parseFloat(etherStr);
+
         // Format with specified decimal places, preserving significant digits for small amounts
         let displayAmount;
-        if (numericAmount === 0) {
+        if (!isFinite(numericAmount) || isNaN(numericAmount)) {
+          displayAmount = '0';
+        } else if (numericAmount === 0) {
           displayAmount = '0';
         } else if (numericAmount < Math.pow(10, -decimals)) {
           // For very small amounts, use more decimal places to show the actual value
-          const extendedDecimals = Math.max(decimals, 8); // Use at least 8 decimals for very small amounts
+          const extendedDecimals = Math.max(decimals, 8);
           displayAmount = numericAmount.toFixed(extendedDecimals);
-          // Remove trailing zeros but keep at least one significant digit
           displayAmount = displayAmount.replace(/\.?0+$/, '');
           if (displayAmount === '0' || displayAmount === '') {
             displayAmount = numericAmount.toFixed(extendedDecimals);
           }
         } else {
-          // For normal amounts, format with specified decimals
           displayAmount = numericAmount.toFixed(decimals);
-          // Only remove trailing zeros for amounts >= 0.01 to preserve precision for small amounts
           if (numericAmount >= 0.01) {
             displayAmount = displayAmount.replace(/\.?0+$/, '');
           }
         }
-        
-        return showSymbol 
-          ? `${displayAmount} ${nativeCurrency.symbol}`
-          : displayAmount;
+
+        return showSymbol ? `${displayAmount} ${nativeCurrency.symbol}` : displayAmount;
       } catch (error) {
         console.warn('Error formatting amount:', error);
         return showSymbol ? `0 ${fallbackSymbol}` : '0';

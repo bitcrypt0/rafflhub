@@ -22,7 +22,7 @@ const NewMobileProfilePage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('activity');
   const [activeDashboardComponent, setActiveDashboardComponent] = useState(null);
-  const { getCurrencySymbol } = useNativeCurrency();
+  const { getCurrencySymbol, formatRevenueAmount } = useNativeCurrency();
 
   // Use existing data hook - match desktop data usage
   const {
@@ -230,7 +230,7 @@ const NewMobileProfilePage = () => {
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => handleRaffleClick(activity.raffleAddress)}
-                    className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+                    className="text-sm bg-[#614E41] text-white px-3 py-1.5 rounded-md hover:bg-[#4a3a30] transition-colors"
                   >
                     View Raffle
                   </button>
@@ -284,7 +284,7 @@ const NewMobileProfilePage = () => {
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">
-              {createdRaffles.reduce((sum, r) => sum + (parseInt(r.ticketsSold || 0) * parseFloat(r.ticketPrice || 0)), 0).toFixed(4)} {getCurrencySymbol()}
+              {formatRevenueAmount(createdRaffles.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0).toFixed(4))}
             </div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>
@@ -2003,7 +2003,7 @@ const NewMobileProfilePage = () => {
                     <span className="font-medium">Tickets Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Revenue:</span> {raffle.revenue || '0'} {getCurrencySymbol()}
+                    <span className="font-medium">Revenue:</span> {formatRevenueAmount(raffle.revenue || '0')}
                   </p>
                 </div>
               </div>
@@ -2086,13 +2086,6 @@ const NewMobileProfilePage = () => {
             </div>
 
             <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => handleRaffleClick(ticket.raffleAddress)}
-                className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
-              >
-                View Raffle
-              </button>
-
               {ticket.state === 'ended' && (
                 <button
                   onClick={() => claimRefund(ticket.raffleAddress)}

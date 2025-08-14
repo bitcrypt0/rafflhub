@@ -29,11 +29,58 @@ const RAFFLE_STATE_LABELS = [
   'Deleted',
   'Activation Failed',
   'Prizes Claimed',
-  'Unengaged'
-];
+  'Unengaged']
+
+function NowProvider({ children }) {
+  const [now, setNow] = React.useState(Math.floor(Date.now() / 1000));
+  React.useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <NowContext.Provider value={now}>{children}</NowContext.Provider>;
+}
+
+
+// Shared time context to avoid per-card timers
+const NowContext = React.createContext(Math.floor(Date.now() / 1000));
+
+// Visibility hook: returns a ref and a boolean when element enters viewport
+function useOnScreen(options) {
+  const ref = React.useRef(null);
+  const [isIntersecting, setIntersecting] = React.useState(false);
+  React.useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => setIntersecting(entry.isIntersecting), options || { rootMargin: '100px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [options]);
+  return [ref, isIntersecting];
+}
+
+// Simple concurrency limiter per key (no external deps)
+async function runLimited(key, fn, limit = 3) {
+  if (!window.__fetchLimiters) window.__fetchLimiters = {};
+  const lim = (window.__fetchLimiters[key] ||= { running: 0, queue: [] });
+  if (lim.running < limit) {
+    lim.running++;
+    try {
+      return await fn();
+    } finally {
+      lim.running--;
+      const next = lim.queue.shift();
+      if (next) next();
+    }
+  } else {
+    await new Promise((resolve) => lim.queue.push(resolve));
+    return runLimited(key, fn, limit);
+  }
+}
+
 
 const RaffleCard = ({ raffle }) => {
   const navigate = useNavigate();
+  const nowSec = React.useContext(NowContext);
   const [timeLabel, setTimeLabel] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('');
   const [erc20Symbol, setErc20Symbol] = useState('');
@@ -45,80 +92,78 @@ const RaffleCard = ({ raffle }) => {
   const [collectionName, setCollectionName] = useState(null);
   const [collectionSymbol, setCollectionSymbol] = useState(null);
   const [directContractValues, setDirectContractValues] = useState(null);
+  const [cardRef, isOnScreen] = useOnScreen({ rootMargin: '200px' });
 
+  const formatTime = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    let formatted = '';
+    if (days > 0) formatted += `${days}d `;
+    if (hours > 0 || days > 0) formatted += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
+    formatted += `${secs}s`;
+    return formatted.trim();
+  };
+  const formatDuration = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    let formatted = '';
+    if (days > 0) formatted += `${days}d `;
+    if (hours > 0 || days > 0) formatted += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m`;
+    if (!formatted) formatted = '0m';
+    return formatted.trim();
+  };
+
+  // Update display using shared time
   useEffect(() => {
-    let interval;
-    function updateTimer() {
-      const now = Math.floor(Date.now() / 1000);
-      let label = '';
-      let seconds = 0;
-      if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7 || raffle.stateNum === 8) {
-        // Ended or completed or other terminal states
-        label = 'Duration';
-        seconds = raffle.duration;
-        setTimeLabel(label);
-        setTimeRemaining(formatDuration(seconds));
-        return;
-      }
-      if (now < raffle.startTime) {
-        label = 'Starts In';
-        seconds = raffle.startTime - now;
-      } else {
-        label = 'Ends In';
-        seconds = (raffle.startTime + raffle.duration) - now;
-      }
+    const now = nowSec;
+    let label = '';
+    let seconds = 0;
+    if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7 || raffle.stateNum === 8) {
+      label = 'Duration';
+      seconds = raffle.duration;
       setTimeLabel(label);
-      setTimeRemaining(seconds > 0 ? formatTime(seconds) : 'Ended');
+      setTimeRemaining(formatDuration(seconds));
+      return;
     }
-    function formatTime(seconds) {
-      const days = Math.floor(seconds / 86400);
-      const hours = Math.floor((seconds % 86400) / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      let formatted = '';
-      if (days > 0) formatted += `${days}d `;
-      if (hours > 0 || days > 0) formatted += `${hours}h `;
-      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
-      formatted += `${secs}s`;
-      return formatted.trim();
+    if (now < raffle.startTime) {
+      label = 'Starts In';
+      seconds = raffle.startTime - now;
+    } else {
+      label = 'Ends In';
+      seconds = (raffle.startTime + raffle.duration) - now;
     }
-    function formatDuration(seconds) {
-      const days = Math.floor(seconds / 86400);
-      const hours = Math.floor((seconds % 86400) / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      let formatted = '';
-      if (days > 0) formatted += `${days}d `;
-      if (hours > 0 || days > 0) formatted += `${hours}h `;
-      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m`;
-      if (!formatted) formatted = '0m';
-      return formatted.trim();
-    }
-    updateTimer();
-    interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [raffle]);
+    setTimeLabel(label);
+    setTimeRemaining(seconds > 0 ? formatTime(seconds) : 'Ended');
+  }, [nowSec, raffle]);
 
   // ERC20 symbol lookup - optimized to reduce RPC calls
   useEffect(() => {
     let isMounted = true;
     const fetchSymbol = async () => {
       if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero) {
-        // Use a static cache to avoid redundant lookups
         if (!window.__erc20SymbolCache) window.__erc20SymbolCache = {};
         if (window.__erc20SymbolCache[raffle.erc20PrizeToken]) {
           setErc20Symbol(window.__erc20SymbolCache[raffle.erc20PrizeToken]);
           return;
         }
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (!isOnScreen) return; // defer until visible
+        await new Promise((resolve) => requestIdleCallback ? requestIdleCallback(() => resolve()) : setTimeout(resolve, 50));
         try {
-          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-          const erc20Abi = ["function symbol() view returns (string)"];
-          const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
-          const symbol = await contract.symbol();
-          if (isMounted) {
-            setErc20Symbol(symbol);
-            window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
-          }
+          await runLimited('erc20Symbol', async () => {
+            const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+            const erc20Abi = ["function symbol() view returns (string)"];
+            const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
+            const symbol = await contract.symbol();
+            if (isMounted) {
+              setErc20Symbol(symbol);
+              window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
+            }
+          }, 4);
         } catch (error) {
           if (isMounted) setErc20Symbol('TOKEN');
         }
@@ -133,13 +178,13 @@ const RaffleCard = ({ raffle }) => {
     let isMounted = true;
     async function fetchTicketsSold() {
       try {
+        if (!isOnScreen) return; // defer until visible
         const raffleContract = getContractInstance && getContractInstance(raffle.address, 'raffle');
         if (!raffleContract) {
           if (isMounted) setTicketsSold(null);
           return;
         }
-        // Use the same fallback approach as RaffleDetailPage and ProfilePage
-        const count = await getTicketsSoldCount(raffleContract);
+        const count = await runLimited('ticketsSold', async () => await getTicketsSoldCount(raffleContract), 3);
         if (isMounted) setTicketsSold(count);
       } catch (e) {
         if (isMounted) setTicketsSold(null);
@@ -158,25 +203,27 @@ const RaffleCard = ({ raffle }) => {
       }
 
       try {
+        if (!isOnScreen) return; // defer until visible
         const raffleContract = getContractInstance(raffle.address, 'raffle');
         if (!raffleContract) {
           return;
         }
 
-        // Fetch values directly like RaffleDetailPage does
-        const [isExternallyPrizedDirect, usesCustomPriceDirect, isEscrowedPrizeDirect] = await Promise.all([
-          raffleContract.isExternallyPrized().catch(() => null),
-          raffleContract.usesCustomPrice().catch(() => null),
-          raffleContract.isEscrowedPrize().catch(() => null)
-        ]);
+        await runLimited('directFlags', async () => {
+          const [isExternallyPrizedDirect, usesCustomPriceDirect, isEscrowedPrizeDirect] = await Promise.all([
+            raffleContract.isExternallyPrized().catch(() => null),
+            raffleContract.usesCustomPrice().catch(() => null),
+            raffleContract.isEscrowedPrize().catch(() => null)
+          ]);
 
-        const directValues = {
-          isExternallyPrized: isExternallyPrizedDirect,
-          usesCustomPrice: usesCustomPriceDirect,
-          isEscrowedPrize: isEscrowedPrizeDirect
-        };
+          const directValues = {
+            isExternallyPrized: isExternallyPrizedDirect,
+            usesCustomPrice: usesCustomPriceDirect,
+            isEscrowedPrize: isEscrowedPrizeDirect
+          };
 
-        setDirectContractValues(directValues);
+          setDirectContractValues(directValues);
+        }, 3);
       } catch (error) {
         // Silently handle errors
       }
@@ -455,7 +502,7 @@ const RaffleCard = ({ raffle }) => {
           {getStatusBadge()}
         </div>
       </div>
-      
+
       <div className="space-y-2 mb-4 min-w-0">
         <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Creator:</span>
@@ -566,7 +613,7 @@ const RaffleCard = ({ raffle }) => {
           return null;
         })()}
       </div>
-      
+
       <Button
         onClick={handleViewRaffle}
         className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0 text-sm sm:text-base py-2 sm:py-3"
@@ -708,8 +755,12 @@ const LandingPage = () => {
             </h1>
             <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
               Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+
             </p>
           </div>
+
+          {/* Shared time provider updating once per second */}
+          <NowProvider>
 
           {/* Filter toggle button */}
           <div className="mb-6 flex justify-between items-center">
@@ -741,7 +792,9 @@ const LandingPage = () => {
                 : "There are currently no raffles available on the blockchain. Check back later or create your own!"
             }
           />
+            </NowProvider>
         </PageContainer>
+
       </div>
     </>
   );

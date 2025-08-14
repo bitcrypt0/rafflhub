@@ -461,7 +461,7 @@ const DesktopProfilePage = () => {
         title: getActivityTitle(),
         description: getActivityDescription(),
         icon: getActivityIcon(),
-        timestamp: activity.timestamp ? new Date(activity.timestamp).toLocaleDateString() : 'Unknown date'
+        timestamp: activity.timestamp ? new Date(activity.timestamp < 1e12 ? activity.timestamp * 1000 : activity.timestamp).toLocaleString() : 'Unknown date'
       };
     });
   }, [userActivity]);
@@ -725,7 +725,7 @@ const DesktopProfilePage = () => {
             creatorStats={{
               totalRaffles: createdRaffles.length,
               activeRaffles: createdRaffles.filter(r => r.state === 'active').length,
-              totalRevenue: createdRaffles.reduce((sum, r) => sum + (r.ticketsSold * parseFloat(r.ticketPrice) / 1e18), 0).toFixed(4),
+              totalRevenue: createdRaffles.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0).toFixed(4),
               monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
               totalParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0),
               uniqueParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0), // TODO: Calculate unique participants

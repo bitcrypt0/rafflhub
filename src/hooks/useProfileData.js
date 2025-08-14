@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -62,6 +62,95 @@ export const useProfileData = () => {
     }
   }, []);
 
+  // Adaptive querying helpers to support strict RPCs
+  const isRangeOrLimitError = (error) => {
+    const msg = ((error?.message || '') + ' ' + (error?.data?.message || '')).toLowerCase();
+    return (
+      msg.includes('block range') ||
+      msg.includes('range too large') ||
+      msg.includes('range exceeded') ||
+      msg.includes('too many blocks') ||
+      msg.includes('exceed') ||
+      msg.includes('limit') ||
+      msg.includes('overflow') ||
+      msg.includes('50000') || msg.includes('10000') || msg.includes('5000')
+    );
+  };
+
+  const queryFilterAdaptive = async (contract, filter, fromBlock, toBlock, initialChunk = (APP_CONFIG?.profileBlockRangeLimit || 50000), minChunk = 2000) => {
+    const results = [];
+    const totalSpan = toBlock - fromBlock;
+    let chunk = Math.min(initialChunk, Math.max(minChunk, totalSpan));
+    let start = fromBlock;
+
+    while (start <= toBlock) {
+      const end = Math.min(start + chunk, toBlock);
+      try {
+        const part = await contract.queryFilter(filter, start, end);
+        if (part && part.length) results.push(...part);
+        start = end + 1;
+      } catch (err) {
+        if (isRangeOrLimitError(err)) {
+          if (chunk > minChunk) {
+            // Halve the chunk and retry without advancing start
+            chunk = Math.max(minChunk, Math.floor(chunk / 2));
+            console.warn(`Adaptive queryFilter: reducing chunk to ${chunk} due to provider limits`);
+            continue;
+          } else {
+            // Skip this segment silently
+            console.warn(`Adaptive queryFilter: skipping segment ${start}-${end} (min chunk still failing)`);
+            start = end + 1;
+            continue;
+          }
+        }
+        // Non-range errors bubble up
+        throw err;
+      }
+    }
+    return results;
+  };
+
+  const getLogsAdaptive = async (provider, baseFilter, fromBlock, toBlock, initialChunk = (APP_CONFIG?.profileBlockRangeLimit || 50000), minChunk = 2000) => {
+    const results = [];
+    const totalSpan = toBlock - fromBlock;
+    let chunk = Math.min(initialChunk, Math.max(minChunk, totalSpan));
+    let start = fromBlock;
+
+    while (start <= toBlock) {
+      const end = Math.min(start + chunk, toBlock);
+      try {
+        const part = await provider.getLogs({ ...baseFilter, fromBlock: start, toBlock: end });
+        if (part && part.length) results.push(...part);
+        start = end + 1;
+      } catch (err) {
+        if (isRangeOrLimitError(err)) {
+          if (chunk > minChunk) {
+            chunk = Math.max(minChunk, Math.floor(chunk / 2));
+            console.warn(`Adaptive getLogs: reducing chunk to ${chunk} due to provider limits`);
+            continue;
+          } else {
+            console.warn(`Adaptive getLogs: skipping segment ${start}-${end} (min chunk still failing)`);
+            start = end + 1;
+            continue;
+          }
+        }
+        throw err;
+      }
+    }
+    return results;
+  };
+
+  // Simple block timestamp cache to avoid repeated getBlock calls
+  const blockTimestampCacheRef = useRef(new Map());
+  const getBlockTimestampMs = async (blockNumber) => {
+    const cache = blockTimestampCacheRef.current;
+    if (cache.has(blockNumber)) return cache.get(blockNumber);
+    const block = await provider.getBlock(blockNumber);
+    const tsMs = (block?.timestamp || 0) * 1000;
+    cache.set(blockNumber, tsMs);
+    return tsMs;
+  };
+
   // Fetch on-chain activity (matches desktop implementation)
   const fetchOnChainActivity = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider) {
@@ -92,7 +181,7 @@ export const useProfileData = () => {
       if (stableContracts.raffleDeployer) {
         try {
           const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
-          const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock, toBlock);
+          const raffleCreatedEvents = await queryFilterAdaptive(stableContracts.raffleDeployer, raffleCreatedFilter, fromBlock, toBlock);
 
           console.log('Mobile: Found', raffleCreatedEvents.length, 'RaffleCreated events for address:', stableAddress);
 
@@ -132,7 +221,7 @@ export const useProfileData = () => {
       if (stableContracts.raffleManager) {
         try {
           const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
-          const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock, toBlock);
+          const raffleRegisteredEvents = await queryFilterAdaptive(stableContracts.raffleManager, raffleRegisteredFilter, fromBlock, toBlock);
 
           console.log('Mobile: Found', raffleRegisteredEvents.length, 'registered raffles');
 
@@ -185,7 +274,7 @@ export const useProfileData = () => {
                 try {
                   // 1. Track NFT Prize Claims (PrizeClaimed events)
                   const prizeClaimedFilter = contract.filters.PrizeClaimed(stableAddress);
-                  const prizeEvents = await contract.queryFilter(prizeClaimedFilter, fromBlock, toBlock);
+                  const prizeEvents = await queryFilterAdaptive(contract, prizeClaimedFilter, fromBlock, toBlock);
 
                   for (const prizeEvent of prizeEvents) {
                     const block = await provider.getBlock(prizeEvent.blockNumber);
@@ -224,11 +313,7 @@ export const useProfileData = () => {
                       ]
                     };
 
-                    const transferEvents = await provider.getLogs({
-                      ...transferFilter,
-                      fromBlock: fromBlock,
-                      toBlock: toBlock
-                    }).catch(error => {
+                    const transferEvents = await getLogsAdaptive(provider, transferFilter, fromBlock, toBlock).catch(error => {
                       // Silently handle getLogs errors for prize tracking
                       const errorMessage = (error.message || '').toLowerCase();
                       if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
@@ -281,11 +366,7 @@ export const useProfileData = () => {
                         ]
                       };
 
-                      const erc20Events = await provider.getLogs({
-                        ...erc20TransferFilter,
-                        fromBlock: fromBlock,
-                        toBlock: toBlock
-                      }).catch(error => {
+                      const erc20Events = await getLogsAdaptive(provider, erc20TransferFilter, fromBlock, toBlock).catch(error => {
                         // Silently handle getLogs errors for ERC20 prize tracking
                         const errorMessage = (error.message || '').toLowerCase();
                         if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
@@ -330,7 +411,7 @@ export const useProfileData = () => {
 
               // Fetch refund claims for this raffle
               const refundClaimedFilter = raffleContract.filters.RefundClaimed(stableAddress);
-              const refundClaimedEvents = await raffleContract.queryFilter(refundClaimedFilter, fromBlock, toBlock);
+              const refundClaimedEvents = await queryFilterAdaptive(raffleContract, refundClaimedFilter, fromBlock, toBlock);
               for (const refundEvent of refundClaimedEvents) {
                 const block = await provider.getBlock(refundEvent.blockNumber);
                 try {
@@ -356,7 +437,7 @@ export const useProfileData = () => {
 
               // Fetch full refunds for deletion for this raffle
               const fullRefundFilter = raffleContract.filters.FullRefundForDeletion(stableAddress);
-              const fullRefundEvents = await raffleContract.queryFilter(fullRefundFilter, fromBlock, toBlock);
+              const fullRefundEvents = await queryFilterAdaptive(raffleContract, fullRefundFilter, fromBlock, toBlock);
               for (const refundEvent of fullRefundEvents) {
                 const block = await provider.getBlock(refundEvent.blockNumber);
                 try {
@@ -382,7 +463,7 @@ export const useProfileData = () => {
 
               // Fetch creator revenue withdrawals for this raffle
               const revenueWithdrawnFilter = raffleContract.filters.RevenueWithdrawn(stableAddress);
-              const revenueWithdrawnEvents = await raffleContract.queryFilter(revenueWithdrawnFilter, fromBlock, toBlock);
+              const revenueWithdrawnEvents = await queryFilterAdaptive(raffleContract, revenueWithdrawnFilter, fromBlock, toBlock);
               for (const revenueEvent of revenueWithdrawnEvents) {
                 const block = await provider.getBlock(revenueEvent.blockNumber);
                 try {
@@ -421,7 +502,7 @@ export const useProfileData = () => {
       if (stableContracts.revenueManager) {
         try {
           const adminWithdrawnFilter = stableContracts.revenueManager.filters.AdminWithdrawn(stableAddress);
-          const adminWithdrawnEvents = await stableContracts.revenueManager.queryFilter(adminWithdrawnFilter, fromBlock, toBlock);
+          const adminWithdrawnEvents = await queryFilterAdaptive(stableContracts.revenueManager, adminWithdrawnFilter, fromBlock, toBlock);
 
           for (const event of adminWithdrawnEvents) {
             const block = await provider.getBlock(event.blockNumber);
@@ -515,7 +596,7 @@ export const useProfileData = () => {
         console.log('Profile: Fetching created raffles from RaffleDeployer from block', fromBlock, 'to', toBlock, `(${toBlock - fromBlock} blocks)`);
 
         const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
-        const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock, toBlock);
+        const raffleCreatedEvents = await queryFilterAdaptive(stableContracts.raffleDeployer, raffleCreatedFilter, fromBlock, toBlock);
 
         console.log('Mobile: Found', raffleCreatedEvents.length, 'created raffles for address:', stableAddress);
 
@@ -527,13 +608,15 @@ export const useProfileData = () => {
             if (!raffleContract) continue;
 
             // Use correct executeCall format
-            const [nameResult, ticketPriceResult, ticketLimitResult, startTimeResult, durationResult, stateResult] = await Promise.all([
+            const [nameResult, ticketPriceResult, ticketLimitResult, startTimeResult, durationResult, stateResult, winnersCountResult, usesCustomPriceResult] = await Promise.all([
               executeCall(raffleContract.name, 'name'),
               executeCall(raffleContract.ticketPrice, 'ticketPrice'),
               executeCall(raffleContract.ticketLimit, 'ticketLimit'),
               executeCall(raffleContract.startTime, 'startTime'),
               executeCall(raffleContract.duration, 'duration'),
-              executeCall(raffleContract.state, 'state')
+              executeCall(raffleContract.state, 'state'),
+              executeCall(raffleContract.winnersCount, 'winnersCount'),
+              executeCall(raffleContract.usesCustomPrice, 'usesCustomPrice')
             ]);
 
             const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
@@ -542,6 +625,8 @@ export const useProfileData = () => {
             const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
             const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
             const state = stateResult.success ? stateResult.result : 0;
+            const winnersCountBn = winnersCountResult.success ? winnersCountResult.result : ethers.BigNumber.from(0);
+            const usesCustomPrice = usesCustomPriceResult.success ? !!usesCustomPriceResult.result : false;
 
             // Use fallback approach for tickets sold count (same as RaffleDetailPage)
             const ticketsSoldCount = await getTicketsSoldCount(raffleContract);
@@ -549,7 +634,13 @@ export const useProfileData = () => {
 
             // Calculate end time and revenue
             const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
-            const revenue = ticketPrice.mul && ticketsSoldCount > 0 ? ticketPrice.mul(ticketsSold) : ethers.BigNumber.from(0);
+            let revenueWei = ethers.BigNumber.from(0);
+            if (usesCustomPrice && ticketPrice.mul) {
+              // Creator revenue = winnersCount * ticketPrice when usesCustomPrice is true
+              revenueWei = ticketPrice.mul(winnersCountBn);
+            } else {
+              revenueWei = ethers.BigNumber.from(0);
+            }
 
             raffles.push({
               address: raffleAddress,
@@ -560,7 +651,8 @@ export const useProfileData = () => {
               endTime: endTime,
               state: mapRaffleState(state),
               stateNum: state, // Add the numeric state for proper badge display
-              revenue: ethers.utils.formatEther(revenue)
+              revenue: ethers.utils.formatEther(revenueWei),
+              usesCustomPrice
             });
           } catch (error) {
             console.error(`Mobile: Error processing created raffle ${raffleAddress}:`, error);
@@ -628,7 +720,7 @@ export const useProfileData = () => {
         console.log('Profile: Fetching purchased tickets using TicketsPurchased events from block', fromBlock, 'to', toBlock, `(${toBlock - fromBlock} blocks)`);
 
         const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
-        const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock, toBlock);
+        const raffleRegisteredEvents = await queryFilterAdaptive(stableContracts.raffleManager, raffleRegisteredFilter, fromBlock, toBlock);
 
         console.log('Checking', raffleRegisteredEvents.length, 'registered raffles for TicketsPurchased events');
 
@@ -649,7 +741,7 @@ export const useProfileData = () => {
 
             // Fetch TicketsPurchased events for this user in this raffle (exact same as Activity tab)
             const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(stableAddress);
-            const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock, toBlock);
+            const ticketEvents = await queryFilterAdaptive(raffleContract, ticketsPurchasedFilter, fromBlock, toBlock);
 
             console.log(`Raffle ${raffleAddress}: Found ${ticketEvents.length} TicketsPurchased events`);
 
@@ -816,7 +908,7 @@ export const useProfileData = () => {
 
       await executeTransaction(raffleContract, 'withdrawRevenue', []);
       toast.success('Revenue withdrawn successfully!');
-      
+
       // Refresh data
       fetchCreatedRaffles();
       setShowRevenueModal(false);
@@ -843,7 +935,7 @@ export const useProfileData = () => {
 
       await executeTransaction(raffleContract, 'claimRefund', []);
       toast.success('Refund claimed successfully!');
-      
+
       // Refresh data
       fetchPurchasedTickets();
       fetchOnChainActivity();
@@ -860,13 +952,13 @@ export const useProfileData = () => {
     purchasedTickets,
     activityStats,
     loading,
-    
+
     // Revenue modal state
     showRevenueModal,
     setShowRevenueModal,
     selectedRaffle,
     setSelectedRaffle,
-    
+
     // Functions
     fetchOnChainActivity,
     fetchCreatedRaffles,
@@ -875,7 +967,7 @@ export const useProfileData = () => {
     claimRefund,
     extractRevertReason,
     mapRaffleState,
-    
+
     // Computed values
     creatorStats: {
       totalRaffles: createdRaffles.length,
