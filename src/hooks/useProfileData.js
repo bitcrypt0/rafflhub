@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { toast } from '../components/ui/sonner';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import { handleError } from '../utils/errorHandling';
+import { APP_CONFIG } from '../constants';
 
 /**
  * Shared data hook for ProfilePage (both desktop and mobile)
@@ -82,62 +83,18 @@ export const useProfileData = () => {
       });
 
       const currentBlock = await provider.getBlockNumber();
-
-      // Enhanced block range calculation with 50,000 block limit
-      const getOptimalBlockRange = async () => {
-        // Progressive test ranges up to 50,000 blocks
-        const testRanges = [200, 500, 1000, 2000, 3000, 5000, 10000, 20000, 50000];
-        let maxRange = 200; // Conservative default
-
-        // For newly deployed contracts, use conservative ranges
-        if (currentBlock < 10000) {
-          maxRange = Math.min(200, currentBlock);
-          console.log('Profile: New network detected, using conservative range:', maxRange);
-          return Math.max(0, currentBlock - maxRange);
-        }
-
-        // Test progressively larger ranges to find the maximum supported
-        for (const testRange of testRanges) {
-          try {
-            const testFromBlock = Math.max(0, currentBlock - testRange);
-            await stableContracts.raffleDeployer.queryFilter(
-              stableContracts.raffleDeployer.filters.RaffleCreated(),
-              testFromBlock,
-              testFromBlock + 50 // Small test window for validation
-            );
-            maxRange = testRange; // This range works, continue testing
-            console.log(`Profile: RPC supports ${testRange} block range`);
-          } catch (error) {
-            // Silently handle block range errors without toast notifications
-            const errorMessage = (error.message || '').toLowerCase();
-            if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
-              console.log(`Profile: RPC block range limit reached at ${testRange} blocks, using ${maxRange}`);
-            } else {
-              console.log(`Profile: RPC failed at ${testRange} blocks, using ${maxRange}`);
-            }
-            break; // Stop at first failure, use last successful range
-          }
-        }
-
-        // Enhanced safety: allow larger ranges for mature networks
-        if (currentBlock < 50000) {
-          maxRange = Math.min(maxRange, 5000); // Increased from 2000 to 5000
-        }
-
-        console.log('Profile: Final block range selected:', maxRange);
-        return Math.max(0, currentBlock - maxRange);
-      };
-
-      const fromBlock = await getOptimalBlockRange();
-      console.log('Profile: Fetching activity from block', fromBlock, 'to', currentBlock, `(${currentBlock - fromBlock} blocks)`);
+      const rangeLimit = APP_CONFIG.profileBlockRangeLimit || 50000;
+      const fromBlock = Math.max(0, currentBlock - rangeLimit);
+      const toBlock = currentBlock;
+      console.log('Profile: Fetching activity from block', fromBlock, 'to', toBlock, `(${toBlock - fromBlock} blocks)`);
 
       // 1. Fetch RaffleCreated events from RaffleDeployer (same as desktop)
       if (stableContracts.raffleDeployer) {
         try {
           const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
-          const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
+          const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock, toBlock);
 
-          console.log('Profile: Found', raffleCreatedEvents.length, 'RaffleCreated events for address:', stableAddress);
+          console.log('Mobile: Found', raffleCreatedEvents.length, 'RaffleCreated events for address:', stableAddress);
 
           for (const event of raffleCreatedEvents) {
             const block = await provider.getBlock(event.blockNumber);
@@ -167,7 +124,7 @@ export const useProfileData = () => {
             }
           }
         } catch (error) {
-          console.error('Profile: Error fetching RaffleCreated events:', error);
+          console.error('Mobile: Error fetching RaffleCreated events:', error);
         }
       }
 
@@ -175,9 +132,9 @@ export const useProfileData = () => {
       if (stableContracts.raffleManager) {
         try {
           const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
-          const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
+          const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock, toBlock);
 
-          console.log('Profile: Found', raffleRegisteredEvents.length, 'registered raffles');
+          console.log('Mobile: Found', raffleRegisteredEvents.length, 'registered raffles');
 
           for (const event of raffleRegisteredEvents) {
             const raffleAddress = event.args.raffle;
@@ -188,7 +145,7 @@ export const useProfileData = () => {
             try {
               // Fetch ticket purchases for this raffle
               const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(stableAddress);
-              const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
+              const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock, toBlock);
 
               for (const ticketEvent of ticketEvents) {
                 const block = await provider.getBlock(ticketEvent.blockNumber);
@@ -228,7 +185,7 @@ export const useProfileData = () => {
                 try {
                   // 1. Track NFT Prize Claims (PrizeClaimed events)
                   const prizeClaimedFilter = contract.filters.PrizeClaimed(stableAddress);
-                  const prizeEvents = await contract.queryFilter(prizeClaimedFilter, fromBlock);
+                  const prizeEvents = await contract.queryFilter(prizeClaimedFilter, fromBlock, toBlock);
 
                   for (const prizeEvent of prizeEvents) {
                     const block = await provider.getBlock(prizeEvent.blockNumber);
@@ -257,9 +214,6 @@ export const useProfileData = () => {
                   // 2. Track Native Currency Prize Claims (Transfer events to user)
                   try {
                     // Use ultra-conservative block range for getLogs (much more restrictive than queryFilter)
-                    const currentBlock = await provider.getBlockNumber();
-                    const conservativeFromBlock = Math.max(0, currentBlock - 100); // Ultra-conservative for getLogs
-
                     // Look for Transfer events from raffle contract to user (native currency prizes)
                     const transferFilter = {
                       address: address,
@@ -272,13 +226,13 @@ export const useProfileData = () => {
 
                     const transferEvents = await provider.getLogs({
                       ...transferFilter,
-                      fromBlock: conservativeFromBlock,
-                      toBlock: 'latest'
+                      fromBlock: fromBlock,
+                      toBlock: toBlock
                     }).catch(error => {
                       // Silently handle getLogs errors for prize tracking
                       const errorMessage = (error.message || '').toLowerCase();
-                      if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit') || errorMessage.includes('50000')) {
-                        console.warn('Profile: getLogs block range error for native currency prizes, skipping:', errorMessage);
+                      if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
+                        console.warn('Mobile: getLogs block range error for native currency prizes, skipping:', errorMessage);
                         return []; // Return empty array to continue processing
                       }
                       throw error; // Re-throw non-block-range errors
@@ -304,19 +258,16 @@ export const useProfileData = () => {
 
                         totalPrizesWon++;
                       } catch (error) {
-                        console.error('Profile: Error processing native currency prize event:', error);
+                        console.error('Mobile: Error processing native currency prize event:', error);
                       }
                     }
                   } catch (error) {
-                    console.log('Profile: Native currency prize tracking not available for this raffle');
+                    console.log('Mobile: Native currency prize tracking not available for this raffle');
                   }
 
                   // 3. Track ERC20 Prize Claims
                   try {
                     // Use ultra-conservative block range for getLogs (same as native currency)
-                    const currentBlock = await provider.getBlockNumber();
-                    const conservativeFromBlock = Math.max(0, currentBlock - 100); // Ultra-conservative for getLogs
-
                     // Check if raffle has ERC20 prizes
                     const erc20PrizeToken = await executeCall(contract.erc20PrizeToken, 'erc20PrizeToken');
                     if (erc20PrizeToken.success && erc20PrizeToken.result !== ethers.constants.AddressZero) {
@@ -332,13 +283,13 @@ export const useProfileData = () => {
 
                       const erc20Events = await provider.getLogs({
                         ...erc20TransferFilter,
-                        fromBlock: conservativeFromBlock,
-                        toBlock: 'latest'
+                        fromBlock: fromBlock,
+                        toBlock: toBlock
                       }).catch(error => {
                         // Silently handle getLogs errors for ERC20 prize tracking
                         const errorMessage = (error.message || '').toLowerCase();
-                        if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit') || errorMessage.includes('50000')) {
-                          console.warn('Profile: getLogs block range error for ERC20 prizes, skipping:', errorMessage);
+                        if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
+                          console.warn('Mobile: getLogs block range error for ERC20 prizes, skipping:', errorMessage);
                           return []; // Return empty array to continue processing
                         }
                         throw error; // Re-throw non-block-range errors
@@ -379,7 +330,7 @@ export const useProfileData = () => {
 
               // Fetch refund claims for this raffle
               const refundClaimedFilter = raffleContract.filters.RefundClaimed(stableAddress);
-              const refundClaimedEvents = await raffleContract.queryFilter(refundClaimedFilter, fromBlock);
+              const refundClaimedEvents = await raffleContract.queryFilter(refundClaimedFilter, fromBlock, toBlock);
               for (const refundEvent of refundClaimedEvents) {
                 const block = await provider.getBlock(refundEvent.blockNumber);
                 try {
@@ -405,7 +356,7 @@ export const useProfileData = () => {
 
               // Fetch full refunds for deletion for this raffle
               const fullRefundFilter = raffleContract.filters.FullRefundForDeletion(stableAddress);
-              const fullRefundEvents = await raffleContract.queryFilter(fullRefundFilter, fromBlock);
+              const fullRefundEvents = await raffleContract.queryFilter(fullRefundFilter, fromBlock, toBlock);
               for (const refundEvent of fullRefundEvents) {
                 const block = await provider.getBlock(refundEvent.blockNumber);
                 try {
@@ -431,7 +382,7 @@ export const useProfileData = () => {
 
               // Fetch creator revenue withdrawals for this raffle
               const revenueWithdrawnFilter = raffleContract.filters.RevenueWithdrawn(stableAddress);
-              const revenueWithdrawnEvents = await raffleContract.queryFilter(revenueWithdrawnFilter, fromBlock);
+              const revenueWithdrawnEvents = await raffleContract.queryFilter(revenueWithdrawnFilter, fromBlock, toBlock);
               for (const revenueEvent of revenueWithdrawnEvents) {
                 const block = await provider.getBlock(revenueEvent.blockNumber);
                 try {
@@ -470,7 +421,7 @@ export const useProfileData = () => {
       if (stableContracts.revenueManager) {
         try {
           const adminWithdrawnFilter = stableContracts.revenueManager.filters.AdminWithdrawn(stableAddress);
-          const adminWithdrawnEvents = await stableContracts.revenueManager.queryFilter(adminWithdrawnFilter, fromBlock);
+          const adminWithdrawnEvents = await stableContracts.revenueManager.queryFilter(adminWithdrawnFilter, fromBlock, toBlock);
 
           for (const event of adminWithdrawnEvents) {
             const block = await provider.getBlock(event.blockNumber);
@@ -528,12 +479,12 @@ export const useProfileData = () => {
                                fullErrorText.includes('block range limit') ||
                                fullErrorText.includes('too many blocks') ||
                                fullErrorText.includes('range exceeded') ||
-                               errorMessage.includes('50000') || // New 50,000 block limit
                                errorMessage.includes('10000') || // Common block limit
-                               errorMessage.includes('5000');   // Another common limit
+                               errorMessage.includes('5000') ||   // Another common limit
+                               errorMessage.includes('50000');    // New 50k limit
 
       if (isBlockRangeError) {
-        console.warn('Profile: Block range error detected (enhanced detection), suppressing toast:', errorMessage);
+        console.warn('Mobile: Block range error detected (enhanced detection), suppressing toast:', errorMessage);
         // Don't show toast for block range errors, just log them
         return;
       }
@@ -558,58 +509,13 @@ export const useProfileData = () => {
       // Use same approach as desktop - get RaffleCreated events from raffleDeployer
       if (stableContracts.raffleDeployer) {
         const currentBlock = await provider.getBlockNumber();
-
-        // Enhanced block range logic with 50,000 block limit (same as activity tracking)
-        const getOptimalBlockRange = async () => {
-          const testRanges = [200, 500, 1000, 2000, 3000, 5000, 10000, 20000, 50000];
-          let maxRange = 200; // Conservative default
-
-          // For newly deployed contracts, use conservative ranges
-          if (currentBlock < 10000) {
-            maxRange = Math.min(200, currentBlock);
-            console.log('Mobile: New network detected in fetchCreatedRaffles, using conservative range:', maxRange);
-            return Math.max(0, currentBlock - maxRange);
-          }
-
-          // Test progressively larger ranges
-          for (const testRange of testRanges) {
-            try {
-              const testFromBlock = Math.max(0, currentBlock - testRange);
-              await stableContracts.raffleDeployer.queryFilter(
-                stableContracts.raffleDeployer.filters.RaffleCreated(),
-                testFromBlock,
-                testFromBlock + 50
-              );
-              maxRange = testRange;
-              console.log(`Mobile: fetchCreatedRaffles RPC supports ${testRange} block range`);
-            } catch (error) {
-              // Silently handle block range errors without toast notifications
-              const errorMessage = (error.message || '').toLowerCase();
-              if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
-                console.log(`Mobile: fetchCreatedRaffles RPC block range limit reached at ${testRange} blocks, using ${maxRange}`);
-              } else {
-                console.log(`Mobile: fetchCreatedRaffles RPC failed at ${testRange} blocks, using ${maxRange}`);
-              }
-              break;
-            }
-          }
-
-          // Enhanced safety: allow larger ranges for mature networks
-          if (currentBlock < 50000) {
-            maxRange = Math.min(maxRange, 5000); // Increased from 2000 to 5000
-          }
-
-          console.log('Mobile: fetchCreatedRaffles final block range:', maxRange);
-          return Math.max(0, currentBlock - maxRange);
-        };
-
-
-
-        const fromBlock = await getOptimalBlockRange();
-        console.log('Mobile: Fetching created raffles from RaffleDeployer from block', fromBlock, 'to', currentBlock, `(${currentBlock - fromBlock} blocks)`);
+        const rangeLimit = APP_CONFIG.profileBlockRangeLimit || 50000;
+        const fromBlock = Math.max(0, currentBlock - rangeLimit);
+        const toBlock = currentBlock;
+        console.log('Profile: Fetching created raffles from RaffleDeployer from block', fromBlock, 'to', toBlock, `(${toBlock - fromBlock} blocks)`);
 
         const raffleCreatedFilter = stableContracts.raffleDeployer.filters.RaffleCreated(null, stableAddress);
-        const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock);
+        const raffleCreatedEvents = await stableContracts.raffleDeployer.queryFilter(raffleCreatedFilter, fromBlock, toBlock);
 
         console.log('Mobile: Found', raffleCreatedEvents.length, 'created raffles for address:', stableAddress);
 
@@ -687,9 +593,9 @@ export const useProfileData = () => {
                                fullErrorText.includes('block range limit') ||
                                fullErrorText.includes('too many blocks') ||
                                fullErrorText.includes('range exceeded') ||
-                               errorMessage.includes('50000') || // New 50,000 block limit
                                errorMessage.includes('10000') ||
-                               errorMessage.includes('5000');
+                               errorMessage.includes('5000') ||
+                               errorMessage.includes('50000');
 
       if (isBlockRangeError) {
         console.warn('Mobile: Block range error in fetchCreatedRaffles (enhanced detection), suppressing toast:', errorMessage);
@@ -716,56 +622,13 @@ export const useProfileData = () => {
 
       if (stableContracts.raffleManager) {
         const currentBlock = await provider.getBlockNumber();
-
-        // Enhanced block range logic with 50,000 block limit (same as activity tracking)
-        const getOptimalBlockRange = async () => {
-          const testRanges = [200, 500, 1000, 2000, 3000, 5000, 10000, 20000, 50000];
-          let maxRange = 200; // Conservative default
-
-          // For newly deployed contracts, use conservative ranges
-          if (currentBlock < 10000) {
-            maxRange = Math.min(200, currentBlock);
-            console.log('Mobile: New network detected in fetchPurchasedTickets, using conservative range:', maxRange);
-            return Math.max(0, currentBlock - maxRange);
-          }
-
-          // Test progressively larger ranges
-          for (const testRange of testRanges) {
-            try {
-              const testFromBlock = Math.max(0, currentBlock - testRange);
-              await stableContracts.raffleManager.queryFilter(
-                stableContracts.raffleManager.filters.RaffleRegistered(),
-                testFromBlock,
-                testFromBlock + 50
-              );
-              maxRange = testRange;
-              console.log(`Mobile: fetchPurchasedTickets RPC supports ${testRange} block range`);
-            } catch (error) {
-              // Silently handle block range errors without toast notifications
-              const errorMessage = (error.message || '').toLowerCase();
-              if (errorMessage.includes('block range') || errorMessage.includes('too large') || errorMessage.includes('limit')) {
-                console.log(`Mobile: fetchPurchasedTickets RPC block range limit reached at ${testRange} blocks, using ${maxRange}`);
-              } else {
-                console.log(`Mobile: fetchPurchasedTickets RPC failed at ${testRange} blocks, using ${maxRange}`);
-              }
-              break;
-            }
-          }
-
-          // Enhanced safety: allow larger ranges for mature networks
-          if (currentBlock < 50000) {
-            maxRange = Math.min(maxRange, 5000); // Increased from 2000 to 5000
-          }
-
-          console.log('Mobile: fetchPurchasedTickets final block range:', maxRange);
-          return Math.max(0, currentBlock - maxRange);
-        };
-
-        const fromBlock = await getOptimalBlockRange();
-        console.log('Fetching purchased tickets using TicketsPurchased events from block', fromBlock, 'to', currentBlock, `(${currentBlock - fromBlock} blocks)`);
+        const rangeLimit = APP_CONFIG.profileBlockRangeLimit || 50000;
+        const fromBlock = Math.max(0, currentBlock - rangeLimit);
+        const toBlock = currentBlock;
+        console.log('Profile: Fetching purchased tickets using TicketsPurchased events from block', fromBlock, 'to', toBlock, `(${toBlock - fromBlock} blocks)`);
 
         const raffleRegisteredFilter = stableContracts.raffleManager.filters.RaffleRegistered();
-        const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock);
+        const raffleRegisteredEvents = await stableContracts.raffleManager.queryFilter(raffleRegisteredFilter, fromBlock, toBlock);
 
         console.log('Checking', raffleRegisteredEvents.length, 'registered raffles for TicketsPurchased events');
 
@@ -786,7 +649,7 @@ export const useProfileData = () => {
 
             // Fetch TicketsPurchased events for this user in this raffle (exact same as Activity tab)
             const ticketsPurchasedFilter = raffleContract.filters.TicketsPurchased(stableAddress);
-            const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock);
+            const ticketEvents = await raffleContract.queryFilter(ticketsPurchasedFilter, fromBlock, toBlock);
 
             console.log(`Raffle ${raffleAddress}: Found ${ticketEvents.length} TicketsPurchased events`);
 
@@ -884,9 +747,9 @@ export const useProfileData = () => {
                                fullErrorText.includes('block range limit') ||
                                fullErrorText.includes('too many blocks') ||
                                fullErrorText.includes('range exceeded') ||
-                               errorMessage.includes('50000') || // New 50,000 block limit
                                errorMessage.includes('10000') ||
-                               errorMessage.includes('5000');
+                               errorMessage.includes('5000') ||
+                               errorMessage.includes('50000');
 
       if (isBlockRangeError) {
         console.warn('Mobile: Block range error in fetchPurchasedTickets (enhanced detection), suppressing toast:', errorMessage);

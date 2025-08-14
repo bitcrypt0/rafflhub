@@ -584,28 +584,21 @@ const LandingPage = () => {
   const { isMobile } = useMobileBreakpoints();
   const { formatTicketPrice, formatPrizeAmount } = useNativeCurrency();
 
-  // Use the new RaffleService hook with mobile hybrid approach
+  // Use the new RaffleService hook
   const {
     raffles,
-    allRaffleMetadata, // Mobile: metadata for filtering
     loading,
     backgroundLoading,
-    progressiveLoading, // Mobile: progressive loading state
-    loadingProgress, // Mobile: progress tracking
     error,
     refreshRaffles
   } = useRaffleService({
     autoFetch: true,
     enablePolling: true,
     pollingInterval: 120000, // 2 minutes
-    maxRaffles: null, // No platform-based limits - fetch all raffles
-    isMobile // Pass mobile flag for hybrid approach
+    maxRaffles: null // No platform-based limits - fetch all raffles
   });
 
-  // Use filter system with appropriate data source
-  // Mobile: Use metadata for filtering (fast), Desktop: Use full raffle data
-  const filterDataSource = isMobile ? (allRaffleMetadata.length > 0 ? allRaffleMetadata : raffles) : raffles;
-
+  // Use filter system
   const {
     filters,
     filteredRaffles,
@@ -615,7 +608,7 @@ const LandingPage = () => {
     clearFilters,
     toggleFilter,
     filteredCount
-  } = useRaffleFilters(filterDataSource);
+  } = useRaffleFilters(raffles);
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -702,7 +695,7 @@ const LandingPage = () => {
         filters={filters}
         onFiltersChange={updateFilters}
         raffleCount={filteredCount}
-        allRaffles={filterDataSource} // Use appropriate data source for accurate filtering
+        allRaffles={raffles}
       />
 
       {/* Main content - full width */}
@@ -736,42 +729,9 @@ const LandingPage = () => {
             )}
           </div>
 
-          {/* Mobile: Progressive loading indicator */}
-          {isMobile && progressiveLoading && (
-            <div className="mb-4 p-4 bg-card border border-border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium">Loading raffles...</div>
-                  <div className="text-xs text-muted-foreground">
-                    {loadingProgress.loaded} of {loadingProgress.total} raffles loaded
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {Math.round((loadingProgress.loaded / loadingProgress.total) * 100)}%
-                </div>
-              </div>
-              <div className="mt-2 w-full bg-muted rounded-full h-1.5">
-                <div
-                  className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min((loadingProgress.loaded / loadingProgress.total) * 100, 100)}%`
-                  }}
-                ></div>
-              </div>
-            </div>
-          )}
-
           {/* Filtered raffle grid */}
           <FilteredRaffleGrid
-            raffles={isMobile ?
-              // Mobile: Show only raffles we have full details for, filtered by current filters
-              raffles.filter(raffle =>
-                filteredRaffles.some(filtered => filtered.address === raffle.address)
-              ) :
-              // Desktop: Show all filtered raffles
-              filteredRaffles
-            }
+            raffles={filteredRaffles}
             loading={loading}
             error={error}
             RaffleCardComponent={RaffleCard}
