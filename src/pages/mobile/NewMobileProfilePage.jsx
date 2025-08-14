@@ -164,16 +164,32 @@ const NewMobileProfilePage = () => {
       }
     };
 
-    const formatDate = (timestamp) => {
-      const date = new Date(timestamp * 1000);
-      const now = new Date();
-      const diffInHours = (now - date) / (1000 * 60 * 60);
-      
-      if (diffInHours < 24) {
-        return `${Math.floor(diffInHours)}h ago`;
-      } else {
-        const diffInDays = Math.floor(diffInHours / 24);
-        return `${diffInDays}d ago`;
+    const formatDate = (value) => {
+      try {
+        if (!value && value !== 0) return 'Unknown';
+        let tsMs;
+        if (value instanceof Date) {
+          tsMs = value.getTime();
+        } else if (typeof value === 'number') {
+          // If it's likely seconds, scale to ms
+          tsMs = value < 1e12 ? value * 1000 : value;
+        } else {
+          const d = new Date(value);
+          tsMs = isNaN(d.getTime()) ? null : d.getTime();
+        }
+        if (tsMs == null) return 'Unknown';
+        const nowMs = Date.now();
+        let diffSec = Math.floor((nowMs - tsMs) / 1000);
+        if (diffSec < 0) diffSec = 0; // future timestamps -> Just now
+        if (diffSec < 60) return diffSec <= 1 ? 'Just now' : `${diffSec}s ago`;
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        const diffDay = Math.floor(diffHr / 24);
+        return `${diffDay}d ago`;
+      } catch (_) {
+        return 'Unknown';
       }
     };
 
