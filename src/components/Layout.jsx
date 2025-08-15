@@ -30,7 +30,7 @@ const Header = () => {
   // Show loading state while detecting device type to prevent flash
   if (!isInitialized) {
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
         <div className="flex items-center justify-between h-16 px-4">
           <div className="flex items-center">
             <Logo size="sm" />
@@ -195,9 +195,9 @@ const Header = () => {
 
   return (
     <>
-      <header className="relative w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="relative w-full z-50 bg-background/80 backdrop-blur-md border-b border-[#614E41]">
         <div className="w-full px-0 py-0">
-          <div className="bg-background/80 backdrop-blur-md border-b border-border/50 w-full">
+          <div className="bg-background/80 backdrop-blur-md border-b border-[#614E41] w-full">
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-3">
@@ -330,7 +330,7 @@ const Header = () => {
                 <NetworkSelector />
                 {/* Wallet connect/disconnect next */}
                 {connected ? (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md text-sm font-medium">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-background border border-[#614E41] rounded-md text-sm font-medium">
                     <span>{formatAddress(address)}</span>
                     <button
                       onClick={disconnect}
@@ -343,7 +343,7 @@ const Header = () => {
                 ) : (
                   <button
                     onClick={handleConnectWallet}
-                    className="flex items-center gap-2 px-3 py-2 bg-foreground text-background rounded-md text-sm hover:bg-foreground/90 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 bg-background text-foreground border border-[#614E41] rounded-md text-sm hover:bg-background/90 transition-colors"
                   >
                     <Wallet className="h-4 w-4" />
                     <span>Connect Wallet</span>
@@ -352,11 +352,11 @@ const Header = () => {
                 {/* New vertical dropdown menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md text-sm font-medium hover:bg-muted/80 transition-colors">
+                    <button className="flex items-center gap-2 px-3 py-2 bg-background border border-[#614E41] rounded-md text-sm font-medium hover:bg-background/80 transition-colors">
                       Menu
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-popover/90 backdrop-blur-md border border-border/50 mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">
+                  <DropdownMenuContent align="end" sideOffset={8} collisionPadding={8} className="w-56 bg-popover/90 backdrop-blur-md border border-[#614E41] mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">
                     <DropdownMenuItem asChild>
                       <a
                         href="https://rafflhub.gitbook.io/rafflhub"

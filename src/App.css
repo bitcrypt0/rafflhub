@@ -1,4 +1,6 @@
+@import './styles/detail-beige-overrides.css';
 @custom-variant dark (&:is(.dark *));
+
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -8,6 +10,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
@@ -42,7 +45,7 @@
   --radius: 0.625rem;
 
   /* Light Theme Colors */
-  --background: 0 0% 100%;
+  --background: 31 56% 91%;
   --foreground: 240 10% 3.9%;
   --card: 0 0% 100%;
   --card-foreground: 240 10% 3.9%;
@@ -147,17 +150,17 @@ html.dim-blue {
   --ring: 25 20% 32%;
   --chart-1: 25 20% 32%;
   --chart-2: 25 20% 32%;
-  --chart-3: 195 85% 50%;
-  --chart-4: 0 75% 55%;
-  --chart-5: 47.9 95.8% 53.1%;
+  --chart-3: 210 40% 92%;
+  --chart-4: 210 40% 92%;
+  --chart-5: 210 40% 92%;
   --sidebar: 215 25% 8%;
   --sidebar-foreground: 210 40% 92%;
-  --sidebar-primary: 210 85% 45%;
+  --sidebar-primary: 0 0% 98%;
   --sidebar-primary-foreground: 215 25% 8%;
   --sidebar-accent: 215 20% 18%;
   --sidebar-accent-foreground: 210 40% 92%;
   --sidebar-border: 215 20% 18%;
-  --sidebar-ring: 210 85% 45%;
+  --sidebar-ring: 0 0% 98%;
 }
 
 .animate-spin {
@@ -261,31 +264,31 @@ select:focus-visible {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   .grid {
     grid-template-columns: 1fr;
   }
-  
+
   h1 {
     font-size: 2rem;
   }
-  
+
   h2 {
     font-size: 1.5rem;
   }
-  
+
   h3 {
     font-size: 1.25rem;
   }
-  
+
   p {
     font-size: 1rem;
   }
-  
+
   button {
     font-size: 0.875rem;
   }
-  
+
   input, textarea, select {
     font-size: 0.875rem;
   }

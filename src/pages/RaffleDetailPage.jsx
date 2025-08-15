@@ -230,7 +230,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   );
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Tickets
@@ -812,7 +812,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   // Show loading state
   if (loading) {
     return (
-      <Card className="h-full flex flex-col items-center justify-center">
+      <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-[#614E41] rounded-xl">
         <CardContent className="flex flex-col items-center justify-center">
           <div className="w-64 h-64 flex items-center justify-center border rounded-lg bg-muted/30">
             <div className="text-center">
@@ -832,7 +832,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   }
 
   return (
-    <Card className="h-full flex flex-col items-center justify-center">
+    <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-[#614E41] rounded-xl">
       <CardContent className="flex flex-col items-center justify-center">
         <img
           src={imageUrl}
@@ -1110,23 +1110,23 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
     };
     if (winner.prizeClaimed) return {
       text: 'Claimed',
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-green-700',
       icon: 'green-dot',
-      bgColor: 'bg-green-50 dark:bg-green-900/20'
+      bgColor: 'bg-green-100'
     };
     return {
       text: 'Unclaimed',
-      color: 'text-orange-600 dark:text-orange-400',
+      color: 'text-orange-700',
       icon: '⏳',
-      bgColor: 'bg-orange-50 dark:bg-orange-900/20'
+      bgColor: 'bg-orange-100'
     };
   };
 
   const claimStatus = getClaimStatus();
 
   return (
-    <div className={`bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
-      isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-border hover:border-border/80'
+    <div className={`detail-beige-card text-foreground bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
+      isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-[#614E41]'
     }`}>
       <div className="p-3">
         <div className="flex items-center justify-between mb-3">
@@ -1562,7 +1562,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isEscrowedPrize, isMobile, o
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Trophy className="h-5 w-5" />
         Winners
@@ -2389,17 +2389,17 @@ const RaffleDetailPage = () => {
 
     const label = getDynamicLabel(raffle.stateNum);
     const colorMap = {
-      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
-      'Prize Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300', // Same styling for singular
-      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Active': 'bg-green-100 text-green-800',
+      'Ended': 'bg-red-100 text-red-800',
+      'Drawing': 'bg-purple-100 text-purple-800',
+      'Completed': 'bg-blue-100 text-blue-800',
+      'Deleted': 'bg-gray-200 text-gray-800',
+      'Activation Failed': 'bg-red-200 text-red-900',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900',
+      'Prize Claimed': 'bg-blue-200 text-blue-900', // Same styling for singular
+      'Unengaged': 'bg-gray-100 text-gray-800',
+      'Unknown': 'bg-gray-100 text-gray-800'
     };
     return <span className={`px-3 py-1 rounded-full text-sm font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
@@ -2887,7 +2887,7 @@ const RaffleDetailPage = () => {
         )}
       </div>
 
-      <div className="mb-8 p-6 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg">
+      <div className="detail-beige-card mb-8 p-6 bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl shadow-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketsSold}</p>
@@ -2909,7 +2909,7 @@ const RaffleDetailPage = () => {
             {isRefundable && raffle && raffle.standard !== 2 && raffle.standard !== 3 && (() => {
               const { refundable, reason, label } = getRefundability(raffle);
               return (
-                <span className={`px-3 py-1 rounded-full font-semibold ${refundable ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'} text-xs`}
+                <span className={`px-3 py-1 rounded-full font-semibold ${refundable ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'} text-xs`}
                   title={reason}
                   style={{ whiteSpace: 'nowrap' }}
                 >
@@ -2964,7 +2964,7 @@ const RaffleDetailPage = () => {
 
         {/* Bottom Row: Raffle Details and PrizeImageCard */}
         <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg h-full">
+          <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg h-full">
             <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">

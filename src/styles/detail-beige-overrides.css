@@ -1,0 +1,17 @@
+/* Scoped beige card overrides for RaffleDetailPage */
+/* Applies to dark and dim-blue themes only; light theme remains unchanged */
+
+/* TicketPurchaseSection, WinnersSection, Stats Overview, Raffle Details, PrizeImageCard, WinnerCard */
+.dark .detail-beige-card,
+html.dim-blue .detail-beige-card {
+  /* Light beige card surface and local light tokens */
+  --card: 31 56% 91%;             /* #F5E9DC */
+  --card-foreground: 240 10% 3.9%; /* dark text */
+  --foreground: 240 10% 3.9%;      /* ensure main text is dark */
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --accent: 240 4.8% 95.9%;
+  background-color: #F5E9DC !important;
+}
+

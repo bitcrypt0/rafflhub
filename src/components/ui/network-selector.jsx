@@ -94,10 +94,10 @@ const NetworkSelector = () => {
   return (
     <div className="flex items-center gap-2">
       <Select value={chainId ? String(chainId) : ''} onValueChange={handleChange} disabled={pending}>
-        <SelectTrigger className="min-w-[180px]">
+        <SelectTrigger className="min-w-[180px] bg-background border-[#614E41]">
           <SelectValue placeholder="Select Network" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border border-[#614E41]">
           {getAvailableNetworks().map(([id, net]) => (
             <SelectItem key={id} value={id}>
               {net.name}

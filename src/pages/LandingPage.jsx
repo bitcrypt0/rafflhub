@@ -361,17 +361,17 @@ const RaffleCard = ({ raffle }) => {
 
     const label = getDynamicLabel(raffle.stateNum);
     const colorMap = {
-      'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      'Active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      'Ended': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      'Drawing': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      'Deleted': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Activation Failed': 'bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300',
-      'Prizes Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300',
-      'Prize Claimed': 'bg-blue-200 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300', // Same styling for singular
-      'Unengaged': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Unknown': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Active': 'bg-green-100 text-green-800',
+      'Ended': 'bg-red-100 text-red-800',
+      'Drawing': 'bg-purple-100 text-purple-800',
+      'Completed': 'bg-blue-100 text-blue-800',
+      'Deleted': 'bg-gray-200 text-gray-800',
+      'Activation Failed': 'bg-red-200 text-red-900',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900',
+      'Prize Claimed': 'bg-blue-200 text-blue-900', // Same styling for singular
+      'Unengaged': 'bg-gray-100 text-gray-800',
+      'Unknown': 'bg-gray-100 text-gray-800'
     };
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
@@ -448,7 +448,7 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
+    <div className="landing-raffle-card bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
       <div className="flex items-center justify-between mb-4 min-w-0">
         <h3 className="text-base sm:text-lg font-semibold truncate flex-1 mr-2 min-w-0">{raffle.name}</h3>
         <div className="flex-shrink-0">
@@ -670,23 +670,7 @@ const LandingPage = () => {
 
   return (
     <>
-      {/* Background gradient */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 0,
-          pointerEvents: 'none',
-          background: `radial-gradient(circle at 20% 30%, hsl(var(--primary) / 0.08) 0%, transparent 60%),
-                      radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.06) 0%, transparent 60%),
-                      radial-gradient(circle at 60% 80%, hsl(var(--secondary) / 0.05) 0%, transparent 60%),
-                      linear-gradient(120deg, hsl(var(--primary) / 0.03) 0%, hsl(var(--accent) / 0.03) 100%)`
-        }}
-        aria-hidden="true"
-      />
+
 
       {/* Filter Sidebar (overlay when open) */}
       <FilterSidebar
