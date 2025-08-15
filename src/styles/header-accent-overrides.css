@@ -1,0 +1,20 @@
+/* Header accent surfaces for triggers/buttons (not dropdown panels) */
+/* Light (beige) theme: use brand #614E41 surface with light text */
+.header-accent-surface {
+  background-color: #614E41 !important;
+  /* Make inner text/icon utilities theme-aware via tokens */
+  --foreground: 0 0% 100%; /* white */
+  --muted-foreground: 0 0% 100%; /* ensure icons like chevron inherit visible color */
+  color: hsl(var(--foreground));
+}
+
+/* Dark and Dim Blue themes: use beige surface #F5E9DC with dark text */
+.dark .header-accent-surface,
+html.dim-blue .header-accent-surface,
+.dim-blue .header-accent-surface {
+  background-color: #F5E9DC !important;
+  --foreground: 240 10% 3.9%; /* dark readable text */
+  --muted-foreground: 240 3.8% 46.1%; /* readable muted on beige */
+  color: hsl(var(--foreground));
+}
+

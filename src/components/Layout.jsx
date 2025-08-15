@@ -330,20 +330,20 @@ const Header = () => {
                 <NetworkSelector />
                 {/* Wallet connect/disconnect next */}
                 {connected ? (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-background border border-[#614E41] rounded-md text-sm font-medium">
+                  <div className="flex items-center gap-2 px-3 py-2 header-accent-surface border border-[#614E41] rounded-md text-sm font-medium">
                     <span>{formatAddress(address)}</span>
                     <button
                       onClick={disconnect}
                       title="Disconnect Wallet"
                       className="hover:bg-destructive/10 rounded-full p-1 transition-colors"
                     >
-                      <LogOut className="h-4 w-4 text-destructive" />
+                      <LogOut className="h-4 w-4 text-foreground opacity-80" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={handleConnectWallet}
-                    className="flex items-center gap-2 px-3 py-2 bg-background text-foreground border border-[#614E41] rounded-md text-sm hover:bg-background/90 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 header-accent-surface text-foreground border border-[#614E41] rounded-md text-sm hover:opacity-95 transition-colors"
                   >
                     <Wallet className="h-4 w-4" />
                     <span>Connect Wallet</span>
@@ -352,7 +352,7 @@ const Header = () => {
                 {/* New vertical dropdown menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-background border border-[#614E41] rounded-md text-sm font-medium hover:bg-background/80 transition-colors">
+                    <button className="flex items-center gap-2 px-3 py-2 header-accent-surface border border-[#614E41] rounded-md text-sm font-medium hover:opacity-95 transition-colors">
                       Menu
                     </button>
                   </DropdownMenuTrigger>

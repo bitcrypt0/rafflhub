@@ -1147,7 +1147,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
           </div>
           <button
             onClick={() => onToggleExpand(winner, index)}
-            className="flex-shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors"
+            className="winner-card-expand flex-shrink-0 p-1.5 rounded-md hover:bg-transparent active:bg-transparent focus:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-0"
             title={isExpanded ? "Hide details" : "View details"}
           >
             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />

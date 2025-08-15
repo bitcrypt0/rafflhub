@@ -9,7 +9,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-background/80 backdrop-blur-md border-t border-border/50 mt-auto shrink-0">
+    <footer className="bg-background/80 backdrop-blur-md border-t border-[#614E41] mt-auto shrink-0">
       <div className="w-full px-6 sm:px-8 lg:px-12 py-3 sm:py-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 w-full min-h-[60px] sm:min-h-0">
           <div className="text-sm text-muted-foreground sm:ml-0 flex-shrink-0">
