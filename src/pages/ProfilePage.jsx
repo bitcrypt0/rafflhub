@@ -12,6 +12,7 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
+
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
@@ -33,7 +34,7 @@ function mapRaffleState(stateNum) {
 const ActivityCard = ({ activity }) => {
   const navigate = useNavigate();
   const { getCurrencySymbol } = useNativeCurrency();
-  
+
   const getActivityIcon = () => {
     // Icons removed as requested
     return null;
@@ -99,7 +100,11 @@ const ActivityCard = ({ activity }) => {
         </div>
         {activity.raffleAddress && (
           <button
-            onClick={() => navigate(`/raffle/${activity.raffleAddress}`)}
+            onClick={() => {
+              const slug = activity.chainId && SUPPORTED_NETWORKS[activity.chainId] ? SUPPORTED_NETWORKS[activity.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (activity.chainId || '');
+              const path = slug ? `/${slug}/raffle/${activity.raffleAddress}` : `/raffle/${activity.raffleAddress}`;
+              navigate(path);
+            }}
             className="p-1 hover:bg-muted rounded-md transition-colors"
           >
             <Eye className="h-4 w-4" />
@@ -194,7 +199,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         <h3 className="font-semibold truncate">{raffle.name}</h3>
         {getStatusBadge()}
       </div>
-      
+
       <div className="space-y-2 text-sm mb-4">
         <div className="flex justify-between">
           <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
@@ -209,10 +214,14 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
           <span>{timeRemaining}</span>
         </div>
       </div>
-      
+
       <div className="flex gap-2">
         <Button
-          onClick={() => navigate(`/raffle/${raffle.address}`)}
+          onClick={() => {
+              const slug = raffle.chainId && SUPPORTED_NETWORKS[raffle.chainId] ? SUPPORTED_NETWORKS[raffle.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (raffle.chainId || '');
+              const path = slug ? `/${slug}/raffle/${raffle.address}` : `/raffle/${raffle.address}`;
+              navigate(path);
+            }}
           className="flex-1 bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           View
@@ -256,14 +265,14 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
           Mint to Winner
         </Button>
       </div>
-      
+
       {/* Show deletion info for raffles with sold tickets */}
       {canDelete() && raffle.ticketsSold > 0 && (
         <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
           <p>ℹ️ Deletion will automatically process refunds for sold tickets</p>
         </div>
       )}
-      
+
       {/* Show info for non-deletable raffles */}
       {!canDelete() && (
         <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-800">
@@ -276,7 +285,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
 
 const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   const navigate = useNavigate();
-  
+
   const canClaimPrize = () => {
     return ticket.isWinner && (ticket.raffleState === 'Completed' || ticket.raffleState === 'AllPrizesClaimed') && !ticket.prizeClaimed;
   };
@@ -284,14 +293,14 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   const canClaimRefund = () => {
     return !ticket.isWinner && (ticket.raffleState === 'Completed' || ticket.raffleState === 'AllPrizesClaimed') && !ticket.refundClaimed;
   };
-  
+
   return (
     <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold truncate">{ticket.raffleName}</h3>
         <span className="text-sm text-gray-500 dark:text-gray-400">{ticket.quantity} tickets</span>
       </div>
-      
+
       <div className="space-y-1 text-sm mb-3">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total Cost:</span>
@@ -316,10 +325,14 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
           </span>
         </div>
       </div>
-      
+
       <div className="flex gap-2">
         <Button
-          onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
+          onClick={() => {
+              const slug = ticket.chainId && SUPPORTED_NETWORKS[ticket.chainId] ? SUPPORTED_NETWORKS[ticket.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (ticket.chainId || '');
+              const path = slug ? `/${slug}/raffle/${ticket.raffleAddress}` : `/raffle/${ticket.raffleAddress}`;
+              navigate(path);
+            }}
           className="w-full bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           Visit Raffle Page
@@ -333,7 +346,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         >
           Claim Prize
         </Button>
-        
+
         {canClaimRefund() && (
           <button
             onClick={() => onClaimRefund(ticket)}
@@ -491,11 +504,11 @@ const DesktopProfilePage = () => {
 
   const handleDeleteRaffle = async (raffle) => {
     let confirmMessage = `Are you sure you want to delete "${raffle.name}"?`;
-    
+
     if (raffle.ticketsSold > 0) {
       confirmMessage += `\n\nThis raffle has ${raffle.ticketsSold} sold tickets. Deletion will automatically process refunds for all participants.`;
     }
-    
+
     if (!window.confirm(confirmMessage)) {
       return;
     }
@@ -507,9 +520,9 @@ const DesktopProfilePage = () => {
       }
 
       const result = await executeTransaction(raffleContract.deleteRaffle);
-      
+
       if (result.success) {
-        const successMessage = raffle.ticketsSold > 0 
+        const successMessage = raffle.ticketsSold > 0
           ? `Raffle deleted successfully! Refunds have been processed automatically for ${raffle.ticketsSold} sold tickets.`
           : 'Raffle deleted successfully!';
         toast.success(successMessage);
@@ -549,7 +562,7 @@ const DesktopProfilePage = () => {
         // Single prize - use claimPrize
         result = await executeTransaction(raffleContract.claimPrize);
       }
-      
+
       if (result.success) {
         toast.success('Prize claimed successfully!');
         // Refresh data after claiming
@@ -579,7 +592,7 @@ const DesktopProfilePage = () => {
       const refundClaimedBool = refundClaimed && refundClaimed.gt && refundClaimed.gt(0);
 
       const result = await executeTransaction(raffleContract.claimRefund);
-      
+
       if (result.success) {
         toast.success('Refund claimed successfully!');
         // Refresh data after claiming
@@ -729,7 +742,7 @@ const DesktopProfilePage = () => {
               monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
               totalParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0),
               uniqueParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0), // TODO: Calculate unique participants
-              successRate: createdRaffles.length > 0 ? 
+              successRate: createdRaffles.length > 0 ?
                 Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0
             }}
             onDeleteRaffle={handleDeleteRaffle}

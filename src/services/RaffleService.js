@@ -333,6 +333,7 @@ class RaffleService {
         id: raffleAddress,
         name,
         address: raffleAddress,
+        chainId: this.walletContext?.chainId,
         creator,
         startTime: startTime.toNumber(),
         duration: duration.toNumber(),

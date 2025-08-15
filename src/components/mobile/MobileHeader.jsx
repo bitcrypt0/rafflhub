@@ -10,6 +10,8 @@ import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '../ui/sheet';
 import NetworkSelector from '../ui/network-selector';
 import Logo from '../ui/Logo';
+import { SUPPORTED_NETWORKS } from '../../networks';
+
 
 const MobileHeader = () => {
   const { connected, address, formatAddress, disconnect, connectWallet } = useWallet();
@@ -89,7 +91,12 @@ const MobileHeader = () => {
   };
 
   const handleSearchResultClick = (raffleAddress) => {
-    navigate(`/raffle/${raffleAddress}`);
+    const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : null;
+    const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
+      ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : (currentChainId || '');
+    const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+    navigate(path);
     setShowSearch(false);
     setSearchTerm('');
     clearSearch();
@@ -153,12 +160,12 @@ const MobileHeader = () => {
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              
+
               <SheetContent side="right" className="w-64 p-0 bg-background">
                 <SheetHeader className="p-3 border-b border-border">
                   <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
                 </SheetHeader>
-                
+
                 <div className="flex flex-col h-full">
                   {/* Wallet Section */}
                   <div className="p-3 border-b border-border">

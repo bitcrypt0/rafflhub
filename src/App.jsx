@@ -64,6 +64,7 @@ const AppContent = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
+          <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
 
         </Routes>
       </main>

@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SUPPORTED_NETWORKS } from '../networks';
+
 import { createPortal } from 'react-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { useWallet } from '../contexts/WalletContext';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import {
   Activity,
@@ -140,6 +144,8 @@ const ProfileTabs = ({
   onClaimRefund
 }) => {
   const navigate = useNavigate();
+  const { chainId } = useWallet();
+
   const [activeTab, setActiveTab] = useState('activity');
   const { isMobile } = useMobileBreakpoints();
   const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
@@ -288,7 +294,11 @@ const ProfileTabs = ({
             <ProfileRaffleCard
               key={raffle.address}
               raffle={raffle}
-              onRaffleClick={(address) => navigate(`/raffle/${address}`)}
+              onRaffleClick={(address) => {
+                  const slug = chainId && SUPPORTED_NETWORKS[chainId] ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (chainId || '');
+                  const path = slug ? `/${slug}/raffle/${address}` : `/raffle/${address}`;
+                  navigate(path);
+                }}
               formatRevenueAmount={formatRevenueAmount}
               getCurrencySymbol={getCurrencySymbol}
             />

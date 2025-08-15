@@ -179,7 +179,9 @@ const Header = () => {
   }, [searchTerm, showSearch, allRaffles]);
 
   const handleSearchResultClick = (raffleAddress) => {
-    navigate(`/raffle/${raffleAddress}`);
+    const slug = chainId && SUPPORTED_NETWORKS[chainId] ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (chainId || '');
+    const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+    navigate(path);
     setTimeout(() => {
       setShowSearch(false);
       setSearchTerm('');

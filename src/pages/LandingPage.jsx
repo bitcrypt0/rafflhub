@@ -18,6 +18,8 @@ import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
 import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
 import { useRaffleFilters } from '../hooks/useRaffleFilters';
+import { SUPPORTED_NETWORKS } from '../networks';
+
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 
 const RAFFLE_STATE_LABELS = [
@@ -34,6 +36,7 @@ const RAFFLE_STATE_LABELS = [
 
 const RaffleCard = ({ raffle }) => {
   const navigate = useNavigate();
+  const { chainId } = useWallet();
   const [timeLabel, setTimeLabel] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('');
   const [erc20Symbol, setErc20Symbol] = useState('');
@@ -444,7 +447,10 @@ const RaffleCard = ({ raffle }) => {
   };
 
   const handleViewRaffle = () => {
-    navigate(`/raffle/${raffle.address}`);
+    const currentChainId = raffle.chainId || chainId;
+    const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId] ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (currentChainId || '');
+    const path = slug ? `/${slug}/raffle/${raffle.address}` : `/raffle/${raffle.address}`;
+    navigate(path);
   };
 
   return (
@@ -455,7 +461,7 @@ const RaffleCard = ({ raffle }) => {
           {getStatusBadge()}
         </div>
       </div>
-      
+
       <div className="space-y-2 mb-4 min-w-0">
         <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Creator:</span>
@@ -566,7 +572,7 @@ const RaffleCard = ({ raffle }) => {
           return null;
         })()}
       </div>
-      
+
       <Button
         onClick={handleViewRaffle}
         className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0 text-sm sm:text-base py-2 sm:py-3"

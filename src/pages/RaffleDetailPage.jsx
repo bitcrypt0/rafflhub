@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { resolveChainIdFromSlug } from '../utils/urlNetworks';
 import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown } from 'lucide-react';
+import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
@@ -163,7 +166,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
       setActivating(false);
     }
   };
-  
+
   const handleRequestRandomness = async () => {
     setRequestingRandomness(true);
     try {
@@ -408,13 +411,12 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-2">Quantity</label>
-                    <input
+                    <Input
                       type="number"
-                      min="1"
+                      min={1}
                       max={raffle.maxTicketsPerParticipant}
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, Math.min(raffle.maxTicketsPerParticipant, parseInt(e.target.value) || 1)))}
-                      className="w-full px-3 py-2.5 border border-border rounded-md bg-background"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Maximum: {raffle.maxTicketsPerParticipant} tickets
@@ -1128,7 +1130,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
     <div className={`detail-beige-card text-foreground bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
       isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-[#614E41]'
     }`}>
-      <div className="p-3">
+      <div className="px-2 py-3 sm:px-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="flex-shrink-0">
@@ -1147,7 +1149,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
           </div>
           <button
             onClick={() => onToggleExpand(winner, index)}
-            className="winner-card-expand flex-shrink-0 p-1.5 rounded-md hover:bg-transparent active:bg-transparent focus:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-0"
+            className="winner-card-expand flex-shrink-0 p-1 sm:p-1.5 rounded-md hover:bg-transparent active:bg-transparent focus:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-0"
             title={isExpanded ? "Hide details" : "View details"}
           >
             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -1684,6 +1686,8 @@ function getExplorerLink(address, chainIdOverride) {
   return `${baseUrl}/address/${address}`;
 }
 
+
+
 // PrizeTypes.Standard enum mapping
 const PRIZE_TYPE_OPTIONS = [
   { label: 'ERC721', value: 0 },
@@ -1692,11 +1696,22 @@ const PRIZE_TYPE_OPTIONS = [
 
 const RaffleDetailPage = () => {
   const { raffleAddress } = useParams();
+  const params = useParams();
+  const chainSlug = params.chainSlug;
+
   const navigate = useNavigate();
   const { connected, address, provider, isInitialized, isReconnecting } = useWallet();
   const { getContractInstance, executeTransaction, isContractsReady } = useContract();
   const { isMobile } = useMobileBreakpoints();
   const { formatTicketPrice, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
+  const makeSharePath = useCallback(() => {
+    const currentChainId = provider?.network?.chainId;
+    const nameSlug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
+      ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : (currentChainId || '');
+    return `${nameSlug ? `/${nameSlug}` : ''}/raffle/${raffleAddress}`;
+  }, [provider, raffleAddress]);
+
   const { refreshTrigger, triggerRefresh } = useRaffleStateManager();
   const { handleError } = useErrorHandler();
 
@@ -1725,6 +1740,50 @@ const RaffleDetailPage = () => {
   const [approvingERC721, setApprovingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
   const [isExternallyPrized, setIsExternallyPrized] = useState(false);
+  // If URL includes a chain slug, gently ensure wallet is on the right network
+  useEffect(() => {
+    async function ensureNetworkFromUrl() {
+      if (!chainSlug) return; // no slug provided, skip
+      const targetChainId = resolveChainIdFromSlug(chainSlug);
+      if (!targetChainId) return;
+      // If wallet not connected yet, do nothing; switching will be prompted later when needed
+      if (!connected || !window.ethereum) return;
+      try {
+        if (provider?.network?.chainId !== targetChainId) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+            });
+          } catch (switchErr) {
+            // If not added, try to add
+            if (switchErr?.code === 4902 && SUPPORTED_NETWORKS[targetChainId]) {
+              const net = SUPPORTED_NETWORKS[targetChainId];
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: `0x${targetChainId.toString(16)}`,
+                  chainName: net.name,
+                  rpcUrls: [net.rpcUrl],
+                  blockExplorerUrls: [net.explorer],
+                  nativeCurrency: net.nativeCurrency || { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                }],
+              });
+              // Try switching again
+              await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Network switch via URL failed (non-fatal):', e);
+      }
+    }
+    ensureNetworkFromUrl();
+  }, [chainSlug, connected, provider]);
+
 
   const [showMintInput, setShowMintInput] = useState(false);
   const [mintWinnerAddress, setMintWinnerAddress] = useState("");
@@ -1967,7 +2026,7 @@ const RaffleDetailPage = () => {
 
         let userTickets = 0;
         let userTicketsRemaining = maxTicketsPerParticipant.toNumber();
-        
+
         if (connected && address) {
           try {
             const userTicketCount = await raffleContract.ticketsPurchased(address);
@@ -2016,7 +2075,7 @@ const RaffleDetailPage = () => {
           prizeTokenId,
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
         };
-        
+
         setRaffle(raffleData);
         setIsRefundable(isRefundableFlag);
         setIsExternallyPrized(isExternallyPrizedFlag);
@@ -2047,6 +2106,8 @@ const RaffleDetailPage = () => {
         setError(errorMessage);
       } finally {
         setLoading(false);
+
+
       }
   }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress, isInitialized, isReconnecting, refreshTrigger]);
 
@@ -2326,7 +2387,7 @@ const RaffleDetailPage = () => {
     }
 
     const totalCost = ethers.BigNumber.from(raffle.ticketPrice).mul(quantity);
-    
+
     const result = await executeTransaction(
       raffleContract.purchaseTickets,
       quantity,
@@ -2344,9 +2405,9 @@ const RaffleDetailPage = () => {
 
   const handleDeleteRaffle = async () => {
     if (!raffle || !getContractInstance) return;
-    
 
-    
+
+
     setDeletingRaffle(true);
     try {
       const raffleContract = getContractInstance(raffle.address, 'raffle');
@@ -2356,7 +2417,7 @@ const RaffleDetailPage = () => {
 
       const tx = await raffleContract.deleteRaffle();
       await tx.wait();
-      
+
       toast.success('Raffle deleted successfully!');
         navigate('/');
     } catch (error) {
@@ -2370,7 +2431,7 @@ const RaffleDetailPage = () => {
   const canDelete = () => {
     return (
       connected &&
-           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
+           address?.toLowerCase() === raffle?.creator.toLowerCase() &&
       (raffle?.state === 'Pending' || raffle?.state === 'Active') &&
       (isRefundable === true || raffle?.usesCustomPrice === true)
     );
@@ -2719,13 +2780,35 @@ const RaffleDetailPage = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Raffles
         </button>
-        
+
         <div className="flex items-center justify-between">
           <div>
-            <h1 className={isMobile ? "text-xl font-bold mb-2" : "text-3xl font-bold mb-2"}>{raffle.name}</h1>
-            <p className="text-muted-foreground">
-              Created by {raffle.creator.slice(0, 10)}...{raffle.creator.slice(-8)}
-            </p>
+
+            <div className="flex items-center gap-2">
+              <h1 className={isMobile ? "text-xl font-bold mb-2" : "text-3xl font-bold mb-2"}>{raffle.name}</h1>
+              <button
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}${makeSharePath()}`;
+                  navigator.clipboard.writeText(shareUrl).then(() => {
+                    toast.success('Share link copied to clipboard');
+                  }).catch(() => {
+                    toast.error('Failed to copy link');
+                  });
+                }}
+                title="Copy share link"
+                className="ml-2 p-1 rounded text-muted-foreground hover:text-foreground focus:outline-none active:outline-none hover:bg-transparent active:bg-transparent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M3.9 12a5 5 0 0 1 5-5h2v2h-2a3 3 0 0 0 0 6h2v2h-2a5 5 0 0 1-5-5zm7-1h2v2h-2v-2zm4.1-4a5 5 0 0 1 0 10h-2v-2h2a3 3 0 0 0 0-6h-2V7h2z" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-2">
+              <p className="text-muted-foreground">
+                Created by {raffle.creator.slice(0, 10)}...{raffle.creator.slice(-8)}
+              </p>
+            </div>
+
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge()}
@@ -2877,7 +2960,7 @@ const RaffleDetailPage = () => {
             )}
           </div>
         </div>
-        
+
         {canDelete() && raffle.ticketsSold > 0 && (
           <div className="mt-4 p-4 bg-blue-50/80 dark:bg-blue-900/20 backdrop-blur-sm border border-blue-200/50 dark:border-blue-700/50 rounded-lg">
             <p className="text-sm text-blue-800">

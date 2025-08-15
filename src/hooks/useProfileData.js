@@ -644,6 +644,7 @@ export const useProfileData = () => {
 
             raffles.push({
               address: raffleAddress,
+              chainId,
               name,
               ticketPrice: ethers.utils.formatEther(ticketPrice),
               maxTickets: ticketLimit.toString(),

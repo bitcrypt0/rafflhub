@@ -12,6 +12,8 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 
+import { SUPPORTED_NETWORKS } from '../../networks';
+
 /**
  * New Mobile Profile Page - Simple, stable implementation
  * No dynamic component rendering to prevent React Error #130
@@ -194,7 +196,12 @@ const NewMobileProfilePage = () => {
     };
 
     const handleRaffleClick = (raffleAddress) => {
-      navigate(`/raffle/${raffleAddress}`);
+      const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : null;
+      const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
+        ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        : (currentChainId || '');
+      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+      navigate(path);
     };
 
     if (!userActivity || userActivity.length === 0) {
@@ -217,7 +224,7 @@ const NewMobileProfilePage = () => {
           <h3 className="text-lg font-semibold">Recent Activity</h3>
           <span className="text-sm text-muted-foreground">{userActivity.length} activities</span>
         </div>
-        
+
         {userActivity.slice(0, 10).map((activity, index) => (
           <div
             key={activity.id || index}
@@ -1971,7 +1978,12 @@ const NewMobileProfilePage = () => {
   // My Raffles section rendering - matches desktop functionality
   const renderMyRafflesSection = () => {
     const handleRaffleClick = (raffleAddress) => {
-      navigate(`/raffle/${raffleAddress}`);
+      const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : null;
+      const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
+        ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        : (currentChainId || '');
+      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+      navigate(path);
     };
 
     if (!createdRaffles || createdRaffles.length === 0) {
@@ -2053,7 +2065,12 @@ const NewMobileProfilePage = () => {
   // Purchased Tickets section rendering - matches desktop functionality
   const renderPurchasedTicketsSection = () => {
     const handleRaffleClick = (raffleAddress) => {
-      navigate(`/raffle/${raffleAddress}`);
+      const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : null;
+      const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
+        ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        : (currentChainId || '');
+      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+      navigate(path);
     };
 
     if (!purchasedTickets || purchasedTickets.length === 0) {
