@@ -9,6 +9,7 @@ import { ethers } from 'ethers';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
@@ -417,6 +418,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                       max={raffle.maxTicketsPerParticipant}
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, Math.min(raffle.maxTicketsPerParticipant, parseInt(e.target.value) || 1)))}
+                      className="focus:outline-none focus:ring-0 focus-visible:ring-0"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Maximum: {raffle.maxTicketsPerParticipant} tickets
@@ -1788,6 +1790,21 @@ const RaffleDetailPage = () => {
   const [showMintInput, setShowMintInput] = useState(false);
   const [mintWinnerAddress, setMintWinnerAddress] = useState("");
   const [mintingToWinner, setMintingToWinner] = useState(false);
+  const mintWinnerRef = useRef(null);
+
+  // Click-away logic for Mint to Winner UI
+  useEffect(() => {
+    if (!showMintInput) return;
+    function handleClickOutside(event) {
+      if (mintWinnerRef.current && !mintWinnerRef.current.contains(event.target)) {
+        setShowMintInput(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMintInput]);
   const handleMintToWinner = async () => {
     setMintingToWinner(true);
     try {
@@ -2781,7 +2798,7 @@ const RaffleDetailPage = () => {
           Back to Raffles
         </button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
 
             <div className="flex items-center gap-2">
@@ -2810,7 +2827,8 @@ const RaffleDetailPage = () => {
             </div>
 
           </div>
-          <div className="flex items-center gap-3">
+          {/* On mobile, stack state badge and creator actions; on desktop, keep inline */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2 w-full sm:w-auto">
             {getStatusBadge()}
 
             {/* Auto-refresh indicator */}
@@ -2840,22 +2858,22 @@ const RaffleDetailPage = () => {
               (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') &&
               (!raffle.nativePrizeAmount || raffle.nativePrizeAmount.isZero?.() || raffle.nativePrizeAmount === '0') &&
               !isEscrowedPrize && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 items-center">
                 {!showMintInput ? (
-              <Button
+                  <Button
                     onClick={() => setShowMintInput(true)}
-                className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                Mint to Winner
-              </Button>
+                    className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    Mint to Winner
+                  </Button>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-2 items-center">
+                  <div ref={mintWinnerRef} className="flex flex-col sm:flex-row gap-2 items-center">
                     <input
                       type="text"
                       placeholder="Enter winner address"
                       value={mintWinnerAddress}
                       onChange={e => setMintWinnerAddress(e.target.value)}
-                      className="px-3 py-2.5 border border-border rounded-md bg-background w-72 font-mono"
+                      className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-72 font-mono focus:outline-none focus:ring-0"
                       disabled={mintingToWinner}
                     />
                     <Button
@@ -2869,7 +2887,7 @@ const RaffleDetailPage = () => {
                       variant="outline"
                       onClick={() => setShowMintInput(false)}
                       disabled={mintingToWinner}
-                      className="ml-2"
+                      className="sm:ml-2 border-2 border-[#614E41]"
                     >
                       Cancel
                     </Button>
@@ -2880,22 +2898,20 @@ const RaffleDetailPage = () => {
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
               isEscrowedPrize &&
-              raffle.standard === 1 &&
-              (
+              raffle.standard === 1 && (
                 <Button
                   onClick={handleWithdrawPrize}
-                  className="ml-2 bg-warning text-warning-foreground hover:bg-warning/90"
+                  className="sm:ml-2 bg-warning text-warning-foreground hover:bg-warning/90"
                   disabled={withdrawingPrize}
                 >
                   {withdrawingPrize ? 'Withdrawing...' : 'Withdraw Prize'}
                 </Button>
-              )
-            }
+              )}
             {!raffle.isPrized &&
               raffle.stateNum === 0 &&
               connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() && (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 items-center">
                   {!showAssignPrizeInput ? (
                     <Button
                       onClick={() => setShowAssignPrizeInput(true)}
@@ -2904,31 +2920,32 @@ const RaffleDetailPage = () => {
                       Assign Prize
                     </Button>
                   ) : (
-                    <div ref={assignPrizeRef} className="flex flex-col sm:flex-row gap-2 items-center bg-background p-2 rounded-md relative z-10">
+                    <div ref={assignPrizeRef} className="flex flex-col sm:flex-row gap-2 items-center bg-background p-2 rounded-md relative z-10 w-full sm:w-auto">
                       <input
                         type="text"
                         placeholder="Prize collection address"
                         value={assignPrizeAddress}
                         onChange={e => setAssignPrizeAddress(e.target.value)}
-                        className="px-3 py-2.5 border border-border rounded-md bg-background w-56 font-mono"
+                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-56 font-mono focus:outline-none focus:ring-0"
                         disabled={assigningPrize}
                       />
-                      <select
-                        value={assignPrizeStandard}
-                        onChange={e => setAssignPrizeStandard(Number(e.target.value))}
-                        className="px-3 py-2.5 border border-border rounded-md bg-black text-white"
-                        disabled={assigningPrize}
-                      >
-                        {PRIZE_TYPE_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
+                      <div className="w-full sm:w-auto">
+                        <Select value={String(assignPrizeStandard)} onValueChange={v => setAssignPrizeStandard(Number(v))}>
+                          <SelectTrigger className="w-full px-3 py-2.5 text-base border-2 border-[#614E41] rounded-lg bg-background">
+                            <SelectValue placeholder="Select Prize Standard" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">ERC721</SelectItem>
+                            <SelectItem value="1">ERC1155</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <input
                         type="number"
                         placeholder="Prize Token ID"
                         value={assignPrizeStandard === 0 ? 0 : assignPrizeTokenId}
                         onChange={e => setAssignPrizeTokenId(e.target.value)}
-                        className="px-3 py-2.5 border border-border rounded-md bg-background w-32"
+                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-32 focus:outline-none focus:ring-0"
                         disabled={assigningPrize || assignPrizeStandard === 0}
                       />
                       <input
@@ -2936,7 +2953,7 @@ const RaffleDetailPage = () => {
                         placeholder="Amount Per Winner"
                         value={assignPrizeStandard === 0 ? 1 : assignPrizeAmountPerWinner}
                         onChange={e => setAssignPrizeAmountPerWinner(e.target.value)}
-                        className="px-3 py-2.5 border border-border rounded-md bg-background w-32"
+                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-32 focus:outline-none focus:ring-0"
                         disabled={assigningPrize || assignPrizeStandard === 0}
                       />
                       <Button
@@ -2950,7 +2967,7 @@ const RaffleDetailPage = () => {
                         variant="outline"
                         onClick={() => setShowAssignPrizeInput(false)}
                         disabled={assigningPrize}
-                        className="ml-2"
+                        className="sm:ml-2 border-2 border-[#614E41]"
                       >
                         Cancel
                       </Button>

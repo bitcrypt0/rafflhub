@@ -8,7 +8,7 @@ import { contractABIs } from '../contracts/contractABIs';
  * useRaffleSummaries
  * Fast, on-chain-only summary fetcher for newest raffles with client-side cache.
  * - Minimal fields only to render a lightweight card
- * - Small concurrency, short timeout, no retries (skip stragglers)
+ * - Multicall3 batching when available (fallback to light parallel calls)
  * - LocalStorage cache per chainId with TTL
  */
 export const useRaffleSummaries = ({
@@ -76,6 +76,102 @@ export const useRaffleSummaries = ({
     ]);
   };
 
+  const buildSummary = useCallback((raffleAddress,
+    { name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum }
+  ) => ({
+    id: raffleAddress,
+    address: raffleAddress,
+    chainId,
+    name,
+    startTime: startTime?.toNumber ? startTime.toNumber() : Number(startTime || 0),
+    duration: duration?.toNumber ? duration.toNumber() : Number(duration || 0),
+    ticketPrice,
+    ticketLimit: ticketLimit?.toNumber ? ticketLimit.toNumber() : Number(ticketLimit || 0),
+    winnersCount: winnersCount?.toNumber ? winnersCount.toNumber() : Number(winnersCount || 0),
+    stateNum: stateNum?.toNumber ? stateNum.toNumber() : Number(stateNum || 5),
+    isSummary: true,
+  }), [chainId]);
+
+  // Multicall3 support (best-effort)
+  const MULTICALL3_ADDRESS = '0xca11bde05977b3631167028862be2a173976ca11';
+  const multicall3Abi = [
+    {
+      inputs: [
+        {
+          components: [
+            { internalType: 'address', name: 'target', type: 'address' },
+            { internalType: 'bool', name: 'allowFailure', type: 'bool' },
+            { internalType: 'bytes', name: 'callData', type: 'bytes' }
+          ],
+          name: 'calls',
+          type: 'tuple[]'
+        }
+      ],
+      name: 'aggregate3',
+      outputs: [
+        {
+          components: [
+            { internalType: 'bool', name: 'success', type: 'bool' },
+            { internalType: 'bytes', name: 'returnData', type: 'bytes' }
+          ],
+          name: 'returnData',
+          type: 'tuple[]'
+        }
+      ],
+      stateMutability: 'payable',
+      type: 'function'
+    }
+  ];
+
+  const isMulticallAvailable = useCallback(async () => {
+    if (!readProvider) return false;
+    try {
+      const code = await readProvider.getCode(MULTICALL3_ADDRESS);
+      return code && code !== '0x';
+    } catch (_) {
+      return false;
+    }
+  }, [readProvider]);
+
+  const tryMulticallSummaries = useCallback(async (addresses) => {
+    const iface = new ethers.utils.Interface(contractABIs.raffle);
+    const calls = [];
+    for (const addr of addresses) {
+      calls.push(
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('name', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('startTime', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('duration', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('ticketPrice', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('ticketLimit', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('winnersCount', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('state', []) },
+      );
+    }
+    const mc = new ethers.Contract(MULTICALL3_ADDRESS, multicall3Abi, readProvider);
+    const res = await mc.callStatic.aggregate3(calls, { value: 0 });
+    const per = 7;
+    const out = [];
+    for (let i = 0; i < addresses.length; i++) {
+      const base = i * per;
+      const dec = (index, fn) => {
+        const r = res[base + index];
+        if (!r || !r.success) return null;
+        try { return iface.decodeFunctionResult(fn, r.returnData)[0]; } catch (_) { return null; }
+      };
+      const summary = buildSummary(addresses[i], {
+        name: dec(0, 'name') || 'Raffle',
+        startTime: dec(1, 'startTime') || ethers.BigNumber.from(0),
+        duration: dec(2, 'duration') || ethers.BigNumber.from(0),
+        ticketPrice: dec(3, 'ticketPrice') || ethers.BigNumber.from(0),
+        ticketLimit: dec(4, 'ticketLimit') || ethers.BigNumber.from(0),
+        winnersCount: dec(5, 'winnersCount') || ethers.BigNumber.from(0),
+        stateNum: dec(6, 'state') || ethers.BigNumber.from(5),
+      });
+      out.push(summary);
+    }
+    return out;
+  }, [readProvider, buildSummary]);
+
   const fetchRaffleSummary = useCallback(async (raffleAddress, timeoutMs = 8000) => {
     const c = new ethers.Contract(raffleAddress, contractABIs.raffle, readProvider);
     // Minimal getters only
@@ -89,19 +185,8 @@ export const useRaffleSummaries = ({
       callWithTimeout(c.state(), timeoutMs).catch(() => ethers.BigNumber.from(5)), // ended as safe default
     ]);
 
-    return {
-      id: raffleAddress,
-      address: raffleAddress,
-      chainId,
-      name,
-      startTime: startTime.toNumber ? startTime.toNumber() : Number(startTime),
-      duration: duration.toNumber ? duration.toNumber() : Number(duration),
-      ticketPrice,
-      ticketLimit: ticketLimit.toNumber ? ticketLimit.toNumber() : Number(ticketLimit),
-      winnersCount: winnersCount.toNumber ? winnersCount.toNumber() : Number(winnersCount),
-      stateNum: stateNum.toNumber ? stateNum.toNumber() : Number(stateNum),
-    };
-  }, [chainId, readProvider]);
+    return buildSummary(raffleAddress, { name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum });
+  }, [readProvider, buildSummary]);
 
   const fetchSummaries = useCallback(async () => {
     if (!chainId || !readProvider) return;
@@ -110,22 +195,36 @@ export const useRaffleSummaries = ({
     try {
       const addresses = await fetchAllAddressesNewestFirst();
       const slice = addresses.slice(0, Math.max(1, initialCount));
-      const results = [];
-      const concurrency = 3;
-      let i = 0;
-      async function runNext() {
-        if (i >= slice.length) return;
-        const idx = i++;
-        try {
-          const summary = await fetchRaffleSummary(slice[idx]);
-          if (summary) results.push(summary);
-        } catch (_) {
-          // skip
+
+      // Try multicall3 first
+      let results = [];
+      try {
+        if (await isMulticallAvailable()) {
+          results = await tryMulticallSummaries(slice);
         }
-        await runNext();
+      } catch (_) {
+        // fall back below
       }
-      const workers = Array.from({ length: Math.min(concurrency, slice.length) }, () => runNext());
-      await Promise.all(workers);
+
+      if (!results || results.length === 0) {
+        // Fallback: light parallel per-raffle calls
+        const tmp = [];
+        const concurrency = 3;
+        let i = 0;
+        async function runNext() {
+          if (i >= slice.length) return;
+          const idx = i++;
+          try {
+            const summary = await fetchRaffleSummary(slice[idx]);
+            if (summary) tmp.push(summary);
+          } catch (_) { /* skip */ }
+          await runNext();
+        }
+        const workers = Array.from({ length: Math.min(concurrency, slice.length) }, () => runNext());
+        await Promise.all(workers);
+        results = tmp;
+      }
+
       // keep original newest-first order
       results.sort((a, b) => slice.indexOf(a.address) - slice.indexOf(b.address));
       if (mountedRef.current) {
@@ -137,7 +236,7 @@ export const useRaffleSummaries = ({
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [chainId, readProvider, initialCount, fetchAllAddressesNewestFirst, fetchRaffleSummary, saveToCache]);
+  }, [chainId, readProvider, initialCount, fetchAllAddressesNewestFirst, isMulticallAvailable, tryMulticallSummaries, fetchRaffleSummary, saveToCache]);
 
   const refresh = useCallback(() => {
     fetchSummaries();

@@ -484,10 +484,13 @@ const RaffleCard = ({ raffle }) => {
           <span className="text-muted-foreground flex-shrink-0">{timeLabel}:</span>
           <span className="truncate ml-2">{timeRemaining}</span>
         </div>
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Type:</span>
-          <span className="px-2 py-1 rounded-full text-xs sm:text-sm bg-muted/20 truncate ml-2">{getPrizeType()}</span>
-        </div>
+        {/* Hide Type until full raffle data is available to avoid misleading placeholder */}
+        {!raffle.isSummary && (
+          <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+            <span className="text-muted-foreground flex-shrink-0">Type:</span>
+            <span className="px-2 py-1 rounded-full text-xs sm:text-sm bg-muted/20 truncate ml-2">{getPrizeType()}</span>
+          </div>
+        )}
         {(() => {
           const prizeType = getPrizeType();
           const isNFTPrize = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero;
