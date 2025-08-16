@@ -19,6 +19,7 @@ import FilterToggleButton from '../components/FilterToggleButton';
 import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
 import { useRaffleFilters } from '../hooks/useRaffleFilters';
 import { SUPPORTED_NETWORKS } from '../networks';
+import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 
@@ -590,7 +591,7 @@ const LandingPage = () => {
   const { isMobile } = useMobileBreakpoints();
   const { formatTicketPrice, formatPrizeAmount } = useNativeCurrency();
 
-  // Use the new RaffleService hook
+  // Use the new RaffleService hook (full dataset for filtering)
   const {
     raffles,
     loading,
@@ -601,8 +602,11 @@ const LandingPage = () => {
     autoFetch: true,
     enablePolling: true,
     pollingInterval: 120000, // 2 minutes
-    maxRaffles: null // No platform-based limits - fetch all raffles
+    maxRaffles: null // fetch all for accurate filters
   });
+
+  // Fast, minimal summaries for mobile-first paint
+  const { summaries, loading: summariesLoading } = useRaffleSummaries({ initialCount: 12 });
 
   // Use filter system
   const {
@@ -640,7 +644,11 @@ const LandingPage = () => {
     );
   }
 
-  if (loading) {
+  // Decide if we can show summaries (mobile, no active filters, no full data yet)
+  const shouldShowSummaries = isMobile && !hasActiveFilters && (!raffles || raffles.length === 0) && (summaries?.length > 0);
+
+  // Show loading only when neither summaries nor full data are available
+  if (!shouldShowSummaries && loading) {
     return (
       <PageContainer>
         <ContentLoading
@@ -651,8 +659,8 @@ const LandingPage = () => {
     );
   }
 
-  // Show error message if there's an error
-  if (error) {
+  // Show error message (only when not using summary path)
+  if (!shouldShowSummaries && error) {
     return (
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
@@ -719,18 +727,28 @@ const LandingPage = () => {
             )}
           </div>
 
-          {/* Filtered raffle grid */}
-          <FilteredRaffleGrid
-            raffles={filteredRaffles}
-            loading={loading}
-            error={error}
-            RaffleCardComponent={RaffleCard}
-            emptyMessage={
-              hasActiveFilters
-                ? "No raffles match your current filters. Try adjusting your filter criteria."
-                : "There are currently no raffles available on the blockchain. Check back later or create your own!"
-            }
-          />
+          {/* Grid: summaries for fast mobile first paint, else full filtered raffles */}
+          {shouldShowSummaries ? (
+            <FilteredRaffleGrid
+              raffles={summaries}
+              loading={false}
+              error={null}
+              RaffleCardComponent={RaffleCard}
+              emptyMessage={"No raffles found."}
+            />
+          ) : (
+            <FilteredRaffleGrid
+              raffles={filteredRaffles}
+              loading={loading}
+              error={error}
+              RaffleCardComponent={RaffleCard}
+              emptyMessage={
+                hasActiveFilters
+                  ? "No raffles match your current filters. Try adjusting your filter criteria."
+                  : "There are currently no raffles available on the blockchain. Check back later or create your own!"
+              }
+            />
+          )}
         </PageContainer>
       </div>
     </>
