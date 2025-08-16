@@ -202,7 +202,7 @@ const Header = () => {
           <div className="bg-background/80 backdrop-blur-md border-b border-[#614E41] w-full">
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
-                <Link to="/" className="flex items-center gap-3">
+                <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
                   <Logo size="md" className="hover:opacity-80" />
                 </Link>
               </div>
