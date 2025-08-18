@@ -470,13 +470,16 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   const [loading, setLoading] = useState(true);
   const [fetchSource, setFetchSource] = useState(null); // Track successful source for debugging
 
-  // Multiple IPFS gateways for resilience
+  // Multiple gateways for decentralized URIs
   const IPFS_GATEWAYS = [
     'https://ipfs.io/ipfs/',
     'https://gateway.pinata.cloud/ipfs/',
     'https://cloudflare-ipfs.com/ipfs/',
-    'https://dweb.link/ipfs/',
-    'https://ipfs.infura.io/ipfs/'
+    'https://dweb.link/ipfs/'
+  ];
+  const IPNS_GATEWAYS = IPFS_GATEWAYS.map(g => g.replace('/ipfs/', '/ipns/'));
+  const ARWEAVE_GATEWAYS = [
+    'https://arweave.net/'
   ];
 
   // Classify URI format for appropriate processing
@@ -489,53 +492,170 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   };
 
   // Generate multiple URI variants prioritizing extensionless formats
-  const constructMetadataURIs = (baseUri, tokenId) => {
+  // For ERC1155, also include 64-hex {id} style even when baseUri lacks {id}, and consider root candidates
+  // For ERC721, try baseUri/root earlier when tokenURI likely points to unrevealed or a shared resource
+  const constructMetadataURIs = (baseUri, tokenId, standard, opts = {}) => {
     const uriVariants = [];
+    const hadTrailingSlash = /\/$/.test(baseUri);
     const cleanBaseUri = baseUri.replace(/\/$/, ''); // Remove trailing slash
 
-    // Check if the URI already contains the token ID (like tokenURI responses)
     const tokenIdStr = tokenId.toString();
-    const alreadyContainsTokenId = baseUri.includes(`/${tokenIdStr}`) || baseUri.endsWith(`/${tokenIdStr}`) || baseUri.endsWith(tokenIdStr);
+    const hexIdLower = BigInt(tokenId).toString(16).padStart(64, '0');
+    const hexIdUpper = hexIdLower.toUpperCase();
+    const isERC1155 = standard === 1;
+    const isERC721 = standard === 0;
+
+    // Helper: add root candidates (with and without slash)
+    const addRootCandidates = (uri) => {
+      const candidates = [];
+      const root = uri.replace(/\/?(?:[0-9]+|[a-fA-F0-9]{64})(?:\.json)?$/, '');
+      if (root && root !== uri) {
+        candidates.push(root);
+        candidates.push(`${root}/`);
+        // Common root index file
+        candidates.push(`${root}/index.json`);
+      }
+      return candidates;
+    };
+
+    // Check if the URI already contains the token ID (like tokenURI responses)
+    const alreadyContainsTokenId =
+      baseUri.match(/\/(?:[0-9]+|[a-fA-F0-9]{64})(?:\.json)?$/) !== null;
 
     if (alreadyContainsTokenId) {
+      // Priority 0 (ERC1155 & ERC721): try collection root early if present (helps unrevealed/shared)
+      if (isERC1155 || isERC721 || opts.prioritizeRoot) {
+        uriVariants.push(...addRootCandidates(baseUri));
+      }
 
-      // Priority 1: Original URI as-is (for tokenURI responses)
+      // Priority 1: Original URI as-is
       uriVariants.push(baseUri);
+
+      // ERC1155-specific: also try hex-64 variants when the tokenId appears in the URL
+      if (isERC1155) {
+        const replaceDecimalWithHex = (uri, alsoJson = true) => {
+          const out = [];
+          if (uri.match(new RegExp(`/${tokenIdStr}(?:\\.json)?$`))) {
+            out.push(uri.replace(new RegExp(`/${tokenIdStr}(?:\\.json)?$`), `/${hexIdLower}`));
+            if (alsoJson) out.push(uri.replace(new RegExp(`/${tokenIdStr}(?:\\.json)?$`), `/${hexIdLower}.json`));
+            // Uppercase variant (rare)
+            out.push(uri.replace(new RegExp(`/${tokenIdStr}(?:\\.json)?$`), `/${hexIdUpper}`));
+            if (alsoJson) out.push(uri.replace(new RegExp(`/${tokenIdStr}(?:\\.json)?$`), `/${hexIdUpper}.json`));
+          }
+          if (uri.match(new RegExp(`${tokenIdStr}(?:\\.json)?$`))) {
+            out.push(uri.replace(new RegExp(`${tokenIdStr}(?:\\.json)?$`), `${hexIdLower}`));
+            if (alsoJson) out.push(uri.replace(new RegExp(`${tokenIdStr}(?:\\.json)?$`), `${hexIdLower}.json`));
+            out.push(uri.replace(new RegExp(`${tokenIdStr}(?:\\.json)?$`), `${hexIdUpper}`));
+            if (alsoJson) out.push(uri.replace(new RegExp(`${tokenIdStr}(?:\\.json)?$`), `${hexIdUpper}.json`));
+          }
+          return out;
+        };
+        uriVariants.push(...replaceDecimalWithHex(baseUri, true));
+      }
 
       // Priority 2: Add .json extension if not present
-      if (!baseUri.includes('.json')) {
-        uriVariants.push(`${baseUri}.json`);
-      }
+      if (!baseUri.includes('.json')) uriVariants.push(`${baseUri}.json`);
     } else {
+      if (isERC1155) {
+        // Try base URI root early
+        uriVariants.push(baseUri);
+        if (hadTrailingSlash) uriVariants.push(cleanBaseUri + '/');
 
-      // Priority 1: No extension (as requested)
-      uriVariants.push(`${cleanBaseUri}/${tokenId}`);
-      uriVariants.push(`${cleanBaseUri}${tokenId}`);
-
-      // Priority 2: Common formats
-      uriVariants.push(`${cleanBaseUri}/${tokenId}.json`);
-      uriVariants.push(`${cleanBaseUri}${tokenId}.json`);
-
-      // Priority 3: Template formats
-      if (baseUri.includes('{id}')) {
-        const hexId = BigInt(tokenId).toString(16).padStart(64, '0');
-        uriVariants.push(baseUri.replace('{id}', tokenId));
-        uriVariants.push(baseUri.replace('{id}', hexId));
+        // Priority 1 (ERC1155): hex without extension first
+        uriVariants.push(`${cleanBaseUri}/${hexIdLower}`);
+        uriVariants.push(`${cleanBaseUri}${hexIdLower}`);
+        // Priority 2 (ERC1155): hex.json
+        uriVariants.push(`${cleanBaseUri}/${hexIdLower}.json`);
+        uriVariants.push(`${cleanBaseUri}${hexIdLower}.json`);
+        // Also try uppercase hex (rare)
+        uriVariants.push(`${cleanBaseUri}/${hexIdUpper}`);
+        uriVariants.push(`${cleanBaseUri}${hexIdUpper}`);
+        uriVariants.push(`${cleanBaseUri}/${hexIdUpper}.json`);
+        uriVariants.push(`${cleanBaseUri}${hexIdUpper}.json`);
+        // Priority 3 (ERC1155): decimal without extension
+        uriVariants.push(`${cleanBaseUri}/${tokenIdStr}`);
+        uriVariants.push(`${cleanBaseUri}${tokenIdStr}`);
+        // Priority 4 (ERC1155): decimal.json
+        uriVariants.push(`${cleanBaseUri}/${tokenIdStr}.json`);
+        uriVariants.push(`${cleanBaseUri}${tokenIdStr}.json`);
+      } else {
+        // ERC721: try baseUri earlier (unrevealed/shared)
+        uriVariants.push(baseUri);
+        if (hadTrailingSlash) uriVariants.push(cleanBaseUri + '/');
+        // Keep previous priority (extensionless decimal first)
+        uriVariants.push(`${cleanBaseUri}/${tokenIdStr}`);
+        uriVariants.push(`${cleanBaseUri}${tokenIdStr}`);
+        uriVariants.push(`${cleanBaseUri}/${tokenIdStr}.json`);
+        uriVariants.push(`${cleanBaseUri}${tokenIdStr}.json`);
       }
 
-      // Priority 4: Original URI as-is
-      uriVariants.push(baseUri);
+      // Template formats
+      if (baseUri.includes('{id}')) {
+        // Prefer hex first for ERC1155
+        uriVariants.push(baseUri.replace('{id}', hexIdLower));
+        uriVariants.push(baseUri.replace('{id}', tokenIdStr));
+        // Upper hex variant (rare)
+        uriVariants.push(baseUri.replace('{id}', hexIdUpper));
+      }
     }
 
     return [...new Set(uriVariants)]; // Remove duplicates
   };
 
-  // Convert IPFS URIs to multiple gateway variants
-  const convertIPFStoHTTP = (ipfsUri) => {
-    if (!ipfsUri.startsWith('ipfs://')) return [ipfsUri];
+  // Convert decentralized URIs (ipfs/ipns/ar) and normalize common HTTP gateways to multiple gateway variants
+  const convertDecentralizedToHTTP = (uri) => {
+    if (!uri) return [];
 
-    const hash = ipfsUri.replace('ipfs://', '');
-    return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
+    // IPFS (ipfs://)
+    if (uri.startsWith('ipfs://')) {
+      let hash = uri.replace('ipfs://', '');
+      if (hash.startsWith('ipfs/')) hash = hash.slice('ipfs/'.length); // normalize ipfs://ipfs/
+      return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
+    }
+
+    // IPNS (ipns://)
+    if (uri.startsWith('ipns://')) {
+      let name = uri.replace('ipns://', '');
+      if (name.startsWith('ipns/')) name = name.slice('ipns/'.length);
+      return IPNS_GATEWAYS.map(gateway => `${gateway}${name}`);
+    }
+
+    // Arweave (ar://)
+    if (uri.startsWith('ar://')) {
+      const id = uri.replace('ar://', '');
+      return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+    }
+
+    // If HTTP(s) to a known IPFS/IPNS/Arweave gateway, normalize and fan out
+    try {
+      const u = new URL(uri);
+      // Fix accidental double ipfs segment in HTTP URLs (e.g., /ipfs/ipfs/<hash>)
+      let pathname = u.pathname.replace(/\/ipfs\/ipfs\//, '/ipfs/');
+      const parts = pathname.split('/').filter(Boolean);
+
+      const ipfsIndex = parts.indexOf('ipfs');
+      if (ipfsIndex !== -1 && parts[ipfsIndex + 1]) {
+        const hashAndRest = parts.slice(ipfsIndex + 1).join('/');
+        return IPFS_GATEWAYS.map(gateway => `${gateway}${hashAndRest}`);
+      }
+
+      const ipnsIndex = parts.indexOf('ipns');
+      if (ipnsIndex !== -1 && parts[ipnsIndex + 1]) {
+        const nameAndRest = parts.slice(ipnsIndex + 1).join('/');
+        return IPNS_GATEWAYS.map(gateway => `${gateway}${nameAndRest}`);
+      }
+
+      // Arweave gateway (e.g., arweave.net/<id>)
+      if (u.hostname.endsWith('arweave.net') || u.hostname === 'arweave.net') {
+        const id = parts.join('/');
+        return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+      }
+    } catch (_) {
+      // not a URL, fall through
+    }
+
+    // Fallback: return as-is
+    return [uri];
   };
 
   // Extract image URL from metadata with flexible field support
@@ -550,16 +670,32 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
       'artwork'
     ];
 
+    const normalizeIpfs = (u) => {
+      if (!u) return null;
+      if (u.startsWith('ipfs://')) {
+        // Strip protocol and any leading 'ipfs/' segment
+        let rest = u.slice('ipfs://'.length);
+        if (rest.startsWith('ipfs/')) rest = rest.slice('ipfs/'.length);
+        // Build single-gateway HTTP URL
+        return `https://ipfs.io/ipfs/${rest}`;
+      }
+      if (u.startsWith('ipns://')) {
+        let rest = u.slice('ipns://'.length);
+        if (rest.startsWith('ipns/')) rest = rest.slice('ipns/'.length);
+        return `https://ipfs.io/ipns/${rest}`;
+      }
+      if (u.startsWith('ar://')) {
+        const rest = u.slice('ar://'.length);
+        return `https://arweave.net/${rest}`;
+      }
+      return u;
+    };
+
     for (const field of imageFields) {
       if (metadata[field]) {
-        let imageUrl = metadata[field];
-
-        // Convert IPFS image URLs to HTTP
-        if (imageUrl.startsWith('ipfs://')) {
-          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
-        }
-
-        return imageUrl;
+        const raw = metadata[field];
+        const httpUrl = normalizeIpfs(String(raw));
+        return httpUrl;
       }
     }
 
@@ -591,7 +727,22 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   const fetchMetadataWithFallback = async (uriVariants) => {
     for (const uri of uriVariants) {
       try {
-
+        // Support data: URIs (on-chain metadata or direct images)
+        if (uri.startsWith('data:')) {
+          // Example: data:application/json;base64,eyJpbWFnZSI6ICJpcGZzOi8vLi4uIn0=
+          const [meta, payload] = uri.split(',', 2);
+          const [, mime, encoding] = meta.match(/^data:([^;]+);([^,]+)$/) || [];
+          if (mime?.includes('application/json') && encoding === 'base64') {
+            const json = JSON.parse(atob(payload));
+            const imageUrl = extractImageURL(json) || null;
+            if (imageUrl) return { metadata: json, imageUrl, sourceUri: uri };
+          } else if (mime?.startsWith('image/')) {
+            // Direct image data URL
+            return { metadata: { image: uri }, imageUrl: uri, sourceUri: uri };
+          }
+          // If unsupported data URI, continue to next
+          continue;
+        }
 
         const response = await fetchWithTimeout(uri);
 
@@ -600,24 +751,23 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
 
           // Try to parse as JSON
           try {
-            const metadata = await response.json();
+            const text = await response.text();
+            // Some gateways send text/plain; try JSON.parse regardless
+            const metadata = JSON.parse(text);
             if (metadata && typeof metadata === 'object') {
               const imageUrl = extractImageURL(metadata);
               if (imageUrl) {
-
                 return { metadata, imageUrl, sourceUri: uri };
               }
             }
           } catch (jsonError) {
-            // If JSON parsing fails, try as plain text (might be direct image URL)
+            // If JSON parsing fails, check if response is an image or URL points to image
             if (contentType?.startsWith('image/') || uri.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
-
               return { metadata: { image: uri }, imageUrl: uri, sourceUri: uri };
             }
           }
         }
       } catch (error) {
-
         continue; // Try next variant
       }
     }
@@ -766,17 +916,13 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
           return;
         }
 
-        // Step 2: Generate URI variants
-        const uriVariants = constructMetadataURIs(baseUri, raffle.prizeTokenId);
+        // Step 2: Generate URI variants (pass standard for ERC1155 hex logic)
+        const uriVariants = constructMetadataURIs(baseUri, raffle.prizeTokenId, raffle.standard);
 
-        // Step 3: Convert IPFS URIs to multiple gateways
+        // Step 3: Convert decentralized URIs (IPFS/IPNS/Arweave) and HTTP gateways to multiple gateways
         const allURIs = [];
         for (const variant of uriVariants) {
-          if (variant.startsWith('ipfs://')) {
-            allURIs.push(...convertIPFStoHTTP(variant));
-          } else {
-            allURIs.push(variant);
-          }
+          allURIs.push(...convertDecentralizedToHTTP(variant));
         }
 
         // Step 4: Attempt fetch with cascading fallback
@@ -784,6 +930,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
 
         setImageUrl(result.imageUrl);
         setFetchSource(result.sourceUri);
+        // Early exit if we resolved a root metadata; no further attempts needed
 
       } catch (error) {
         setImageUrl(null);
