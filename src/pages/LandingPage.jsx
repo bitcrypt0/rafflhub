@@ -648,11 +648,26 @@ const LandingPage = () => {
     );
   }
 
-  // Decide if we can show summaries (mobile, no active filters, no full data yet)
-  const shouldShowSummaries = isMobile && !hasActiveFilters && (!raffles || raffles.length === 0) && (summaries?.length > 0);
+  // Allow summaries path on mobile even when filters are active to avoid slow first-load UX
+  const canUseSummariesForCurrentFilters = isMobile && (summaries?.length > 0) && (!raffles || raffles.length === 0 || loading);
 
-  // Show loading only when neither summaries nor full data are available
-  if (!shouldShowSummaries && loading) {
+  // When using summaries, apply only the filters we can with summary data (raffleState)
+  let mobileFilteredSummaries = null;
+  if (canUseSummariesForCurrentFilters) {
+    if (!filters || !filters.raffleState || filters.raffleState.length === 0) {
+      mobileFilteredSummaries = summaries;
+    } else {
+      const wanted = new Set(filters.raffleState.map(s => s.toLowerCase()));
+      mobileFilteredSummaries = summaries.filter(s => {
+        const label = RAFFLE_STATE_LABELS[s.stateNum]?.toLowerCase();
+        return wanted.has(label);
+      });
+    }
+  }
+
+  // Show loading only when neither summaries (possibly filtered) nor full data are available
+  const shouldShowLoading = !canUseSummariesForCurrentFilters && loading;
+  if (shouldShowLoading) {
     return (
       <PageContainer>
         <ContentLoading
@@ -663,8 +678,8 @@ const LandingPage = () => {
     );
   }
 
-  // Show error message (only when not using summary path)
-  if (!shouldShowSummaries && error) {
+  // Show error message (only when not using summaries path)
+  if (!canUseSummariesForCurrentFilters && error) {
     return (
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
@@ -731,10 +746,10 @@ const LandingPage = () => {
             )}
           </div>
 
-          {/* Grid: summaries for fast mobile first paint, else full filtered raffles */}
-          {shouldShowSummaries ? (
+          {/* Grid: summaries for fast mobile first paint; if filters tapped early on mobile, use summary subset */}
+          {canUseSummariesForCurrentFilters ? (
             <FilteredRaffleGrid
-              raffles={summaries}
+              raffles={mobileFilteredSummaries || []}
               loading={false}
               error={null}
               RaffleCardComponent={RaffleCard}

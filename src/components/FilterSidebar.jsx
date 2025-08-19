@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { countRafflesByFilters } from '../utils/filterUtils';
@@ -19,6 +19,45 @@ const mobileInputStyles = `
   }
 `;
 
+  // Header height tracking to snap filter to top after header scrolls out of view
+  const useHeaderOffset = () => {
+    const [offset, setOffset] = useState({ top: 56, height: 56 }); // default ~14 (3.5rem) => 56px
+
+    useEffect(() => {
+      const header = document.querySelector('header');
+      const baseHeight = header ? header.getBoundingClientRect().height : 56;
+
+      const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+
+      const onScroll = () => {
+        const scrolled = window.scrollY || window.pageYOffset || 0;
+        if (isMobile()) {
+          // On mobile, header remains fixed; keep panel below header always
+          setOffset({ top: baseHeight, height: window.innerHeight - baseHeight });
+        } else {
+          // Desktop/tablet: once header scrolls out, panel covers full screen
+          if (scrolled >= baseHeight) {
+            setOffset({ top: 0, height: window.innerHeight });
+          } else {
+            setOffset({ top: baseHeight - scrolled, height: window.innerHeight - (baseHeight - scrolled) });
+          }
+        }
+      };
+
+      // Initialize and listen
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      return () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      };
+    }, []);
+
+    return offset;
+  };
+
+
 /**
  * FilterSidebar Component
  * Vertical filter panel for raffle filtering on LandingPage
@@ -33,6 +72,9 @@ const FilterSidebar = ({
   className = ""
 }) => {
   const { countEnhancedRaffleTypes } = useCollabDetection();
+
+
+  const headerOffset = useHeaderOffset();
 
   // Expanded sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -97,7 +139,7 @@ const FilterSidebar = ({
   // Handle filter changes
   const handleFilterChange = useCallback((category, value, isChecked) => {
     const newFilters = { ...filters };
-    
+
     if (category === 'raffleType') {
       // Single select for raffle type
       newFilters[category] = isChecked ? [value] : [];
@@ -106,14 +148,14 @@ const FilterSidebar = ({
       if (!newFilters[category]) {
         newFilters[category] = [];
       }
-      
+
       if (isChecked) {
         newFilters[category] = [...newFilters[category], value];
       } else {
         newFilters[category] = newFilters[category].filter(item => item !== value);
       }
     }
-    
+
     onFiltersChange(newFilters);
   }, [filters, onFiltersChange]);
 
@@ -145,6 +187,7 @@ const FilterSidebar = ({
           onClick={() => toggleSection(category)}
           className="w-full flex items-center justify-between p-3 sm:p-4 text-left hover:bg-muted/50 transition-colors"
           disabled={isDisabled}
+          style={(category === 'raffleState' || category === 'raffleType' || category === 'prizeType' || category === 'prizeStandard') ? { border: '1px solid #614E41' } : undefined}
         >
           <span className={`text-sm sm:text-base font-medium ${isDisabled ? 'text-muted-foreground' : ''}`}>
             {title}
@@ -155,7 +198,7 @@ const FilterSidebar = ({
             <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           )}
         </button>
-        
+
         {isExpanded && !isDisabled && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-1 sm:space-y-2">
             {options.map((option) => {
@@ -204,14 +247,8 @@ const FilterSidebar = ({
             })}
           </div>
         )}
-        
-        {isDisabled && (
-          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-            <p className="text-xs text-muted-foreground italic">
-              Select "Prized" raffle type to enable this filter
-            </p>
-          </div>
-        )}
+
+
       </div>
     );
   }, [expandedSections, filters, handleFilterChange, toggleSection]);
@@ -230,10 +267,10 @@ const FilterSidebar = ({
       )}
 
       {/* Filter Sidebar */}
-      <div className={`
+      <div
+        style={{ top: headerOffset.top, height: headerOffset.height }}
+        className={`
         fixed left-0
-        top-14 sm:top-16
-        h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]
         w-72 sm:w-80 md:w-96
         bg-background border-r border-border
         transform transition-transform duration-300 ease-in-out
@@ -242,8 +279,8 @@ const FilterSidebar = ({
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${className}
       `}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-muted/20">
+        {/* Header - sticky under mobile header so label stays visible */}
+        <div className="sticky top-0 z-10 flex items-center justify-between p-3 sm:p-4 border-b border-border bg-muted/80 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             <h2 className="font-semibold text-base sm:text-lg">Filter Raffles</h2>

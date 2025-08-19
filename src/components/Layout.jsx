@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Monitor, Wallet, User, Plus, Search, Book, LogOut } from 'lucide-react';
+import { Moon, Sun, Monitor, Wallet, User, Plus, Search, Book, LogOut, Menu } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -354,8 +354,8 @@ const Header = () => {
                 {/* New vertical dropdown menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 header-accent-surface border border-[#614E41] rounded-md text-sm font-medium hover:opacity-95 transition-colors">
-                      Menu
+                    <button className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted transition-colors" aria-label="Open menu">
+                      <Menu className="h-5 w-5" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" sideOffset={8} collisionPadding={8} className="w-56 bg-popover/90 backdrop-blur-md border border-[#614E41] mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">

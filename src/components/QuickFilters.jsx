@@ -70,13 +70,14 @@ const QuickFilters = ({
       <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
         {quickFilters.map((filter) => {
           const Icon = filter.icon;
+          const highlight = ['Active', 'Pending', 'NFT Prizes', 'Whitelist'].includes(filter.label);
           return (
             <Button
               key={filter.label}
               variant="outline"
               size="sm"
               onClick={() => handleQuickFilter(filter.filters)}
-              className="flex items-center justify-start gap-1.5 sm:gap-2 h-auto p-2 sm:p-3 text-left"
+              className={`flex items-center justify-start gap-1.5 sm:gap-2 h-auto p-2 sm:p-3 text-left ${highlight ? 'border border-[#614E41] hover:bg-transparent' : ''}`}
               title={filter.description}
             >
               <Icon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />

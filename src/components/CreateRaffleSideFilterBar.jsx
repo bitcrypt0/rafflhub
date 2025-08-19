@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Filter, X, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
@@ -25,6 +25,43 @@ const CreateRaffleSideFilterBar = ({
 }) => {
   const { isMobile } = useMobileBreakpoints();
   const { getCurrencySymbol } = useNativeCurrency();
+
+  // Header offset hook (shared logic)
+  const useHeaderOffset = () => {
+    const [offset, setOffset] = useState({ top: 56, height: 56 });
+
+    useEffect(() => {
+      const header = document.querySelector('header');
+      const baseHeight = header ? header.getBoundingClientRect().height : 56;
+
+      const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+
+      const onScroll = () => {
+        const scrolled = window.scrollY || window.pageYOffset || 0;
+        if (isMobile()) {
+          setOffset({ top: baseHeight, height: window.innerHeight - baseHeight });
+        } else {
+          if (scrolled >= baseHeight) {
+            setOffset({ top: 0, height: window.innerHeight });
+          } else {
+            setOffset({ top: baseHeight - scrolled, height: window.innerHeight - (baseHeight - scrolled) });
+          }
+        }
+      };
+
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      return () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      };
+    }, []);
+
+    return offset;
+  };
+
+  const headerOffset = useHeaderOffset();
 
   // Expanded sections state (like LandingPage)
   const [expandedSections, setExpandedSections] = useState({
@@ -78,9 +115,9 @@ const CreateRaffleSideFilterBar = ({
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
-    return raffleType !== 'Whitelist/Allowlist' || 
-           nftStandard !== 'ERC721' || 
-           erc721Source !== 'New ERC721 Collection' || 
+    return raffleType !== 'Whitelist/Allowlist' ||
+           nftStandard !== 'ERC721' ||
+           erc721Source !== 'New ERC721 Collection' ||
            erc1155Source !== 'New ERC1155 Collection';
   }, [raffleType, nftStandard, erc721Source, erc1155Source]);
 
@@ -110,7 +147,7 @@ const CreateRaffleSideFilterBar = ({
             <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           )}
         </button>
-        
+
         {isExpanded && !isDisabled && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-1 sm:space-y-2">
             {options.map((option) => {
@@ -146,7 +183,7 @@ const CreateRaffleSideFilterBar = ({
             })}
           </div>
         )}
-        
+
         {isDisabled && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <p className="text-xs text-muted-foreground italic">
@@ -169,10 +206,10 @@ const CreateRaffleSideFilterBar = ({
       )}
 
       {/* Filter Sidebar (reduced width) */}
-      <div className={`
+      <div
+        style={{ top: headerOffset.top, height: headerOffset.height }}
+        className={`
         fixed left-0
-        top-14 sm:top-16
-        h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]
         w-64 sm:w-72 md:w-80
         bg-background border-r border-border
         transform transition-transform duration-300 ease-in-out
@@ -181,8 +218,8 @@ const CreateRaffleSideFilterBar = ({
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${className}
       `}>
-        {/* Header (like LandingPage) */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-muted/20">
+        {/* Header (like LandingPage) - sticky under mobile header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between p-3 sm:p-4 border-b border-border bg-muted/80 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             <h2 className="font-semibold text-base sm:text-lg">Create Raffle</h2>
