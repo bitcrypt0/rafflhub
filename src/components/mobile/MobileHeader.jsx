@@ -134,7 +134,7 @@ const MobileHeader = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
         <div className="flex items-center justify-between h-14 px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">

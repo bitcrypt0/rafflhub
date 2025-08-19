@@ -216,9 +216,11 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   const canClaimPrize = () => shouldShowClaimPrize && !prizeAlreadyClaimed;
 
   const canClaimRefund = () => {
+    const prizeFlag = (isPrized === true) || (isExternallyPrized === true) || raffle.isPrized || raffle.isExternallyPrized;
+    const refundableState = [4, 5, 7, 8].includes(raffle.stateNum); // Completed, Deleted, Prizes Claimed, Unengaged
     return (
-      raffle.isPrized &&
-      (raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.stateNum === 8) &&
+      prizeFlag &&
+      refundableState &&
       refundableAmount && refundableAmount.gt && refundableAmount.gt(0)
     );
   };
@@ -234,13 +236,13 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   );
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[260px] sm:min-h-[280px] lg:min-h-[360px]">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Tickets
       </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
             <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
@@ -262,7 +264,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               <span className="text-muted-foreground">Max per user:</span>
               <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.maxTicketsPerParticipant}</p>
             </div>
-            {canClaimRefund && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
+            {canClaimRefund() && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Your Refundable Amount:</span>
                 <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{ethers.utils.formatEther(refundableAmount)} ETH</p>
@@ -271,28 +273,9 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           <div></div>
           </div>
 
-        {(raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
+        {(raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
           <>
-            {/* Participation Summary for completed/claimed states */}
-            <div className="hidden lg:block">
-              <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
-                <div className="text-center text-muted-foreground">
-                  <div className="text-sm font-medium mb-2">Your Participation Summary</div>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="block text-muted-foreground">Tickets Purchased</span>
-                      <span className="font-semibold text-base">{userTickets || 0}</span>
-                    </div>
-                    <div>
-                      <span className="block text-muted-foreground">Total Spent</span>
-                      <span className="font-semibold text-base">
-                        {userTickets > 0 ? formatTicketPrice(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets)) : `0 ${getCurrencySymbol()}`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Removed desktop placeholder; rely on min-height and flex layout */}
             {(canClaimPrize() || canClaimRefund()) ? (
               <div className="flex flex-col sm:flex-row gap-2 w-full">
                 {canClaimPrize() && (
@@ -302,8 +285,8 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                     className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                   >
                     {claimingPrize
-                      ? (isMintableERC721 && !isEscrowedPrize ? 'Minting...' : 'Claiming...')
-                      : (isMintableERC721 && !isEscrowedPrize ? 'Mint Prize' : 'Claim Prize')}
+                      ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
+                      : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
                   </button>
                 )}
                 {canClaimRefund() && (
@@ -327,28 +310,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           </>
         ) : (
           <>
-            {/* Consolidated height management for non-active states */}
-            {!canPurchaseTickets() && !(raffle.state?.toLowerCase() === 'pending' && canActivate) && (
-              <div className="hidden lg:block">
-                <div className="p-4 bg-muted/20 backdrop-blur-sm border border-border/20 rounded-lg">
-                  <div className="text-center text-muted-foreground">
-                    <div className="text-sm font-medium mb-2">Your Participation Summary</div>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="block text-muted-foreground">Tickets Purchased</span>
-                        <span className="font-semibold text-base">{userTickets || 0}</span>
-                      </div>
-                      <div>
-                        <span className="block text-muted-foreground">Total Spent</span>
-                        <span className="font-semibold text-base">
-                          {userTickets > 0 ? formatTicketPrice(ethers.BigNumber.from(raffle.ticketPrice).mul(userTickets)) : `0 ${getCurrencySymbol()}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Removed non-active desktop placeholder; rely on min-height */}
             {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
               <button
                 onClick={handleActivateRaffle}
@@ -469,6 +431,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchSource, setFetchSource] = useState(null); // Track successful source for debugging
+  const [suppressRender, setSuppressRender] = useState(false); // For mintable ERC721 with no unrevealedBaseURI
 
   // Multiple gateways for decentralized URIs
   const IPFS_GATEWAYS = [
@@ -523,13 +486,21 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
       baseUri.match(/\/(?:[0-9]+|[a-fA-F0-9]{64})(?:\.json)?$/) !== null;
 
     if (alreadyContainsTokenId) {
-      // Priority 0 (ERC1155 & ERC721): try collection root early if present (helps unrevealed/shared)
-      if (isERC1155 || isERC721 || opts.prioritizeRoot) {
+      // For ERC1155, try collection root early (helps unrevealed/shared)
+      if (isERC1155 || opts.prioritizeRoot) {
         uriVariants.push(...addRootCandidates(baseUri));
       }
 
-      // Priority 1: Original URI as-is
+      // Priority 1: Original URI as-is (tokenURI)
       uriVariants.push(baseUri);
+
+      // Priority 2 (ERC721 requirement): tokenURI + ".json" next
+      if (!baseUri.includes('.json')) uriVariants.push(`${baseUri}.json`);
+
+      // For ERC721, only consider root candidates AFTER trying tokenURI and tokenURI.json
+      if (isERC721) {
+        uriVariants.push(...addRootCandidates(baseUri));
+      }
 
       // ERC1155-specific: also try hex-64 variants when the tokenId appears in the URL
       if (isERC1155) {
@@ -552,9 +523,6 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         };
         uriVariants.push(...replaceDecimalWithHex(baseUri, true));
       }
-
-      // Priority 2: Add .json extension if not present
-      if (!baseUri.includes('.json')) uriVariants.push(`${baseUri}.json`);
     } else {
       if (isERC1155) {
         // Try base URI root early
@@ -832,25 +800,19 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
           if (isMintable) {
             try {
               baseUri = await contract.unrevealedBaseURI();
+              // If empty/unavailable, suppress rendering per requirement
               if (!baseUri || baseUri.trim() === '') {
-                // Fallback to tokenURI if unrevealedBaseURI is empty
-                try {
-                  baseUri = await contract.tokenURI(raffle.prizeTokenId);
-                } catch (fallbackError) {
-                  setImageUrl(null);
-                  setLoading(false);
-                  return;
-                }
-              }
-            } catch (error) {
-              // Fallback to tokenURI
-              try {
-                baseUri = await contract.tokenURI(raffle.prizeTokenId);
-              } catch (fallbackError) {
+                setSuppressRender(true);
                 setImageUrl(null);
                 setLoading(false);
                 return;
               }
+            } catch (error) {
+              // unrevealedBaseURI unavailable: suppress render
+              setSuppressRender(true);
+              setImageUrl(null);
+              setLoading(false);
+              return;
             }
           } else {
             try {
@@ -1973,6 +1935,8 @@ const RaffleDetailPage = () => {
   };
 
   const [showAssignPrizeInput, setShowAssignPrizeInput] = useState(false);
+  const [assignSelectOpen, setAssignSelectOpen] = useState(false);
+
   const assignPrizeRef = useRef(null);
   const [assignPrizeAddress, setAssignPrizeAddress] = useState("");
   const [assignPrizeStandard, setAssignPrizeStandard] = useState(0);
@@ -2014,10 +1978,12 @@ const RaffleDetailPage = () => {
     }
   };
 
-  // Click-away logic for Assign Prize area
+  // Click-away logic for Assign Prize area (single effect)
   useEffect(() => {
     if (!showAssignPrizeInput) return;
     function handleClickOutside(event) {
+      // If select menu is open, do not treat outside click as a dismiss action
+      if (assignSelectOpen) return;
       if (assignPrizeRef.current && !assignPrizeRef.current.contains(event.target)) {
         setShowAssignPrizeInput(false);
       }
@@ -2026,7 +1992,7 @@ const RaffleDetailPage = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showAssignPrizeInput]);
+  }, [showAssignPrizeInput, assignSelectOpen]);
 
   // Memoize stable values to prevent unnecessary re-renders
   const stableConnected = useMemo(() => connected, [connected]);
@@ -2664,7 +2630,7 @@ const RaffleDetailPage = () => {
   // Check winner status when raffle data changes
   useEffect(() => {
     const checkWinnerStatus = async () => {
-      if (!raffle || !address || (raffle.stateNum !== 4 && raffle.stateNum !== 7)) {
+      if (!raffle || !address || ![4,5,7,8].includes(raffle.stateNum)) {
         setIsWinner(false);
         setEligibleForRefund(false);
         setRefundableAmount(null);
@@ -2782,11 +2748,16 @@ const RaffleDetailPage = () => {
     };
   }, [lastDrawingStateTime, raffle?.stateNum, autoRefreshCount, triggerRefresh]);
 
-  const shouldShowClaimPrize = !!winnerData && raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7);
+  const shouldShowClaimPrize = !!winnerData && (
+    // Standard prized raffles: winners can claim in Completed (4) or Prizes Claimed (7)
+    (raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7)) ||
+    // Externally prized raffles (mintable assigned before Active): winners can mint in Completed (4)
+    ((raffle?.isPrized === false) && ((isExternallyPrized === true) || (raffle?.isExternallyPrized === true)) && raffle?.stateNum === 4)
+  );
   const prizeAlreadyClaimed = winnerData && winnerData.prizeClaimed;
   const shouldShowClaimRefund =
-    raffle?.isPrized &&
-    (raffle?.stateNum === 4 || raffle?.stateNum === 7) &&
+    (raffle?.isPrized || raffle?.isExternallyPrized) &&
+    [4,5,7,8].includes(raffle?.stateNum) &&
     eligibleForRefund &&
     refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
 
@@ -3076,12 +3047,16 @@ const RaffleDetailPage = () => {
                         className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-56 font-mono focus:outline-none focus:ring-0"
                         disabled={assigningPrize}
                       />
-                      <div className="w-full sm:w-auto">
-                        <Select value={String(assignPrizeStandard)} onValueChange={v => setAssignPrizeStandard(Number(v))}>
+                      <div className="w-full sm:w-auto" onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
+                        <Select
+                          value={String(assignPrizeStandard)}
+                          onValueChange={v => setAssignPrizeStandard(Number(v))}
+                          onOpenChange={(open) => setAssignSelectOpen(open)}
+                        >
                           <SelectTrigger className="w-full px-3 py-2.5 text-base border-2 border-[#614E41] rounded-lg bg-background">
                             <SelectValue placeholder="Select Prize Standard" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent onMouseDown={e => e.stopPropagation()}>
                             <SelectItem value="0">ERC721</SelectItem>
                             <SelectItem value="1">ERC1155</SelectItem>
                           </SelectContent>

@@ -2146,7 +2146,7 @@ const NewMobileProfilePage = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <div className="bg-card border-b border-border p-4">
+      <div className="bg-card border-b border-[#614E41] p-4">
         <h1 className="text-2xl font-bold mb-2">Profile</h1>
         <p className="text-sm text-muted-foreground mb-4">
           Track activities and manage your raffles
@@ -2166,7 +2166,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'activity'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background hover:bg-muted text-foreground'
+                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Activity</span>
@@ -2177,7 +2177,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'created'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background hover:bg-muted text-foreground'
+                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
             }`}
           >
             <span className="text-sm font-medium">My Raffles</span>
@@ -2188,7 +2188,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'purchased'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background hover:bg-muted text-foreground'
+                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Tickets</span>
@@ -2199,7 +2199,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'dashboard'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background hover:bg-muted text-foreground'
+                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Dashboard</span>

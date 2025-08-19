@@ -65,14 +65,15 @@ export const CollabDetectionProvider = ({ children }) => {
 
     // If still loading or no result, fall back to synchronous detection
     if (collabStatus === undefined && loadingStates[raffle.address]) {
-      // Still checking, use fallback logic (prioritize NFT Collab)
+      // Prioritize NFT Collab if isExternallyPrized
       if (raffle.isExternallyPrized) {
         return 'nft_collab';
       }
     }
 
-    // If definitely not collab or no async result available
+    // If definitely not collab or no async result available, prefer immediate isExternallyPrized
     if (collabStatus === 'not_collab' || collabStatus === undefined) {
+      if (raffle.isExternallyPrized) return 'nft_collab';
       return raffle.isPrized ? 'prized' : 'non_prized';
     }
 

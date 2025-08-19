@@ -416,7 +416,10 @@ const RaffleCard = ({ raffle }) => {
   };
 
   const getPrizeType = () => {
-    // Use async-determined collab status from context
+    // Synchronous priority: externally prized raffles are always NFT Collab
+    if (raffle.isExternallyPrized) return 'NFT Collab';
+
+    // Use async-determined collab status from context (fallback)
     const collabStatus = getCollabStatus(raffle.address);
     if (collabStatus === 'nft_collab') return 'NFT Collab';
     if (collabStatus === 'whitelist_collab') return 'Whitelist Collab';
@@ -424,15 +427,13 @@ const RaffleCard = ({ raffle }) => {
 
     // Continue with other prize types
     if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
-      // Display native currency ticker + 'Giveaway' (e.g., 'AVAX Giveaway', 'ETH Giveaway')
       return `${getCurrencySymbol()} Giveaway`;
     }
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
-      // Display 'Token Giveaway' for ERC20 tokens
       return 'Token Giveaway';
     }
 
-    // ✅ NEW: Enhanced NFT type detection
+    // Enhanced NFT type detection
     const enhancedNFTType = getEnhancedNFTType();
     if (enhancedNFTType) {
       return enhancedNFTType;
