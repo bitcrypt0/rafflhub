@@ -351,7 +351,7 @@ class RaffleService {
         erc20PrizeAmount,
         nativePrizeAmount,
         isExternallyPrized: isExternallyPrized,
-        standard: standard ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined,
+        standard: (standard !== undefined && standard !== null) ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined,
         usesCustomPrice: usesCustomPrice,
         isEscrowedPrize: isEscrowedPrize
       };
