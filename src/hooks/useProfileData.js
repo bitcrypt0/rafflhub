@@ -119,25 +119,40 @@ export const useProfileData = () => {
   }, []);
 
   const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+  const CACHE_VERSION = 'v2';
 
   const getAllRafflesCached = useCallback(async () => {
     if (!stableContracts.raffleManager) return [];
-    const cacheKey = `raffles:all:${chainId}`;
+    const cacheKey = `raffles:all:${CACHE_VERSION}:${chainId}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
     try {
       const res = await executeCall(stableContracts.raffleManager.getAllRaffles, 'getAllRaffles');
       const list = res.success && Array.isArray(res.result) ? res.result : [];
-      setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
+      if (Array.isArray(list) && list.length > 0) {
+        setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
+      }
       return list;
     } catch {
       return [];
     }
   }, [stableContracts.raffleManager, chainId, executeCall, getCachedJson, setCachedJson]);
 
+  // Safe retry helper: refetch all raffles shortly after contracts become ready
+  const getAllRafflesWithRetry = useCallback(async () => {
+    const first = await getAllRafflesCached();
+    if (first && first.length > 0) return first;
+    // Only retry if contracts are present (to avoid unnecessary timers)
+    if (!stableContracts.raffleManager) return first;
+    await new Promise((r) => setTimeout(r, 1200));
+    const second = await getAllRafflesCached();
+    return second;
+  }, [getAllRafflesCached, stableContracts.raffleManager]);
+
+
   const getRafflesByCreatorCached = useCallback(async (creator) => {
     if (!stableContracts.raffleManager || !creator) return [];
-    const cacheKey = `raffles:byCreator:${chainId}:${creator.toLowerCase()}`;
+    const cacheKey = `raffles:byCreator:${CACHE_VERSION}:${chainId}:${creator.toLowerCase()}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
     try {
@@ -300,7 +315,7 @@ export const useProfileData = () => {
       const activitiesFromGetters = [];
 
       if (stableContracts.raffleManager) {
-        const allRaffles = await getAllRafflesCached();
+        const allRaffles = await getAllRafflesWithRetry();
         console.log('Profile: Checking', allRaffles.length, 'raffles for purchased tickets via getTicketsPurchased');
 
         for (const raffleAddress of allRaffles) {
@@ -409,7 +424,7 @@ export const useProfileData = () => {
   const fetchDirectTotals = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider || !stableContracts.raffleManager) return;
     try {
-      const allRaffles = await getAllRafflesCached();
+      const allRaffles = await getAllRafflesWithRetry();
       let totalTickets = 0;
       let totalWins = 0;
       let totalRefunds = ethers.BigNumber.from(0);
@@ -450,7 +465,7 @@ export const useProfileData = () => {
 
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
-    if (stableConnected && stableAddress) {
+    if (stableConnected && stableAddress && stableContracts.raffleManager) {
       const loadAllData = async () => {
         setLoading(true);
         try {
@@ -467,7 +482,7 @@ export const useProfileData = () => {
         }
       };
       loadAllData();
-    } else {
+    } else if (!stableConnected || !stableAddress) {
       // Reset state when wallet disconnects
       setUserActivity([]);
       setCreatedRaffles([]);
@@ -483,7 +498,7 @@ export const useProfileData = () => {
         withdrawableRevenue: '0'
       });
     }
-  }, [stableConnected, stableAddress, fetchCreatedRaffles, fetchPurchasedTickets, fetchDirectTotals]);
+  }, [stableConnected, stableAddress, stableContracts.raffleManager, fetchCreatedRaffles, fetchPurchasedTickets, fetchDirectTotals]);
 
   // Revenue withdrawal function
   const withdrawRevenue = useCallback(async (raffleAddress) => {
