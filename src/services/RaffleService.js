@@ -329,6 +329,15 @@ class RaffleService {
         default: raffleState = 'ended';
       }
 
+      let actualDuration;
+      // Only fetch actual duration for ended/terminal states
+      if ([2,3,4,5,6,7,8].includes(stateNum)) {
+        try {
+          const val = await raffleContract.getActualRaffleDuration?.();
+          if (val) actualDuration = val.toNumber ? val.toNumber() : Number(val);
+        } catch (_) {}
+      }
+
       return {
         id: raffleAddress,
         name,
@@ -337,6 +346,7 @@ class RaffleService {
         creator,
         startTime: startTime.toNumber(),
         duration: duration.toNumber(),
+        actualDuration,
         ticketPrice,
         ticketLimit: ticketLimit.toNumber(),
         ticketsSold: 0, // Will be fetched separately if needed

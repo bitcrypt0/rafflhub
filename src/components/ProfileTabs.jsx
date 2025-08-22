@@ -91,13 +91,10 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow min-h-[160px]">
+    <div className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow min-h-[180px] flex flex-col">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm mb-1 truncate">{raffle.name}</h3>
-          <p className="text-xs text-muted-foreground">
-            Ends: {formatDateTimeDisplay(raffle.endTime)}
-          </p>
         </div>
         {getStatusBadge()}
       </div>
@@ -113,14 +110,20 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
             {formatRevenueAmount(raffle.revenue || 0)}
           </p>
         </div>
+        <div className="col-span-2">
+          <span className="text-muted-foreground">Created</span>
+          <p className="font-semibold">{raffle.createdAt ? new Date((raffle.createdAt < 1e12 ? raffle.createdAt * 1000 : raffle.createdAt)).toLocaleString() : 'Unknown'}</p>
+        </div>
       </div>
 
-      <button
-        onClick={() => onRaffleClick(raffle.address)}
-        className="w-full text-sm bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
-      >
-        View Raffle
-      </button>
+      <div className="mt-auto">
+        <button
+          onClick={() => onRaffleClick(raffle.address)}
+          className="w-full text-sm bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
+        >
+          View Raffle
+        </button>
+      </div>
     </div>
   );
 };
@@ -388,35 +391,35 @@ const ProfileTabs = ({
             <Plus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{creatorStats.totalRaffles}</div>
+            <div className="text-2xl font-bold">{Number(creatorStats.totalRaffles || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {creatorStats.activeRaffles} currently active
+              {Number(creatorStats.activeRaffles || 0).toLocaleString()} currently active
             </p>
           </CardContent>
         </Card>
 
         <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Withdrawable Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatRevenueAmount(creatorStats.totalRevenue)}</div>
+            <div className="text-2xl font-bold">{formatRevenueAmount(creatorStats.withdrawableRevenue || '0')}</div>
             <p className="text-xs text-muted-foreground">
-              +{creatorStats.monthlyRevenue} this month
+              Available to withdraw across all raffles
             </p>
           </CardContent>
         </Card>
 
         <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Tickets Sold</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{creatorStats.totalParticipants}</div>
+            <div className="text-2xl font-bold">{Number(creatorStats.totalParticipants || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {creatorStats.uniqueParticipants} unique users
+              {Number(creatorStats.uniqueParticipants || 0).toLocaleString()} unique users
             </p>
           </CardContent>
         </Card>

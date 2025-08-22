@@ -38,7 +38,8 @@ export const contractABIs = {
       ],
       "stateMutability": "view",
       "type": "function"
-    }
+    },
+
   ],
   erc20: ERC20ABI
 };

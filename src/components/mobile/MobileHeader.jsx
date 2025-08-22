@@ -162,13 +162,13 @@ const MobileHeader = () => {
               </SheetTrigger>
 
               <SheetContent side="right" className="w-64 p-0 bg-background">
-                <SheetHeader className="p-3 border-b border-border">
+                <SheetHeader className="p-3 border-b border-[#614E41]">
                   <SheetTitle className="text-left text-foreground text-base">Menu</SheetTitle>
                 </SheetHeader>
 
                 <div className="flex flex-col h-full">
                   {/* Wallet Section */}
-                  <div className="p-3 border-b border-border">
+                  <div className="p-3 border-b border-[#614E41]">
                     {connected ? (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ const MobileHeader = () => {
                           variant="outline"
                           size="sm"
                           onClick={disconnect}
-                          className="w-full text-foreground h-8"
+                          className="w-full text-foreground h-8 border-[#614E41]"
                         >
                           Disconnect
                         </Button>
@@ -220,7 +220,7 @@ const MobileHeader = () => {
                   </div>
 
                   {/* Settings Section */}
-                  <div className="p-3 border-t border-border space-y-2">
+                  <div className="p-3 border-t border-[#614E41] space-y-2">
                     {/* Theme Toggle */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">Theme</span>
@@ -255,7 +255,7 @@ const MobileHeader = () => {
           <div
             ref={searchContainerRef}
             data-search-container
-            className="px-4 pb-3 border-t border-border/50 animate-in slide-in-from-top-2 duration-200"
+            className="px-4 pb-3 border-t border-[#614E41]/50 animate-in slide-in-from-top-2 duration-200"
           >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

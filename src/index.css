@@ -1088,3 +1088,15 @@ html.dim-blue .winner-card-highlight {
 html.dim-blue .winner-text-highlight {
   color: rgb(251 191 36); /* yellow-400 for dim-blue theme */
 }
+
+
+/* Light beige helper: applies beige background only in light theme */
+@import url('./styles/beige.css');
+@layer utilities {
+  .beige-surface {}
+}
+/* Ensure beige background only when light theme is active */
+html.light .beige-surface, .light .beige-surface {
+  background-color: #F5E9DC !important;
+}
+

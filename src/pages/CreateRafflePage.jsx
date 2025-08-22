@@ -1192,7 +1192,8 @@ const NewERC721DropForm = () => {
         // Scheduled
         revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
       }
-      if (revealType !== 2) {
+      // Preserve unrevealedBaseURI for Manual (1) and Scheduled (2). Only clear for Instant (0)
+      if (revealType === 0) {
         unrevealedBaseURI = '';
         revealTime = 0;
       }
@@ -3424,7 +3425,8 @@ function NewERC1155DropForm() {
         // Scheduled
         revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
       }
-      if (revealType !== 2) {
+      // Preserve unrevealedBaseURI for Manual (1) and Scheduled (2). Only clear for Instant (0)
+      if (revealType === 0) {
         unrevealedBaseURI = '';
         revealTime = 0;
       }

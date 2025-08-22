@@ -37,6 +37,52 @@ const NewMobileProfilePage = () => {
     creatorStats
   } = useProfileData();
 
+
+  // Unified raffle state badge renderer (matches LandingPage/RaffleDetailPage styles)
+  const renderStateBadge = (value, opts = {}) => {
+    const { stateNum, winnerCount } = opts;
+    const labels = ['Pending','Active','Ended','Drawing','Completed','Deleted','Activation Failed','Prizes Claimed','Unengaged'];
+    let label = 'Unknown';
+    if (Number.isFinite(stateNum)) {
+      label = (stateNum === 7 && typeof winnerCount === 'number')
+        ? (winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed')
+        : (labels[stateNum] || 'Unknown');
+    } else if (typeof value === 'string') {
+      const key = value.toLowerCase().replace(/[^a-z]/g, '');
+      const strMap = {
+        pending: 'Pending',
+        active: 'Active',
+        ended: 'Ended',
+        drawing: 'Drawing',
+        completed: 'Completed',
+        deleted: 'Deleted',
+        activationfailed: 'Activation Failed',
+        activation_failed: 'Activation Failed',
+        allprizesclaimed: 'Prizes Claimed',
+        all_prizes_claimed: 'Prizes Claimed',
+        unengaged: 'Unengaged',
+        unknown: 'Unknown'
+      };
+      label = strMap[key] || (value.charAt(0).toUpperCase() + value.slice(1));
+    }
+    const colorMap = {
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Active': 'bg-green-100 text-green-800',
+      'Ended': 'bg-red-100 text-red-800',
+      'Drawing': 'bg-purple-100 text-purple-800',
+      'Completed': 'bg-blue-100 text-blue-800',
+      'Deleted': 'bg-gray-200 text-gray-800',
+      'Activation Failed': 'bg-red-200 text-red-900',
+      'Prizes Claimed': 'bg-blue-200 text-blue-900',
+      'Prize Claimed': 'bg-blue-200 text-blue-900',
+      'Unengaged': 'bg-gray-100 text-gray-800',
+      'Unknown': 'bg-gray-100 text-gray-800'
+    };
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>
+    );
+  };
+
   // Dashboard component states
   const [dashboardStates, setDashboardStates] = useState({
     royalty: {
@@ -99,17 +145,7 @@ const NewMobileProfilePage = () => {
     );
   }
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   // Activity section rendering
   const renderActivitySection = () => {
@@ -228,7 +264,7 @@ const NewMobileProfilePage = () => {
         {userActivity.slice(0, 10).map((activity, index) => (
           <div
             key={activity.id || index}
-            className="bg-card border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 mt-1">
@@ -297,21 +333,21 @@ const NewMobileProfilePage = () => {
 
         {/* Creator Stats - Match Desktop Calculations Exactly */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card border border-border rounded-lg p-4">
+          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.length}</div>
             <div className="text-sm text-muted-foreground">Total Raffles</div>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
+          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.filter(r => r.state === 'active').length}</div>
             <div className="text-sm text-muted-foreground">Active Raffles</div>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
+          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
             <div className="text-2xl font-bold">
               {formatRevenueAmount(createdRaffles.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0).toFixed(4))}
             </div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
+          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
             <div className="text-2xl font-bold">
               {createdRaffles.length > 0 ?
                 Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0}%
@@ -328,7 +364,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('royalty')}
             data-dashboard-card
-            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Settings className="h-5 w-5 text-primary" />
@@ -343,7 +379,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('minter')}
             data-dashboard-card
-            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
               <UserPlus className="h-5 w-5 text-primary" />
@@ -358,7 +394,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('tokenCreator')}
             data-dashboard-card
-            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Plus className="h-5 w-5 text-primary" />
@@ -373,7 +409,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('revenue')}
             data-dashboard-card
-            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
               <DollarSign className="h-5 w-5 text-primary" />
@@ -692,7 +728,7 @@ const NewMobileProfilePage = () => {
 
         {/* Collection Info Display */}
         {state.collectionInfo && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Collection Information</h4>
             <div className="space-y-2 text-sm">
               <div className="break-words"><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
@@ -1128,7 +1164,7 @@ const NewMobileProfilePage = () => {
 
         {/* Collection Info */}
         {state.fetchedCollection && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Collection Information</h4>
             <div className="text-sm space-y-2">
               <div className="break-all">
@@ -1148,7 +1184,7 @@ const NewMobileProfilePage = () => {
             </div>
 
             {/* Lock/Unlock Button */}
-            <div className="pt-2 border-t border-border">
+            <div className="pt-2 border-t border-[#614E41]">
               <button
                 onClick={toggleMinterApprovalLock}
                 disabled={state.loading || !connected}
@@ -1620,7 +1656,7 @@ const NewMobileProfilePage = () => {
 
         const isCreator = creator.toLowerCase() === address.toLowerCase();
 
-        // Map state number to readable state - matches desktop exactly
+        // Map state number (BigNumber/string/number) to readable state - robust conversion
         const stateNames = [
           'Pending',           // 0
           'Active',            // 1
@@ -1632,7 +1668,12 @@ const NewMobileProfilePage = () => {
           'AllPrizesClaimed',  // 7
           'Unengaged'          // 8
         ];
-        const stateName = stateNames[state] || 'Unknown';
+        const stateIndex = (state && typeof state === 'object' && typeof state.toNumber === 'function')
+          ? state.toNumber()
+          : Number(state);
+        const stateName = (Number.isFinite(stateIndex) && stateIndex >= 0 && stateIndex < stateNames.length)
+          ? stateNames[stateIndex]
+          : 'Unknown';
 
         updateRevenueState({
           raffleData: {
@@ -1823,10 +1864,10 @@ const NewMobileProfilePage = () => {
                 <button
                   key={raffle.address}
                   onClick={() => loadRaffleInfo(raffle.address)}
-                  className="w-full text-left bg-muted/30 border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  className="w-full text-left bg-muted/30 beige-surface border border-[#614E41] rounded-lg p-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="text-sm font-medium">{raffle.name || `Raffle ${raffle.address.slice(0, 8)}...`}</div>
-                  <div className="text-xs text-muted-foreground">State: {raffle.state}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">State: {renderStateBadge(raffle.state, { stateNum: raffle.stateNum })}</div>
                 </button>
               ))}
             </div>
@@ -1835,14 +1876,14 @@ const NewMobileProfilePage = () => {
 
         {/* Raffle Info Display */}
         {state.raffleData.address && state.raffleData.raffleState !== 'unknown' && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
             <h4 className="font-semibold">Raffle Information</h4>
             <div className="space-y-2 text-sm">
               <div className="break-all">
                 <span className="font-medium">Address:</span>
                 <span className="ml-1 font-mono text-xs">{state.raffleData.address}</span>
               </div>
-              <div><span className="font-medium">State:</span> {state.raffleData.raffleState}</div>
+              <div className="flex items-center gap-2"><span className="font-medium">State:</span> {renderStateBadge(state.raffleData.raffleState, { stateNum: state.raffleData.stateNum, winnerCount: state.raffleData.winnerCount })}</div>
               <div><span className="font-medium">You are creator:</span> {state.raffleData.isCreator ? 'Yes' : 'No'}</div>
               <div><span className="font-medium">Available Revenue:</span> {state.raffleData.revenueAmount} {getCurrencySymbol()}</div>
             </div>
@@ -1884,7 +1925,7 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Creator Mint Section - matches desktop implementation */}
-        <div className="space-y-4 border-t border-border pt-6">
+        <div className="space-y-4 border-t border-[#614E41] pt-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Creator Mint</h3>
             <p className="text-sm text-muted-foreground">
@@ -2016,7 +2057,7 @@ const NewMobileProfilePage = () => {
         {createdRaffles.map((raffle) => (
           <div
             key={raffle.address}
-            className="bg-card border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -2024,14 +2065,17 @@ const NewMobileProfilePage = () => {
                   {raffle.name || `Raffle ${raffle.address.slice(0, 8)}...`}
                 </h4>
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">State:</span> {raffle.state}
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span className="font-medium">State:</span> {renderStateBadge(raffle.state, { stateNum: raffle.stateNum })}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Tickets Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Revenue:</span> {formatRevenueAmount(raffle.revenue || '0')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Created:</span> {raffle.createdAt ? new Date((raffle.createdAt < 1e12 ? raffle.createdAt * 1000 : raffle.createdAt)).toLocaleString() : 'Unknown'}
                   </p>
                 </div>
               </div>
@@ -2097,7 +2141,7 @@ const NewMobileProfilePage = () => {
         {purchasedTickets.map((ticket, index) => (
           <div
             key={ticket.id || index}
-            className="bg-card border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -2109,10 +2153,25 @@ const NewMobileProfilePage = () => {
                     <span className="font-medium">Tickets:</span> {ticket.quantity || ticket.ticketCount || 1}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Amount Paid:</span> {ticket.amount || '0'} {getCurrencySymbol()}
+                    <span className="font-medium">Amount Paid:</span> {(() => {
+                      const amt = ticket.totalSpent ?? ticket.amount;
+                      if (amt === undefined || amt === null || amt === '') {
+                        const qty = ticket.quantity || ticket.ticketCount || 0;
+                        const price = ticket.ticketPrice; // ether units string
+                        if (price) {
+                          const computed = (parseFloat(price) || 0) * qty;
+                          return formatRevenueAmount(computed.toString());
+                        }
+                        return formatRevenueAmount('0');
+                      }
+                      return formatRevenueAmount(amt);
+                    })()}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">State:</span> {ticket.state || 'Unknown'}
+                    <span className="font-medium">Purchased:</span> {ticket.purchaseTime ? new Date((ticket.purchaseTime < 1e12 ? ticket.purchaseTime * 1000 : ticket.purchaseTime)).toLocaleString() : 'Unknown'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">State:</span> {renderStateBadge(ticket.state, { stateNum: ticket.stateNum })}
                   </p>
                 </div>
               </div>
@@ -2146,12 +2205,12 @@ const NewMobileProfilePage = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <div className="bg-card border-b border-[#614E41] p-4">
+      <div className="bg-card beige-surface border-b border-[#614E41] p-4">
         <h1 className="text-2xl font-bold mb-2">Profile</h1>
         <p className="text-sm text-muted-foreground mb-4">
           Track activities and manage your raffles
         </p>
-        <div className="bg-muted/50 border border-border/30 rounded-lg p-3">
+        <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-3">
           <p className="text-sm font-medium">Connected Account:</p>
           <p className="text-xs font-mono break-all">{address}</p>
         </div>
@@ -2211,6 +2270,13 @@ const NewMobileProfilePage = () => {
       <div className="pb-8">
         {renderContent()}
       </div>
+
+      {loading && (
+        <div className="text-center py-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-xs text-muted-foreground">Loading on-chain data…</p>
+        </div>
+      )}
     </div>
   );
 };

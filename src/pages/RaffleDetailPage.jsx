@@ -18,6 +18,7 @@ import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleStateManager, useRaffleEventListener } from '../hooks/useRaffleService';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip';
 import {
   batchContractCalls,
   safeContractCall,
@@ -236,13 +237,15 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   );
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[260px] sm:min-h-[280px] lg:min-h-[360px]">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Tickets
       </h3>
 
-        <div className="space-y-4 flex-1">
+        {/* Reserve flexible space so the action area can stick to bottom even when content above grows */}
+
+        <div className="flex-1 flex flex-col h-full gap-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
             <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
@@ -267,7 +270,9 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
             {canClaimRefund() && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Your Refundable Amount:</span>
-                <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{ethers.utils.formatEther(refundableAmount)} ETH</p>
+                <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  {ethers.utils.formatEther(refundableAmount)} {getCurrencySymbol()}
+                </p>
               </div>
             )}
           <div></div>
@@ -275,41 +280,42 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
 
         {(raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
           <>
-            {/* Removed desktop placeholder; rely on min-height and flex layout */}
-            {(canClaimPrize() || canClaimRefund()) ? (
-              <div className="flex flex-col sm:flex-row gap-2 w-full">
-                {canClaimPrize() && (
-                  <button
-                    onClick={handleClaimPrize}
-                    disabled={claimingPrize || !connected}
-                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
-                  >
-                    {claimingPrize
-                      ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
-                      : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
-                  </button>
-                )}
-                {canClaimRefund() && (
-                  <button
-                    onClick={handleClaimRefund}
-                    disabled={claimingRefund || !connected}
-                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
-                  >
-                    {claimingRefund ? 'Claiming...' : 'Claim Refund'}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <button
-                disabled
-                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                Raffle Ended
-              </button>
-            )}
+            <div className="mt-auto">
+              {(canClaimPrize() || canClaimRefund()) ? (
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  {canClaimPrize() && (
+                    <button
+                      onClick={handleClaimPrize}
+                      disabled={claimingPrize || !connected}
+                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
+                    >
+                      {claimingPrize
+                        ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
+                        : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
+                    </button>
+                  )}
+                  {canClaimRefund() && (
+                    <button
+                      onClick={handleClaimRefund}
+                      disabled={claimingRefund || !connected}
+                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
+                    >
+                      {claimingRefund ? 'Claiming...' : 'Claim Refund'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Raffle Deleted' : 'Raffle Ended'}
+                </button>
+              )}
+            </div>
           </>
         ) : (
-          <>
+          <div className="mt-auto">
             {/* Removed non-active desktop placeholder; rely on min-height */}
             {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
               <button
@@ -338,12 +344,12 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                       The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
                 </p>
               </>
-            ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7) ? (
+            ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.state === 'Deleted' || raffle.stateNum === 5) ? (
               <button
                 disabled
                 className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Raffle Ended
+                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Raffle Deleted' : 'Raffle Ended'}
               </button>
             ) : isRaffleEnded() ? (
               <button
@@ -358,7 +364,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                 disabled
                 className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Raffle Ended
+                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Raffle Deleted' : 'Raffle Ended'}
               </button>
             ) : userTickets >= raffle.maxTicketsPerParticipant ? (
               <button
@@ -411,27 +417,24 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                 </p>
               </div>
             )}
-          </>
+          </div>
         )}
 
-          {!connected && (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                Please connect your wallet to purchase tickets.
-              </p>
-            </div>
-          )}
+
         </div>
     </div>
   );
 };
 
-const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
+const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
   const { getContractInstance } = useContract();
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchSource, setFetchSource] = useState(null); // Track successful source for debugging
   const [suppressRender, setSuppressRender] = useState(false); // For mintable ERC721 with no unrevealedBaseURI
+  // Image gateway fallback state
+  const [imageCandidates, setImageCandidates] = useState([]);
+  const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
 
   // Multiple gateways for decentralized URIs
   const IPFS_GATEWAYS = [
@@ -462,8 +465,10 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
     const hadTrailingSlash = /\/$/.test(baseUri);
     const cleanBaseUri = baseUri.replace(/\/$/, ''); // Remove trailing slash
 
-    const tokenIdStr = tokenId.toString();
-    const hexIdLower = BigInt(tokenId).toString(16).padStart(64, '0');
+    // Be tolerant when tokenId is undefined/null for mintable/unrevealed cases
+    const tokenIdStr = (tokenId !== undefined && tokenId !== null) ? tokenId.toString() : '0';
+    const tokenIdBig = (tokenId !== undefined && tokenId !== null) ? BigInt(tokenId) : 0n;
+    const hexIdLower = tokenIdBig.toString(16).padStart(64, '0');
     const hexIdUpper = hexIdLower.toUpperCase();
     const isERC1155 = standard === 1;
     const isERC721 = standard === 0;
@@ -475,8 +480,9 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
       if (root && root !== uri) {
         candidates.push(root);
         candidates.push(`${root}/`);
-        // Common root index file
+        // Common root index files
         candidates.push(`${root}/index.json`);
+        candidates.push(`${root}/metadata.json`);
       }
       return candidates;
     };
@@ -528,6 +534,10 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         // Try base URI root early
         uriVariants.push(baseUri);
         if (hadTrailingSlash) uriVariants.push(cleanBaseUri + '/');
+        // Add common root JSON filenames and baseUri.json (mirroring ERC721 robustness)
+        uriVariants.push(`${cleanBaseUri}.json`);
+        uriVariants.push(`${cleanBaseUri}/index.json`);
+        uriVariants.push(`${cleanBaseUri}/metadata.json`);
 
         // Priority 1 (ERC1155): hex without extension first
         uriVariants.push(`${cleanBaseUri}/${hexIdLower}`);
@@ -550,6 +560,10 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         // ERC721: try baseUri earlier (unrevealed/shared)
         uriVariants.push(baseUri);
         if (hadTrailingSlash) uriVariants.push(cleanBaseUri + '/');
+        // Also try common root JSON filenames and baseUri.json
+        uriVariants.push(`${cleanBaseUri}.json`);
+        uriVariants.push(`${cleanBaseUri}/index.json`);
+        uriVariants.push(`${cleanBaseUri}/metadata.json`);
         // Keep previous priority (extensionless decimal first)
         uriVariants.push(`${cleanBaseUri}/${tokenIdStr}`);
         uriVariants.push(`${cleanBaseUri}${tokenIdStr}`);
@@ -628,7 +642,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
 
   // Extract image URL from metadata with flexible field support
   const extractImageURL = (metadata) => {
-    const imageFields = [
+    const mediaFields = [
       'image',
       'image_url',
       'imageUrl',
@@ -644,30 +658,43 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         // Strip protocol and any leading 'ipfs/' segment
         let rest = u.slice('ipfs://'.length);
         if (rest.startsWith('ipfs/')) rest = rest.slice('ipfs/'.length);
-        // Build single-gateway HTTP URL
-        return `https://ipfs.io/ipfs/${rest}`;
+        // Build multiple-gateway HTTP URLs as candidates
+        const candidates = IPFS_GATEWAYS.map(gateway => `${gateway}${rest}`);
+        return candidates; // Return array to support gateway fallback
       }
       if (u.startsWith('ipns://')) {
         let rest = u.slice('ipns://'.length);
         if (rest.startsWith('ipns/')) rest = rest.slice('ipns/'.length);
-        return `https://ipfs.io/ipns/${rest}`;
+        const candidates = IPNS_GATEWAYS.map(gateway => `${gateway}${rest}`);
+        return candidates;
       }
       if (u.startsWith('ar://')) {
         const rest = u.slice('ar://'.length);
-        return `https://arweave.net/${rest}`;
+        const candidates = ARWEAVE_GATEWAYS.map(gateway => `${gateway}${rest}`);
+        return candidates;
       }
-      return u;
+      return [u]; // Normalize to array
     };
 
-    for (const field of imageFields) {
+    for (const field of mediaFields) {
       if (metadata[field]) {
         const raw = metadata[field];
-        const httpUrl = normalizeIpfs(String(raw));
-        return httpUrl;
+        const urls = normalizeIpfs(String(raw)); // returns array
+        return urls;
       }
     }
 
     return null;
+  };
+
+  // Handle media (image/video) fallback across multiple gateways
+  const handleMediaError = () => {
+    if (Array.isArray(imageCandidates) && imageCandidateIndex + 1 < imageCandidates.length) {
+      setImageCandidateIndex(imageCandidateIndex + 1);
+      setImageUrl(imageCandidates[imageCandidateIndex + 1]);
+    } else {
+      setImageUrl(null);
+    }
   };
 
   // Enhanced fetch with timeout and error handling
@@ -692,7 +719,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
   };
 
   // Cascading fetch strategy with fallback
-  const fetchMetadataWithFallback = async (uriVariants) => {
+  const fetchMetadataWithFallback = async (uriVariants, timeoutMs = 10000) => {
     for (const uri of uriVariants) {
       try {
         // Support data: URIs (on-chain metadata or direct images)
@@ -704,15 +731,15 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
             const json = JSON.parse(atob(payload));
             const imageUrl = extractImageURL(json) || null;
             if (imageUrl) return { metadata: json, imageUrl, sourceUri: uri };
-          } else if (mime?.startsWith('image/')) {
-            // Direct image data URL
+          } else if (mime?.startsWith('image/') || mime?.startsWith('video/')) {
+            // Direct media data URL (image/video)
             return { metadata: { image: uri }, imageUrl: uri, sourceUri: uri };
           }
           // If unsupported data URI, continue to next
           continue;
         }
 
-        const response = await fetchWithTimeout(uri);
+        const response = await fetchWithTimeout(uri, timeoutMs);
 
         if (response.ok) {
           const contentType = response.headers.get('content-type');
@@ -730,7 +757,11 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
             }
           } catch (jsonError) {
             // If JSON parsing fails, check if response is an image or URL points to image
-            if (contentType?.startsWith('image/') || uri.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+            if (
+              contentType?.startsWith('image/') ||
+              contentType?.startsWith('video/') ||
+              uri.match(/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ogg)$/i)
+            ) {
               return { metadata: { image: uri }, imageUrl: uri, sourceUri: uri };
             }
           }
@@ -767,24 +798,10 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         let baseUri = null;
         const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
         const contract = getContractInstance(raffle.prizeCollection, contractType);
-        // Fix the mintable logic:
-        // - Mintable: isExternallyPrized === true (prize minted from collection)
-        // - Escrowed: isExternallyPrized === false (prize held by raffle contract)
-        // - If undefined, we need to determine based on available data
-        let isMintable;
-        if (raffle.isExternallyPrized === true) {
-          isMintable = true; // Definitely mintable
-        } else if (raffle.isExternallyPrized === false) {
-          isMintable = false; // Definitely escrowed
-        } else {
-          // isExternallyPrized is undefined - try to determine from other data
-          // If we have a prizeTokenId, it's likely escrowed (specific token)
-          // If no prizeTokenId or prizeTokenId is 0, it's likely mintable
-          const hasSpecificTokenId = raffle.prizeTokenId &&
-            (raffle.prizeTokenId.toString() !== '0' && raffle.prizeTokenId !== 0);
-          isMintable = !hasSpecificTokenId;
 
-        }
+        // Determine mintable vs escrowed using isEscrowedPrize flag only
+        // Mintable when not escrowed; Escrowed when isEscrowedPrize is true
+        const isMintable = isEscrowedPrize ? false : true;
 
 
 
@@ -828,32 +845,76 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
           if (isMintable) {
             let unrevealedUri = null;
             let tokenUri = null;
+            let revealed = null;
 
             try {
               unrevealedUri = await contract.unrevealedURI();
             } catch (error) {
-              // No unrevealedURI available
+              // ignore
             }
 
             try {
               tokenUri = await contract.tokenURI(raffle.prizeTokenId);
             } catch (error) {
-              // No tokenURI available
+              // ignore
             }
 
-            // Prefer tokenURI if both exist, otherwise use unrevealedURI
-            if (tokenUri && tokenUri.trim() !== '') {
-              baseUri = tokenUri;
-            } else if (unrevealedUri && unrevealedUri.trim() !== '') {
-              baseUri = unrevealedUri;
+            // Check reveal state to decide which URI to prefer
+            try {
+              revealed = await contract.isRevealed();
+            } catch (error) {
+              revealed = null; // Unknown; fall back to previous preference order
+            }
+
+            if (revealed === false) {
+              // Pre-reveal: prefer unrevealedURI
+              if (unrevealedUri && unrevealedUri.trim() !== '') {
+                baseUri = unrevealedUri;
+              } else if (tokenUri && tokenUri.trim() !== '') {
+                baseUri = tokenUri;
+              } else {
+                // Fallback to uri() method
+                try {
+                  const tokenIdForCall = raffle?.prizeTokenId;
+                  baseUri = await contract.uri(tokenIdForCall);
+                } catch (fallbackError) {
+                  setImageUrl(null);
+                  setLoading(false);
+                  return;
+                }
+              }
+            } else if (revealed === true) {
+              // Post-reveal: prefer tokenURI
+              if (tokenUri && tokenUri.trim() !== '') {
+                baseUri = tokenUri;
+              } else {
+                // Fallback to uri() method; if that fails, try unrevealedURI as last resort
+                try {
+                  baseUri = await contract.uri(raffle.prizeTokenId);
+                } catch (fallbackError) {
+                  if (unrevealedUri && unrevealedUri.trim() !== '') {
+                    baseUri = unrevealedUri;
+                  } else {
+                    setImageUrl(null);
+                    setLoading(false);
+                    return;
+                  }
+                }
+              }
             } else {
-              // Fallback to uri() method
-              try {
-                baseUri = await contract.uri(raffle.prizeTokenId);
-              } catch (fallbackError) {
-                setImageUrl(null);
-                setLoading(false);
-                return;
+              // Unknown reveal state: keep prior behavior (prefer tokenURI)
+              if (tokenUri && tokenUri.trim() !== '') {
+                baseUri = tokenUri;
+              } else if (unrevealedUri && unrevealedUri.trim() !== '') {
+                baseUri = unrevealedUri;
+              } else {
+                try {
+                  baseUri = await contract.uri(raffle.prizeTokenId);
+                } catch (fallbackError) {
+                  setImageUrl(null);
+                  setLoading(false);
+                  return;
+                }
               }
             }
           } else {
@@ -888,9 +949,15 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
         }
 
         // Step 4: Attempt fetch with cascading fallback
-        const result = await fetchMetadataWithFallback(allURIs);
+        // Optimization: use a shorter timeout for mintable ERC721 unrevealed URIs to reduce perceived latency
+        const timeoutMs = (raffle.standard === 0 && isMintable) ? 5000 : 10000;
+        const result = await fetchMetadataWithFallback(allURIs, timeoutMs);
 
-        setImageUrl(result.imageUrl);
+        // Build media candidates for gateway fallback
+        const imgCandidates = Array.isArray(result.imageUrl) ? result.imageUrl : [result.imageUrl];
+        setImageCandidates(imgCandidates);
+        setImageCandidateIndex(0);
+        setImageUrl(imgCandidates[0]);
         setFetchSource(result.sourceUri);
         // Early exit if we resolved a root metadata; no further attempts needed
 
@@ -902,25 +969,26 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
       setLoading(false);
     }
 
-    // Trigger fetch if we have prize information
-    const shouldFetch = raffle.isPrized ||
-      (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) ||
-      (raffle.standard !== undefined && raffle.prizeTokenId !== undefined);
+    // Trigger fetch only when all prize conditions are met (no dependency on isExternallyPrized)
+    const eligiblePrize = (
+      raffle?.isPrized === true &&
+      raffle?.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero &&
+      (raffle?.standard === 0 || raffle?.standard === 1)
+    );
 
-    if (shouldFetch) fetchPrizeImageEnhanced();
-  }, [raffle, getContractInstance, isMintableERC721]);
+    if (eligiblePrize) fetchPrizeImageEnhanced();
+  }, [raffle, getContractInstance, isEscrowedPrize]);
 
-  // Check if we should render the component
-  const shouldRender = raffle.isPrized ||
-    (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) ||
-    (raffle.standard !== undefined && raffle.prizeTokenId !== undefined);
+  // Render only when prize conditions are met (no dependency on isExternallyPrized)
+  const shouldRender = (
+    raffle?.isPrized === true &&
+    raffle?.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero &&
+    (raffle?.standard === 0 || raffle?.standard === 1)
+  );
 
   if (!shouldRender) {
-
     return null;
   }
-
-
 
   // Show loading state
   if (loading) {
@@ -930,7 +998,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
           <div className="w-64 h-64 flex items-center justify-center border rounded-lg bg-muted/30">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Loading prize image...</p>
+              <p className="text-sm text-muted-foreground">Loading prize media...</p>
             </div>
           </div>
         </CardContent>
@@ -944,19 +1012,29 @@ const PrizeImageCard = ({ raffle, isMintableERC721 }) => {
     return null;
   }
 
+  const isVideo = typeof imageUrl === 'string' && /\.(mp4|webm|ogg)$/i.test(imageUrl);
+
   return (
     <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-[#614E41] rounded-xl">
       <CardContent className="flex flex-col items-center justify-center">
-        <img
-          src={imageUrl}
-          alt="Prize Art"
-          className="w-64 h-64 object-contain rounded-lg border"
-          style={{ background: '#fff' }}
-          onError={(e) => {
-
-            setImageUrl(null);
-          }}
-        />
+        {isVideo ? (
+          <video
+            src={imageUrl}
+            className="w-64 h-64 object-contain rounded-lg border"
+            style={{ background: '#000' }}
+            controls
+            playsInline
+            onError={handleMediaError}
+          />
+        ) : (
+          <img
+            src={imageUrl}
+            alt="Prize Art"
+            className="w-64 h-64 object-contain rounded-lg border"
+            style={{ background: '#fff' }}
+            onError={handleMediaError}
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -1606,7 +1684,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isEscrowedPrize, isMobile, o
       case 'Deleted':
         return (
           <div className="text-center py-8">
-            <Trash2 className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <Trash2 className="h-12 w-12 text-foreground/60 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Raffle Deleted</h3>
             <p className="text-muted-foreground">This raffle has been deleted and is no longer active.</p>
           </div>
@@ -1750,7 +1828,7 @@ function ERC20PrizeAmount({ token, amount }) {
   }, [token]);
   return (
     <div className="flex justify-between">
-      <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+      <span className="text-foreground/80 dark:text-foreground">Prize Amount:</span>
       <span>{ethers.utils.formatUnits(amount, 18)} {symbol}</span>
     </div>
   );
@@ -1999,6 +2077,19 @@ const RaffleDetailPage = () => {
   const stableAddress = useMemo(() => address, [address]);
   const stableRaffleAddress = useMemo(() => raffleAddress, [raffleAddress]);
 
+  const actualDurationDebounceRef = useRef(null);
+  const fetchActualDurationImmediate = useCallback(async () => {
+    try {
+      const contract = getContractInstance(stableRaffleAddress || raffleAddress, 'raffle');
+      if (!contract) return;
+      const val = await contract.getActualRaffleDuration();
+      const num = val?.toNumber ? val.toNumber() : Number(val);
+      if (num && num > 0) {
+        setRaffle(prev => (prev ? { ...prev, actualDuration: num } : prev));
+      }
+    } catch (_) {}
+  }, [getContractInstance, stableRaffleAddress, raffleAddress]);
+
   // Event listener for raffle state changes
   // Stop listening for winner selection events after raffle is completed
   const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 7; // Completed or Prizes Claimed
@@ -2021,15 +2112,21 @@ const RaffleDetailPage = () => {
       }, 5000); // 5 second delay
     },
     onStateChange: (newState, blockNumber) => {
-
-
       // Reset auto-refresh monitoring when state changes successfully
       if (newState !== 3) { // Not Drawing state
         setAutoRefreshCount(0);
         setLastDrawingStateTime(null);
       }
 
-      // Trigger refresh when state changes
+      // If transitioning into an ended/terminal state, debounce a direct fetch of actualDuration
+      if ([2,3,4,5,6,7,8].includes(newState)) {
+        if (actualDurationDebounceRef.current) clearTimeout(actualDurationDebounceRef.current);
+        actualDurationDebounceRef.current = setTimeout(() => {
+          fetchActualDurationImmediate();
+        }, 600); // small debounce
+      }
+
+      // Trigger refresh when state changes (to update other fields)
       triggerRefresh();
     },
     onPrizeClaimed: (winner, tokenId, event) => {
@@ -2124,12 +2221,15 @@ const RaffleDetailPage = () => {
           { method: createSafeMethod(raffleContract, 'usesCustomPrice', false), name: 'usesCustomPrice', required: false, fallback: false },
           { method: createSafeMethod(raffleContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
           { method: createSafeMethod(raffleContract, 'isExternallyPrized', false), name: 'isExternallyPrized', required: false, fallback: false },
-          { method: createSafeMethod(raffleContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) }
+          { method: createSafeMethod(raffleContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) },
+          // Conditionally include actual duration only when state is in ended/terminal states
+          { method: () => raffleContract.getActualRaffleDuration(), name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
+          { method: createSafeMethod(raffleContract, 'getUniqueParticipantsCount', ethers.BigNumber.from(0)), name: 'uniqueParticipants', required: false, fallback: ethers.BigNumber.from(0) }
         ];
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomPrice, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner
+          name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomPrice, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2182,12 +2282,19 @@ const RaffleDetailPage = () => {
 
         const isPrized = !!isPrizedContract;
 
+        const endedStates = [2,3,4,5,6,7,8];
+        const actualDurationNumber = (endedStates.includes(stateNum) && actualDurationValue)
+          ? (actualDurationValue.toNumber ? actualDurationValue.toNumber() : Number(actualDurationValue))
+          : undefined;
+
         const raffleData = {
           address: raffleAddress,
           name,
           creator,
           startTime: startTime.toNumber(),
           duration: duration.toNumber(),
+          actualDuration: actualDurationNumber,
+          uniqueParticipants: (uniqueParticipantsValue?.toNumber ? uniqueParticipantsValue.toNumber() : Number(uniqueParticipantsValue)) || 0,
           ticketPrice,
           ticketLimit: ticketLimit.toNumber(),
           ticketsSold,
@@ -2302,7 +2409,9 @@ const RaffleDetailPage = () => {
     let seconds = 0;
     if ([2,3,4,5,6,7,8].includes(raffle.stateNum)) {
       label = 'Duration';
-      seconds = raffle.duration;
+      // Prefer actual duration if available on ended/terminal states
+      const actual = raffle.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
+      seconds = actual && actual > 0 ? actual : raffle.duration;
       setTimeLabel(label);
       setTimeValue(formatDuration(seconds));
       return;
@@ -2592,7 +2701,11 @@ const RaffleDetailPage = () => {
       'Unengaged': 'bg-gray-100 text-gray-800',
       'Unknown': 'bg-gray-100 text-gray-800'
     };
-    return <span className={`px-3 py-1 rounded-full text-sm font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+    return (
+      <span className={`inline-flex max-w-[60vw] items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${colorMap[label] || colorMap['Unknown']}`}>
+        {label}
+      </span>
+    );
   };
 
   async function handleWithdrawPrize() {
@@ -2946,8 +3059,8 @@ const RaffleDetailPage = () => {
 
           </div>
           {/* On mobile, stack state badge and creator actions; on desktop, keep inline */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2 w-full sm:w-auto">
-            {getStatusBadge()}
+          <div className="flex flex-col items-start sm:flex-row sm:items-center sm:gap-3 gap-2 w-full sm:w-auto">
+            <div className="self-start sm:self-auto">{getStatusBadge()}</div>
 
             {/* Auto-refresh indicator */}
             {(isAutoRefreshing || (raffle?.stateNum === 3 && lastDrawingStateTime)) && (
@@ -3113,19 +3226,19 @@ const RaffleDetailPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketsSold}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Tickets Sold</p>
+            <p className="text-sm text-foreground/70 dark:text-foreground/80">Tickets Sold</p>
           </div>
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketLimit}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Total Tickets</p>
+            <p className="text-sm text-foreground/70 dark:text-foreground/80">Total Tickets</p>
           </div>
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.winnersCount}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Winners</p>
+            <p className="text-sm text-foreground/70 dark:text-foreground/80">Winners</p>
           </div>
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{timeValue}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{timeLabel}</p>
+            <p className="text-sm text-foreground/70 dark:text-foreground/80">{timeLabel}</p>
           </div>
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
             {isRefundable && raffle && raffle.standard !== 2 && raffle.standard !== 3 && (() => {
@@ -3190,26 +3303,42 @@ const RaffleDetailPage = () => {
             <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400">Contract Address:</span>
+                <span className="text-foreground/80 dark:text-foreground">Contract Address:</span>
                 <span className="font-mono">
                   {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400">Start Time:</span>
+                <span className="text-foreground/80 dark:text-foreground">Start Time:</span>
                 <span>{new Date(raffle.startTime * 1000).toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400">Duration:</span>
-                <span>{formatDuration(raffle.duration)}</span>
+                <span className="text-foreground/80 dark:text-foreground flex items-center gap-1">
+                  Raffle Duration
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center cursor-help" aria-label="Raffle Duration info">
+                        <Info className="h-3.5 w-3.5 opacity-70" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center">
+                      Shows the default duration until the raffle ends, then shows the actual duration taken.
+                    </TooltipContent>
+                  </Tooltip>
+                </span>
+                <span>{formatDuration(([2,3,4,5,6,7,8].includes(raffle.stateNum) && raffle.actualDuration) ? raffle.actualDuration : raffle.duration)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400">Ticket Price:</span>
+                <span className="text-foreground/80 dark:text-foreground">Ticket Price:</span>
                 <span>{formatTicketPrice(raffle.ticketPrice)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/80 dark:text-foreground">Total Participants:</span>
+                <span>{Number(raffle.uniqueParticipants || 0).toLocaleString()}</span>
               </div>
                   {raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0) && (
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+                      <span className="text-foreground/80 dark:text-foreground">Prize Amount:</span>
                       <span>{formatPrizeAmount(raffle.nativePrizeAmount)}</span>
                     </div>
                   )}
@@ -3219,7 +3348,7 @@ const RaffleDetailPage = () => {
               {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
                 <>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+                  <span className="text-foreground/80 dark:text-foreground">Prize Collection:</span>
                     <a
                       href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
                       target="_blank"
@@ -3231,7 +3360,7 @@ const RaffleDetailPage = () => {
                     </a>
                 </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-foreground/80 dark:text-foreground">
                       {isEscrowedPrize ? 'Prize Type:' : 'Collection Type:'}
                     </span>
                     <span className="font-semibold">
@@ -3250,7 +3379,7 @@ const RaffleDetailPage = () => {
                   {/* Prize Token ID for escrowed ERC721 and ERC1155 prizes */}
                   {isEscrowedPrize && raffle.prizeTokenId !== undefined && raffle.prizeTokenId !== null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Prize Token ID:</span>
+                      <span className="text-foreground/80 dark:text-foreground">Prize Token ID:</span>
                       <span className="font-mono font-semibold">
                         {raffle.prizeTokenId.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId}
                       </span>
@@ -3261,7 +3390,7 @@ const RaffleDetailPage = () => {
             </div>
           </div>
 
-          <PrizeImageCard raffle={raffle} isMintableERC721={isMintableERC721} />
+          <PrizeImageCard raffle={raffle} isMintableERC721={isMintableERC721} isEscrowedPrize={isEscrowedPrize} />
         </div>
       </div>
     </PageContainer>

@@ -57,9 +57,10 @@ const RaffleCard = ({ raffle }) => {
       let label = '';
       let seconds = 0;
       if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7 || raffle.stateNum === 8) {
-        // Ended or completed or other terminal states
+        // Ended or terminal states
         label = 'Duration';
-        seconds = raffle.duration;
+        const actual = raffle.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
+        seconds = actual && actual > 0 ? actual : raffle.duration;
         setTimeLabel(label);
         setTimeRemaining(formatDuration(seconds));
         return;

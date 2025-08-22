@@ -29,6 +29,7 @@
   { "inputs": [], "name": "getParticipantsCount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "ticketsPurchased", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "quantity", "type": "uint256" }], "name": "purchaseTickets", "outputs": [], "stateMutability": "payable", "type": "function" },
+  { "inputs": [], "name": "getUniqueParticipantsCount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "deleteRaffle", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "winners", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "claimedWins", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
@@ -64,7 +65,11 @@
     "stateMutability": "view",
     "type": "function"
   },
-  {
+
+  { "inputs": [{ "internalType": "address", "name": "participant", "type": "address" }], "name": "getTicketsPurchased", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "lastPurchaseBlock", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" } ], "name": "purchaseTimestamps", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
+  , {
     "inputs": [
       { "internalType": "address", "name": "_prizeCollection", "type": "address" },
       { "internalType": "uint8", "name": "_standard", "type": "uint8" },
@@ -87,5 +92,6 @@
   { "inputs": [], "name": "withdrawCreatorRevenue", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "endRaffle", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "isExternallyPrized", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "amountPerWinner", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+  { "inputs": [], "name": "amountPerWinner", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "getActualRaffleDuration", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
 ]

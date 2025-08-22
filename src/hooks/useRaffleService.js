@@ -284,7 +284,15 @@ export const useRaffleService = (options = {}) => {
   useEffect(() => {
     if (enablePolling && walletContext?.connected && pollingInterval > 0) {
       pollingRef.current = setInterval(() => {
-        fetchRaffles(true); // Background fetch
+        // For background refreshes, bypass cache to surface end-state changes (actualDuration) promptly
+          raffleService.fetchAllRaffles({ isMobile, useCache: false, maxRaffles })
+            .then(fetched => {
+              if (mountedRef.current) {
+                setRaffles(fetched);
+                setLastFetch(new Date());
+              }
+            })
+            .catch(() => {/* ignore background errors */});
       }, pollingInterval);
 
       return () => {

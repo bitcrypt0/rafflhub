@@ -5,7 +5,7 @@ import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import RoyaltyAdjustmentComponent from '../components/RoyaltyAdjustmentComponent';
-import CreatorRevenueWithdrawalComponent from '../components/CreatorRevenueWithdrawalComponent';
+
 import MinterApprovalComponent from '../components/MinterApprovalComponent';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { Button } from '../components/ui/button';
@@ -307,8 +307,8 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
           <span>{ethers.utils.formatEther(ticket.totalCost)} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Purchase Date:</span>
-          <span>{new Date(ticket.purchaseDate * 1000).toLocaleDateString()}</span>
+          <span className="text-muted-foreground">Purchased:</span>
+          <span>{ticket.purchaseTime ? new Date((ticket.purchaseTime < 1e12 ? ticket.purchaseTime * 1000 : ticket.purchaseTime)).toLocaleString() : 'Unknown'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">State:</span>
@@ -401,11 +401,11 @@ const DesktopProfilePage = () => {
     createdRaffles,
     purchasedTickets,
     activityStats,
+    creatorStats,
     loading,
     showRevenueModal,
     selectedRaffle,
     setSelectedRaffle,
-    fetchOnChainActivity,
     fetchCreatedRaffles,
     fetchPurchasedTickets,
     withdrawRevenue,
@@ -529,7 +529,6 @@ const DesktopProfilePage = () => {
         // Refresh data after deletion
         setLoading(true);
         await Promise.all([
-          fetchOnChainActivity(),
           fetchCreatedRaffles(),
           fetchPurchasedTickets()
         ]);
@@ -568,7 +567,6 @@ const DesktopProfilePage = () => {
         // Refresh data after claiming
         setLoading(true);
         await Promise.all([
-          fetchOnChainActivity(),
           fetchCreatedRaffles(),
           fetchPurchasedTickets()
         ]);
@@ -598,7 +596,6 @@ const DesktopProfilePage = () => {
         // Refresh data after claiming
         setLoading(true);
         await Promise.all([
-          fetchOnChainActivity(),
           fetchCreatedRaffles(),
           fetchPurchasedTickets()
         ]);
@@ -674,7 +671,7 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-3">
                   <Ticket className="h-8 w-8 text-blue-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{activityStats.totalTicketsPurchased}</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalTicketsPurchased || 0).toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Tickets Purchased</p>
                   </div>
                 </div>
@@ -683,7 +680,7 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-3">
                   <Plus className="h-8 w-8 text-green-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{activityStats.totalRafflesCreated}</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalRafflesCreated || 0).toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Raffles Created</p>
                   </div>
                 </div>
@@ -692,31 +689,34 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-3">
                   <Trophy className="h-8 w-8 text-yellow-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{activityStats.totalPrizesWon}</p>
-                    <p className="text-sm text-muted-foreground">Prizes Won</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalPrizesWon || 0).toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Total Wins</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
-                  <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
-                      {activityStats.totalRevenueWithdrawn && activityStats.totalRevenueWithdrawn.toString ?
-                        parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4) :
-                        '0.0000'
-                      }
-                    </p>
-                    <p className="text-sm text-muted-foreground">Creator Revenue Withdrawn</p>
-                  </div>
-                </div>
-              </div>
+
               <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <Minus className="h-8 w-8 text-orange-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{activityStats.totalRefundsClaimed}</p>
-                    <p className="text-sm text-muted-foreground">Refunds Claimed</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                      {(() => {
+                        const bn = activityStats.totalClaimableRefunds;
+                        const symbol = getCurrencySymbol();
+                        if (!bn || !bn.toString) return `0 ${symbol}`;
+                        try {
+                          const v = parseFloat(ethers.utils.formatEther(bn));
+                          // Show up to 8 decimals; trim trailing zeros for cleaner rendering
+                          const fixed = v.toFixed(8);
+                          const trimmed = fixed.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+                          const out = (trimmed === '' || trimmed === '.') ? '0' : trimmed;
+                          return `${out} ${symbol}`;
+                        } catch {
+                          return `0 ${symbol}`;
+                        }
+                      })()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total Claimable Refunds</p>
                   </div>
                 </div>
               </div>
@@ -724,33 +724,23 @@ const DesktopProfilePage = () => {
           </div>
         )}
 
-        {/* Profile Tabs */}
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+        {/* Profile Tabs - now always rendered; show lightweight loader above */}
+        {loading && (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Loading on-chain data…</p>
           </div>
-        ) : (
-          <ProfileTabs
-            activities={transformedActivities}
-            createdRaffles={createdRaffles}
-            purchasedTickets={purchasedTickets}
-            creatorStats={{
-              totalRaffles: createdRaffles.length,
-              activeRaffles: createdRaffles.filter(r => r.state === 'active').length,
-              totalRevenue: createdRaffles.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0).toFixed(4),
-              monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
-              totalParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0),
-              uniqueParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0), // TODO: Calculate unique participants
-              successRate: createdRaffles.length > 0 ?
-                Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0
-            }}
-            onDeleteRaffle={handleDeleteRaffle}
-                        onViewRevenue={handleViewRevenue}
-                        onClaimPrize={handleClaimPrize}
-                        onClaimRefund={handleClaimRefund}
-                      />
         )}
+        <ProfileTabs
+          activities={transformedActivities}
+          createdRaffles={createdRaffles}
+          purchasedTickets={purchasedTickets}
+          creatorStats={creatorStats}
+          onDeleteRaffle={handleDeleteRaffle}
+          onViewRevenue={handleViewRevenue}
+          onClaimPrize={handleClaimPrize}
+          onClaimRefund={handleClaimRefund}
+        />
 
         {/* Revenue Modal */}
         {showRevenueModal && selectedRaffle && (

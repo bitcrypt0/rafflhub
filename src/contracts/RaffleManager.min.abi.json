@@ -15,6 +15,30 @@
     "stateMutability": "view",
     "type": "function"
   },
+
+  {
+    "inputs": [
+      { "internalType": "address", "name": "creator", "type": "address" }
+    ],
+    "name": "getRafflesByCreator",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "raffle", "type": "address" }
+    ],
+    "name": "getRaffleCreator",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "raffleCreationTimestamps", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
   {
     "inputs": [
       { "internalType": "address", "name": "token", "type": "address" }
