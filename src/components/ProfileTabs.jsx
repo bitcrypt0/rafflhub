@@ -91,7 +91,7 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow min-h-[180px] flex flex-col">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-5 shadow-xl border-border/80 transition-all duration-300 min-h-[180px] flex flex-col">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm mb-1 truncate">{raffle.name}</h3>
@@ -251,7 +251,7 @@ const ProfileTabs = ({
       ) : (
         <div className="space-y-3">
           {activities.slice(0, 10).map((activity, index) => (
-            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
               <div className="flex items-start gap-3">
                 <div className="mt-1">
                   {activity.icon}

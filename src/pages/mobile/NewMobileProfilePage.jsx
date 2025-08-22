@@ -343,7 +343,7 @@ const NewMobileProfilePage = () => {
           </div>
           <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
             <div className="text-2xl font-bold">
-              {formatRevenueAmount(createdRaffles.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0).toFixed(4))}
+              {formatRevenueAmount(activityStats.withdrawableRevenue || '0')}
             </div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>

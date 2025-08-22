@@ -667,7 +667,7 @@ const DesktopProfilePage = () => {
           <div className="mb-8">
             <h2 className={`font-semibold mb-4 ${isMobile ? 'text-lg' : 'text-xl'}`}>Activity Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <Ticket className="h-8 w-8 text-blue-500" />
                   <div>
@@ -676,7 +676,7 @@ const DesktopProfilePage = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <Plus className="h-8 w-8 text-green-500" />
                   <div>
@@ -685,7 +685,7 @@ const DesktopProfilePage = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
                 <div className="flex items-center gap-3">
                   <Trophy className="h-8 w-8 text-yellow-500" />
                   <div>
@@ -695,9 +695,9 @@ const DesktopProfilePage = () => {
                 </div>
               </div>
 
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
                 <div className="flex items-center gap-3">
-                  <Minus className="h-8 w-8 text-orange-500" />
+                  <DollarSign className="h-8 w-8 text-orange-500" />
                   <div>
                     <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                       {(() => {

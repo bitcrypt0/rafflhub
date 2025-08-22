@@ -164,6 +164,28 @@ export const useProfileData = () => {
       return [];
     }
   }, [stableContracts.raffleManager, chainId, executeCall, getCachedJson, setCachedJson]);
+  // Retry helper for creator raffles: retry once after a short delay, bypassing cache on retry
+  const getRafflesByCreatorWithRetry = useCallback(async (creator) => {
+    const first = await getRafflesByCreatorCached(creator);
+    if (first && first.length > 0) return first;
+    if (!stableContracts.raffleManager) return first;
+    // Wait briefly to allow contracts/data to become ready
+    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      // Bypass cache on retry to avoid persisting/transient empty results
+      const res = await executeCall(stableContracts.raffleManager.getRafflesByCreator, 'getRafflesByCreator', creator);
+      const list = res.success && Array.isArray(res.result) ? res.result : [];
+      // Optionally refresh cache only if non-empty (avoid caching empty)
+      if (Array.isArray(list) && list.length > 0) {
+        const cacheKey = `raffles:byCreator:${CACHE_VERSION}:${chainId}:${creator?.toLowerCase?.()}`;
+        setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
+      }
+      return list;
+    } catch {
+      return first || [];
+    }
+  }, [getRafflesByCreatorCached, stableContracts.raffleManager, executeCall, setCachedJson, chainId]);
+
 
   // Fetch created raffles using RaffleManager.getRafflesByCreator()
   const fetchCreatedRaffles = useCallback(async () => {
@@ -176,7 +198,7 @@ export const useProfileData = () => {
       const raffles = [];
       const activitiesFromGetters = [];
       let withdrawableRevenueTotal = ethers.BigNumber.from(0);
-      const creatorRaffles = await getRafflesByCreatorCached(stableAddress);
+      const creatorRaffles = await getRafflesByCreatorWithRetry(stableAddress);
       console.log('Profile: Found', creatorRaffles.length, 'created raffles for', stableAddress);
 
       for (const raffleAddress of creatorRaffles) {
@@ -466,6 +488,20 @@ export const useProfileData = () => {
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
     if (stableConnected && stableAddress && stableContracts.raffleManager) {
+      // Reset state synchronously to avoid mixing when switching accounts,
+      // but do not clear cached localStorage results.
+      setUserActivity([]);
+      setCreatedRaffles([]);
+      setPurchasedTickets([]);
+      setActivityStats(prev => ({
+        ...prev,
+        totalTicketsPurchased: 0,
+        totalRafflesCreated: 0,
+        totalPrizesWon: 0,
+        totalClaimableRefunds: 0,
+        withdrawableRevenue: '0'
+      }));
+
       const loadAllData = async () => {
         setLoading(true);
         try {

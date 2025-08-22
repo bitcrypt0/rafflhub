@@ -41,10 +41,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.bscscan.com',
     nativeCurrency: { name: 'Test BNB', symbol: 'tBNB', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
-      revenueManager: '0x...',
-      nftFactory: '0x...'
+      raffleManager: '0x95F4C0d1b4ED8fA971473B038adD95f903Be1BF1',
+      raffleDeployer: '0x5C2a42Bbb38e7f2fE7Cb59F0f917497FFdeD8055',
+      revenueManager: '0xb36535a55bdD756A08Cc7d3978BB78F860B49c04',
+      nftFactory: '0xFb3cD95C572E310FEd736AE61C84685056Edb735'
     }
   },
   43113: {
