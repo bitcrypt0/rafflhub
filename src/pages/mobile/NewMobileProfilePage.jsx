@@ -1399,13 +1399,9 @@ const NewMobileProfilePage = () => {
         const contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
 
         const result = await executeTransaction(
-          contract,
-          'createNewToken',
-          [tokenId, maxSupply],
-          {
-            description: `Creating new token ID ${tokenId} with max supply ${maxSupply}`,
-            successMessage: `Token ID ${tokenId} created successfully!`
-          }
+          contract.createNewToken,
+          tokenId,
+          maxSupply
         );
 
         if (result.success) {
@@ -1446,13 +1442,9 @@ const NewMobileProfilePage = () => {
         const contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
 
         const result = await executeTransaction(
-          contract,
-          'setURI',
-          [tokenId, state.uriData.tokenURI],
-          {
-            description: `Setting URI for token ID ${tokenId}`,
-            successMessage: `Token URI set successfully for token ID ${tokenId}!`
-          }
+          contract.setURI,
+          tokenId,
+          state.uriData.tokenURI
         );
 
         if (result.success) {

@@ -11,6 +11,7 @@ import { useMobileBreakpoints } from './hooks/useMobileBreakpoints';
 import ErrorBoundary from './components/ui/error-boundary';
 import { usePerformanceMonitor } from './components/debug/PerformanceMonitor';
 import { initAndroidKeyboardFix, cleanupAndroidKeyboardFix } from './utils/androidKeyboardFix';
+import { initDisableNumberScroll, cleanupDisableNumberScroll } from './utils/disableNumberScroll';
 import LandingPage from './pages/LandingPage';
 
 // Load test utilities in development
@@ -34,8 +35,12 @@ const AppContent = () => {
   useEffect(() => {
     initAndroidKeyboardFix();
 
+    // Initialize global number-input scroll guard
+    const cleanupNumberScroll = initDisableNumberScroll();
+
     return () => {
       cleanupAndroidKeyboardFix();
+      cleanupNumberScroll && cleanupNumberScroll();
     };
   }, []);
 

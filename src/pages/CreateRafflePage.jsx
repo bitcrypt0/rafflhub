@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, AlertCircle, Gift, Coins, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Package, AlertCircle, Gift, Coins, CheckCircle, XCircle, Info } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -17,6 +17,7 @@ import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import CreateRaffleSideFilterBar from '../components/CreateRaffleSideFilterBar';
 import { useErrorHandler } from '../utils/errorHandling';
 import { SUPPORTED_NETWORKS } from '../networks';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -156,6 +157,7 @@ function ERC1155DropForm() {
             <input
               type="number"
               min="0"
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               value={formData.tokenId || ''}
               onChange={e => handleChange('tokenId', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
@@ -167,6 +169,7 @@ function ERC1155DropForm() {
             <input
               type="number"
               min="1"
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               value={formData.unitsPerWinner || ''}
               onChange={e => handleChange('unitsPerWinner', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
@@ -184,57 +187,102 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Info">
+                      <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Ticket Limit info">
+                      <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Winner Count info">
+                    <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Max Tickets Per Participant info">
+                    <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
           </div>
         </div>
         <div>
@@ -479,40 +527,97 @@ const PrizedRaffleForm = () => {
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Info">
+                      <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Ticket Limit info">
+                      <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Winner Count info">
+                    <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center cursor-help" data-tooltip-icon aria-label="Max Tickets Per Participant info">
+                    <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={1}
@@ -609,6 +714,7 @@ const PrizedRaffleForm = () => {
                   type="number"
                   value={formData.maxSupply || ''}
                   onChange={(e) => handleChange('maxSupply', e.target.value)}
+                  onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
                   className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                 />
               </div>
@@ -620,6 +726,7 @@ const PrizedRaffleForm = () => {
                   min="0"
                   value={formData.royaltyPercentage || ''}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                  onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
                   className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                   placeholder="e.g. 5 for 5%"
                 />
@@ -852,44 +959,94 @@ const NonPrizedRaffleForm = () => {
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
               onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
@@ -1058,7 +1215,21 @@ const WhitelistRaffleForm = () => {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
@@ -1066,37 +1237,65 @@ const WhitelistRaffleForm = () => {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={1}
@@ -1298,57 +1497,96 @@ const NewERC721DropForm = () => {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winners</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
               onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
           </div>
           <div>
             <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
@@ -1402,6 +1640,7 @@ const NewERC721DropForm = () => {
                 type="number"
                 value={formData.maxSupply || ''}
                 onChange={(e) => handleChange('maxSupply', e.target.value)}
+                onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               />
             </div>
@@ -1411,6 +1650,7 @@ const NewERC721DropForm = () => {
                 type="number"
                 value={formData.royaltyPercentage || ''}
                 onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
                 min="0"
                 step="0.01"
@@ -1681,39 +1921,88 @@ function ExistingERC721DropForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               min="1"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               min="1"
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per User</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               min="1"
@@ -1722,11 +2011,6 @@ function ExistingERC721DropForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
           </div>
         </div>
         <div>
@@ -1950,45 +2234,88 @@ function ExistingERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winners Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -1996,11 +2323,7 @@ function ExistingERC1155DropForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
           </div>
           <div>
             <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
@@ -2399,45 +2722,86 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  This raffle type supports only one Winner
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -2445,11 +2809,7 @@ function LuckySaleERC721Form() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
           </div>
         </div>
         <div>
@@ -2689,45 +3049,88 @@ function LuckySaleERC1155Form() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -2735,11 +3138,7 @@ function LuckySaleERC1155Form() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
           </div>
         </div>
         <div>
@@ -2918,22 +3317,47 @@ function ETHGiveawayForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
@@ -2941,22 +3365,39 @@ function ETHGiveawayForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -2964,11 +3405,7 @@ function ETHGiveawayForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
           </div>
         </div>
         <TokenGatedSection
@@ -3199,22 +3636,47 @@ function ERC20GiveawayForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
@@ -3222,22 +3684,38 @@ function ERC20GiveawayForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winner Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -3245,11 +3723,7 @@ function ERC20GiveawayForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
           </div>
         </div>
         <TokenGatedSection
@@ -3530,22 +4004,47 @@ function NewERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+              {limits.minDuration && limits.maxDuration && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
+                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minDuration && limits.maxDuration && (
-              <span className="text-xs text-muted-foreground">
-                Min Allowed: {Math.ceil(Number(limits.minDuration)/60)} min, Max Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-              </span>
-            )}
+
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Ticket Limit
+              {limits.minTicket && limits.maxTicket && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div>
+                      Minimum Ticket Limit Allowed: {limits.minTicket}<br/>
+                      Maximum Ticket Limit Allowed: {limits.maxTicket}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </label>
             <input
               type="number"
               value={formData.ticketLimit || ''}
@@ -3553,22 +4052,38 @@ function NewERC1155DropForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {limits.minTicket && limits.maxTicket && (
-              <span className="text-xs text-muted-foreground">Min Allowed: {limits.minTicket}, Max Allowed: {limits.maxTicket}</span>
-            )}
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Winners Count</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Winners must not exceed 10% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
+              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Tickets Per Participant
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                </TooltipContent>
+              </Tooltip>
+            </label>
             <input
               type="number"
               value={formData.maxTicketsPerParticipant || ''}
@@ -3576,12 +4091,8 @@ function NewERC1155DropForm() {
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
-            {(() => { console.log('maxTicketsPerParticipant limit:', limits.maxTicketsPerParticipant); return null; })()}
-            {typeof limits.maxTicketsPerParticipant === 'string' && limits.maxTicketsPerParticipant !== '' ? (
-              <span className="text-xs text-muted-foreground">Max Allowed: {limits.maxTicketsPerParticipant}</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            )}
+
+
           </div>
           <div>
             <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>

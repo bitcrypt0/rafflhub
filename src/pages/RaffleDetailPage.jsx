@@ -51,7 +51,7 @@ function extractRevertReason(error) {
   return msg;
 }
 
-const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange }) => {
+const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const { formatTicketPrice, getCurrencySymbol } = useNativeCurrency();
@@ -60,7 +60,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   const [userTickets, setUserTickets] = useState(0);
   const [winningChance, setWinningChance] = useState(null);
   const [activating, setActivating] = useState(false);
-  const [usesCustomPrice, setUsesCustomPrice] = useState(null);
+
   const [endingRaffle, setEndingRaffle] = useState(false);
   const [requestingRandomness, setRequestingRandomness] = useState(false);
 
@@ -68,20 +68,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
     fetchUserTickets();
   }, [raffle.address, address]);
 
-  useEffect(() => {
-    async function fetchUsesCustomPrice() {
-      if (!raffle.address) return;
-      try {
-        const raffleContract = getContractInstance(raffle.address, 'raffle');
-        if (!raffleContract) return;
-        const result = await raffleContract.usesCustomPrice();
-        setUsesCustomPrice(result);
-      } catch (e) {
-        setUsesCustomPrice(null);
-      }
-    }
-    fetchUsesCustomPrice();
-  }, [raffle.address, getContractInstance]);
+
 
   const fetchUserTickets = async () => {
     if (!raffle.address || !address) {
@@ -120,6 +107,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
       setWinningChance(null);
     }
   };
+
 
   const handlePurchase = async () => {
     if (!connected) {
@@ -248,7 +236,20 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
         <div className="flex-1 flex flex-col h-full gap-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-            <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
+            <span className="text-muted-foreground flex items-center gap-2">Ticket Fee:
+              {typeof raffle.usesCustomPrice === 'boolean' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help" aria-label="Ticket Fee info">
+                      <Info className="h-3.5 w-3.5 opacity-70" tabIndex={0} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    {raffle.usesCustomPrice === true ? 'Set by Creator' : 'Protocol Ticket Fee'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </span>
               <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{formatTicketPrice(raffle.ticketPrice || '0')}</p>
             </div>
             <div>
@@ -424,7 +425,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
         </div>
     </div>
   );
-};
+});
 
 const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
   const { getContractInstance } = useContract();
@@ -1415,7 +1416,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   );
 };
 
-const WinnersSection = ({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange }) => {
+const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange }) => {
   const { getContractInstance, executeTransaction } = useContract();
   const { address: connectedAddress } = useWallet();
   const { formatPrizeAmount } = useNativeCurrency();
@@ -1786,7 +1787,7 @@ const WinnersSection = ({ raffle, isMintableERC721, isEscrowedPrize, isMobile, o
       </div>
     </div>
   );
-};
+});
 
 function formatDuration(seconds) {
   const days = Math.floor(seconds / 86400);
@@ -2222,8 +2223,17 @@ const RaffleDetailPage = () => {
           { method: createSafeMethod(raffleContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
           { method: createSafeMethod(raffleContract, 'isExternallyPrized', false), name: 'isExternallyPrized', required: false, fallback: false },
           { method: createSafeMethod(raffleContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) },
-          // Conditionally include actual duration only when state is in ended/terminal states
-          { method: () => raffleContract.getActualRaffleDuration(), name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
+          // Conditionally fetch actual duration only when state is in ended/terminal states
+          { method: async () => {
+              try {
+                const st = await raffleContract.state();
+                // States: 0 Pending, 1 Active, 2 Ended, 3 Drawing, 4 Completed, 5 Deleted, 6 Activation Failed, 7 Prizes Claimed, 8 Unengaged
+                if (typeof st === 'number' ? st >= 2 : (st.toNumber ? st.toNumber() >= 2 : Number(st) >= 2)) {
+                  return await raffleContract.getActualRaffleDuration();
+                }
+              } catch (_) {}
+              return ethers.BigNumber.from(0);
+            }, name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(raffleContract, 'getUniqueParticipantsCount', ethers.BigNumber.from(0)), name: 'uniqueParticipants', required: false, fallback: ethers.BigNumber.from(0) }
         ];
 
@@ -3088,7 +3098,8 @@ const RaffleDetailPage = () => {
               raffle.prizeCollection !== ethers.constants.AddressZero &&
               (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') &&
               (!raffle.nativePrizeAmount || raffle.nativePrizeAmount.isZero?.() || raffle.nativePrizeAmount === '0') &&
-              !isEscrowedPrize && (
+              !isEscrowedPrize &&
+              raffle.stateNum === 4 && (
               <div className="flex flex-col sm:flex-row gap-2 items-center">
                 {!showMintInput ? (
                   <Button
@@ -3329,7 +3340,7 @@ const RaffleDetailPage = () => {
                 <span>{formatDuration(([2,3,4,5,6,7,8].includes(raffle.stateNum) && raffle.actualDuration) ? raffle.actualDuration : raffle.duration)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Ticket Price:</span>
+                <span className="text-foreground/80 dark:text-foreground">Ticket Fee:</span>
                 <span>{formatTicketPrice(raffle.ticketPrice)}</span>
               </div>
               <div className="flex justify-between items-center">

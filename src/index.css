@@ -53,6 +53,16 @@
     }
   }
 
+  /* Allow small focusable icons (e.g., tooltip Info icons) to remain small on mobile */
+  @media (max-width: 767px), (pointer: coarse) {
+    svg[tabindex],
+    [data-tooltip-icon][tabindex] {
+      min-height: 0 !important;
+      min-width: 0 !important;
+    }
+  }
+
+
   /* Let browser handle focus naturally - no custom overrides */
 
   /* Increase font sizes for better legibility */

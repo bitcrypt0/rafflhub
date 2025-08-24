@@ -183,13 +183,9 @@ const CreateNewTokenIDComponent = () => {
       const contract = getContractInstance(collectionData.address, 'erc1155Prize');
 
       const result = await executeTransaction(
-        contract,
-        'createNewToken',
-        [tokenId, maxSupply],
-        {
-          description: `Creating new token ID ${tokenId} with max supply ${maxSupply}`,
-          successMessage: `Token ID ${tokenId} created successfully!`
-        }
+        contract.createNewToken,
+        tokenId,
+        maxSupply
       );
 
       if (result.success) {
@@ -243,13 +239,9 @@ const CreateNewTokenIDComponent = () => {
       const contract = getContractInstance(collectionData.address, 'erc1155Prize');
 
       const result = await executeTransaction(
-        contract,
-        'setURI',
-        [tokenId, uriData.tokenURI.trim()],
-        {
-          description: `Setting URI for token ID ${tokenId}`,
-          successMessage: `URI set successfully for token ID ${tokenId}!`
-        }
+        contract.setURI,
+        tokenId,
+        uriData.tokenURI.trim()
       );
 
       if (result.success) {
@@ -297,13 +289,7 @@ const CreateNewTokenIDComponent = () => {
         {/* Collection Info Display */}
         {collectionInfo && (
           <div className={`p-4 rounded-lg border ${collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-muted/50'}`}>
-            <h4 className="text-sm text-muted-foreground mb-2">Collection Information</h4>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p><span className="text-muted-foreground">Address:</span> {collectionInfo.address}</p>
-              <p><span className="text-muted-foreground">Owner:</span> {collectionInfo.owner}</p>
-              <p><span className="text-muted-foreground">You are owner:</span> {collectionInfo.isOwner ? '✅ Yes' : '❌ No'}</p>
-              <p><span className="text-muted-foreground">Type:</span> {collectionInfo.type === 'erc721' ? '❌ ERC721 Collection (Incompatible)' : '✅ ERC1155 Collection'}</p>
-            </div>
+
 
             {collectionInfo.isBlocked && (
               <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
@@ -364,7 +350,6 @@ const CreateNewTokenIDComponent = () => {
               className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can create new tokens" : !tokenCreationData.tokenId || !tokenCreationData.maxSupply ? "Please fill in all required fields" : "Create new token ID"}
             >
-              <Plus className="h-4 w-4" />
               {loading ? 'Creating...' : 'Create New Token ID'}
             </button>
           </div>
@@ -411,7 +396,6 @@ const CreateNewTokenIDComponent = () => {
               className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can set URIs" : !uriData.tokenId || !uriData.tokenURI ? "Please fill in all required fields" : "Set token URI"}
             >
-              <Search className="h-4 w-4" />
               {loading ? 'Setting...' : 'Set Token URI'}
             </button>
           </div>
