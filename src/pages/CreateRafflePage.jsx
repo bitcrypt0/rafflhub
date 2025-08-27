@@ -124,7 +124,7 @@ function ERC1155DropForm() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">ERC1155 Collection Raffle</h3>
@@ -403,7 +403,6 @@ const PrizedRaffleForm = () => {
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
-          mintingOrder: 0,
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
@@ -440,7 +439,6 @@ const PrizedRaffleForm = () => {
           revealType: 0,
           unrevealedBaseURI: '',
           revealTime: 0,
-          mintingOrder: 0,
           // Token-gated params
           holderTokenAddress,
           holderTokenStandard,
@@ -496,7 +494,7 @@ const PrizedRaffleForm = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Prized Raffle</h3>
@@ -674,7 +672,7 @@ const PrizedRaffleForm = () => {
           </div>
 
           {formData.prizeSource === 'new' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-xl shadow-md">
               <div>
                 <label className="block text-base font-medium mb-2">Collection Name</label>
                 <input
@@ -735,7 +733,7 @@ const PrizedRaffleForm = () => {
           )}
 
           {formData.prizeSource === 'existing' && (
-            <div className="space-y-4 p-4 bg-muted/20 rounded-xl">
+            <div className="space-y-4 p-4 bg-muted/20 rounded-xl shadow-md">
               <div>
                 <label className="block text-base font-medium mb-2">Prize Collection Address</label>
                 <input
@@ -928,7 +926,7 @@ const NonPrizedRaffleForm = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Non-Prized Raffle</h3>
@@ -1139,7 +1137,7 @@ const WhitelistRaffleForm = () => {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
+
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
@@ -1187,7 +1185,7 @@ const WhitelistRaffleForm = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Whitelist Raffle</h3>
@@ -1350,8 +1348,6 @@ const NewERC721DropForm = () => {
     unrevealedBaseURI: '',
     revealTime: '',
     royaltyRecipient: address || '',
-    // Minting order field
-    mintingOrder: '0', // 0 = Linear, 1 = Random
     // 1. Add tokenGatedEnabled and token-gated fields to form state
     tokenGatedEnabled: false,
     holderTokenAddress: '',
@@ -1425,8 +1421,7 @@ const NewERC721DropForm = () => {
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
         revealTime: revealTime,
-        // Minting order
-        mintingOrder: parseInt(formData.mintingOrder),
+
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -1453,7 +1448,6 @@ const NewERC721DropForm = () => {
           unrevealedBaseURI: '',
           revealTime: '',
           royaltyRecipient: address || '',
-          mintingOrder: '0',
           tokenGatedEnabled: false,
           holderTokenAddress: '',
           holderTokenStandard: '0',
@@ -1469,7 +1463,7 @@ const NewERC721DropForm = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">New ERC721 Collection Raffle</h3>
@@ -1601,7 +1595,7 @@ const NewERC721DropForm = () => {
           </div>
         </div>
         {/* Inner card for collection info */}
-        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4">
+        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4 shadow-md">
           <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1689,23 +1683,7 @@ const NewERC721DropForm = () => {
               </Select>
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Minting Order</label>
-              <Select
-                value={formData.mintingOrder}
-                onValueChange={value => handleChange('mintingOrder', value)}
-                required
-              >
-                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
-                  <SelectValue placeholder="Select Minting Order" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Linear (1, 2, 3, ...)</SelectItem>
-                  <SelectItem value="1">Random (e.g., 57, 12, 98, ...)</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-xs text-muted-foreground">
-                Linear: Token IDs are minted sequentially. Random: Token IDs are minted in random order.
-              </span>
+
             </div>
             {(formData.revealType === '1' || formData.revealType === '2') && (
               <div>
@@ -1826,7 +1804,7 @@ function ExistingERC721DropForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
+
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
@@ -1874,7 +1852,7 @@ function ExistingERC721DropForm() {
   }, [formData.collection, checkingInternal721, internalStatus721]);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Existing ERC721 Prize Raffle</h3>
@@ -2115,7 +2093,6 @@ function ExistingERC1155DropForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2165,7 +2142,7 @@ function ExistingERC1155DropForm() {
   }, [formData.collectionAddress, checkingInternal1155, internalStatus1155]);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Existing ERC1155 Collection Raffle</h3>
@@ -2615,7 +2592,6 @@ function LuckySaleERC721Form() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2664,7 +2640,7 @@ function LuckySaleERC721Form() {
   }, [formData.collectionAddress, checkingWhitelistLucky721, whitelistStatusLucky721]);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Lucky Sale (ERC721 Escrowed Prize)</h3>
@@ -2930,7 +2906,6 @@ function LuckySaleERC1155Form() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2980,7 +2955,7 @@ function LuckySaleERC1155Form() {
   }, [formData.collectionAddress, checkingWhitelistLucky1155, whitelistStatusLucky1155]);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">Lucky Sale (ERC1155 Escrowed Prize)</h3>
@@ -3239,7 +3214,6 @@ function ETHGiveawayForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3277,7 +3251,7 @@ function ETHGiveawayForm() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>{getCurrencyLabel()} Giveaway</h3>
@@ -3548,7 +3522,6 @@ function ERC20GiveawayForm() {
         revealType: 0,
         unrevealedBaseURI: '',
         revealTime: 0,
-        mintingOrder: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3577,7 +3550,7 @@ function ERC20GiveawayForm() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
         <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>ERC20 Token Giveaway</h3>
@@ -3933,8 +3906,6 @@ function NewERC1155DropForm() {
         revealType: revealType,
         unrevealedBaseURI: unrevealedBaseURI,
         revealTime: revealTime,
-        // Minting order
-        mintingOrder: 0,
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -3976,7 +3947,7 @@ function NewERC1155DropForm() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
         <h3 className="text-xl font-semibold">New ERC1155 Collection Raffle</h3>
@@ -4127,7 +4098,7 @@ function NewERC1155DropForm() {
           </div>
         </div>
         {/* Inner card for collection info */}
-        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4">
+        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4 shadow-md">
           <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

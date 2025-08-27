@@ -6,10 +6,12 @@ import { ethers } from 'ethers';
 import { toast } from './ui/sonner';
 import { ResponsiveAddressInput } from './ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
+  const { formatRevenueAmount, getCurrencySymbol } = useNativeCurrency();
   const [loading, setLoading] = useState(false);
   const [raffleData, setRaffleData] = useState({
     address: '',
@@ -393,8 +395,12 @@ const CreatorRevenueWithdrawalComponent = () => {
     }
   };
 
-  const canWithdraw = raffleData.isCreator && 
-                     parseFloat(raffleData.revenueAmount) > 0 && 
+  const hasRevenue = (raffleData.totalRevenue && ethers.BigNumber.isBigNumber(raffleData.totalRevenue))
+    ? !raffleData.totalRevenue.isZero()
+    : parseFloat(raffleData.revenueAmount) > 0;
+
+  const canWithdraw = raffleData.isCreator &&
+                     hasRevenue &&
                      ['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState);
 
   return (
@@ -441,7 +447,7 @@ const CreatorRevenueWithdrawalComponent = () => {
               <div>
                 <span className="text-muted-foreground">Creator Revenue:</span>
                 <div className="font-semibold">
-                  {raffleData.revenueAmount} ETH
+                  {formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}
                 </div>
               </div>
               <div>
@@ -476,7 +482,7 @@ const CreatorRevenueWithdrawalComponent = () => {
               </div>
             )}
 
-            {raffleData.isCreator && parseFloat(raffleData.revenueAmount) <= 0 && (
+            {raffleData.isCreator && !hasRevenue && (
               <div className="mt-3 p-3 bg-yellow-50/80 dark:bg-yellow-900/20 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <span className="text-sm text-yellow-800">
@@ -511,10 +517,10 @@ const CreatorRevenueWithdrawalComponent = () => {
             onClick={handleWithdrawRevenue}
             disabled={loading || !connected || !canWithdraw}
             className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
-            title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isCreator ? "Only raffle creator can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${raffleData.revenueAmount} ETH`}
+            title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isCreator ? "Only raffle creator can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
           >
             <DollarSign className="h-4 w-4" />
-            {loading ? 'Withdrawing...' : raffleData.address && raffleData.revenueAmount ? `Withdraw ${raffleData.revenueAmount} ETH` : 'Withdraw Revenue'}
+            {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
           </button>
 
           {!canWithdraw && raffleData.isCreator && raffleData.address && (

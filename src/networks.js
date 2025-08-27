@@ -53,10 +53,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.snowscan.xyz',
     nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0xbC68Fa9B331a41692772c0271DC75AC1c660F4F0',
-      raffleDeployer: '0x99B15f180155b37635eE5c24Ed22542c196F18Cb',
-      revenueManager: '0x8Ff1aD0D4Df78f2e04dF3f75A2de74123822813A',
-      nftFactory: '0x875274d35c61eFabD9aF6D488d5eDEb816B458Bb'
+      raffleManager: '0x19f000AB8f97C4C9d7c8504f9F20f186ec0c92e4',
+      raffleDeployer: '0xa5c4C92bf2a3dc74727e2349E1C7F7CBcBB90a31',
+      revenueManager: '0xdcEFbcAC80ED9240637919aa79f20Ae65D664654',
+      nftFactory: '0xb9e71e8ea5e4Ff0B2A21755703C35763a798D6Da'
     }
   },
   43114: {

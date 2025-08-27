@@ -37,7 +37,6 @@
           { "internalType": "uint8", "name": "revealType", "type": "uint8" },
           { "internalType": "string", "name": "unrevealedBaseURI", "type": "string" },
           { "internalType": "uint256", "name": "revealTime", "type": "uint256" },
-          { "internalType": "uint8", "name": "mintingOrder", "type": "uint8" },
           { "internalType": "address", "name": "holderTokenAddress", "type": "address" },
           { "internalType": "uint8", "name": "holderTokenStandard", "type": "uint8" },
           { "internalType": "uint256", "name": "minHolderTokenBalance", "type": "uint256" },

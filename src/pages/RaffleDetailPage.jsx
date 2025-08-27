@@ -225,7 +225,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   );
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Tickets
@@ -994,7 +994,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
   // Show loading state
   if (loading) {
     return (
-      <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-[#614E41] rounded-xl">
+      <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-border rounded-xl">
         <CardContent className="flex flex-col items-center justify-center">
           <div className="w-64 h-64 flex items-center justify-center border rounded-lg bg-muted/30">
             <div className="text-center">
@@ -1016,7 +1016,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
   const isVideo = typeof imageUrl === 'string' && /\.(mp4|webm|ogg)$/i.test(imageUrl);
 
   return (
-    <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-[#614E41] rounded-xl">
+    <Card className="detail-beige-card h-full flex flex-col items-center justify-center text-foreground border border-border rounded-xl">
       <CardContent className="flex flex-col items-center justify-center">
         {isVideo ? (
           <video
@@ -1754,7 +1754,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   };
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Trophy className="h-5 w-5" />
         Winners
@@ -3233,7 +3233,7 @@ const RaffleDetailPage = () => {
         )}
       </div>
 
-      <div className="detail-beige-card mb-8 p-6 bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl shadow-lg">
+      <div className="detail-beige-card mb-8 p-6 bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
           <div>
             <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.ticketsSold}</p>
@@ -3310,7 +3310,7 @@ const RaffleDetailPage = () => {
 
         {/* Bottom Row: Raffle Details and PrizeImageCard */}
         <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-[#614E41] rounded-xl p-6 shadow-lg h-full">
+          <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg h-full">
             <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">

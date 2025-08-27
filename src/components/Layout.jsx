@@ -27,27 +27,11 @@ const Header = () => {
   const [showSearch, setShowSearch] = useState(false);
   const location = useLocation();
 
-  // Show loading state while detecting device type to prevent flash
-  if (!isInitialized) {
-    return (
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
-        <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center">
-            <Logo size="sm" />
-          </div>
-        </div>
-      </header>
-    );
-  }
+  // Show loading state while detecting device type to prevent flash (moved below hooks to preserve hook order)
 
-  // Use mobile header for mobile devices
-  if (isMobile) {
-    return (
-      <MobileErrorBoundary>
-        <MobileHeader />
-      </MobileErrorBoundary>
-    );
-  }
+
+  // Use mobile header for mobile devices (moved below hooks to preserve hook order)
+
 
   // Handle direct wallet connection
   const handleConnectWallet = async () => {
@@ -197,9 +181,22 @@ const Header = () => {
 
   return (
     <>
-      <header className="relative w-full z-50 bg-background/80 backdrop-blur-md border-b border-[#614E41]">
-        <div className="w-full px-0 py-0">
-          <div className="bg-background/80 backdrop-blur-md border-b border-[#614E41] w-full">
+      {!isInitialized ? (
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
+          <div className="flex items-center justify-between h-16 px-4">
+            <div className="flex items-center">
+              <Logo size="sm" />
+            </div>
+          </div>
+        </header>
+      ) : isMobile ? (
+        <MobileErrorBoundary>
+          <MobileHeader />
+        </MobileErrorBoundary>
+      ) : (
+        <header className="relative w-full z-50 bg-background/80 backdrop-blur-md border-b border-[#614E41]">
+          <div className="w-full px-0 py-0">
+            <div className="bg-background/80 backdrop-blur-md border-b border-[#614E41] w-full">
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
@@ -233,11 +230,11 @@ const Header = () => {
                     ref={searchInputWrapperRef}
                     data-search-container
                     className="overflow-visible transition-all duration-300 rounded-md bg-background"
-                    style={{ 
-                      width: showSearch ? '16rem' : '0', 
-                      marginLeft: '0', 
-                      position: 'relative', 
-                      display: 'inline-block', 
+                    style={{
+                      width: showSearch ? '16rem' : '0',
+                      marginLeft: '0',
+                      position: 'relative',
+                      display: 'inline-block',
                       verticalAlign: 'middle',
                       overflow: 'visible'
                     }}
@@ -268,7 +265,7 @@ const Header = () => {
                     {showSearch && (
                       <div
                         className="absolute left-0 top-full mt-1 z-50 w-full"
-                        style={{ 
+                        style={{
                           boxSizing: 'border-box',
                           position: 'absolute',
                           top: '100%',
@@ -387,6 +384,8 @@ const Header = () => {
           </div>
         </div>
       </header>
+      )}
+
     </>
   );
 };
