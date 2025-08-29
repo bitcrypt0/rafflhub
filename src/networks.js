@@ -41,10 +41,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.bscscan.com',
     nativeCurrency: { name: 'Test BNB', symbol: 'tBNB', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0xd32E33197611473C917301965726e12Da1fb19F4',
-      raffleDeployer: '0x82DEB79fE0a2380aB2799F8675Af296A1133F40F',
-      revenueManager: '0x20A10ABbafbFff78402D1E79cEF1423282C64568',
-      nftFactory: '0xa22a2105fBe227Db05FD0D76ccbC317A53EC9aC5'
+      raffleManager: '0x...',
+      raffleDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...'
     }
   },
   43113: {
@@ -53,10 +53,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.snowscan.xyz',
     nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x0cb72c04AfD46Fc91DB50FBa0e215Ad61A385781',
-      raffleDeployer: '0x1d87Df2CB34fC115E4dA9a9a69d6b7b5E83d3381',
-      revenueManager: '0x723A31c0C8eCc1fE6dCb22eE1113AEC885b3144c',
-      nftFactory: '0x2F43A7D4C8723C93B15b5cF8b3061C06de4Bda87'
+      raffleManager: '0x...',
+      raffleDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...'
     }
   },
   43114: {
@@ -89,10 +89,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x2E5f56aE0658fcEB371eD8DD87ad5790076109DC',
-      raffleDeployer: '0x12a8d0A7175FAc5E0A1417E5E668f526F56A802A',
-      revenueManager: '0x79e7381D5158147aC90A71C727eD1f8b9e67248F',
-      nftFactory: '0x0f919F5f737ACbc4dFd67607099D2eceFacC02f4'
+      raffleManager: '0x...',
+      raffleDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...'
     }
   },
   11155111: {
@@ -101,10 +101,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0xBa507ac4a3Ce23957Ee423Fc037183B5d7632D1d',
-      raffleDeployer: '0x6d5229392Bd75e444d055bB3f749502B3Cf2630B',
-      revenueManager: '0x4537557520Ab4F9d7565fF9476c2A57985d3f24f',
-      nftFactory: '0x883a0F1eCe26C1978ca3EfE384B40bd091D75F5c'
+      raffleManager: '0x...',
+      raffleDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...'
     }
   },
   11155420: {
@@ -113,10 +113,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia-optimism.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x27096A4cB1b37d6caAaa399286016C1fD9770a78',
-      raffleDeployer: '0xE300723adE1d200DE1C1F2F01EA1a8309E0c796c',
-      revenueManager: '0x27930DAc4699fd813764aE57D4acc63A2192Ca16',
-      nftFactory: '0x205b597cCC9c72A28A71abb9DD590FEB333B8B09'
+      raffleManager: '0x...',
+      raffleDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...'
     }
   },
   2020: {
