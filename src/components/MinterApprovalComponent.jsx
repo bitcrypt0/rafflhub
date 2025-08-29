@@ -11,12 +11,12 @@ import { extractRevertReason } from '../utils/errorHandling';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
-import { 
-  AlertCircle, 
-  CheckCircle, 
-  Lock, 
-  Unlock, 
-  UserPlus, 
+import {
+  AlertCircle,
+  CheckCircle,
+  Lock,
+  Unlock,
+  UserPlus,
   UserMinus,
   Loader2,
   Info,
@@ -184,7 +184,7 @@ const MinterApprovalComponent = () => {
           signer
         );
       }
-      
+
       let tx;
       if (collectionType === 'erc721') {
         tx = await contract.setMinterApproval(minterAddress, approved);
@@ -226,7 +226,7 @@ const MinterApprovalComponent = () => {
           signer
         );
       }
-      
+
       // Check if the current user is the owner
       let owner;
       try {
@@ -241,7 +241,7 @@ const MinterApprovalComponent = () => {
         return;
       }
       const currentAddress = await signer.getAddress();
-      
+
       if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
         toast.error('Only the contract owner can lock/unlock minter approval');
         return;
@@ -265,7 +265,7 @@ const MinterApprovalComponent = () => {
         tx = await contract.lockMinterApproval();
         }
       }
-      
+
       console.log('Transaction sent:', tx.hash);
       await tx.wait();
       toast.success(`Minter approval ${isLocked ? 'unlocked' : 'locked'} successfully!`);
@@ -288,10 +288,10 @@ const MinterApprovalComponent = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Minter Approval Management
+            Minter Approval & Royalty Enforcement Exemption
           </CardTitle>
           <CardDescription>
-            Please connect your wallet to manage minter approvals.
+            Please connect your wallet to manage minter approvals and royalty enforcement exemptions.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -311,10 +311,10 @@ const MinterApprovalComponent = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UserPlus className="h-5 w-5" />
-          Minter Approval Management
+          Minter Approval & Royalty Enforcement Exemption
         </CardTitle>
         <CardDescription>
-          Manage and control minter approvals for your prize collections.
+          Manage minter approvals and royalty enforcement exemptions for collections
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -389,6 +389,102 @@ const MinterApprovalComponent = () => {
                 </p>
               </div>
             )}
+
+            {/* Royalty Enforcement Exemption Utility */}
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-2">
+                <Label htmlFor="exempt-address">Royalty Enforcement Exemption Address</Label>
+                <ResponsiveAddressInput
+                  id="exempt-address"
+                  placeholder="0x... (address to exempt/enforce)"
+                  value={minterAddress}
+                  onChange={(e) => setMinterAddress(e.target.value)}
+                  disabled={loading}
+                />
+                {minterAddress && !ethers.utils.isAddress(minterAddress) && (
+                  <p className="text-sm text-red-600">Invalid Ethereum address</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      setError('');
+                      const contract = new ethers.Contract(
+                        fetchedCollection,
+                        collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        provider
+                      );
+                      const exempt = await contract.isRoyaltyEnforcementExempt(minterAddress);
+                      toast.success(exempt ? 'Address is exempt from royalty enforcement' : 'Address is NOT exempt');
+                    } catch (err) {
+                      toast.error(`Failed to check exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Check exemption
+                </Button>
+
+                <Button
+                  className="bg-[#614E41] text-white hover:bg-[#4a3a30]"
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      setError('');
+                      const signer = provider.getSigner();
+                      const contract = new ethers.Contract(
+                        fetchedCollection,
+                        collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        signer
+                      );
+                      const tx = await contract.setRoyaltyEnforcementExemption(minterAddress, true);
+                      await tx.wait();
+                      toast.success('Exemption granted successfully');
+                    } catch (err) {
+                      toast.error(`Failed to grant exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Grant Exemption
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      setError('');
+                      const signer = provider.getSigner();
+                      const contract = new ethers.Contract(
+                        fetchedCollection,
+                        collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        signer
+                      );
+                      const tx = await contract.setRoyaltyEnforcementExemption(minterAddress, false);
+                      await tx.wait();
+                      toast.success('Exemption revoked successfully');
+                    } catch (err) {
+                      toast.error(`Failed to revoke exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Revoke Exemption
+                </Button>
+              </div>
+            </div>
+
           </div>
 
         {/* Minter Approval Control */}
@@ -461,7 +557,7 @@ const MinterApprovalComponent = () => {
                 Remove Minter
               </Button>
             </div>
-              
+
             <Button
               onClick={toggleMinterApprovalLock}
               disabled={loading}
@@ -506,4 +602,4 @@ const MinterApprovalComponent = () => {
   );
 };
 
-export default MinterApprovalComponent; 
+export default MinterApprovalComponent;

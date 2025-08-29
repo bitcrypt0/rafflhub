@@ -595,6 +595,7 @@ const LandingPage = () => {
   const { connected } = useWallet();
   const { isMobile } = useMobileBreakpoints();
   const { formatTicketPrice, formatPrizeAmount } = useNativeCurrency();
+  const [page, setPage] = useState(1);
 
   // Use the new RaffleService hook (full dataset for filtering)
   const {
@@ -611,7 +612,7 @@ const LandingPage = () => {
   });
 
   // Fast, minimal summaries for mobile-first paint
-  const { summaries, loading: summariesLoading } = useRaffleSummaries({ initialCount: 12 });
+  const { summaries, loading: summariesLoading, totalAvailable } = useRaffleSummaries({ initialCount: 12 });
 
   // Use filter system
   const {
@@ -623,7 +624,14 @@ const LandingPage = () => {
     clearFilters,
     toggleFilter,
     filteredCount
+
+
   } = useRaffleFilters(raffles);
+  // Reset pagination when data source or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [isMobile, loading, raffles?.length, filteredRaffles?.length, summaries?.length, hasActiveFilters]);
+
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -664,7 +672,11 @@ const LandingPage = () => {
         return wanted.has(label);
       });
     }
+
+
   }
+
+
 
   // Show loading only when neither summaries (possibly filtered) nor full data are available
   const shouldShowLoading = !canUseSummariesForCurrentFilters && loading;
@@ -699,6 +711,8 @@ const LandingPage = () => {
           showCreateButton={true}
         />
       </PageContainer>
+
+
     );
   }
 
@@ -717,6 +731,9 @@ const LandingPage = () => {
       />
 
       {/* Main content - full width */}
+
+
+
       <div className="min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
         <PageContainer className="py-4">
           {/* Header */}
@@ -727,48 +744,187 @@ const LandingPage = () => {
             <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
               Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
             </p>
+
           </div>
 
           {/* Filter toggle button */}
-          <div className="mb-6 flex justify-between items-center">
+
+
+
+          <div className="mb-6 flex items-center">
             <FilterToggleButton
               onClick={toggleFilter}
               hasActiveFilters={hasActiveFilters}
             />
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Clear All Filters
-              </Button>
-            )}
+            <div className="ml-auto flex items-center gap-3">
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Clear All Filters
+                </Button>
+              )}
+              {/* Desktop top-right pagination (Prev, numbers, Next) aligned with Filter Raffles */}
+              {!isMobile && (() => {
+                const pageSize = 24;
+                const totalList = filteredRaffles || [];
+                const totalPages = Math.max(1, Math.ceil(totalList.length / pageSize));
+                if (totalPages <= 1) return null;
+                const currentPageSafe = Math.min(page, totalPages);
+                const goPrev = () => setPage(p => Math.max(1, p - 1));
+                const goNext = () => setPage(p => Math.min(totalPages, p + 1));
+                const delta = 2;
+                const left = Math.max(1, currentPageSafe - delta);
+                const right = Math.min(totalPages, currentPageSafe + delta);
+                const range = [];
+                if (left > 1) { range.push(1); if (left > 2) range.push('...'); }
+                for (let i = left; i <= right; i++) range.push(i);
+                if (right < totalPages) { if (right < totalPages - 1) range.push('...'); range.push(totalPages); }
+                return (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={goPrev}
+                      disabled={currentPageSafe === 1}
+                      className="px-3 py-2 rounded-md border border-border bg-background text-sm disabled:opacity-50"
+                      aria-label="Previous page"
+                    >
+                      Prev
+                    </button>
+                    {range.map((item, idx) => item === '...'
+                      ? <span key={`ellipsis-top-${idx}`} className="px-1 text-muted-foreground">…</span>
+                      : (
+                        <button
+                          key={`page-top-${item}`}
+                          onClick={() => setPage(item)}
+                          className={`px-1 text-sm leading-none ${currentPageSafe === item ? 'font-semibold text-foreground' : 'text-foreground/80'} bg-transparent`}
+                          aria-label={`Go to page ${item}`}
+                        >{item}</button>
+                      )
+                    )}
+                    <button
+                      onClick={goNext}
+                      disabled={currentPageSafe === totalPages}
+                      className="px-3 py-2 rounded-md border border-border bg-background text-sm disabled:opacity-50"
+                      aria-label="Next page"
+                    >
+                      Next
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Grid: summaries for fast mobile first paint; if filters tapped early on mobile, use summary subset */}
-          {canUseSummariesForCurrentFilters ? (
-            <FilteredRaffleGrid
-              raffles={mobileFilteredSummaries || []}
-              loading={false}
-              error={null}
-              RaffleCardComponent={RaffleCard}
-              emptyMessage={"No raffles found."}
-            />
-          ) : (
-            <FilteredRaffleGrid
-              raffles={filteredRaffles}
-              loading={loading}
-              error={error}
-              RaffleCardComponent={RaffleCard}
-              emptyMessage={
-                hasActiveFilters
-                  ? "No raffles match your current filters. Try adjusting your filter criteria."
-                  : "There are currently no raffles available on the blockchain. Check back later or create your own!"
+          {(() => {
+            const pageSize = isMobile ? 12 : 24;
+            const usingSummaries = !!canUseSummariesForCurrentFilters;
+            // While using summaries on mobile, use totalAvailable from the manager as totalCount if present
+            const effectiveTotal = (isMobile && usingSummaries && typeof totalAvailable === 'number') ? totalAvailable : null;
+            const totalList = usingSummaries ? (mobileFilteredSummaries || []) : (filteredRaffles || []);
+
+            // Ensure newest-first order is preserved by assuming input is already sorted; do not mutate order
+            const totalCount = totalList.length;
+            const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+            const currentPage = Math.min(page, totalPages);
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageItems = totalList.slice(start, end);
+
+            // Show pagination on mobile summaries as soon as 12+ items exist, regardless of full fetch state
+            const shouldShowPagination = totalPages > 1 || (isMobile && usingSummaries && totalList.length >= pageSize);
+
+
+            // Build a compact page range with ellipses
+            const pageRange = (() => {
+              const total = totalPages;
+              const current = currentPage;
+              const delta = isMobile ? 1 : 2; // neighbors to show
+            {/* Desktop top-right page numbers aligned with Filter Raffles */}
+
+
+              const range = [];
+              const left = Math.max(1, current - delta);
+              const right = Math.min(total, current + delta);
+              if (left > 1) {
+                range.push(1);
+                if (left > 2) range.push('...');
               }
-            />
-          )}
+              for (let i = left; i <= right; i++) range.push(i);
+              if (right < total) {
+                if (right < total - 1) range.push('...');
+                range.push(total);
+              }
+              return range;
+            })();
+
+            const handlePrev = () => setPage(p => Math.max(1, p - 1));
+            const handleNext = () => setPage(p => Math.min(totalPages, p + 1));
+
+            const showCount = !(isMobile && usingSummaries && (loading || (!raffles || raffles.length === 0))); // delay count on mobile summaries until full data fetched
+
+            return (
+              <div key={usingSummaries ? 'summaries' : 'full'}>
+                <FilteredRaffleGrid
+                  raffles={pageItems}
+                  loading={usingSummaries ? false : loading}
+                  error={usingSummaries ? null : error}
+                  RaffleCardComponent={RaffleCard}
+                  emptyMessage={
+                    hasActiveFilters
+                      ? "No raffles match your current filters. Try adjusting your filter criteria."
+                      : "There are currently no raffles available on the blockchain. Check back later or create your own!"
+                  }
+                  totalCount={effectiveTotal ?? totalCount}
+                  showCount={showCount}
+                />
+
+                {/* Pagination controls */}
+                {shouldShowPagination && (
+                  <div className="mt-6 flex flex-col items-center gap-3">
+                    {/* Numbered page buttons: bottom (mobile+desktop) */}
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={handlePrev}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 rounded-md border border-border bg-background text-sm disabled:opacity-50"
+                        aria-label="Previous page"
+                      >
+                        Prev
+                      </button>
+                      {pageRange.map((item, idx) => item === '...'
+                        ? <span key={`ellipsis-bottom-${idx}`} className="px-1 text-muted-foreground">…</span>
+                        : (
+                          <button
+                            key={`page-bottom-${item}`}
+                            onClick={() => setPage(item)}
+                            className={`px-1 text-sm leading-none ${currentPage === item ? 'font-semibold text-foreground' : 'text-foreground/80'} bg-transparent`}
+                            aria-label={`Go to page ${item}`}
+                          >{item}</button>
+
+                        )
+                      )}
+                      <button
+                        onClick={handleNext}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 rounded-md border border-border bg-background text-sm disabled:opacity-50"
+                        aria-label="Next page"
+                      >
+                        Next
+                      </button>
+                    </div>
+                    {/* Page indicator */}
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {Math.max(1, totalPages)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </PageContainer>
       </div>
     </>

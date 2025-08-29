@@ -6,13 +6,15 @@ import { RaffleErrorDisplay } from './ui/raffle-error-display';
  * FilteredRaffleGrid Component
  * Displays filtered raffles in a responsive grid
  */
-const FilteredRaffleGrid = ({ 
-  raffles = [], 
-  loading = false, 
+const FilteredRaffleGrid = ({
+  raffles = [],
+  loading = false,
   error = null,
   RaffleCardComponent,
   emptyMessage = "No raffles found matching your filters.",
-  className = ""
+  className = "",
+  totalCount,
+  showCount = true,
 }) => {
   // Loading state
   if (loading) {
@@ -76,7 +78,9 @@ const FilteredRaffleGrid = ({
       {/* Results header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">
-          {raffles.length} {raffles.length === 1 ? 'Raffle' : 'Raffles'} Found
+          {showCount
+            ? `${(typeof totalCount === 'number' ? totalCount : raffles.length)} ${(typeof totalCount === 'number' ? totalCount : raffles.length) === 1 ? 'Raffle' : 'Raffles'} Found`
+            : 'Raffles Found'}
         </h2>
       </div>
 

@@ -419,7 +419,7 @@ const ProfileTabs = ({
           <CardContent>
             <div className="text-2xl font-bold">{Number(creatorStats.totalParticipants || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {Number(creatorStats.uniqueParticipants || 0).toLocaleString()} unique users
+              {Number(creatorStats.uniqueParticipants || 0).toLocaleString()} entries across all your raffles
             </p>
           </CardContent>
         </Card>

@@ -40,8 +40,8 @@ const UnifiedDashboardGrid = ({
     },
     {
       id: 'minter',
-      title: 'Minter Approval',
-      description: 'Manage minter approvals for collections',
+      title: 'Minter Approval & Royalty Enforcement Exemption',
+      description: 'Manage minter approvals and royalty enforcement exemptions for collections',
 
       component: MinterApprovalComponent,
       priority: 2
@@ -132,6 +132,8 @@ const UnifiedDashboardGrid = ({
               // Desktop/tablet styling
               !isMobile && "h-fit"
             )}
+            // Provide modal width for Minter Approval & Royalty Enforcement Exemption (reduced by ~1/3)
+            dialogContentClassName={component.id === 'minter' ? "max-w-4xl xl:max-w-4xl" : undefined}
           />
         ))}
       </div>

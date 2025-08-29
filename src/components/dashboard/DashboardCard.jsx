@@ -19,6 +19,8 @@ const DashboardCard = ({
   component: Component,
   defaultExpanded = false,
   className = '',
+  // Allow overriding desktop modal width/classes per card
+  dialogContentClassName,
   // External state management props to prevent auto-close
   isExpanded: externalIsExpanded,
   onToggle: externalOnToggle,
@@ -122,7 +124,11 @@ const DashboardCard = ({
                 Open {title}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className={cn(
+                // Default modal width; per-card overrides can adjust this
+                "max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden",
+                dialogContentClassName
+              )}>
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
               </DialogHeader>

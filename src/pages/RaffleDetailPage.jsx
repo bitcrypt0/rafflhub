@@ -3140,7 +3140,7 @@ const RaffleDetailPage = () => {
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
               isEscrowedPrize &&
-              raffle.standard === 1 && (
+              raffle.stateNum === 8 && (
                 <Button
                   onClick={handleWithdrawPrize}
                   className="sm:ml-2 bg-warning text-warning-foreground hover:bg-warning/90"

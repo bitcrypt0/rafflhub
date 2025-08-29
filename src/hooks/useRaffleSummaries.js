@@ -20,6 +20,7 @@ export const useRaffleSummaries = ({
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [totalAvailable, setTotalAvailable] = useState(null);
   const mountedRef = useRef(true);
 
   const cacheKey = useMemo(() => (chainId ? `raffle_summaries_${chainId}` : null), [chainId]);
@@ -65,7 +66,9 @@ export const useRaffleSummaries = ({
     const manager = new ethers.Contract(addr, contractABIs.raffleManager, readProvider);
     const addresses = await manager.getAllRaffles();
     // newest first
-    return (addresses || []).slice().reverse();
+    const list = (addresses || []).slice().reverse();
+    if (mountedRef.current) setTotalAvailable(list.length);
+    return list;
   }, [getRaffleManagerAddress, readProvider]);
 
   const callWithTimeout = (p, ms) => {
@@ -88,7 +91,14 @@ export const useRaffleSummaries = ({
     ticketPrice,
     ticketLimit: ticketLimit?.toNumber ? ticketLimit.toNumber() : Number(ticketLimit || 0),
     winnersCount: winnersCount?.toNumber ? winnersCount.toNumber() : Number(winnersCount || 0),
-    stateNum: stateNum?.toNumber ? stateNum.toNumber() : Number(stateNum || 5),
+    stateNum: (() => {
+      if (stateNum?.toNumber) return stateNum.toNumber();
+      if (stateNum === 0) return 0; // preserve Pending (0)
+      if (typeof stateNum === 'number') return stateNum;
+      if (stateNum == null) return 5; // default only when null/undefined
+      const n = Number(stateNum);
+      return Number.isFinite(n) ? n : 5;
+    })(),
     isSummary: true,
   }), [chainId]);
 
@@ -158,14 +168,25 @@ export const useRaffleSummaries = ({
         if (!r || !r.success) return null;
         try { return iface.decodeFunctionResult(fn, r.returnData)[0]; } catch (_) { return null; }
       };
+      const nameVal = dec(0, 'name') || 'Raffle';
+      const startTimeVal = dec(1, 'startTime') || ethers.BigNumber.from(0);
+      const durationVal = dec(2, 'duration') || ethers.BigNumber.from(0);
+      const ticketPriceVal = dec(3, 'ticketPrice') || ethers.BigNumber.from(0);
+      const ticketLimitVal = dec(4, 'ticketLimit') || ethers.BigNumber.from(0);
+      const winnersCountVal = dec(5, 'winnersCount') || ethers.BigNumber.from(0);
+      let stateNumVal = dec(6, 'state');
+      if (stateNumVal === null || stateNumVal === undefined) {
+        // No estimation: if state is unavailable, default to 5 (Deleted) for now
+        stateNumVal = ethers.BigNumber.from(5);
+      }
       const summary = buildSummary(addresses[i], {
-        name: dec(0, 'name') || 'Raffle',
-        startTime: dec(1, 'startTime') || ethers.BigNumber.from(0),
-        duration: dec(2, 'duration') || ethers.BigNumber.from(0),
-        ticketPrice: dec(3, 'ticketPrice') || ethers.BigNumber.from(0),
-        ticketLimit: dec(4, 'ticketLimit') || ethers.BigNumber.from(0),
-        winnersCount: dec(5, 'winnersCount') || ethers.BigNumber.from(0),
-        stateNum: dec(6, 'state') || ethers.BigNumber.from(5),
+        name: nameVal,
+        startTime: startTimeVal,
+        duration: durationVal,
+        ticketPrice: ticketPriceVal,
+        ticketLimit: ticketLimitVal,
+        winnersCount: winnersCountVal,
+        stateNum: stateNumVal,
       });
       out.push(summary);
     }
@@ -182,7 +203,7 @@ export const useRaffleSummaries = ({
       callWithTimeout(c.ticketPrice(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.ticketLimit(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.winnersCount(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
-      callWithTimeout(c.state(), timeoutMs).catch(() => ethers.BigNumber.from(5)), // ended as safe default
+      callWithTimeout(c.state(), timeoutMs).catch(() => ethers.BigNumber.from(5)), // default when unavailable
     ]);
 
     return buildSummary(raffleAddress, { name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum });
@@ -260,7 +281,7 @@ export const useRaffleSummaries = ({
     }
   }, [chainId, loadFromCache, fetchSummaries]);
 
-  return { summaries, loading, error, refresh };
+  return { summaries, loading, error, refresh, totalAvailable };
 };
 
 export default useRaffleSummaries;

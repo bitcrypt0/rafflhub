@@ -1240,6 +1240,92 @@ const NewMobileProfilePage = () => {
                 Remove Minter
               </button>
             </div>
+
+            {/* Royalty Enforcement Exemption Utility */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium mb-1">Royalty Enforcement Exemption Address</label>
+              <ResponsiveAddressInput
+                value={state.minterAddress}
+                onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
+                placeholder="0x..."
+              />
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      updateMinterState({ loading: true, error: '' });
+                      const contract = new ethers.Contract(
+                        state.fetchedCollection,
+                        state.collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        provider
+                      );
+                      const exempt = await contract.isRoyaltyEnforcementExempt(state.minterAddress);
+                      toast.success(exempt ? 'Address is exempt from royalty enforcement' : 'Address is NOT exempt');
+                    } catch (err) {
+                      toast.error(`Failed to check exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      updateMinterState({ loading: false });
+                    }
+                  }}
+                  disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
+                  className="w-full bg-gray-100 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Check exemption
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      updateMinterState({ loading: true, error: '' });
+                      const signer = provider.getSigner();
+                      const contract = new ethers.Contract(
+                        state.fetchedCollection,
+                        state.collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        signer
+                      );
+                      const tx = await contract.setRoyaltyEnforcementExemption(state.minterAddress, true);
+                      await tx.wait();
+                      toast.success('Exemption granted successfully');
+                    } catch (err) {
+                      toast.error(`Failed to grant exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      updateMinterState({ loading: false });
+                    }
+                  }}
+                  disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
+                  className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Grant Exemption
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      updateMinterState({ loading: true, error: '' });
+                      const signer = provider.getSigner();
+                      const contract = new ethers.Contract(
+                        state.fetchedCollection,
+                        state.collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
+                        signer
+                      );
+                      const tx = await contract.setRoyaltyEnforcementExemption(state.minterAddress, false);
+                      await tx.wait();
+                      toast.success('Exemption revoked successfully');
+                    } catch (err) {
+                      toast.error(`Failed to revoke exemption: ${extractRevertReason(err)}`);
+                    } finally {
+                      updateMinterState({ loading: false });
+                    }
+                  }}
+                  disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
+                  className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Revoke Exemption
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
 
