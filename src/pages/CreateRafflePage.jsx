@@ -1290,7 +1290,7 @@ const WhitelistRaffleForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Tickets Per Participant must not exceed 1% of your Ticket Limit
+                  Only one entry is allowed for Whitelist Raffles
                 </TooltipContent>
               </Tooltip>
             </label>

@@ -32,6 +32,9 @@ const NetworkSelector = () => {
     });
   };
 
+	  const availableNetworks = getAvailableNetworks();
+
+
   const handleChange = async (value) => {
     const targetChainId = parseInt(value, 10);
     setPending(true);
@@ -106,13 +109,16 @@ const NetworkSelector = () => {
         </SelectContent>
       </Select>
       {/* Show warning if wallet is connected and network doesn't have contracts configured */}
-      {chainId && (!isSupportedNetwork || !getAvailableNetworks().some(([id]) => parseInt(id) === chainId)) && (
-        <span className="text-xs text-red-500 ml-2">
-          {!isSupportedNetwork ? 'Unsupported Network' : 'Contracts Not Available'}
-        </span>
+      {/* Show a hint only when no networks are configured at all */}
+      {availableNetworks.length === 0 && (
+        <span className="text-xs text-red-500 ml-2">Contracts Not Available</span>
+      )}
+      {/* If networks are configured but the current chain isn't among them, show 'Unsupported Network' */}
+      {chainId && isSupportedNetwork && availableNetworks.length > 0 && !availableNetworks.some(([id]) => parseInt(id) === chainId) && (
+        <span className="text-xs text-red-500 ml-2">Unsupported Network</span>
       )}
     </div>
   );
 };
 
-export default NetworkSelector; 
+export default NetworkSelector;
