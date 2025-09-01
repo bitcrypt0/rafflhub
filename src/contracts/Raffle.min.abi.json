@@ -93,5 +93,7 @@
   { "inputs": [], "name": "endRaffle", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "isExternallyPrized", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "amountPerWinner", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getActualRaffleDuration", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+  { "inputs": [], "name": "getActualRaffleDuration", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "s_vrf_subscriptionId", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "removeFromVRFSubscription", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
 ]

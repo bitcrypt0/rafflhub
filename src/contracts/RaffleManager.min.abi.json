@@ -68,5 +68,6 @@
   ], "stateMutability": "view", "type": "function" },
   { "inputs": [ { "internalType": "address", "name": "token", "type": "address" } ], "name": "isERC20PrizeWhitelisted", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },
   { "inputs": [ { "internalType": "address", "name": "collection", "type": "address" } ], "name": "isInternalCollection", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "isVRFConsumer", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },
   { "inputs": [ { "internalType": "address", "name": "_collection", "type": "address" } ], "name": "isCollectionApproved", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }
 ]

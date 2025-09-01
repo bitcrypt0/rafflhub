@@ -1891,7 +1891,7 @@ const RaffleDetailPage = () => {
 
   const navigate = useNavigate();
   const { connected, address, provider, isInitialized, isReconnecting } = useWallet();
-  const { getContractInstance, executeTransaction, isContractsReady } = useContract();
+  const { getContractInstance, executeTransaction, isContractsReady, contracts } = useContract();
   const { isMobile } = useMobileBreakpoints();
   const { formatTicketPrice, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
   const makeSharePath = useCallback(() => {
@@ -1912,6 +1912,7 @@ const RaffleDetailPage = () => {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isEscrowedPrize, setIsEscrowedPrize] = useState(false);
   const [withdrawingPrize, setWithdrawingPrize] = useState(false);
+  const [updatingVrfStatus, setUpdatingVrfStatus] = useState(false);
   const [raffleCollectionName, setRaffleCollectionName] = useState(null);
   const [deletingRaffle, setDeletingRaffle] = useState(false);
   const [is1155Approved, setIs1155Approved] = useState(false);
@@ -2320,10 +2321,79 @@ const RaffleDetailPage = () => {
           usesCustomPrice,
           standard,
           prizeTokenId,
-          amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
+          amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1
         };
 
+	        // Determine if this raffle is still a VRF consumer via RaffleManager (more reliable than checking subscription id)
+
+	        console.log('[VRF Debug] Checking isVRFConsumer', {
+	          chainSlug,
+	          providerChainId: provider?.network?.chainId,
+	          resolvedChainId: resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId,
+	          raffleAddress
+	        });
+
+	        let isVrfConsumer = false;
+	        try {
+	          const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+	          const managerAddr = currentChainId ? SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.raffleManager : undefined;
+	          if (managerAddr) {
+	            const managerContract = getContractInstance(managerAddr, 'raffleManager');
+
+
+            // debug removed
+
+	            console.log('[VRF Debug] Built manager contract?', { hasContract: !!managerContract });
+
+            // debug removed
+
+
+	            if (managerContract && managerContract.isVRFConsumer) {
+	              isVrfConsumer = await managerContract.isVRFConsumer(raffleAddress);
+
+	              console.log('[VRF Debug] manager.isVRFConsumer result', { isVrfConsumer });
+
+	            }
+	          }
+	        } catch (_) {}
+
+	        console.log('[VRF Debug] Setting raffle.isVrfConsumer', { isVrfConsumer: !!isVrfConsumer });
+
+	        raffleData.isVrfConsumer = !!isVrfConsumer;
+
+
         setRaffle(raffleData);
+
+	        // Fallback: if manager contract exists in context, prefer it directly (no address lookups)
+	        try {
+	          if (!isVrfConsumer && contracts?.raffleManager?.isVRFConsumer) {
+
+	        // Fallback: if manager contract exists in context, prefer it directly (no address lookups)
+	        try {
+	          if (!isVrfConsumer && contracts?.raffleManager?.isVRFConsumer) {
+	            console.log('[VRF Debug] Using context manager to check isVRFConsumer', { manager: contracts.raffleManager.address, raffleAddress });
+	            isVrfConsumer = await contracts.raffleManager.isVRFConsumer(raffleAddress);
+	            console.log('[VRF Debug] Context manager isVRFConsumer result', { isVrfConsumer });
+	            raffleData.isVrfConsumer = !!isVrfConsumer;
+	          }
+	        } catch (err) {
+	          console.warn('[VRF Debug] Context manager isVRFConsumer check failed', err);
+	        }
+
+
+        // Update raffle with final VRF consumer flag
+        setRaffle(raffleData);
+
+	        console.log('[VRF Debug] Final isVrfConsumer for raffle', { raffleAddress, isVrfConsumer: raffleData.isVrfConsumer });
+
+        console.log('[VRF Debug] Final isVrfConsumer for raffle (post-set)', { raffleAddress, isVrfConsumer: raffleData.isVrfConsumer });
+
+
+	            isVrfConsumer = await contracts.raffleManager.isVRFConsumer(raffleAddress);
+	            raffleData.isVrfConsumer = !!isVrfConsumer;
+	          }
+	        } catch (_) {}
+
         setIsRefundable(isRefundableFlag);
         setIsExternallyPrized(isExternallyPrizedFlag);
         // If externally prized, re-query prizeCollection
@@ -2430,7 +2500,7 @@ const RaffleDetailPage = () => {
       label = 'Starts In';
       seconds = raffle.startTime - now;
     } else {
-      label = 'Ends In';
+      label = 'Remaining';
       seconds = (raffle.startTime + raffle.duration) - now;
     }
     setTimeLabel(label);
@@ -3149,6 +3219,37 @@ const RaffleDetailPage = () => {
                   {withdrawingPrize ? 'Withdrawing...' : 'Withdraw Prize'}
                 </Button>
               )}
+
+              {/* Update VRF Status - visible to all users, in terminal states */}
+              {([4,5,6,7,8].includes(raffle.stateNum) && raffle?.isVrfConsumer === true) && (
+                <Button
+                  onClick={async () => {
+                    try {
+                      setUpdatingVrfStatus(true);
+                      const contract = getContractInstance(raffle.address, 'raffle');
+                      if (!contract) throw new Error('Failed to get raffle contract');
+                      const result = await executeTransaction(contract.removeFromVRFSubscription);
+                      if (result?.success) {
+                        toast.success('VRF status updated successfully');
+                        // Optimistically update local state so the button hides immediately
+                        setRaffle((prev) => prev ? { ...prev, isVrfConsumer: false } : prev);
+                        triggerRefresh?.();
+                      } else if (result?.error) {
+                        throw new Error(result.error);
+                      }
+                    } catch (err) {
+                      toast.error(extractRevertReason(err));
+                    } finally {
+                      setUpdatingVrfStatus(false);
+                    }
+                  }}
+                  disabled={updatingVrfStatus}
+                  className="sm:ml-2 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {updatingVrfStatus ? 'Updating...' : 'Update VRF Status'}
+                </Button>
+              )}
+
             {!raffle.isPrized &&
               raffle.stateNum === 0 &&
               connected &&

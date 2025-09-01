@@ -249,7 +249,7 @@ function ERC1155DropForm() {
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" align="center">
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -589,7 +589,7 @@ const PrizedRaffleForm = () => {
                   </span>
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1015,7 +1015,7 @@ const NonPrizedRaffleForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1270,7 +1270,7 @@ const WhitelistRaffleForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1549,7 +1549,7 @@ const NewERC721DropForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1957,7 +1957,7 @@ function ExistingERC721DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2269,7 +2269,7 @@ function ExistingERC1155DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3082,7 +3082,7 @@ function LuckySaleERC1155Form() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3348,7 +3348,7 @@ function ETHGiveawayForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3665,7 +3665,7 @@ function ERC20GiveawayForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -4031,7 +4031,7 @@ function NewERC1155DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 10% of your Ticket Limit
+                  Winners must not exceed 25% of your Ticket Limit
                 </TooltipContent>
               </Tooltip>
             </label>
