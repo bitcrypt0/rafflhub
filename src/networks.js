@@ -101,10 +101,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0xDAF2e54b738D9110e852Fa8de5367F1AC124c951',
-      raffleDeployer: '0x959323e987ab59092253818C0898334F972C028b',
-      revenueManager: '0xF5b85fCd3320FADaAEc775f348eb4EC7Bd6d98a7',
-      nftFactory: '0xA895EA2Ffb45C537f2eFA1498f364e26dcDb6a51'
+      raffleManager: '0x1243f69977e4db974fA4fcAB20DcaA1af81e3b94',
+      raffleDeployer: '0x85c3A282075611D924723e20700A7D583014a5ae',
+      revenueManager: '0x076925a375C1A14830486fff4C991Ad4279D56Bb',
+      nftFactory: '0x6575629a471665886195AA7410d29272f295C66D'
     }
   },
   11155420: {
