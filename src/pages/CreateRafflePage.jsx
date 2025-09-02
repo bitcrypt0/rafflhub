@@ -2462,7 +2462,7 @@ const CreateRafflePage = () => {
             Create an on-chain raffle for your community
           </h1>
           <p className={`font-semibold ${isMobile ? 'text-base' : 'text-2xl'}`}>
-            Configure your raffle <a href="#" onClick={(e) => { e.preventDefault(); setIsFilterOpen(true); }} className="text-primary hover:text-primary/90 no-underline font-medium transition-colors">here</a>
+            Click <a href="#" onClick={(e) => { e.preventDefault(); setIsFilterOpen(true); }} className="text-primary hover:text-primary/90 no-underline font-medium transition-colors">here</a> to configure your raffle
           </p>
         </div>
 
