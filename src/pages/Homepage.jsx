@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Shuffle, Layers, Users, LockKeyhole, Sparkles, BookOpen, Info, GitBranch, Coins } from 'lucide-react';
 
@@ -18,24 +18,53 @@ const SectionTitle = ({ eyebrow, title, subtitle }) => (
   </div>
 );
 
+
+
 export default function Homepage() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { root: null, rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+
+
+
   return (
     <div className="bg-background text-foreground">
       {/* Hero */}
       <Section id="hero" className="py-12 sm:py-16" containerClassName="max-w-[1400px]">
-        <div className="rounded-2xl bg-card/80 border border-border p-6 sm:p-10">
+        <div className="rounded-2xl bg-card/80 border border-border p-6 sm:p-10 relative overflow-hidden">
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
+          {/* Decorative, theme-aware orbs */}
+          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-8 -left-8 w-48 h-48 rounded-full bg-muted/40 blur-2xl" />
+
             <div className="flex-1 text-center lg:text-left">
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
                 The Future of Decentralized Digital Asset Distribution
               </h1>
-              <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="reveal text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Rafflhub is a permissionless raffling protocol that empowers creators and protects participants through
                 cryptographic security and intelligent economics. With the implementation of Chainlink VRF 2.5, NFTs and
                 tokens can be fairly distributed to within Web3 communities.
               </p>
 
-              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+              <div className="reveal reveal-delay-1 mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <a
                   href="/app"
                   target="_blank"
@@ -66,8 +95,8 @@ export default function Homepage() {
 
 
             </div>
-            <div className="flex-1 w-full">
-              <div className="w-full rounded-xl overflow-hidden border border-border bg-transparent">
+            <div className="flex-1 w-full reveal reveal-delay-2">
+              <div className="w-full rounded-xl overflow-hidden border border-border bg-transparent hover-lift">
                 <img
                   src="/images/Raffle Lifecycle.png"
                   alt="Raffle Lifecycle"
@@ -84,8 +113,8 @@ export default function Homepage() {
       {/* Built for Web3 Community (moved up) */}
       <Section id="audience" className="py-12 sm:py-16">
         <SectionTitle title="Built for the Web3 Community" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-border p-6 bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 reveal">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="text-lg font-semibold mb-2">For Creators</div>
             <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
               <li>Flexible launch options and pricing models</li>
@@ -93,7 +122,7 @@ export default function Homepage() {
               <li>Transparent and fair revenue model</li>
             </ul>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="text-lg font-semibold mb-2">For Participants</div>
             <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
               <li>Provably fair selection with on-chain transparency</li>
@@ -111,8 +140,8 @@ export default function Homepage() {
       <Section id="how-it-works" className="py-12 sm:py-16">
         <SectionTitle title="How it works" />
         {/* Top row: Lifecycle + Economics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="rounded-xl border border-border p-6 bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 reveal">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <GitBranch className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Raffle Lifecycle</div>
@@ -124,7 +153,7 @@ export default function Homepage() {
               Edge cases: ActivationFailed, Deleted, Unengaged.
             </p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <Coins className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Revenue and Refunds</div>
@@ -136,8 +165,8 @@ export default function Homepage() {
         </div>
 
         {/* Bottom row: Prize models */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="rounded-xl border border-border p-6 bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 reveal">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <LockKeyhole className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Escrowed Prizes</div>
@@ -146,7 +175,7 @@ export default function Homepage() {
               Lock high-value assets (NFTs, ETH, ERC-20) in secure raffle contracts. Prize availability is verifiable.
             </p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Mintable Prizes</div>
@@ -155,7 +184,7 @@ export default function Homepage() {
               Mint NFTs on demand for winners—no gas wars, lower costs. Ideal for new launches and large distributions.
             </p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">External Prizes</div>
@@ -170,22 +199,22 @@ export default function Homepage() {
       {/* Fairness & Security (moved below How it works) */}
       <Section id="fairness" className="py-12 sm:py-16">
         <SectionTitle title="Why it’s fair and secure" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="rounded-xl border border-border p-6 bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 reveal">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <Shuffle className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Chainlink VRF 2.5</div>
             </div>
             <p className="text-sm text-muted-foreground">Verifiable, tamper-proof randomness for winner selection.</p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">OpenZeppelin Security</div>
             </div>
             <p className="text-sm text-muted-foreground">Audited libraries, reentrancy guards, and robust access control.</p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="flex items-center gap-2 mb-2">
               <Layers className="h-5 w-5 text-[#614E41]" />
               <div className="text-lg font-semibold">Upgradeable & Scalable</div>
@@ -205,16 +234,16 @@ export default function Homepage() {
       {/* Use cases */}
       <Section id="use-cases" className="py-12 sm:py-16">
         <SectionTitle title="Use cases" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="rounded-xl border border-border p-6 bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 reveal">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="text-lg font-semibold mb-2">NFT Launches Reimagined</div>
             <p className="text-sm text-muted-foreground">Eliminate unfair whitelist allocations, gas wars, and botted mints. Raffle winners mint on demand.</p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="text-lg font-semibold mb-2">Advanced Community Engagement</div>
             <p className="text-sm text-muted-foreground">Create token-gated raffles for holder-only rewards and cross-community campaigns.</p>
           </div>
-          <div className="rounded-xl border border-border p-6 bg-card">
+          <div className="rounded-xl border border-border p-6 bg-card hover-lift">
             <div className="text-lg font-semibold mb-2">Gamified Asset Sales</div>
             <p className="text-sm text-muted-foreground">Turn static traditional marketplace listings and giveaways into dynamic community events.</p>
           </div>
