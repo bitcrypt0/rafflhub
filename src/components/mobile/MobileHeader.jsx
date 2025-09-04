@@ -132,12 +132,38 @@ const MobileHeader = () => {
     return null; // Use desktop header for non-mobile
   }
 
+  // Minimal header for homepage: only logo and theme toggle
+  const isHomepage = location.pathname === '/';
+  if (isHomepage) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
+        <div className="flex items-center justify-between h-14 px-4">
+          {/* On homepage: logo should be non-clickable */}
+          <span className="flex items-center cursor-default select-none">
+            <Logo size="xs" className="active:opacity-70" />
+          </span>
+          <button
+            onClick={cycleTheme}
+            className="p-2 hover:bg-muted rounded-md transition-colors"
+            title={`Current: ${getCurrentTheme().name} - Click to cycle themes`}
+          >
+            {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
+            {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
+            {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-5 w-5" />}
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-[#614E41]">
         <div className="flex items-center justify-between h-14 px-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+          {/* On non-home pages we keep the original link to / */}
+          <Link to="/app" className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
             <Logo size="xs" className="active:opacity-70" />
           </Link>
 

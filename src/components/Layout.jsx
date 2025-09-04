@@ -26,6 +26,7 @@ const Header = () => {
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
   const location = useLocation();
+  const isHomepage = location.pathname === '/';
 
   // Show loading state while detecting device type to prevent flash (moved below hooks to preserve hook order)
 
@@ -199,186 +200,214 @@ const Header = () => {
             <div className="bg-background/80 backdrop-blur-md border-b border-[#614E41] w-full">
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
-                <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
-                  <Logo size="md" className="hover:opacity-80" />
-                </Link>
+                {isHomepage ? (
+                  <span className="flex items-center gap-3 cursor-default select-none">
+                    <Logo size="md" />
+                  </span>
+                ) : connected ? (
+                  <Link to="/app" className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+                    <Logo size="md" className="hover:opacity-80" />
+                  </Link>
+                ) : (
+                  <span className="flex items-center gap-3 cursor-default select-none">
+                    <Logo size="md" />
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-4 w-full justify-end">
-                {/* Search Icon and Field - now next to dropdown */}
-                <div className="flex items-center transition-all duration-300" style={{ minWidth: '40px', marginRight: '0.5rem' }}>
-                  <button
-                    className={`p-2 hover:bg-muted rounded-md transition-colors text-lg ${showSearch ? 'mr-2' : ''}`}
-                    onClick={() => {
-                      setShowSearch((v) => {
-                        if (!v) {
-                          // Opening: after animation, set inputFullyOpen and focus
-                          setTimeout(() => {
-                            setInputFullyOpen(true);
-                            if (searchInputRef.current) searchInputRef.current.focus();
-                          }, 300);
-                        } else {
-                          // Closing: immediately set inputFullyOpen to false
-                          setInputFullyOpen(false);
-                        }
-                        return !v;
-                      });
-                    }}
-                  >
-                    <Search className="h-5 w-5" />
-                  </button>
-                  <div
-                    ref={searchInputWrapperRef}
-                    data-search-container
-                    className="overflow-visible transition-all duration-300 rounded-md bg-background"
-                    style={{
-                      width: showSearch ? '16rem' : '0',
-                      marginLeft: '0',
-                      position: 'relative',
-                      display: 'inline-block',
-                      verticalAlign: 'middle',
-                      overflow: 'visible'
-                    }}
-                  >
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      className={`transition-all duration-300 px-3 py-2 rounded-md bg-background text-sm ${inputFullyOpen ? 'focus:outline-none focus:ring-2 focus:ring-primary border border-border' : 'border-0 outline-none shadow-none'} ${showSearch ? 'w-64 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
-                      style={{
-                        minWidth: showSearch ? '16rem' : '0',
-                        maxWidth: showSearch ? '16rem' : '0',
-                        boxSizing: 'border-box',
-                        border: inputFullyOpen ? undefined : 'none',
-                        outline: inputFullyOpen ? undefined : 'none',
-                        boxShadow: inputFullyOpen ? undefined : 'none',
-                        visibility: showSearch ? 'visible' : 'hidden',
-                        pointerEvents: inputFullyOpen ? 'auto' : 'none',
-                      }}
-                      placeholder="Search raffle name or address..."
-                      value={searchTerm}
-                      onChange={e => {
-                        const newValue = e.target.value;
-                        setSearchTerm(newValue);
-                      }}
-                      autoFocus={inputFullyOpen}
-                    />
-                    {/* Search Results Dropdown - now relative to input and always 100% width */}
-                    {showSearch && (
-                      <div
-                        className="absolute left-0 top-full mt-1 z-50 w-full"
-                        style={{
-                          boxSizing: 'border-box',
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          zIndex: 9999
+                {/* Conditionally render: On homepage, show only theme toggle; on others, show full header */}
+                {isHomepage ? (
+                  <>
+                    {/* Theme Cycle only */}
+                    <button
+                      onClick={cycleTheme}
+                      className="p-2 hover:bg-muted rounded-md transition-colors"
+                      title={`Current: ${getCurrentTheme().name} - Click to cycle themes`}
+                    >
+                      {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
+                      {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
+                      {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-5 w-5" />}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Search Icon and Field - now next to dropdown */}
+                    <div className="flex items-center transition-all duration-300" style={{ minWidth: '40px', marginRight: '0.5rem' }}>
+                      <button
+                        className={`p-2 hover:bg-muted rounded-md transition-colors text-lg ${showSearch ? 'mr-2' : ''}`}
+                        onClick={() => {
+                          setShowSearch((v) => {
+                            if (!v) {
+                              // Opening: after animation, set inputFullyOpen and focus
+                              setTimeout(() => {
+                                setInputFullyOpen(true);
+                                if (searchInputRef.current) searchInputRef.current.focus();
+                              }, 300);
+                            } else {
+                              // Closing: immediately set inputFullyOpen to false
+                              setInputFullyOpen(false);
+                            }
+                            return !v;
+                          });
                         }}
-                        onMouseEnter={() => setMouseInDropdown(true)}
-                        onMouseLeave={() => setMouseInDropdown(false)}
                       >
-                        {searchLoading && (
-                          <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">Searching...</div>
-                        )}
-                        {!searchLoading && searchResults.length > 0 && (
+                        <Search className="h-5 w-5" />
+                      </button>
+                      <div
+                        ref={searchInputWrapperRef}
+                        data-search-container
+                        className="overflow-visible transition-all duration-300 rounded-md bg-background"
+                        style={{
+                          width: showSearch ? '16rem' : '0',
+                          marginLeft: '0',
+                          position: 'relative',
+                          display: 'inline-block',
+                          verticalAlign: 'middle',
+                          overflow: 'visible'
+                        }}
+                      >
+                        <input
+                          ref={searchInputRef}
+                          type="text"
+                          className={`transition-all duration-300 px-3 py-2 rounded-md bg-background text-sm ${inputFullyOpen ? 'focus:outline-none focus:ring-2 focus:ring-primary border border-border' : 'border-0 outline-none shadow-none'} ${showSearch ? 'w-64 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
+                          style={{
+                            minWidth: showSearch ? '16rem' : '0',
+                            maxWidth: showSearch ? '16rem' : '0',
+                            boxSizing: 'border-box',
+                            border: inputFullyOpen ? undefined : 'none',
+                            outline: inputFullyOpen ? undefined : 'none',
+                            boxShadow: inputFullyOpen ? undefined : 'none',
+                            visibility: showSearch ? 'visible' : 'hidden',
+                            pointerEvents: inputFullyOpen ? 'auto' : 'none',
+                          }}
+                          placeholder="Search raffle name or address..."
+                          value={searchTerm}
+                          onChange={e => {
+                            const newValue = e.target.value;
+                            setSearchTerm(newValue);
+                          }}
+                          autoFocus={inputFullyOpen}
+                        />
+                        {/* Search Results Dropdown - now relative to input and always 100% width */}
+                        {showSearch && (
                           <div
-                            className="bg-popover/90 backdrop-blur-md border border-border/50 rounded-xl max-h-60 overflow-y-auto shadow-xl custom-search-scrollbar"
-                            style={{ overflowX: 'hidden' }}
+                            className="absolute left-0 top-full mt-1 z-50 w-full"
+                            style={{
+                              boxSizing: 'border-box',
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              zIndex: 9999
+                            }}
+                            onMouseEnter={() => setMouseInDropdown(true)}
+                            onMouseLeave={() => setMouseInDropdown(false)}
                           >
-                            {searchResults.map(r => (
+                            {searchLoading && (
+                              <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">Searching...</div>
+                            )}
+                            {!searchLoading && searchResults.length > 0 && (
                               <div
-                                key={r.address}
-                                className="px-3 py-2 hover:bg-muted cursor-pointer text-sm border-b border-border/20"
-                                onMouseDown={() => handleSearchResultClick(r.address)}
+                                className="bg-popover/90 backdrop-blur-md border border-border/50 rounded-xl max-h-60 overflow-y-auto shadow-xl custom-search-scrollbar"
+                                style={{ overflowX: 'hidden' }}
                               >
-                                <div className="font-semibold text-foreground">{r.name}</div>
-                                <div
-                                  className="text-xs text-muted-foreground font-mono"
-                                  style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    display: 'block',
-                                    maxWidth: '100%',
-                                  }}
-                                  title={r.address}
-                                >
-                                  {r.address}
-                                </div>
+                                {searchResults.map(r => (
+                                  <div
+                                    key={r.address}
+                                    className="px-3 py-2 hover:bg-muted cursor-pointer text-sm border-b border-border/20"
+                                    onMouseDown={() => handleSearchResultClick(r.address)}
+                                  >
+                                    <div className="font-semibold text-foreground">{r.name}</div>
+                                    <div
+                                      className="text-xs text-muted-foreground font-mono"
+                                      style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        display: 'block',
+                                        maxWidth: '100%',
+                                      }}
+                                      title={r.address}
+                                    >
+                                      {r.address}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+                            {!searchLoading && searchTerm && searchResults.length === 0 && (
+                              <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">No results found.</div>
+                            )}
                           </div>
                         )}
-                        {!searchLoading && searchTerm && searchResults.length === 0 && (
-                          <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">No results found.</div>
-                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                {/* Theme Cycle */}
-                <button
-                  onClick={cycleTheme}
-                  className="p-2 hover:bg-muted rounded-md transition-colors"
-                  title={`Current: ${getCurrentTheme().name} - Click to cycle themes`}
-                >
-                  {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
-                  {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
-                  {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-5 w-5" />}
-                </button>
-                {/* Network Selector */}
-                <NetworkSelector />
-                {/* Wallet connect/disconnect next */}
-                {connected ? (
-                  <div className="flex items-center gap-2 px-3 py-2 header-accent-surface border border-[#614E41] rounded-md text-sm font-medium">
-                    <span>{formatAddress(address)}</span>
+                    </div>
+                    {/* Theme Cycle */}
                     <button
-                      onClick={disconnect}
-                      title="Disconnect Wallet"
-                      className="hover:bg-destructive/10 rounded-full p-1 transition-colors"
+                      onClick={cycleTheme}
+                      className="p-2 hover:bg-muted rounded-md transition-colors"
+                      title={`Current: ${getCurrentTheme().name} - Click to cycle themes`}
                     >
-                      <LogOut className="h-4 w-4 text-foreground opacity-80" />
+                      {getCurrentTheme().icon === 'Sun' && <Sun className="h-5 w-5" />}
+                      {getCurrentTheme().icon === 'Moon' && <Moon className="h-5 w-5" />}
+                      {getCurrentTheme().icon === 'Monitor' && <Monitor className="h-5 w-5" />}
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleConnectWallet}
-                    className="flex items-center gap-2 px-3 py-2 header-accent-surface text-foreground border border-[#614E41] rounded-md text-sm hover:opacity-95 transition-colors"
-                  >
-                    <Wallet className="h-4 w-4" />
-                    <span>Connect Wallet</span>
-                  </button>
-                )}
-                {/* New vertical dropdown menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted transition-colors" aria-label="Open menu">
-                      <Menu className="h-5 w-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" sideOffset={8} collisionPadding={8} className="w-56 bg-popover/90 backdrop-blur-md border border-[#614E41] mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">
-                    <DropdownMenuItem asChild>
-                      <a
-                        href="https://rafflhub.gitbook.io/rafflhub"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
+                    {/* Network Selector */}
+                    <NetworkSelector />
+                    {/* Wallet connect/disconnect next */}
+                    {connected ? (
+                      <div className="flex items-center gap-2 px-3 py-2 header-accent-surface border border-[#614E41] rounded-md text-sm font-medium">
+                        <span>{formatAddress(address)}</span>
+                        <button
+                          onClick={disconnect}
+                          title="Disconnect Wallet"
+                          className="hover:bg-destructive/10 rounded-full p-1 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4 text-foreground opacity-80" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleConnectWallet}
+                        className="flex items-center gap-2 px-3 py-2 header-accent-surface text-foreground border border-[#614E41] rounded-md text-sm hover:opacity-95 transition-colors"
                       >
-                        <Book className="h-5 w-5" /> Docs
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
-                        <User className="h-5 w-5" /> Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/create-raffle" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
-                        <Plus className="h-5 w-5" /> Create Raffle
-                      </Link>
-                    </DropdownMenuItem>
+                        <Wallet className="h-4 w-4" />
+                        <span>Connect Wallet</span>
+                      </button>
+                    )}
+                    {/* New vertical dropdown menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted transition-colors" aria-label="Open menu">
+                          <Menu className="h-5 w-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" sideOffset={8} collisionPadding={8} className="w-56 bg-popover/90 backdrop-blur-md border border-[#614E41] mt-2 rounded-xl shadow-2xl py-2 z-40 ring-1 ring-border/20 flex flex-col">
+                        <DropdownMenuItem asChild>
+                          <a
+                            href="https://rafflhub.gitbook.io/rafflhub"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg"
+                          >
+                            <Book className="h-5 w-5" /> Docs
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                            <User className="h-5 w-5" /> Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/create-raffle" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-primary/10 transition-colors rounded-lg">
+                            <Plus className="h-5 w-5" /> Create Raffle
+                          </Link>
+                        </DropdownMenuItem>
 
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
             </div>
           </div>

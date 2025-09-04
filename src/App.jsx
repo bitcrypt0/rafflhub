@@ -12,7 +12,9 @@ import ErrorBoundary from './components/ui/error-boundary';
 import { usePerformanceMonitor } from './components/debug/PerformanceMonitor';
 import { initAndroidKeyboardFix, cleanupAndroidKeyboardFix } from './utils/androidKeyboardFix';
 import { initDisableNumberScroll, cleanupDisableNumberScroll } from './utils/disableNumberScroll';
+import Homepage from './pages/Homepage';
 import LandingPage from './pages/LandingPage';
+
 
 // Load test utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -65,12 +67,13 @@ const AppContent = () => {
       <div style={{ height: '80px' }} />
       <main className="flex-1 min-h-0">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          {/* Marketing Homepage at root; dapp at /app */}
+          <Route path="/" element={<Homepage />} />
+          <Route path="/app" element={<LandingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-
         </Routes>
       </main>
       <Footer />
