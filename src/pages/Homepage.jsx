@@ -32,7 +32,7 @@ export default function Homepage() {
               <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Rafflhub is a permissionless raffling protocol that empowers creators and protects participants through
                 cryptographic security and intelligent economics. With the implementation of Chainlink VRF 2.5, NFTs and
-                tokens can be fairly distributed to members of the Web3 community on EVM chains.
+                tokens can be fairly distributed to within Web3 communities.
               </p>
 
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
