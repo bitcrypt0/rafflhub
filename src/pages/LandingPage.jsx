@@ -642,7 +642,7 @@ const LandingPage = () => {
             Fairness and Transparency, On-Chain
           </h1>
           <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-            Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+            Host and participate in decentralized, on-chain raffles where every draw is public, auditable, and powered by Chainlink's VRF. Everyone has a fair chance to win!
           </p>
         </div>
 
@@ -700,7 +700,7 @@ const LandingPage = () => {
             Fairness and Transparency, On-Chain
           </h1>
           <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-            Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+            Host and participate in decentralized, on-chain raffles where every draw is public, auditable, and powered by Chainlink's VRF. Everyone has a fair chance to win!
           </p>
         </div>
 
@@ -742,7 +742,7 @@ const LandingPage = () => {
               Fairness and Transparency, On-Chain
             </h1>
             <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-              Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+              Host and participate in decentralized, on-chain raffles where every draw is public, auditable, and powered by Chainlink's VRF. Everyone has a fair chance to win!
             </p>
 
           </div>
