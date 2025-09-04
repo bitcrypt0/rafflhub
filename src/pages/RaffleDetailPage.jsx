@@ -1703,7 +1703,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Unengaged Raffle</h3>
-            <p className="text-muted-foreground">This raffle did not receive enough engagement and was closed.</p>
+            <p className="text-muted-foreground">This raffle had fewer participants than the required number of winners before its duration elapsed.</p>
           </div>
         );
       default:
