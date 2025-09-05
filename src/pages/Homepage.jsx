@@ -181,7 +181,7 @@ export default function Homepage() {
               <div className="text-lg font-semibold">Mintable Prizes</div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Mint NFTs on demand for winners—no gas wars, lower costs. Ideal for new launches and large distributions.
+              Winners mint NFT prizes on demand — no gas wars, no bots. Ideal for new launches and all collection types.
             </p>
           </div>
           <div className="rounded-xl border border-border p-6 bg-card hover-lift">
