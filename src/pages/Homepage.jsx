@@ -95,8 +95,8 @@ export default function Homepage() {
 
 
             </div>
-            <div className="flex-1 w-full reveal reveal-delay-2">
-              <div className="w-full rounded-xl overflow-hidden border border-border bg-transparent hover-lift">
+            <div className="flex-1 w-full">
+              <div className="w-full rounded-xl overflow-hidden border border-border bg-transparent">
                 <img
                   src="/images/Raffle Lifecycle.png"
                   alt="Raffle Lifecycle"
