@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Shuffle, Layers, Users, LockKeyhole, Sparkles, BookOpen, Info, GitBranch, Coins } from 'lucide-react';
+import { ShieldCheck, Shuffle, Layers, Users, LockKeyhole, Sparkles, BookOpen, Info, GitBranch, Coins, ChevronDown } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import * as Accordion from '@radix-ui/react-accordion';
 
 const Section = ({ id, className = '', containerClassName = '', children }) => (
   <section id={id} className={`w-full ${className}`}>
@@ -17,10 +20,38 @@ const SectionTitle = ({ eyebrow, title, subtitle }) => (
     {subtitle && <p className="text-base sm:text-lg text-muted-foreground">{subtitle}</p>}
   </div>
 );
+function parseFaq(md) {
+  if (!md) return [];
+  const lines = md.split('\n').map((l) => l.replace(/\r$/, ''));
+  let i = 0;
+  // Skip leading header and blank lines
+  while (i < lines.length && (lines[i].trim() === '' || lines[i].trim().startsWith('##'))) i++;
+  const items = [];
+  while (i < lines.length) {
+    if (!lines[i].trim().startsWith('**Q:')) { i++; continue; }
+    const q = lines[i].trim().replace(/^\*\*Q:\s*/, '').replace(/\*\*$/, '').trim();
+    i++;
+    // Skip blanks
+    while (i < lines.length && lines[i].trim() === '') i++;
+    const ans = [];
+    if (i < lines.length && lines[i].trim().startsWith('A:')) {
+      ans.push(lines[i].trim().replace(/^A:\s*/, ''));
+      i++;
+    }
+    while (i < lines.length && !lines[i].trim().startsWith('**Q:')) {
+      ans.push(lines[i]);
+      i++;
+    }
+    items.push({ q, aMd: ans.join('\n').trim() });
+  }
+  return items;
+}
+
 
 
 
 export default function Homepage() {
+  const [faqMd, setFaqMd] = useState('');
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,9 +72,28 @@ export default function Homepage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/FAQ.md')
+      .then((res) => res.text())
+      .then((txt) => { if (isMounted) setFaqMd(txt); })
+      .catch(() => { if (isMounted) setFaqMd('## FAQ\nContent unavailable.'); });
+    return () => { isMounted = false; };
+  }, []);
+
+  const faqItems = parseFaq(faqMd);
 
 
-
+  const faqItemsAdj = faqItems.map((it) => {
+    if (it.q.includes("Why do raffles need to be 'Activated'?")) {
+      let a = it.aMd || '';
+      // Convert roman numerals to markdown bullets
+      a = a.replace(/\n\s*i\)\s+/i, '\n\n- ');
+      a = a.replace(/\n\s*ii\)\s+/, '\n- ');
+      return { ...it, aMd: a };
+    }
+    return it;
+  });
   return (
     <div className="bg-background text-foreground">
       {/* Hero */}
@@ -249,6 +299,39 @@ export default function Homepage() {
           </div>
         </div>
       </Section>
+
+      {/* FAQ */}
+      <Section id="faq" className="py-12 sm:py-16">
+        <SectionTitle title="Frequently Asked Questions" />
+        <div className="reveal">
+          <Accordion.Root type="single" collapsible className="space-y-3">
+            {faqItemsAdj.map((item, idx) => (
+              <Accordion.Item key={idx} value={`item-${idx}`} className="rounded-xl border border-[#614E41]/30 bg-card">
+                <Accordion.Header>
+                  <Accordion.Trigger className="w-full p-4 flex items-center justify-between text-left font-medium hover:bg-muted/30 rounded-xl data-[state=open]:rounded-b-none transition">
+                    <span className="pr-4">{item.q}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 data-[state=open]:rotate-180 text-[#614E41]" />
+                  </Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Content className="px-4 pb-4 pt-2 rounded-b-xl border-t border-border/50 overflow-hidden">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: (props) => <p className="text-sm text-muted-foreground mb-3" {...props} />,
+                      li: (props) => <li className="list-disc ml-5 text-sm text-muted-foreground" {...props} />,
+                      strong: (props) => <strong className="text-foreground" {...props} />,
+                      a: (props) => <a className="text-primary underline" {...props} />
+                    }}
+                  >
+                    {item.aMd}
+                  </ReactMarkdown>
+                </Accordion.Content>
+              </Accordion.Item>
+            ))}
+          </Accordion.Root>
+        </div>
+      </Section>
+
 
 
     </div>
