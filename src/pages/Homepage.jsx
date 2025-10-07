@@ -385,7 +385,7 @@ export default function Homepage() {
                     <span className="text-2xl font-bold text-primary-foreground">1</span>
                   </div>
                   <h3 className="text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
-                  <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes. NFT and Token prizes are supported.</p>
+                  <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
                   <div className="flex items-center justify-center gap-2 text-sm text-primary">
                     <Target className="h-4 w-4" />
                     <span>Flexible Configuration</span>
