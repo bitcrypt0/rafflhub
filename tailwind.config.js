@@ -12,6 +12,9 @@ export default {
     'bg-destructive',
     'bg-success',
     'bg-warning',
+    'bg-brand-primary',
+    'bg-brand-secondary',
+    'bg-brand-accent',
     'text-foreground',
     'text-primary',
     'text-secondary',
@@ -25,18 +28,25 @@ export default {
     'text-destructive-foreground',
     'text-muted-foreground',
     'text-accent-foreground',
+    'text-brand-primary',
+    'text-brand-secondary',
+    'text-brand-accent',
     'hover:bg-primary/90',
     'hover:bg-secondary/80',
     'hover:bg-success/90',
     'hover:bg-warning/90',
     'hover:bg-destructive/90',
     'hover:bg-accent/90',
+    'hover:bg-brand-primary/90',
+    'hover:bg-brand-secondary/80',
     'border-border',
     'border-primary',
     'border-secondary',
     'border-muted',
     'border-accent',
     'border-destructive',
+    'border-brand-primary',
+    'border-brand-secondary',
   ],
   content: [
     "./index.html",
@@ -86,6 +96,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Brand colors for Rafflhub
+        brand: {
+          primary: "#614E41", // Dark brown
+          secondary: "#F5E9DC", // Cream/off-white
+          accent: "#FFFFFF", // White
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,4 +111,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate")],
-} 
+}

@@ -63,17 +63,15 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header />
-      {/* Consistent spacing for both mobile and desktop */}
-      <div style={{ height: '80px' }} />
       <main className="flex-1 min-h-0">
         <Routes>
           {/* Marketing Homepage at root; dapp at /app */}
           <Route path="/" element={<Homepage />} />
-          <Route path="/app" element={<LandingPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/create-raffle" element={<CreateRafflePage />} />
-          <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-          <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
+          <Route path="/app" element={<div><div style={{ height: '80px' }} /><LandingPage /></div>} />
+          <Route path="/profile" element={<div><div style={{ height: '80px' }} /><ProfilePage /></div>} />
+          <Route path="/create-raffle" element={<div><div style={{ height: '80px' }} /><CreateRafflePage /></div>} />
+          <Route path="/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
+          <Route path="/:chainSlug/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
         </Routes>
       </main>
       <Footer />
