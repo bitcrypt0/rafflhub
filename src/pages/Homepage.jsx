@@ -252,14 +252,14 @@ export default function Homepage() {
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
-      <Section id="hero" className="min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted">
+      <Section id="hero" className="min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-20 sm:pt-0">
         <GeometricBackground />
         <div className="relative z-10 w-full py-20">
           <div className="text-center max-w-6xl mx-auto">
-            <h1 className="hero-headline text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-foreground leading-tight">
-              Explore New Strategies for{' '}
+            <h1 className="hero-headline text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-foreground leading-snug sm:leading-tight">
+              Explore New Strategies to Distribute{' '}
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                NFT Drops
+                NFTs
               </span>{' '}
               and{' '}
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -270,7 +270,7 @@ export default function Homepage() {
               Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
             </p>
             
-            <div className="hero-cta flex flex-col items-center gap-6 mb-12">
+            <div className="hero-cta flex flex-col items-center gap-6 mb-6 sm:mb-12">
               <Link
                 to="/app"
                 className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-lg"
