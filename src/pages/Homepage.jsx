@@ -267,7 +267,7 @@ export default function Homepage() {
               </span>
             </h1>
             <p className="hero-subtext text-xl sm:text-2xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
-              Transparent whitelist allocations. Inter-community collaboration. Disincentivize mint bots. Earn community trust.
+              Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
             </p>
             
             <div className="hero-cta flex flex-col items-center gap-6 mb-12">
@@ -458,57 +458,15 @@ export default function Homepage() {
         </div>
       </Section>
 
-      {/* Key Features Grid */}
-      <Section id="features" className="py-20 bg-card">
-        <div className="reveal">
-          <SectionTitle 
-            title="Built for Web3 Communities"
-            subtitle="Everything you need to run fair, transparent, and engaging raffles"
-          />
-        </div>
 
-        <div className="card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
-          <div className="card-item bg-background rounded-2xl p-6 hover:shadow-xl transition-all duration-300 border border-border group">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-              <CheckCircle className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold mb-2 text-foreground">Provably Fair</h3>
-            <p className="text-sm text-muted-foreground">Every selection verifiable on-chain with Chainlink VRF technology</p>
-          </div>
-
-          <div className="card-item bg-background rounded-2xl p-6 hover:shadow-xl transition-all duration-300 border border-border group">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-              <Layers className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold mb-2 text-foreground">Flexible Prize Options</h3>
-            <p className="text-sm text-muted-foreground">NFTs, Tokens, WL spots - escrowed or mintable prizes</p>
-          </div>
-
-          <div className="card-item bg-background rounded-2xl p-6 hover:shadow-xl transition-all duration-300 border border-border group">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold mb-2 text-foreground">Token-Gated Raffles</h3>
-            <p className="text-sm text-muted-foreground">Exclusive raffles for true community members and holders</p>
-          </div>
-
-          <div className="card-item bg-background rounded-2xl p-6 hover:shadow-xl transition-all duration-300 border border-border group">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-              <Zap className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold mb-2 text-foreground">Gas-Optimized</h3>
-            <p className="text-sm text-muted-foreground">Batch processing for winner selection from large-scale raffles</p>
-          </div>
-        </div>
-      </Section>
 
       {/* Use Cases */}
       <Section id="use-cases" className="py-20 bg-background">
         <div className="reveal">
           <SectionTitle 
-            title="Built for Every Web3 Community"
-            subtitle="Whether you're launching NFTs, rewarding holders, or building engagement"
-          />
+             title="Built for Web3 Communities"
+             subtitle="Whether you're launching NFTs, rewarding holders, or building engagement"
+           />
         </div>
 
         <div className="card-grid grid grid-cols-1 lg:grid-cols-3 gap-8 mt-16">
@@ -541,19 +499,19 @@ export default function Homepage() {
             <h3 className="text-2xl font-bold mb-4 text-foreground">For Influencers/KOLs</h3>
             <p className="text-muted-foreground mb-6">Trusted giveaways that protect your reputation. Build authentic engagement with provably fair mechanics.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Build Reputation and trust</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Flexible reward options</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Project collabs made easy</span>
-              </li>
-            </ul>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Build reputation and trust</span>
+               </li>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Flexible prize options for community rewards</span>
+               </li>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Project collabs made easy</span>
+               </li>
+             </ul>
           </div>
 
           <div className="card-item bg-card rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-border">
@@ -563,15 +521,19 @@ export default function Homepage() {
             <h3 className="text-2xl font-bold mb-4 text-foreground">For Creators</h3>
             <p className="text-muted-foreground mb-6">Transparent distribution of rewards to holders of CCM tokens by creators.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Holder Rewards</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Tool for Community Growth</span>
-              </li>
-            </ul>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Token-gated raffles for holder rewards</span>
+               </li>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Flexible prize options for holder rewards</span>
+               </li>
+               <li className="flex items-center gap-2">
+                 <CheckCircle className="h-4 w-4 text-primary" />
+                 <span>Easy collabs with projects and other creators</span>
+               </li>
+             </ul>
           </div>
         </div>
       </Section>
