@@ -1623,12 +1623,42 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           </div>
         );
       case 'Ended':
+        // Quietly show any available winners without a loading spinner
         return (
-          <div className="text-center py-8">
-            <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Raffle Ended</h3>
-            <p className="text-muted-foreground">Raffle has ended. Waiting for winner selection.</p>
-          </div>
+          winners.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground">
+                  {winners.length} winner{winners.length !== 1 ? 's' : ''} selected
+                </div>
+              </div>
+              <div className="max-h-96 overflow-y-auto pr-2">
+                <div className="space-y-3 pb-4">
+                  {winners.map((winner, i) => (
+                    <WinnerCard
+                      key={winner.index}
+                      winner={winner}
+                      index={i}
+                      raffle={raffle}
+                      connectedAddress={connectedAddress}
+                      onToggleExpand={handleToggleExpand}
+                      isExpanded={expandedWinner === i}
+                      stats={winnerStats[winner.address]}
+                      onLoadStats={handleToggleExpand}
+                      collectionName={collectionName}
+                      isEscrowedPrize={isEscrowedPrize}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Raffle Ended</h3>
+              <p className="text-muted-foreground">Raffle has ended. Waiting for winner selection.</p>
+            </div>
+          )
         );
       case 'Drawing':
         return (
@@ -2489,11 +2519,14 @@ const RaffleDetailPage = () => {
     let seconds = 0;
     if ([2,3,4,5,6,7,8].includes(raffle.stateNum)) {
       label = 'Duration';
-      // Prefer actual duration if available on ended/terminal states
+      // Show original duration when actual duration exceeds original; otherwise show actual if available
       const actual = raffle.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
-      seconds = actual && actual > 0 ? actual : raffle.duration;
+      const original = raffle.duration;
+      const displaySeconds = actual && actual > 0
+        ? (actual > original ? original : actual)
+        : original;
       setTimeLabel(label);
-      setTimeValue(formatDuration(seconds));
+      setTimeValue(formatDuration(displaySeconds));
       return;
     }
     if (now < raffle.startTime) {
@@ -3416,9 +3449,15 @@ const RaffleDetailPage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-foreground/80 dark:text-foreground">Contract Address:</span>
-                <span className="font-mono">
+                <a
+                  href={getExplorerLink(raffle.address, raffle.chainId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
+                  title={raffle.address}
+                >
                   {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`}
-                </span>
+                </a>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-foreground/80 dark:text-foreground">Start Time:</span>
@@ -3438,7 +3477,17 @@ const RaffleDetailPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 </span>
-                <span>{formatDuration(([2,3,4,5,6,7,8].includes(raffle.stateNum) && raffle.actualDuration) ? raffle.actualDuration : raffle.duration)}</span>
+                <span>
+                  {(() => {
+                    const ended = [2,3,4,5,6,7,8].includes(raffle.stateNum);
+                    const actual = raffle?.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
+                    const original = raffle?.duration;
+                    const displaySeconds = ended && actual && actual > 0
+                      ? (actual > original ? original : actual)
+                      : original;
+                    return formatDuration(displaySeconds);
+                  })()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-foreground/80 dark:text-foreground">Ticket Fee:</span>
