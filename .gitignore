@@ -1,10 +1,8 @@
 node_modules/
 abis/
-supabase/
 docs/
 package-lock.json
 abis.code-workspace
 setup-supabase.ps1
 temp_types.ts
 .env.example
-.env.local
