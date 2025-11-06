@@ -114,5 +114,59 @@
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_kol",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_poolLimit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_enforcedSlotFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "approveKOL",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_kol",
+        "type": "address"
+      }
+    ],
+    "name": "getKOLApprovalDetails",
+    "outputs": [
+      { "internalType": "bool", "name": "approved", "type": "bool" },
+      { "internalType": "uint256", "name": "poolLimit", "type": "uint256" },
+      { "internalType": "uint256", "name": "enforcedSlotFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "poolCount", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_kol",
+        "type": "address"
+      }
+    ],
+    "name": "revokeKOL",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

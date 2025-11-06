@@ -1,8 +1,8 @@
 [
   { "anonymous": false, "inputs": [
-    { "indexed": true, "internalType": "address", "name": "raffle", "type": "address" },
+    { "indexed": true, "internalType": "address", "name": "pool", "type": "address" },
     { "indexed": true, "internalType": "address", "name": "creator", "type": "address" }
-  ], "name": "RaffleCreated", "type": "event" },
+  ], "name": "PoolCreated", "type": "event" },
   { "anonymous": false, "inputs": [
     { "indexed": true, "internalType": "address", "name": "collection", "type": "address" }
   ], "name": "PrizeCollectionCreated", "type": "event" },
@@ -13,11 +13,11 @@
       { "internalType": "string", "name": "name", "type": "string" },
       { "internalType": "uint256", "name": "startTime", "type": "uint256" },
       { "internalType": "uint256", "name": "duration", "type": "uint256" },
-      { "internalType": "uint256", "name": "ticketLimit", "type": "uint256" },
+      { "internalType": "uint256", "name": "slotLimit", "type": "uint256" },
       { "internalType": "uint256", "name": "winnersCount", "type": "uint256" },
-      { "internalType": "uint256", "name": "maxTicketsPerParticipant", "type": "uint256" },
+      { "internalType": "uint256", "name": "maxSlotsPerParticipant", "type": "uint256" },
       { "internalType": "bool", "name": "isPrized", "type": "bool" },
-      { "internalType": "uint256", "name": "customTicketPrice", "type": "uint256" },
+      { "internalType": "uint256", "name": "customSlotFee", "type": "uint256" },
       { "internalType": "bool", "name": "erc721Drop", "type": "bool" },
           { "internalType": "bool", "name": "erc1155Drop", "type": "bool" },
       { "internalType": "address", "name": "prizeCollection", "type": "address" },
@@ -40,18 +40,21 @@
           { "internalType": "address", "name": "holderTokenAddress", "type": "address" },
           { "internalType": "uint8", "name": "holderTokenStandard", "type": "uint8" },
           { "internalType": "uint256", "name": "minHolderTokenBalance", "type": "uint256" },
-          { "internalType": "uint256", "name": "holderTokenId", "type": "uint256" }
+          { "internalType": "uint256", "name": "holderTokenBalance", "type": "uint256" },
+          { "internalType": "uint256", "name": "holderTokenId", "type": "uint256" },
+          { "internalType": "bool", "name": "socialEngagementRequired", "type": "bool" },
+          { "internalType": "string", "name": "socialTaskDescription", "type": "string" }
         ],
-        "internalType": "struct RaffleDeployer.RaffleParams",
+        "internalType": "struct PoolDeployer.PoolParams",
         "name": "p",
         "type": "tuple"
       }
     ],
-    "name": "createRaffle",
+    "name": "createPool",
     "outputs": [
       { "internalType": "address", "name": "", "type": "address" }
     ],
     "stateMutability": "payable",
     "type": "function"
   }
-] 
+]

@@ -5,10 +5,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   10: {
@@ -17,10 +18,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://optimistic.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   56: {
@@ -29,10 +31,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://bscscan.com',
     nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   97: {
@@ -41,10 +44,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.bscscan.com',
     nativeCurrency: { name: 'Test BNB', symbol: 'tBNB', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
-      revenueManager: '0x...',
-      nftFactory: '0x...'
+      protocolManager: '0xa3F0AF8E90644bF0a371fABf8Ed688371352E2Fb',
+      poolDeployer: '0x422D280BFd76f4533F670706AA0eeC63A2e1330a',
+      revenueManager: '0x2472e38aE1b868D1Dd0EFB59762D4e5f793a551f',
+      nftFactory: '0xb52606980b0a000adfc27F0de0DC49d2CDA1d6a5',
+      socialEngagementManager: '0x...'
     }
   },
   43113: {
@@ -53,10 +57,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.snowscan.xyz',
     nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   43114: {
@@ -65,10 +70,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://snowscan.xyz',
     nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   8453: {
@@ -77,10 +83,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   84532: {
@@ -89,10 +96,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x86371A38052eB615c93fa5fF58Bf9B4F582c8456',
-      raffleDeployer: '0x093fde9C9DbC7AaC5AeD570AFE88CAEee827C719',
-      revenueManager: '0xEc3742ef4cE13e0AF78F36407B675976201D4607',
-      nftFactory: '0xE8408DfA54584e6946b9c3f267447cF8eB7Dc04e'
+      protocolManager: '0xd8B3ff54Acf92A12146A490B09588aD01142d882',
+      poolDeployer: '0xA05cfC6642017d6678b0845Fe87F522980fD66e8',
+      revenueManager: '0x3ff06D40476350Ef92Cf19A4B018D98b1E8C30d4',
+      nftFactory: '0x6e30CfA9f20532d09cfCB3E62D3D791B7f99cE89',
+      socialEngagementManager: '0xC1536c882C4Fec5a37014fE8ce7e4D2E9d7A4b4E'
     }
   },
   11155111: {
@@ -101,10 +109,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   11155420: {
@@ -113,10 +122,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia-optimism.etherscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   2020: {
@@ -125,10 +135,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://app.roninchain.com/',
     nativeCurrency: { name: 'Ronin', symbol: 'RON', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   2021: {
@@ -137,10 +148,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://saigon-app.roninchain.com/explorer',
     nativeCurrency: { name: 'Ronin', symbol: 'RON', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   42161: {
@@ -149,10 +161,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://arbiscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
   421614: {
@@ -161,10 +174,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.arbiscan.io',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      raffleManager: '0x...',
-      raffleDeployer: '0x...',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
       revenueManager: '0x...',
-      nftFactory: '0x...'
+      nftFactory: '0x...',
+      socialEngagementManager: '0x...'
     }
   },
-}; 
+};

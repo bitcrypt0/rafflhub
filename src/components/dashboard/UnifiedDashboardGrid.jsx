@@ -13,6 +13,7 @@ import RoyaltyAdjustmentComponent from '../RoyaltyAdjustmentComponent';
 import CreateNewTokenIDComponent from '../CreateNewTokenIDComponent';
 import MinterApprovalComponent from '../MinterApprovalComponent';
 import CreatorRevenueWithdrawalComponent from '../CreatorRevenueWithdrawalComponent';
+import KOLApprovalComponent from '../KOLApprovalComponent';
 
 const UnifiedDashboardGrid = ({ 
   className = '',
@@ -42,25 +43,29 @@ const UnifiedDashboardGrid = ({
       id: 'minter',
       title: 'Minter Approval & Royalty Enforcement Exemption',
       description: 'Manage minter approvals and royalty enforcement exemptions for collections',
-
       component: MinterApprovalComponent,
       priority: 2
+    },
+    {
+      id: 'kol',
+      title: 'KOL Approval Management',
+      description: 'Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees',
+      component: KOLApprovalComponent,
+      priority: 3
     },
     {
       id: 'tokenCreator',
       title: 'Create New Token ID & Set Token URI',
       description: 'Add new token IDs to existing ERC1155 collections and set metadata URIs',
-
       component: CreateNewTokenIDComponent,
-      priority: 3
+      priority: 4
     },
     {
       id: 'revenue',
       title: 'Creator Mint & Revenue Withdrawal',
       description: 'Mint tokens to winners and withdraw revenue from your raffles',
-
       component: CreatorRevenueWithdrawalComponent,
-      priority: 4
+      priority: 5
     }
   ];
 

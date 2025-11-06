@@ -1,13 +1,13 @@
 /**
- * Test utilities for the raffle event listening functionality
+ * Test utilities for the pool event listening functionality
  * These functions help verify that event listening is working correctly
  */
 
 /**
- * Test the event listener hook with a mock raffle address
+ * Test the event listener hook with a mock pool address
  */
-export const testEventListener = (raffleAddress) => {
-  console.log('🧪 Testing Event Listener for raffle:', raffleAddress);
+export const testEventListener = (poolAddress) => {
+  console.log('🧪 Testing Event Listener for pool:', poolAddress);
   
   // Mock event data for testing
   const mockEvents = [
@@ -38,7 +38,7 @@ export const testEventListener = (raffleAddress) => {
  * Simulate event firing for testing purposes
  */
 export const simulateRaffleEvents = (eventHandlers, delay = 1000) => {
-  console.log('🎭 Simulating raffle events...');
+  console.log('🎭 Simulating pool events...');
   
   const events = [
     {

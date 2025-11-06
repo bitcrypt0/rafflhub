@@ -85,8 +85,8 @@ export const testSuccessDeduplication = () => {
   setTimeout(() => toast.success('Transaction Completed Successfully!'), 200);
   
   setTimeout(() => {
-    toast.success('Raffle created successfully!');
-    toast.success('Raffle created successfully!');
+    toast.success('Pool created successfully!');
+  toast.success('Pool created successfully!');
   }, 1000);
 };
 
@@ -192,8 +192,8 @@ export const simulateCommonErrors = () => {
   // Scenario 4: Loading errors
   setTimeout(() => {
     console.log('Scenario 4: Loading errors');
-    toast.error('Failed to load raffle data');
-    toast.error('Failed to load raffle data'); // Should be blocked
+    toast.error('Failed to load pool data');
+  toast.error('Failed to load pool data'); // Should be blocked
     toast.error('Failed to load activity data'); // Different, should show
   }, 7000);
 };

@@ -13,7 +13,7 @@
       { "internalType": "uint256", "name": "royaltyPercentage", "type": "uint256" },
       { "internalType": "address", "name": "royaltyRecipient", "type": "address" },
       { "internalType": "uint256", "name": "maxSupply", "type": "uint256" },
-      { "internalType": "address", "name": "raffleAddress", "type": "address" }
+      { "internalType": "address", "name": "poolAddress", "type": "address" }
     ],
     "name": "createPrizeCollection",
     "outputs": [
@@ -24,7 +24,7 @@
   },
   { "inputs": [], "name": "erc1155Implementation", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "erc721Implementation", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "raffleManager", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "protocolManager", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" },
   { "inputs": [
       { "internalType": "address", "name": "collection", "type": "address" },
       { "internalType": "bytes32", "name": "signature", "type": "bytes32" }

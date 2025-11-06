@@ -41,7 +41,7 @@ const NewMobileProfilePage = () => {
   // Unified raffle state badge renderer (matches LandingPage/RaffleDetailPage styles)
   const renderStateBadge = (value, opts = {}) => {
     const { stateNum, winnerCount } = opts;
-    const labels = ['Pending','Active','Ended','Drawing','Completed','Deleted','Activation Failed','Prizes Claimed','Unengaged'];
+    const labels = ['Pending','Active','Ended','Drawing','Completed','Deleted','ActivationFailed','AllPrizesClaimed','Unengaged'];
     let label = 'Unknown';
     if (Number.isFinite(stateNum)) {
       label = (stateNum === 7 && typeof winnerCount === 'number')
@@ -56,10 +56,10 @@ const NewMobileProfilePage = () => {
         drawing: 'Drawing',
         completed: 'Completed',
         deleted: 'Deleted',
-        activationfailed: 'Activation Failed',
-        activation_failed: 'Activation Failed',
-        allprizesclaimed: 'Prizes Claimed',
-        all_prizes_claimed: 'Prizes Claimed',
+        activationfailed: 'ActivationFailed',
+        activation_failed: 'ActivationFailed',
+        allprizesclaimed: 'AllPrizesClaimed',
+        all_prizes_claimed: 'AllPrizesClaimed',
         unengaged: 'Unengaged',
         unknown: 'Unknown'
       };
@@ -72,8 +72,8 @@ const NewMobileProfilePage = () => {
       'Drawing': 'bg-purple-100 text-purple-800',
       'Completed': 'bg-blue-100 text-blue-800',
       'Deleted': 'bg-gray-200 text-gray-800',
-      'Activation Failed': 'bg-red-200 text-red-900',
-      'Prizes Claimed': 'bg-blue-200 text-blue-900',
+      'ActivationFailed': 'bg-red-200 text-red-900',
+      'AllPrizesClaimed': 'bg-blue-200 text-blue-900',
       'Prize Claimed': 'bg-blue-200 text-blue-900',
       'Unengaged': 'bg-gray-100 text-gray-800',
       'Unknown': 'bg-gray-100 text-gray-800'
@@ -155,10 +155,18 @@ const NewMobileProfilePage = () => {
           return <ShoppingCart className="h-4 w-4 text-blue-500" />;
         case 'raffle_created':
           return <Plus className="h-4 w-4 text-green-500" />;
+        case 'raffle_deleted':
+          return <Activity className="h-4 w-4 text-red-500" />;
+        case 'prize_won':
+          return <Crown className="h-4 w-4 text-yellow-500" />;
         case 'prize_claimed':
           return <Crown className="h-4 w-4 text-yellow-500" />;
         case 'refund_claimed':
           return <RefreshCw className="h-4 w-4 text-orange-500" />;
+        case 'revenue_withdrawn':
+          return <DollarSign className="h-4 w-4 text-green-500" />;
+        case 'admin_withdrawn':
+          return <DollarSign className="h-4 w-4 text-purple-500" />;
         default:
           return <Activity className="h-4 w-4 text-gray-500" />;
       }
@@ -170,19 +178,23 @@ const NewMobileProfilePage = () => {
 
       switch (activity.type) {
         case 'ticket_purchase':
-          return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
+          return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
         case 'raffle_created':
           return `Created raffle "${raffleName}"`;
+        case 'raffle_deleted':
+          return `Deleted raffle "${raffleName}"`;
         case 'prize_won':
-          return 'Won Prize!';
+          return `Won prize in "${raffleName}"`;
         case 'prize_claimed':
           return `Claimed prize from "${raffleName}"`;
         case 'refund_claimed':
-          return 'Claimed Refund';
+          return `Claimed refund from "${raffleName}"`;
         case 'revenue_withdrawn':
           return `Withdrew revenue from "${raffleName}"`;
+        case 'admin_withdrawn':
+          return `Admin withdrawal: ${activity.amount} ${getCurrencySymbol()}`;
         default:
-          return 'Activity';
+          return activity.description || 'Activity';
       }
     };
 
@@ -193,12 +205,17 @@ const NewMobileProfilePage = () => {
           return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
         case 'prize_won':
           return `${raffleName} • Congratulations!`;
+        case 'prize_claimed':
+          const prizeType = activity.prizeType || 'Prize';
+          const prizeDetails = activity.amount ? ` (${activity.amount} ${activity.prizeType === 'Native Currency' ? getCurrencySymbol() : activity.prizeType === 'ERC20 Token' ? 'tokens' : ''})` :
+                             activity.tokenId ? ` (Token ID: ${activity.tokenId})` : '';
+          return `${prizeType}${prizeDetails}`;
         case 'refund_claimed':
           return activity.amount ? `${raffleName} • ${activity.amount} ${getCurrencySymbol()}` : raffleName;
         case 'revenue_withdrawn':
           return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
         default:
-          return raffleName;
+          return activity.description || '';
       }
     };
 
@@ -291,7 +308,7 @@ const NewMobileProfilePage = () => {
                     onClick={() => handleRaffleClick(activity.raffleAddress)}
                     className="text-sm bg-[#614E41] text-white px-3 py-1.5 rounded-md hover:bg-[#4a3a30] transition-colors"
                   >
-                    View Raffle
+                    View Pool
                   </button>
 
                   {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
@@ -1715,7 +1732,7 @@ const NewMobileProfilePage = () => {
 
       updateRevenueState({ loading: true });
       try {
-        const contract = getContractInstance(raffleAddress, 'raffle');
+        const contract = getContractInstance(raffleAddress, 'pool');
 
         if (!contract) {
           throw new Error('Failed to create raffle contract instance');
@@ -1803,7 +1820,7 @@ const NewMobileProfilePage = () => {
 
       updateRevenueState({ loading: true });
       try {
-        const contract = getContractInstance(state.raffleData.address, 'raffle');
+        const contract = getContractInstance(state.raffleData.address, 'pool');
         if (!contract) throw new Error('Failed to create raffle contract instance');
 
         const result = await executeTransaction(contract.withdrawCreatorRevenue);
@@ -2147,7 +2164,7 @@ const NewMobileProfilePage = () => {
                     <span className="font-medium">State:</span> {renderStateBadge(raffle.state, { stateNum: raffle.stateNum })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Tickets Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
+                    <span className="font-medium">Slots Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Revenue:</span> {formatRevenueAmount(raffle.revenue || '0')}
@@ -2200,9 +2217,9 @@ const NewMobileProfilePage = () => {
         <div className="p-6">
           <div className="text-center py-12">
             <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Tickets Purchased Yet</h3>
+            <h3 className="text-lg font-semibold mb-2">No Slots Purchased Yet</h3>
             <p className="text-muted-foreground text-sm">
-              You haven't purchased any raffle tickets yet. Browse active raffles to get started!
+              You haven't purchased any pool slots yet. Browse active pools to get started!
             </p>
           </div>
         </div>
@@ -2212,8 +2229,8 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Purchased Tickets</h3>
-          <span className="text-sm text-muted-foreground">{purchasedTickets.length} tickets</span>
+          <h3 className="text-lg font-semibold">Purchased Slots</h3>
+          <span className="text-sm text-muted-foreground">{purchasedTickets.length} slots</span>
         </div>
 
         {purchasedTickets.map((ticket, index) => (
@@ -2228,14 +2245,14 @@ const NewMobileProfilePage = () => {
                 </h4>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Tickets:</span> {ticket.quantity || ticket.ticketCount || 1}
+                    <span className="font-medium">Slots:</span> {ticket.quantity || ticket.ticketCount || 1}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Amount Paid:</span> {(() => {
                       const amt = ticket.totalSpent ?? ticket.amount;
                       if (amt === undefined || amt === null || amt === '') {
                         const qty = ticket.quantity || ticket.ticketCount || 0;
-                        const price = ticket.ticketPrice; // ether units string
+                        const price = ticket.slotFee; // ether units string
                         if (price) {
                           const computed = (parseFloat(price) || 0) * qty;
                           return formatRevenueAmount(computed.toString());
@@ -2328,7 +2345,7 @@ const NewMobileProfilePage = () => {
                 : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <span className="text-sm font-medium">Tickets</span>
+            <span className="text-sm font-medium">Slots</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}

@@ -49,18 +49,18 @@ export const ContractProvider = ({ children }) => {
 
     try {
       // Initialize main contracts
-      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager) {
-        newContracts.raffleManager = new ethers.Contract(
-          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager,
-          contractABIs.raffleManager,
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.protocolManager) {
+        newContracts.protocolManager = new ethers.Contract(
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.protocolManager,
+          contractABIs.protocolManager,
           signer
         );
       }
 
-      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleDeployer) {
-        newContracts.raffleDeployer = new ethers.Contract(
-          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleDeployer,
-          contractABIs.raffleDeployer,
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.poolDeployer) {
+        newContracts.poolDeployer = new ethers.Contract(
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.poolDeployer,
+          contractABIs.poolDeployer,
           signer
         );
       }
@@ -211,38 +211,38 @@ export const ContractProvider = ({ children }) => {
 
   // Set up contract event listeners
   useEffect(() => {
-    if (!connected || !signer || !contracts.raffleDeployer) return;
+    if (!connected || !signer || !contracts.poolDeployer) return;
 
-    // --- RaffleCreated ---
-    const handleRaffleCreated = (raffle, creator) => {
-      emitEvent('RaffleCreated', { raffle, creator });
+    // --- PoolCreated ---
+    const handlePoolCreated = (pool, creator) => {
+      emitEvent('PoolCreated', { pool, creator });
     };
-    contracts.raffleDeployer.on('RaffleCreated', handleRaffleCreated);
+    contracts.poolDeployer.on('PoolCreated', handlePoolCreated);
 
     // --- WinnersSelected ---
-    if (contracts.raffle) {
+    if (contracts.pool) {
       const handleWinnersSelected = (winners) => {
         emitEvent('WinnersSelected', { winners });
       };
-      contracts.raffle.on('WinnersSelected', handleWinnersSelected);
+      contracts.pool.on('WinnersSelected', handleWinnersSelected);
 
       // --- PrizeClaimed ---
       const handlePrizeClaimed = (winner, tokenId) => {
         emitEvent('PrizeClaimed', { winner, tokenId });
       };
-      contracts.raffle.on('PrizeClaimed', handlePrizeClaimed);
+      contracts.pool.on('PrizeClaimed', handlePrizeClaimed);
 
       return () => {
-        contracts.raffle.off('WinnersSelected', handleWinnersSelected);
-        contracts.raffle.off('PrizeClaimed', handlePrizeClaimed);
+        contracts.pool.off('WinnersSelected', handleWinnersSelected);
+        contracts.pool.off('PrizeClaimed', handlePrizeClaimed);
       };
     }
 
     // Clean up
     return () => {
-      contracts.raffleDeployer.off('RaffleCreated', handleRaffleCreated);
+      contracts.poolDeployer.off('PoolCreated', handlePoolCreated);
     };
-  }, [connected, signer, contracts.raffleDeployer, contracts.raffle]);
+  }, [connected, signer, contracts.poolDeployer, contracts.pool]);
 
   const value = {
     contracts,

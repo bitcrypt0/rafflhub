@@ -35,8 +35,8 @@ export const useRaffleSummaries = ({
     return null;
   }, [provider, chainId]);
 
-  const getRaffleManagerAddress = useCallback(() => {
-    return chainId && SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager;
+  const getProtocolManagerAddress = useCallback(() => {
+    return chainId && SUPPORTED_NETWORKS[chainId]?.contractAddresses?.protocolManager;
   }, [chainId]);
 
   const loadFromCache = useCallback(() => {
@@ -61,15 +61,15 @@ export const useRaffleSummaries = ({
   }, [cacheKey, useCache]);
 
   const fetchAllAddressesNewestFirst = useCallback(async () => {
-    const addr = getRaffleManagerAddress();
-    if (!addr || !readProvider) throw new Error('RaffleManager not available');
-    const manager = new ethers.Contract(addr, contractABIs.raffleManager, readProvider);
-    const addresses = await manager.getAllRaffles();
+    const addr = getProtocolManagerAddress();
+    if (!addr || !readProvider) throw new Error('ProtocolManager not available');
+    const manager = new ethers.Contract(addr, contractABIs.protocolManager, readProvider);
+    const addresses = await manager.getAllPools();
     // newest first
     const list = (addresses || []).slice().reverse();
     if (mountedRef.current) setTotalAvailable(list.length);
     return list;
-  }, [getRaffleManagerAddress, readProvider]);
+  }, [getProtocolManagerAddress, readProvider]);
 
   const callWithTimeout = (p, ms) => {
     let t;
@@ -80,7 +80,7 @@ export const useRaffleSummaries = ({
   };
 
   const buildSummary = useCallback((raffleAddress,
-    { name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum }
+    { name, startTime, duration, slotFee, ticketLimit, winnersCount, stateNum }
   ) => ({
     id: raffleAddress,
     address: raffleAddress,
@@ -88,7 +88,7 @@ export const useRaffleSummaries = ({
     name,
     startTime: startTime?.toNumber ? startTime.toNumber() : Number(startTime || 0),
     duration: duration?.toNumber ? duration.toNumber() : Number(duration || 0),
-    ticketPrice,
+    slotFee,
     ticketLimit: ticketLimit?.toNumber ? ticketLimit.toNumber() : Number(ticketLimit || 0),
     winnersCount: winnersCount?.toNumber ? winnersCount.toNumber() : Number(winnersCount || 0),
     stateNum: (() => {
@@ -144,14 +144,14 @@ export const useRaffleSummaries = ({
   }, [readProvider]);
 
   const tryMulticallSummaries = useCallback(async (addresses) => {
-    const iface = new ethers.utils.Interface(contractABIs.raffle);
+    const iface = new ethers.utils.Interface(contractABIs.pool);
     const calls = [];
     for (const addr of addresses) {
       calls.push(
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('name', []) },
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('startTime', []) },
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('duration', []) },
-        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('ticketPrice', []) },
+        { target: addr, allowFailure: true, callData: iface.encodeFunctionData('slotFee', []) },
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('ticketLimit', []) },
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('winnersCount', []) },
         { target: addr, allowFailure: true, callData: iface.encodeFunctionData('state', []) },
@@ -171,7 +171,7 @@ export const useRaffleSummaries = ({
       const nameVal = dec(0, 'name') || 'Raffle';
       const startTimeVal = dec(1, 'startTime') || ethers.BigNumber.from(0);
       const durationVal = dec(2, 'duration') || ethers.BigNumber.from(0);
-      const ticketPriceVal = dec(3, 'ticketPrice') || ethers.BigNumber.from(0);
+      const slotFeeVal = dec(3, 'slotFee') || ethers.BigNumber.from(0);
       const ticketLimitVal = dec(4, 'ticketLimit') || ethers.BigNumber.from(0);
       const winnersCountVal = dec(5, 'winnersCount') || ethers.BigNumber.from(0);
       let stateNumVal = dec(6, 'state');
@@ -183,7 +183,7 @@ export const useRaffleSummaries = ({
         name: nameVal,
         startTime: startTimeVal,
         duration: durationVal,
-        ticketPrice: ticketPriceVal,
+        slotFee: slotFeeVal,
         ticketLimit: ticketLimitVal,
         winnersCount: winnersCountVal,
         stateNum: stateNumVal,
@@ -194,19 +194,19 @@ export const useRaffleSummaries = ({
   }, [readProvider, buildSummary]);
 
   const fetchRaffleSummary = useCallback(async (raffleAddress, timeoutMs = 8000) => {
-    const c = new ethers.Contract(raffleAddress, contractABIs.raffle, readProvider);
+    const c = new ethers.Contract(raffleAddress, contractABIs.pool, readProvider);
     // Minimal getters only
-    const [name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum] = await Promise.all([
+    const [name, startTime, duration, slotFee, ticketLimit, winnersCount, stateNum] = await Promise.all([
       callWithTimeout(c.name(), timeoutMs).catch(() => 'Raffle'),
       callWithTimeout(c.startTime(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.duration(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
-      callWithTimeout(c.ticketPrice(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
+      callWithTimeout(c.slotFee(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.ticketLimit(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.winnersCount(), timeoutMs).catch(() => ethers.BigNumber.from(0)),
       callWithTimeout(c.state(), timeoutMs).catch(() => ethers.BigNumber.from(5)), // default when unavailable
     ]);
 
-    return buildSummary(raffleAddress, { name, startTime, duration, ticketPrice, ticketLimit, winnersCount, stateNum });
+    return buildSummary(raffleAddress, { name, startTime, duration, slotFee, ticketLimit, winnersCount, stateNum });
   }, [readProvider, buildSummary]);
 
   const fetchSummaries = useCallback(async () => {

@@ -25,10 +25,10 @@ const NetworkSelector = () => {
     return Object.entries(SUPPORTED_NETWORKS).filter(([id, network]) => {
       const contractAddresses = network.contractAddresses;
       // Check if essential contracts are configured (not placeholder '0x...')
-      return contractAddresses?.raffleManager &&
-             contractAddresses.raffleManager !== '0x...' &&
-             contractAddresses?.raffleDeployer &&
-             contractAddresses.raffleDeployer !== '0x...';
+      return contractAddresses?.protocolManager &&
+             contractAddresses.protocolManager !== '0x...' &&
+             contractAddresses?.poolDeployer &&
+             contractAddresses.poolDeployer !== '0x...';
     });
   };
 

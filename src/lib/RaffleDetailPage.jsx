@@ -19,8 +19,6 @@ import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleStateManager, useRaffleEventListener } from '../hooks/useRaffleService';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip';
-import SocialMediaVerification from '../components/SocialMediaVerification';
-import signatureService from '../services/signatureService';
 import {
   batchContractCalls,
   safeContractCall,
@@ -53,18 +51,7 @@ function extractRevertReason(error) {
   return msg;
 }
 
-// Helper function to safely convert slotFee to BigNumber
-function safeSlotFeeToBigNumber(slotFee) {
-  if (ethers.BigNumber.isBigNumber(slotFee)) {
-    return slotFee;
-  } else if (slotFee !== null && slotFee !== undefined) {
-    return ethers.BigNumber.from(slotFee);
-  } else {
-    return ethers.BigNumber.from(0);
-  }
-}
-
-const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
+const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const { formatSlotFee, getCurrencySymbol } = useNativeCurrency();
@@ -428,7 +415,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total Cost:</span>
                       <span className={`font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
-                        {formatSlotFee(safeSlotFeeToBigNumber(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
+                        {formatSlotFee(ethers.BigNumber.from(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
                       </span>
                     </div>
                   </div>
@@ -436,19 +423,12 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               ) : null}
               <button
                 onClick={handlePurchase}
-                disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement)}
+                disabled={loading || !connected || !canPurchaseTickets()}
                 className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 <Ticket className="h-4 w-4" />
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}
               </button>
-              {socialEngagementRequired && !hasCompletedSocialEngagement && (
-                <div className="text-center py-2">
-                  <p className="text-muted-foreground text-sm">
-                    Complete social media verification to enable slot purchase.
-                  </p>
-                </div>
-              )}
             </>
             )}
             {!connected && (
@@ -1989,7 +1969,6 @@ const RaffleDetailPage = () => {
   const [is1155Approved, setIs1155Approved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(false);
   const [approving, setApproving] = useState(false);
-  const [hasCompletedSocialEngagement, setHasCompletedSocialEngagement] = useState(false);
 
   // Auto-refresh state for Drawing state monitoring
   const [lastDrawingStateTime, setLastDrawingStateTime] = useState(null);
@@ -2000,7 +1979,7 @@ const RaffleDetailPage = () => {
   const [approvingERC20, setApprovingERC20] = useState(false);
   const [isERC721Approved, setIsERC721Approved] = useState(false);
   const [checkingERC721Approval, setCheckingERC721Approval] = useState(false);
-  const [approvingERC721] = useState(false);
+  const [approvingERC721, setApprovingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
   const [isExternallyPrized, setIsExternallyPrized] = useState(false);
   // If URL includes a chain slug, gently ensure wallet is on the right network
@@ -2254,18 +2233,11 @@ const RaffleDetailPage = () => {
 
 
 
-        // Create contract instances with improved error handling
+        // Create contract instance with improved error handling
         const poolContract = getContractInstance(stableRaffleAddress, 'pool');
         if (!poolContract) {
           throw new Error('Failed to create contract instance - no signer/provider available');
         }
-
-        // Create SocialEngagementManager contract instance for social task queries
-        const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
-        const socialEngagementManagerContract = getContractInstance(
-          SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.socialEngagementManager,
-          'socialEngagementManager'
-        );
 
         // Test contract connectivity with safe call
         const connectivityTest = await safeContractCall(
@@ -2314,25 +2286,12 @@ const RaffleDetailPage = () => {
               } catch (_) {}
               return ethers.BigNumber.from(0);
             }, name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
-          { method: createSafeMethod(poolContract, 'getUniqueParticipantsCount', ethers.BigNumber.from(0)), name: 'uniqueParticipants', required: false, fallback: ethers.BigNumber.from(0) },
-          // Social engagement queries
-          { method: createSafeMethod(poolContract, 'socialEngagementRequired', false), name: 'socialEngagementRequired', required: false, fallback: false },
-          { method: async () => {
-              try {
-                if (socialEngagementManagerContract) {
-                  const result = await socialEngagementManagerContract.tasks(stableRaffleAddress);
-                  return result || '';
-                }
-              } catch (error) {
-                console.error('Error fetching socialTaskDescription:', error);
-              }
-              return '';
-            }, name: 'socialTaskDescription', required: false, fallback: '' }
+          { method: createSafeMethod(poolContract, 'getUniqueParticipantsCount', ethers.BigNumber.from(0)), name: 'uniqueParticipants', required: false, fallback: ethers.BigNumber.from(0) }
         ];
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2413,10 +2372,7 @@ const RaffleDetailPage = () => {
           usesCustomFee,
           standard,
           prizeTokenId,
-          amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
-          // Social engagement fields
-          socialEngagementRequired: !!socialEngagementRequired,
-          socialTaskDescription: socialTaskDescription || ''
+          amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1
         };
 
 	        // Determine if this raffle is still a VRF consumer via ProtocolManager (more reliable than checking subscription id)
@@ -2522,37 +2478,6 @@ const RaffleDetailPage = () => {
 
       }
   }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress, isInitialized, isReconnecting, refreshTrigger]);
-
-  // Function to check user's social engagement completion status
-  const checkSocialEngagementStatus = useCallback(async () => {
-    if (!connected || !address || !raffle?.address || !getContractInstance) {
-      setHasCompletedSocialEngagement(false);
-      return;
-    }
-
-    try {
-      // Get the pool contract instance
-      const poolContract = getContractInstance(raffle.address, 'pool');
-      if (!poolContract) {
-        setHasCompletedSocialEngagement(false);
-        return;
-      }
-
-      // Query the Pool contract to check if user has completed social engagement
-      const isCompleted = await poolContract.hasCompletedSocialEngagement(address);
-      setHasCompletedSocialEngagement(!!isCompleted);
-    } catch (error) {
-      console.error('Error checking social engagement status:', error);
-      setHasCompletedSocialEngagement(false);
-    }
-  }, [connected, address, raffle?.address, getContractInstance]);
-
-  // Effect to check social engagement status when dependencies change
-  useEffect(() => {
-    if (raffle?.socialEngagementRequired && connected && address) {
-      checkSocialEngagementStatus();
-    }
-  }, [raffle?.socialEngagementRequired, connected, address, checkSocialEngagementStatus]);
 
   // Effect to trigger fetchRaffleData when dependencies change
   useEffect(() => {
@@ -2834,63 +2759,20 @@ const RaffleDetailPage = () => {
       throw new Error('Failed to get pool contract');
     }
 
-    // Ensure slotFee is properly handled as BigNumber
-    const slotFeeBN = safeSlotFeeToBigNumber(raffle.slotFee);
-    const totalCost = slotFeeBN.mul(quantity);
+    const totalCost = ethers.BigNumber.from(raffle.slotFee).mul(quantity);
 
-    // Check if signature is required for social media verification
-    let signature = null;
-    let nonce = 0;
-    let deadline = 0;
-    
-    // Determine signature based on social engagement requirements
-    let signatureToUse = '0x'; // Default empty signature
-    
-    if (raffle.socialEngagementRequired) {
-      // Always attempt to generate signature when social engagement is required
-      // This covers both:
-      // 1. Users who have completed social media verification (hasCompletedSocialEngagement = true from frontend)
-      // 2. Users who have previously purchased slots (hasCompletedSocialEngagement = true from contract)
-      try {
-        console.log('Generating signature for social engagement required pool...');
-        const signatureResult = await signatureService.generatePurchaseSignature(
-          address, 
-          raffle.address, 
-          quantity
-        );
-        
-        if (signatureResult.success) {
-          signature = signatureResult.signature;
-          nonce = signatureResult.nonce;
-          deadline = signatureResult.deadline;
-          signatureToUse = signature;
-          console.log('Signature generated successfully with nonce:', nonce, 'deadline:', deadline);
-        } else {
-          throw new Error(signatureResult.error || 'Failed to generate signature');
-        }
-      } catch (signatureError) {
-        console.error('Signature generation failed:', signatureError);
-        // If signature generation fails, it means the user hasn't completed social engagement
-        // and hasn't purchased before - show appropriate error
-        if (!hasCompletedSocialEngagement) {
-          throw new Error('Please complete all social media tasks before purchasing slots');
-        } else {
-          throw new Error('Failed to generate signature. Please try again.');
-        }
-      }
-    }
-    // For pools without social engagement requirements, signatureToUse remains '0x'
+    const result = await executeTransaction(
+      poolContract.purchaseSlots,
+      quantity,
+      { value: totalCost }
+    );
 
-    // Call purchaseSlots with nonce, deadline, and signature
-    try {
-      const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, { value: totalCost });
-      const receipt = await tx.wait();
-      
+    if (result.success) {
       toast.success(`Successfully purchased ${quantity} slot${quantity > 1 ? 's' : ''}!`);
       // Trigger state refresh instead of page reload
       triggerRefresh();
-    } catch (error) {
-      throw new Error(extractRevertReason(error));
+    } else {
+      throw new Error(result.error);
     }
   };
 
@@ -3541,23 +3423,6 @@ const RaffleDetailPage = () => {
         </div>
       </div>
 
-      {/* Social Media Verification Section */}
-      {raffle?.socialEngagementRequired && (
-        <div className="mb-8">
-          <SocialMediaVerification
-            raffle={raffle}
-            userAddress={address}
-            socialEngagementRequired={raffle.socialEngagementRequired}
-            hasCompletedSocialEngagement={hasCompletedSocialEngagement}
-            onVerificationComplete={() => {
-              // Since verification is now handled during purchase, 
-              // we just need to refresh the UI state
-              triggerRefresh();
-            }}
-          />
-        </div>
-      )}
-
       {/* Perfect 2x2 Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Top Row: TicketPurchaseSection and WinnersSection */}
@@ -3587,8 +3452,6 @@ const RaffleDetailPage = () => {
             isPrized={raffle.isPrized}
             isMobile={isMobile}
             onStateChange={triggerRefresh}
-            socialEngagementRequired={raffle?.socialEngagementRequired}
-            hasCompletedSocialEngagement={hasCompletedSocialEngagement}
           />
 
           <WinnersSection

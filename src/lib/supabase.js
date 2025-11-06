@@ -18,7 +18,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
       // Disable analytics that might trigger Sentry
       global: {
         headers: {
-          'X-Client-Info': 'raffle-protocol-frontend'
+          'X-Client-Info': 'raffle-protocol-frontend',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       }
     });

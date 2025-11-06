@@ -7,6 +7,22 @@ import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import { handleError } from '../utils/errorHandling';
 import { APP_CONFIG } from '../constants';
 
+// Pool state mapping function
+function mapPoolState(stateNum) {
+  switch (stateNum) {
+    case 0: return 'pending';
+    case 1: return 'active';
+    case 2: return 'ended';
+    case 3: return 'drawing';
+    case 4: return 'completed';
+    case 5: return 'deleted';
+    case 6: return 'activationFailed';
+    case 7: return 'allPrizesClaimed';
+    case 8: return 'unengaged';
+    default: return 'unknown';
+  }
+}
+
 /**
  * Shared data hook for ProfilePage (both desktop and mobile)
  * Extracts all data fetching logic to be reused across implementations
@@ -25,6 +41,7 @@ export const useProfileData = () => {
   const [userActivity, setUserActivity] = useState([]);
   const [createdRaffles, setCreatedRaffles] = useState([]);
   const [purchasedTickets, setPurchasedTickets] = useState([]);
+  const [purchasedSlots, setPurchasedSlots] = useState([]);
   const [activityStats, setActivityStats] = useState({
     totalTicketsPurchased: 0,
     totalRafflesCreated: 0,
@@ -121,13 +138,13 @@ export const useProfileData = () => {
   const FIFTEEN_MIN_MS = 15 * 60 * 1000;
   const CACHE_VERSION = 'v2';
 
-  const getAllRafflesCached = useCallback(async () => {
-    if (!stableContracts.raffleManager) return [];
+  const getAllPoolsCached = useCallback(async () => {
+    if (!stableContracts.protocolManager) return [];
     const cacheKey = `raffles:all:${CACHE_VERSION}:${chainId}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
     try {
-      const res = await executeCall(stableContracts.raffleManager.getAllRaffles, 'getAllRaffles');
+      const res = await executeCall(stableContracts.protocolManager.getAllPools, 'getAllPools');
       const list = res.success && Array.isArray(res.result) ? res.result : [];
       if (Array.isArray(list) && list.length > 0) {
         setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
@@ -136,44 +153,44 @@ export const useProfileData = () => {
     } catch {
       return [];
     }
-  }, [stableContracts.raffleManager, chainId, executeCall, getCachedJson, setCachedJson]);
+  }, [stableContracts.protocolManager, chainId, executeCall, getCachedJson, setCachedJson]);
 
   // Safe retry helper: refetch all raffles shortly after contracts become ready
-  const getAllRafflesWithRetry = useCallback(async () => {
-    const first = await getAllRafflesCached();
+  const getAllPoolsWithRetry = useCallback(async () => {
+    const first = await getAllPoolsCached();
     if (first && first.length > 0) return first;
     // Only retry if contracts are present (to avoid unnecessary timers)
-    if (!stableContracts.raffleManager) return first;
+    if (!stableContracts.protocolManager) return first;
     await new Promise((r) => setTimeout(r, 1200));
-    const second = await getAllRafflesCached();
-    return second;
-  }, [getAllRafflesCached, stableContracts.raffleManager]);
+    const second = await getAllPoolsCached();
+      return second;
+    }, [getAllPoolsCached, stableContracts.protocolManager]);
 
 
   const getRafflesByCreatorCached = useCallback(async (creator) => {
-    if (!stableContracts.raffleManager || !creator) return [];
+    if (!stableContracts.protocolManager || !creator) return [];
     const cacheKey = `raffles:byCreator:${CACHE_VERSION}:${chainId}:${creator.toLowerCase()}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
     try {
-      const res = await executeCall(stableContracts.raffleManager.getRafflesByCreator, 'getRafflesByCreator', creator);
+      const res = await executeCall(stableContracts.protocolManager.getPoolsByCreator, 'getPoolsByCreator', creator);
       const list = res.success && Array.isArray(res.result) ? res.result : [];
       setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
       return list;
     } catch {
       return [];
     }
-  }, [stableContracts.raffleManager, chainId, executeCall, getCachedJson, setCachedJson]);
+  }, [stableContracts.protocolManager, chainId, executeCall, getCachedJson, setCachedJson]);
   // Retry helper for creator raffles: retry once after a short delay, bypassing cache on retry
   const getRafflesByCreatorWithRetry = useCallback(async (creator) => {
     const first = await getRafflesByCreatorCached(creator);
     if (first && first.length > 0) return first;
-    if (!stableContracts.raffleManager) return first;
+    if (!stableContracts.protocolManager) return first;
     // Wait briefly to allow contracts/data to become ready
     await new Promise((r) => setTimeout(r, 1200));
     try {
       // Bypass cache on retry to avoid persisting/transient empty results
-      const res = await executeCall(stableContracts.raffleManager.getRafflesByCreator, 'getRafflesByCreator', creator);
+      const res = await executeCall(stableContracts.protocolManager.getPoolsByCreator, 'getPoolsByCreator', creator);
       const list = res.success && Array.isArray(res.result) ? res.result : [];
       // Optionally refresh cache only if non-empty (avoid caching empty)
       if (Array.isArray(list) && list.length > 0) {
@@ -184,10 +201,10 @@ export const useProfileData = () => {
     } catch {
       return first || [];
     }
-  }, [getRafflesByCreatorCached, stableContracts.raffleManager, executeCall, setCachedJson, chainId]);
+  }, [getRafflesByCreatorCached, stableContracts.protocolManager, executeCall, setCachedJson, chainId]);
 
 
-  // Fetch created raffles using RaffleManager.getRafflesByCreator()
+  // Fetch created raffles using ProtocolManager.getRafflesByCreator()
   const fetchCreatedRaffles = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider) {
       console.log('Missing requirements for fetchCreatedRaffles:', { stableConnected, stableAddress: !!stableAddress, provider: !!provider });
@@ -203,43 +220,43 @@ export const useProfileData = () => {
 
       for (const raffleAddress of creatorRaffles) {
         try {
-          const raffleContract = getContractInstance(raffleAddress, 'raffle');
+          const raffleContract = getContractInstance(raffleAddress, 'pool');
           if (!raffleContract) continue;
 
-          const [nameResult, ticketPriceResult, ticketLimitResult, startTimeResult, durationResult, stateResult, winnersCountResult, usesCustomPriceResult, totalCreatorRevenueResult, creationTsRes] = await Promise.all([
+          const [nameResult, slotFeeResult, slotLimitResult, startTimeResult, durationResult, stateResult, winnersCountResult, usesCustomFeeResult, totalCreatorRevenueResult, creationTsRes] = await Promise.all([
             executeCall(raffleContract.name, 'name'),
-            executeCall(raffleContract.ticketPrice, 'ticketPrice'),
-            executeCall(raffleContract.ticketLimit, 'ticketLimit'),
+            executeCall(raffleContract.slotFee, 'slotFee'),
+            executeCall(raffleContract.slotLimit, 'slotLimit'),
             executeCall(raffleContract.startTime, 'startTime'),
             executeCall(raffleContract.duration, 'duration'),
             executeCall(raffleContract.state, 'state'),
             executeCall(raffleContract.winnersCount, 'winnersCount'),
-            executeCall(raffleContract.usesCustomPrice, 'usesCustomPrice'),
+            executeCall(raffleContract.usesCustomFee, 'usesCustomFee'),
             executeCall(raffleContract.totalCreatorRevenue, 'totalCreatorRevenue'),
-            stableContracts.raffleManager ? executeCall(stableContracts.raffleManager.raffleCreationTimestamps, 'raffleCreationTimestamps', raffleAddress) : Promise.resolve({ success: false })
+            stableContracts.protocolManager ? executeCall(stableContracts.protocolManager.poolCreationTimestamps, 'poolCreationTimestamps', raffleAddress) : Promise.resolve({ success: false })
           ]);
 
           const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
-          const ticketPrice = ticketPriceResult.success ? ticketPriceResult.result : ethers.BigNumber.from(0);
-          const ticketLimit = ticketLimitResult.success ? ticketLimitResult.result : ethers.BigNumber.from(0);
+          const slotFee = slotFeeResult.success ? slotFeeResult.result : ethers.BigNumber.from(0);
+          const slotLimit = slotLimitResult.success ? slotLimitResult.result : ethers.BigNumber.from(0);
           const startTime = startTimeResult.success ? startTimeResult.result : ethers.BigNumber.from(0);
           const duration = durationResult.success ? durationResult.result : ethers.BigNumber.from(0);
           const state = stateResult.success ? stateResult.result : 0;
           const winnersCountBn = winnersCountResult.success ? winnersCountResult.result : ethers.BigNumber.from(0);
-          const usesCustomPrice = usesCustomPriceResult.success ? !!usesCustomPriceResult.result : false;
+          const usesCustomFee = usesCustomFeeResult.success ? !!usesCustomFeeResult.result : false;
           const totalCreatorRevenueWei = totalCreatorRevenueResult.success ? totalCreatorRevenueResult.result : ethers.BigNumber.from(0);
 
           const ticketsSoldCount = await getTicketsSoldCount(raffleContract);
           const ticketsSold = ethers.BigNumber.from(ticketsSoldCount);
 
-          // Calculate end time and revenue (use totalCreatorRevenue when usesCustomPrice is true)
+          // Calculate end time and revenue (use totalCreatorRevenue when usesCustomFee is true)
           const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
           let revenueWei = ethers.BigNumber.from(0);
 
           // Accumulate withdrawable revenue as the sum of totalCreatorRevenue across raffles
           withdrawableRevenueTotal = withdrawableRevenueTotal.add ? withdrawableRevenueTotal.add(totalCreatorRevenueWei) : ethers.BigNumber.from(withdrawableRevenueTotal).add(totalCreatorRevenueWei);
 
-          if (usesCustomPrice) {
+          if (usesCustomFee) {
             revenueWei = totalCreatorRevenueWei;
           } else {
             revenueWei = ethers.BigNumber.from(0);
@@ -251,15 +268,15 @@ export const useProfileData = () => {
             address: raffleAddress,
             chainId,
             name,
-            ticketPrice: ethers.utils.formatEther(ticketPrice),
-            maxTickets: ticketLimit.toString(),
+            slotFee: ethers.utils.formatEther(slotFee),
+            maxTickets: slotLimit.toString(),
             ticketsSold: ticketsSold.toString(),
             endTime: endTime,
             createdAt: creationTsSec * 1000,
             state: mapRaffleState(state),
             stateNum: state,
             revenue: ethers.utils.formatEther(revenueWei),
-            usesCustomPrice,
+            usesCustomFee,
             // Remove duration information from My Raffles cards by not including duration-specific fields beyond endTime
           });
 
@@ -323,7 +340,7 @@ export const useProfileData = () => {
         fallbackMessage: 'Failed to load created raffles'
       });
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleDeployer, executeCall, getContractInstance, mapRaffleState]);
+  }, [stableConnected, stableAddress, provider, stableContracts.poolDeployer, executeCall, getContractInstance, mapRaffleState]);
 
   // Fetch purchased tickets using direct getters
   const fetchPurchasedTickets = useCallback(async () => {
@@ -334,45 +351,46 @@ export const useProfileData = () => {
 
     try {
       const tickets = [];
+      const slots = [];
       const activitiesFromGetters = [];
 
-      if (stableContracts.raffleManager) {
-        const allRaffles = await getAllRafflesWithRetry();
-        console.log('Profile: Checking', allRaffles.length, 'raffles for purchased tickets via getTicketsPurchased');
+      if (stableContracts.protocolManager) {
+        const allPools = await getAllPoolsWithRetry();
+        console.log('Profile: Checking', allPools.length, 'pools for purchased slots via getSlotsPurchased');
 
-        for (const raffleAddress of allRaffles) {
+        for (const poolAddress of allPools) {
           try {
-            const raffleContract = getContractInstance(raffleAddress, 'raffle');
-            if (!raffleContract) continue;
+            const poolContract = getContractInstance(poolAddress, 'pool');
+            if (!poolContract) continue;
 
-            const [userTicketsRes, nameRes, priceRes, stateRes, startRes, durationRes, lastPurchaseBlockRes] = await Promise.all([
-              executeCall(raffleContract.getTicketsPurchased, 'getTicketsPurchased', stableAddress),
-              executeCall(raffleContract.name, 'name'),
-              executeCall(raffleContract.ticketPrice, 'ticketPrice'),
-              executeCall(raffleContract.state, 'state'),
-              executeCall(raffleContract.startTime, 'startTime'),
-              executeCall(raffleContract.duration, 'duration'),
-              executeCall(raffleContract.lastPurchaseBlock, 'lastPurchaseBlock', stableAddress)
+            const [userSlotsRes, nameRes, priceRes, stateRes, startRes, durationRes, lastPurchaseBlockRes] = await Promise.all([
+              executeCall(poolContract.getSlotsPurchased, 'getSlotsPurchased', stableAddress),
+              executeCall(poolContract.name, 'name'),
+              executeCall(poolContract.slotFee, 'slotFee'),
+              executeCall(poolContract.state, 'state'),
+              executeCall(poolContract.startTime, 'startTime'),
+              executeCall(poolContract.duration, 'duration'),
+              executeCall(poolContract.lastPurchaseBlock, 'lastPurchaseBlock', stableAddress)
             ]);
 
-            const userTicketsBn = userTicketsRes.success ? userTicketsRes.result : ethers.BigNumber.from(0);
-            const userTickets = userTicketsBn.toNumber ? userTicketsBn.toNumber() : Number(userTicketsBn);
-            if (userTickets <= 0) continue;
+            const userSlotsBn = userSlotsRes.success ? userSlotsRes.result : ethers.BigNumber.from(0);
+            const userSlots = userSlotsBn.toNumber ? userSlotsBn.toNumber() : Number(userSlotsBn);
+            if (userSlots <= 0) continue;
 
-            const raffleName = nameRes.success ? nameRes.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
-            const ticketPriceBn = priceRes.success ? priceRes.result : ethers.BigNumber.from(0);
-            const totalSpentBn = ticketPriceBn.mul ? ticketPriceBn.mul(userTicketsBn) : ethers.BigNumber.from(0);
+            const poolName = nameRes.success ? nameRes.result : `Pool ${poolAddress.slice(0, 8)}...`;
+            const slotFeeBn = priceRes.success ? priceRes.result : ethers.BigNumber.from(0);
+            const totalSpentBn = slotFeeBn.mul ? slotFeeBn.mul(userSlotsBn) : ethers.BigNumber.from(0);
             const state = stateRes.success ? stateRes.result : 0;
             const startTime = startRes.success ? startRes.result : ethers.BigNumber.from(0);
             const duration = durationRes.success ? durationRes.result : ethers.BigNumber.from(0);
             const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
 
-            // Determine a purchase timestamp. Prefer purchaseTimestamps for each ticket if available; otherwise fall back to lastPurchaseBlock or startTime.
+            // Determine a purchase timestamp. Prefer purchaseTimestamps for each slot if available; otherwise fall back to lastPurchaseBlock or startTime.
             let purchaseTimestampSec = startTime.toNumber ? startTime.toNumber() : Math.floor(Date.now()/1000);
             try {
               // Try to fetch the most recent purchase timestamp for this user
-              const idx = userTickets > 0 ? userTickets - 1 : 0;
-              const tsRes = await executeCall(raffleContract.purchaseTimestamps, 'purchaseTimestamps', stableAddress, idx);
+              const idx = userSlots > 0 ? userSlots - 1 : 0;
+              const tsRes = await executeCall(poolContract.purchaseTimestamps, 'purchaseTimestamps', stableAddress, idx);
               if (tsRes.success && tsRes.result) {
                 purchaseTimestampSec = tsRes.result.toNumber ? tsRes.result.toNumber() : Number(tsRes.result);
               } else if (lastPurchaseBlockRes.success && lastPurchaseBlockRes.result && provider?.getBlock) {
@@ -384,44 +402,48 @@ export const useProfileData = () => {
               }
             } catch (_) {}
 
-            const ticketData = {
-              id: raffleAddress,
-              address: raffleAddress,
-              raffleName,
-              name: raffleName,
-              ticketCount: userTickets,
-              ticketPrice: ethers.utils.formatEther(ticketPriceBn),
+            const slotData = {
+              id: poolAddress,
+              address: poolAddress,
+              poolName,
+              name: poolName,
+              slotCount: userSlots,
+              slotFee: ethers.utils.formatEther(slotFeeBn),
               totalSpent: ethers.utils.formatEther(totalSpentBn),
-              state: mapRaffleState(state),
+              state: mapPoolState(state),
               endTime,
               purchaseTime: purchaseTimestampSec,
               canClaimPrize: false,
               canClaimRefund: false,
-              tickets: Array.from({ length: userTickets }, (_, i) => i.toString())
+              slots: Array.from({ length: userSlots }, (_, i) => i.toString())
             };
 
-            tickets.push(ticketData);
+            slots.push(slotData);
 
             // Build Activity item from getters (no events dependency)
             activitiesFromGetters.push({
-              id: `getter-ticket-${raffleAddress}-${purchaseTimestampSec}`,
+              id: `getter-slot-${poolAddress}-${purchaseTimestampSec}`,
               type: 'ticket_purchase',
-              raffleAddress,
-              raffleName,
-              quantity: userTickets,
+              poolAddress,
+              poolName,
+              raffleName: poolName,
+              quantity: userSlots,
+              ticketCount: userSlots,
               amount: ethers.utils.formatEther(totalSpentBn),
               timestamp: purchaseTimestampSec * 1000,
+              raffleAddress: poolAddress
             });
           } catch (error) {
-            console.error(`Error processing getTicketsPurchased for raffle ${raffleAddress}:`, error);
+            console.error(`Error processing getSlotsPurchased for pool ${poolAddress}:`, error);
           }
         }
       } else {
-        console.log('raffleManager contract not available');
+        console.log('protocolManager contract not available');
       }
 
-      console.log('Setting purchased tickets:', tickets.length, 'raffles with tickets using getters');
-      setPurchasedTickets(tickets);
+      console.log('Setting purchased slots:', slots.length, 'pools with slots using getters');
+      setPurchasedSlots(slots);
+      setPurchasedTickets(slots); // Also set purchasedTickets for compatibility
 
       // Also push into userActivity so Activity tab reflects purchases immediately
       if (activitiesFromGetters.length > 0) {
@@ -433,61 +455,61 @@ export const useProfileData = () => {
           merged.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
           return merged;
         });
-        // Do not alter totalTicketsPurchased here to avoid flicker with fetchDirectTotals
+        // Do not alter totalSlotsPurchased here to avoid flicker with fetchDirectTotals
       }
     } catch (error) {
       handleError(error, {
-        context: { operation: 'fetchPurchasedTickets', isReadOnly: true },
-        fallbackMessage: 'Failed to load purchased tickets'
+        context: { operation: 'fetchPurchasedSlots', isReadOnly: true },
+        fallbackMessage: 'Failed to load purchased slots'
       });
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleManager, executeCall, getContractInstance, mapRaffleState, getAllRafflesCached]);
-  // Compute totals directly across raffles: tickets, wins, claimable refunds
+  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, executeCall, getContractInstance, mapPoolState, getAllPoolsCached]);
+  // Compute totals directly across pools: slots, wins, claimable refunds
   const fetchDirectTotals = useCallback(async () => {
-    if (!stableConnected || !stableAddress || !provider || !stableContracts.raffleManager) return;
+    if (!stableConnected || !stableAddress || !provider || !stableContracts.protocolManager) return;
     try {
-      const allRaffles = await getAllRafflesWithRetry();
-      let totalTickets = 0;
+      const allPools = await getAllPoolsWithRetry();
+      let totalSlots = 0;
       let totalWins = 0;
       let totalRefunds = ethers.BigNumber.from(0);
 
-      for (const raffleAddress of allRaffles) {
+      for (const poolAddress of allPools) {
         try {
-          const raffleContract = getContractInstance(raffleAddress, 'raffle');
-          if (!raffleContract) continue;
+          const poolContract = getContractInstance(poolAddress, 'pool');
+          if (!poolContract) continue;
 
-          const [ticketsRes, winsRes, refundsRes] = await Promise.all([
-            executeCall(raffleContract.getTicketsPurchased, 'getTicketsPurchased', stableAddress),
-            executeCall(raffleContract.winsPerAddress, 'winsPerAddress', stableAddress),
-            executeCall(raffleContract.getRefundableAmount, 'getRefundableAmount', stableAddress)
+          const [slotsRes, winsRes, refundsRes] = await Promise.all([
+            executeCall(poolContract.getSlotsPurchased, 'getSlotsPurchased', stableAddress),
+            executeCall(poolContract.winsPerAddress, 'winsPerAddress', stableAddress),
+            executeCall(poolContract.getRefundableAmount, 'getRefundableAmount', stableAddress)
           ]);
 
-          const tBn = ticketsRes.success ? ticketsRes.result : ethers.BigNumber.from(0);
+          const tBn = slotsRes.success ? slotsRes.result : ethers.BigNumber.from(0);
           const wBn = winsRes.success ? winsRes.result : ethers.BigNumber.from(0);
           const rBn = refundsRes.success ? refundsRes.result : ethers.BigNumber.from(0);
 
-          totalTickets += tBn.toNumber ? tBn.toNumber() : Number(tBn);
+          totalSlots += tBn.toNumber ? tBn.toNumber() : Number(tBn);
           totalWins += wBn.toNumber ? wBn.toNumber() : Number(wBn);
           totalRefunds = totalRefunds.add ? totalRefunds.add(rBn) : ethers.BigNumber.from(totalRefunds).add(rBn);
         } catch (err) {
-          console.warn('Skipping raffle for totals due to error:', raffleAddress, err?.message || err);
+          console.warn('Skipping pool for totals due to error:', poolAddress, err?.message || err);
         }
       }
 
       setActivityStats(prev => ({
         ...prev,
-        totalTicketsPurchased: totalTickets,
+        totalSlotsPurchased: totalSlots,
         totalPrizesWon: totalWins,
         totalClaimableRefunds: totalRefunds
       }));
     } catch (error) {
       handleError(error, { context: { operation: 'fetchDirectTotals', isReadOnly: true }, fallbackMessage: 'Failed to compute profile totals' });
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.raffleManager, getAllRafflesCached, getContractInstance, executeCall]);
+  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, getAllPoolsCached, getContractInstance, executeCall]);
 
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {
-    if (stableConnected && stableAddress && stableContracts.raffleManager) {
+    if (stableConnected && stableAddress && stableContracts.protocolManager) {
       // Reset state synchronously to avoid mixing when switching accounts,
       // but do not clear cached localStorage results.
       setUserActivity([]);
@@ -534,7 +556,7 @@ export const useProfileData = () => {
         withdrawableRevenue: '0'
       });
     }
-  }, [stableConnected, stableAddress, stableContracts.raffleManager, fetchCreatedRaffles, fetchPurchasedTickets, fetchDirectTotals]);
+  }, [stableConnected, stableAddress, stableContracts.protocolManager, fetchCreatedRaffles, fetchPurchasedTickets, fetchDirectTotals]);
 
   // Revenue withdrawal function
   const withdrawRevenue = useCallback(async (raffleAddress) => {
@@ -544,7 +566,7 @@ export const useProfileData = () => {
     }
 
     try {
-      const raffleContract = getContractInstance(raffleAddress, 'raffle');
+      const raffleContract = getContractInstance(raffleAddress, 'pool');
       if (!raffleContract) {
         toast.error('Invalid raffle contract');
         return;
@@ -571,7 +593,7 @@ export const useProfileData = () => {
     }
 
     try {
-      const raffleContract = getContractInstance(raffleAddress, 'raffle');
+      const raffleContract = getContractInstance(raffleAddress, 'pool');
       if (!raffleContract) {
         toast.error('Invalid raffle contract');
         return;
@@ -594,6 +616,7 @@ export const useProfileData = () => {
     userActivity,
     createdRaffles,
     purchasedTickets,
+    purchasedSlots,
     activityStats,
     loading,
 

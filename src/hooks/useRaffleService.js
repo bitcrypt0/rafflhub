@@ -179,7 +179,7 @@ export const useRaffleService = (options = {}) => {
         errorCode = 'TIMEOUT';
       } else if (err.message?.includes('network')) {
         errorCode = 'NETWORK_ERROR';
-      } else if (err.message?.includes('not available') || err.message?.includes('RaffleManager contract not available')) {
+      } else if (err.message?.includes('not available') || err.message?.includes('ProtocolManager contract not available')) {
         // Handle cases where contracts are not available but error message is different
         errorCode = 'CONTRACTS_NOT_AVAILABLE';
       }
@@ -319,9 +319,19 @@ export const useRaffleService = (options = {}) => {
       } else if (raffle.stateNum === 1 && now >= startTime && now < endTime) {
         acc.active.push(raffle);
       } else if (raffle.stateNum === 2) {
+        acc.ended.push(raffle);
+      } else if (raffle.stateNum === 3) {
         acc.drawing.push(raffle);
-      } else if (raffle.stateNum === 3 || raffle.stateNum === 4) {
+      } else if (raffle.stateNum === 4) {
         acc.completed.push(raffle);
+      } else if (raffle.stateNum === 5) {
+        acc.ended.push(raffle); // deleted pools go to ended
+      } else if (raffle.stateNum === 6) {
+        acc.ended.push(raffle); // activation failed pools go to ended
+      } else if (raffle.stateNum === 7) {
+        acc.completed.push(raffle); // all prizes claimed
+      } else if (raffle.stateNum === 8) {
+        acc.ended.push(raffle); // unengaged pools go to ended
       } else {
         acc.ended.push(raffle);
       }
@@ -464,7 +474,7 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
   // Initialize contract instance
   useEffect(() => {
     if (raffleAddress && getContractInstance) {
-      contractRef.current = getContractInstance(raffleAddress, 'raffle');
+      contractRef.current = getContractInstance(raffleAddress, 'pool');
     } else {
       contractRef.current = null;
     }
@@ -601,13 +611,13 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
         listenersRef.current.push({ contract, event: 'PrizeClaimed', handler: prizeHandler });
       }
 
-      // TicketsPurchased event
+      // SlotsPurchased event
       if (onTicketsPurchased) {
-        const ticketsHandler = createEventHandler('TicketsPurchased', (participant, quantity, event) => {
+        const ticketsHandler = createEventHandler('SlotsPurchased', (participant, quantity, event) => {
           onTicketsPurchased(participant, quantity, event);
         });
-        contract.on('TicketsPurchased', ticketsHandler);
-        listenersRef.current.push({ contract, event: 'TicketsPurchased', handler: ticketsHandler });
+        contract.on('SlotsPurchased', ticketsHandler);
+        listenersRef.current.push({ contract, event: 'SlotsPurchased', handler: ticketsHandler });
       }
 
       setIsListening(true);

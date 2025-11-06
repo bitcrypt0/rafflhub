@@ -1,14 +1,14 @@
 [
   { "anonymous": false, "inputs": [
-    { "indexed": true, "internalType": "address", "name": "raffle", "type": "address" }
-  ], "name": "RaffleRegistered", "type": "event" },
+    { "indexed": true, "internalType": "address", "name": "pool", "type": "address" }
+  ], "name": "PoolRegistered", "type": "event" },
   { "anonymous": false, "inputs": [
     { "indexed": true, "internalType": "address", "name": "token", "type": "address" },
     { "indexed": false, "internalType": "bool", "name": "whitelisted", "type": "bool" }
   ], "name": "ERC20PrizeWhitelisted", "type": "event" },
   {
     "inputs": [],
-    "name": "getAllRaffles",
+    "name": "getAllPools",
     "outputs": [
       { "internalType": "address[]", "name": "", "type": "address[]" }
     ],
@@ -20,7 +20,7 @@
     "inputs": [
       { "internalType": "address", "name": "creator", "type": "address" }
     ],
-    "name": "getRafflesByCreator",
+    "name": "getPoolsByCreator",
     "outputs": [
       { "internalType": "address[]", "name": "", "type": "address[]" }
     ],
@@ -29,16 +29,16 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "raffle", "type": "address" }
+      { "internalType": "address", "name": "pool", "type": "address" }
     ],
-    "name": "getRaffleCreator",
+    "name": "getPoolCreator",
     "outputs": [
       { "internalType": "address", "name": "", "type": "address" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
-  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "raffleCreationTimestamps", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "poolCreationTimestamps", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
   {
     "inputs": [
       { "internalType": "address", "name": "token", "type": "address" }
@@ -48,7 +48,7 @@
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  { "inputs": [], "name": "getAllTicketLimits", "outputs": [
+  { "inputs": [], "name": "getAllSlotLimits", "outputs": [
     { "internalType": "uint256", "name": "minPrized", "type": "uint256" },
     { "internalType": "uint256", "name": "minNonPrized", "type": "uint256" },
     { "internalType": "uint256", "name": "max", "type": "uint256" }
@@ -57,13 +57,13 @@
     { "internalType": "uint256", "name": "min", "type": "uint256" },
     { "internalType": "uint256", "name": "max", "type": "uint256" }
   ], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getMaxTicketsPerParticipant", "outputs": [
+  { "inputs": [], "name": "getMaxSlotsPerParticipant", "outputs": [
     { "internalType": "uint256", "name": "max", "type": "uint256" }
   ], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "minTicketLimitNonPrized", "outputs": [
+  { "inputs": [], "name": "minSlotLimitNonPrized", "outputs": [
     { "internalType": "uint256", "name": "min", "type": "uint256" }
   ], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "maxTicketsPerParticipant", "outputs": [
+  { "inputs": [], "name": "maxSlotsPerParticipant", "outputs": [
     { "internalType": "uint256", "name": "max", "type": "uint256" }
   ], "stateMutability": "view", "type": "function" },
   { "inputs": [ { "internalType": "address", "name": "token", "type": "address" } ], "name": "isERC20PrizeWhitelisted", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },

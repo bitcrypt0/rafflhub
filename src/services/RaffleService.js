@@ -94,25 +94,25 @@ class RaffleService {
     const contractAddresses = SUPPORTED_NETWORKS[chainId].contractAddresses;
 
     // Check if essential contracts are available (not just placeholder '0x...')
-    const isAvailable = contractAddresses?.raffleManager &&
-           contractAddresses.raffleManager !== '0x...' &&
-           contractAddresses?.raffleDeployer &&
-           contractAddresses.raffleDeployer !== '0x...';
+    const isAvailable = contractAddresses?.protocolManager &&
+           contractAddresses.protocolManager !== '0x...' &&
+           contractAddresses?.poolDeployer &&
+           contractAddresses.poolDeployer !== '0x...';
 
     console.log('🔍 Contract availability check:', {
       chainId,
       isAvailable,
-      raffleManager: contractAddresses?.raffleManager,
-      raffleDeployer: contractAddresses?.raffleDeployer
+      protocolManager: contractAddresses?.protocolManager,
+      poolDeployer: contractAddresses?.poolDeployer
     });
 
     return isAvailable;
   }
 
   /**
-   * Get RaffleManager contract with fallback logic
+   * Get ProtocolManager contract with fallback logic
    */
-  getRaffleManagerContract() {
+  getProtocolManagerContract() {
     const { chainId } = this.walletContext || {};
 
     // Check if contracts are available first
@@ -121,14 +121,14 @@ class RaffleService {
     }
 
     // Try ContractContext first (preferred)
-    if (this.contractContext?.contracts?.raffleManager) {
-      return this.contractContext.contracts.raffleManager;
+    if (this.contractContext?.contracts?.protocolManager) {
+      return this.contractContext.contracts.protocolManager;
     }
 
     // Fallback: Create direct instance
-    if (chainId && SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager) {
-      const address = SUPPORTED_NETWORKS[chainId].contractAddresses.raffleManager;
-      return this.createContractInstance(address, 'raffleManager', true);
+    if (chainId && SUPPORTED_NETWORKS[chainId]?.contractAddresses?.protocolManager) {
+      const address = SUPPORTED_NETWORKS[chainId].contractAddresses.protocolManager;
+      return this.createContractInstance(address, 'protocolManager', true);
     }
 
     return null;
@@ -188,7 +188,7 @@ class RaffleService {
   }
 
   /**
-   * Fetch all raffle addresses from RaffleManager
+   * Fetch all raffle addresses from ProtocolManager
    */
   async getAllRaffleAddresses() {
     const cacheKey = `raffleAddresses_${this.walletContext?.chainId}`;
@@ -203,14 +203,14 @@ class RaffleService {
       throw new Error('CONTRACTS_NOT_AVAILABLE');
     }
 
-    const raffleManager = this.getRaffleManagerContract();
-    if (!raffleManager) {
+    const protocolManager = this.getProtocolManagerContract();
+    if (!protocolManager) {
       throw new Error('CONTRACTS_NOT_AVAILABLE');
     }
 
     const addresses = await this.withRetry(
-      () => raffleManager.getAllRaffles(),
-      'getAllRaffles'
+      () => protocolManager.getAllPools(),
+      'getAllPools'
     );
 
     // Reverse the order to get newest raffles first (newest deployed contracts have higher indices)
@@ -230,16 +230,16 @@ class RaffleService {
    */
   async fetchRaffleDetails(raffleAddress, config = {}) {
     try {
-      const raffleContract = this.createContractInstance(raffleAddress, 'raffle', true);
+      const raffleContract = this.createContractInstance(raffleAddress, 'pool', true);
       if (!raffleContract) {
         console.error(`Failed to create raffle contract for ${raffleAddress}`);
         return null;
       }
 
       // Fetch basic raffle data - use sequential calls on mobile for better reliability
-      let name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount,
+      let name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
           maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomPrice, isEscrowedPrize;
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomFee, isEscrowedPrize;
 
       if (config.isMobile) {
         // Sequential calls on mobile for better reliability
@@ -247,10 +247,10 @@ class RaffleService {
         creator = await this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config);
         startTime = await this.withRetry(() => raffleContract.startTime(), `startTime-${raffleAddress}`, config);
         duration = await this.withRetry(() => raffleContract.duration(), `duration-${raffleAddress}`, config);
-        ticketPrice = await this.withRetry(() => raffleContract.ticketPrice(), `ticketPrice-${raffleAddress}`, config);
-        ticketLimit = await this.withRetry(() => raffleContract.ticketLimit(), `ticketLimit-${raffleAddress}`, config);
+        slotFee = await this.withRetry(() => raffleContract.slotFee(), `slotFee-${raffleAddress}`, config);
+        ticketLimit = await this.withRetry(() => raffleContract.slotLimit(), `slotLimit-${raffleAddress}`, config);
         winnersCount = await this.withRetry(() => raffleContract.winnersCount(), `winnersCount-${raffleAddress}`, config);
-        maxTicketsPerParticipant = await this.withRetry(() => raffleContract.maxTicketsPerParticipant(), `maxTickets-${raffleAddress}`, config);
+        maxTicketsPerParticipant = await this.withRetry(() => raffleContract.maxSlotsPerParticipant(), `maxSlots-${raffleAddress}`, config);
         stateNum = await this.withRetry(() => raffleContract.state(), `state-${raffleAddress}`, config);
 
         // Optional fields with fallbacks
@@ -268,8 +268,8 @@ class RaffleService {
           console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
           return undefined;
         });
-        usesCustomPrice = await raffleContract.usesCustomPrice?.().catch((error) => {
-          console.warn(`[RaffleService] usesCustomPrice failed for ${raffleAddress}:`, error.message);
+        usesCustomFee = await raffleContract.usesCustomFee?.().catch((error) => {
+          console.warn(`[RaffleService] usesCustomFee failed for ${raffleAddress}:`, error.message);
           return false;
         });
         isEscrowedPrize = await raffleContract.isEscrowedPrize?.().catch((error) => {
@@ -279,18 +279,18 @@ class RaffleService {
       } else {
         // Parallel calls on desktop
         [
-          name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount,
+          name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
           maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomPrice, isEscrowedPrize
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomFee, isEscrowedPrize
         ] = await Promise.all([
           this.withRetry(() => raffleContract.name(), `name-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.startTime(), `startTime-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.duration(), `duration-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.ticketPrice(), `ticketPrice-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.ticketLimit(), `ticketLimit-${raffleAddress}`, config),
+          this.withRetry(() => raffleContract.slotFee(), `slotFee-${raffleAddress}`, config),
+          this.withRetry(() => raffleContract.slotLimit(), `slotLimit-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.winnersCount(), `winnersCount-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.maxTicketsPerParticipant(), `maxTickets-${raffleAddress}`, config),
+          this.withRetry(() => raffleContract.maxSlotsPerParticipant(), `maxSlots-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.state(), `state-${raffleAddress}`, config),
           raffleContract.isPrized?.().catch(() => false),
           raffleContract.prizeCollection?.().catch(() => ethers.constants.AddressZero),
@@ -306,8 +306,8 @@ class RaffleService {
             console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
             return undefined;
           }),
-          raffleContract.usesCustomPrice?.().catch((error) => {
-            console.warn(`[RaffleService] usesCustomPrice failed for ${raffleAddress}:`, error.message);
+          raffleContract.usesCustomFee?.().catch((error) => {
+            console.warn(`[RaffleService] usesCustomFee failed for ${raffleAddress}:`, error.message);
             return false;
           }),
           raffleContract.isEscrowedPrize?.().catch((error) => {
@@ -333,7 +333,7 @@ class RaffleService {
       // Only fetch actual duration for ended/terminal states
       if ([2,3,4,5,6,7,8].includes(stateNum)) {
         try {
-          const val = await raffleContract.getActualRaffleDuration?.();
+          const val = await raffleContract.getActualPoolDuration?.();
           if (val) actualDuration = val.toNumber ? val.toNumber() : Number(val);
         } catch (_) {}
       }
@@ -347,8 +347,9 @@ class RaffleService {
         startTime: startTime.toNumber(),
         duration: duration.toNumber(),
         actualDuration,
-        ticketPrice,
+        slotFee,
         ticketLimit: ticketLimit.toNumber(),
+        slotLimit: ticketLimit.toNumber(), // Add slotLimit for compatibility with RaffleCard
         ticketsSold: 0, // Will be fetched separately if needed
         winnersCount: winnersCount.toNumber(),
         maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
@@ -362,7 +363,7 @@ class RaffleService {
         nativePrizeAmount,
         isExternallyPrized: isExternallyPrized,
         standard: (standard !== undefined && standard !== null) ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined,
-        usesCustomPrice: usesCustomPrice,
+        usesCustomFee: usesCustomFee,
         isEscrowedPrize: isEscrowedPrize
       };
 
@@ -374,8 +375,8 @@ class RaffleService {
           prizeTokenIdRaw: prizeTokenId,
           isExternallyPrized: raffleData.isExternallyPrized,
           isExternallyPrizedRaw: isExternallyPrized,
-          usesCustomPrice: raffleData.usesCustomPrice,
-          usesCustomPriceRaw: usesCustomPrice,
+          usesCustomFee: raffleData.usesCustomFee,
+          usesCustomFeeRaw: usesCustomFee,
           isEscrowedPrize: raffleData.isEscrowedPrize,
           isEscrowedPrizeRaw: isEscrowedPrize,
           standard: raffleData.standard

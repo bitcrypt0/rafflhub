@@ -28,8 +28,8 @@ export const RaffleErrorDisplay = ({
       
       case 'NO_RAFFLES_FOUND':
         return {
-          title: 'No Raffles Found',
-          message: 'No Raffles are found on this network! Be the first user to create a Raffle.',
+          title: 'No Pools Found',
+          message: 'No Pools are found on this network! Be the first user to create a Pool.',
           icon: <AlertCircle className="h-8 w-8 text-blue-500" />,
           showRetry: true,
           showCreate: true
@@ -65,7 +65,7 @@ export const RaffleErrorDisplay = ({
     }
   };
 
-  const handleCreateRaffle = () => {
+  const handleCreatePool = () => {
     navigate('/create-raffle');
   };
 
@@ -106,10 +106,10 @@ export const RaffleErrorDisplay = ({
 
           {content.showCreate && showCreateButton && (
             <Button
-              onClick={handleCreateRaffle}
+              onClick={handleCreatePool}
               className={`${isMobile ? 'w-full' : ''}`}
             >
-              Create Raffle
+              Create Pool
             </Button>
           )}
         </div>

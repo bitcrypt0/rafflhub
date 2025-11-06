@@ -7,6 +7,7 @@ import { toast } from './ui/sonner';
 import { ResponsiveAddressInput } from './ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
+import { LoadingSpinner } from './ui/loading';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
@@ -252,7 +253,7 @@ const CreatorRevenueWithdrawalComponent = () => {
 
     setLoadingInfo(true);
     try {
-      const contract = getContractInstance(raffleAddress, 'raffle');
+      const contract = getContractInstance(raffleAddress, 'pool');
       
       if (!contract) {
         throw new Error('Failed to create raffle contract instance');
@@ -348,7 +349,7 @@ const CreatorRevenueWithdrawalComponent = () => {
 
     setLoading(true);
     try {
-      const contract = getContractInstance(raffleData.address, 'raffle');
+      const contract = getContractInstance(raffleData.address, 'pool');
       
       if (!contract) {
         throw new Error('Failed to create raffle contract instance');
@@ -376,6 +377,32 @@ const CreatorRevenueWithdrawalComponent = () => {
       loadCreatedRaffles();
     }
   }, [connected]);
+
+  // Auto-fetch raffle info when a valid address is entered
+  useEffect(() => {
+    const addr = raffleData.address;
+    if (!connected || !addr || !ethers.utils.isAddress(addr)) return;
+    const t = setTimeout(() => {
+      if (!loadingInfo) {
+        loadRaffleInfo(addr);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [raffleData.address, connected]);
+
+  // Auto-fetch mint collection info when a valid address is entered
+  useEffect(() => {
+    const addr = mintData.collectionAddress;
+    if (!connected || !addr || !ethers.utils.isAddress(addr)) return;
+    const t = setTimeout(() => {
+      if (!loadingCollectionInfo) {
+        loadCollectionInfoForMint();
+      }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mintData.collectionAddress, connected]);
 
   const getStateColor = (state) => {
     switch (state) {
@@ -409,23 +436,12 @@ const CreatorRevenueWithdrawalComponent = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Raffle Contract Address</label>
-            <div className="flex gap-2">
-              <ResponsiveAddressInput
-                value={raffleData.address}
-                onChange={(e) => handleChange('address', e.target.value)}
-                placeholder="0x..."
-                className="flex-1"
-              />
-              <button
-                onClick={() => loadRaffleInfo(raffleData.address)}
-                disabled={loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please enter a raffle address" : "Load raffle information"}
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingInfo ? 'animate-spin' : ''}`} />
-                {loadingInfo ? 'Loading...' : 'Load Info'}
-              </button>
-            </div>
+            <ResponsiveAddressInput
+              value={raffleData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              placeholder="0x..."
+              rightElement={loadingInfo && <LoadingSpinner size="sm" />}
+            />
           </div>
         </div>
 
@@ -548,22 +564,12 @@ const CreatorRevenueWithdrawalComponent = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Collection Contract Address</label>
-              <div className="flex gap-2">
-                <ResponsiveAddressInput
-                  value={mintData.collectionAddress}
-                  onChange={(e) => handleMintChange('collectionAddress', e.target.value)}
-                  placeholder="0x..."
-                  className="flex-1"
-                />
-                <button
-                  onClick={loadCollectionInfoForMint}
-                  disabled={loadingCollectionInfo || !connected}
-                  className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loadingCollectionInfo ? 'animate-spin' : ''}`} />
-                  {loadingCollectionInfo ? 'Loading...' : 'Load Info'}
-                </button>
-              </div>
+              <ResponsiveAddressInput
+                value={mintData.collectionAddress}
+                onChange={(e) => handleMintChange('collectionAddress', e.target.value)}
+                placeholder="0x..."
+                rightElement={loadingCollectionInfo && <LoadingSpinner size="sm" />}
+              />
             </div>
 
             {/* Collection Info Display */}

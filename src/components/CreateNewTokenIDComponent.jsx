@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 import { Plus, AlertCircle, Search } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
+import { LoadingSpinner } from './ui/loading';
 
 const CreateNewTokenIDComponent = () => {
   const { connected, address } = useWallet();
@@ -27,6 +29,18 @@ const CreateNewTokenIDComponent = () => {
   });
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
+
+  // Auto-fetch collection info on valid address input
+  useEffect(() => {
+    if (!connected || !collectionData.address || !ethers.utils.isAddress(collectionData.address)) return;
+    const t = setTimeout(() => {
+      if (!loadingInfo) {
+        loadCollectionInfo();
+      }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionData.address, connected]);
 
   const handleCollectionChange = (field, value) => {
     setCollectionData(prev => ({ ...prev, [field]: value }));
@@ -272,18 +286,11 @@ const CreateNewTokenIDComponent = () => {
               value={collectionData.address}
               onChange={(e) => handleCollectionChange('address', e.target.value)}
               placeholder="0x..."
+              rightElement={loadingInfo && <LoadingSpinner size="sm" />}
             />
           </div>
 
-          <button
-            onClick={loadCollectionInfo}
-            disabled={loadingInfo || !connected}
-            className={`flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm`}
-            title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
-          >
-            <Search className="h-4 w-4" />
-            {loadingInfo ? 'Loading...' : 'Load Collection Info'}
-          </button>
+          
         </div>
 
         {/* Collection Info Display */}

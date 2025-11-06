@@ -76,9 +76,9 @@ const CreateRaffleSideFilterBar = ({
     return [
       { value: 'Whitelist/Allowlist', label: 'Whitelist/Allowlist', description: 'Whitelist Campaigns' },
       { value: 'NFTDrop', label: 'NFT Drop', description: 'Raffles with Mintable NFT Prizes' },
-      { value: 'Lucky Sale/NFT Giveaway', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales/NFT Giveaways' },
-      { value: 'Native Token Giveaway', label: `${currencySymbol} Giveaway`, description: 'Native Coin Giveaways' },
-      { value: 'ERC20 Token Giveaway', label: 'ERC20 Token Giveaway', description: 'Token Giveaways' }
+      { value: 'Lucky Sale/NFT Pool', label: 'Lucky Sale/NFT Giveaway', description: 'Discounted NFT sales/NFT Giveaways' },
+      { value: 'Native Token Pool', label: `${currencySymbol} Giveaway`, description: 'Native Coin Giveaways' },
+      { value: 'ERC20 Token Pool', label: 'ERC20 Token Giveaway', description: 'Token Giveaways' }
     ];
   }, [getCurrencySymbol]);
 
@@ -122,8 +122,8 @@ const CreateRaffleSideFilterBar = ({
   }, [raffleType, nftStandard, erc721Source, erc1155Source]);
 
   // Conditional visibility logic (maintaining existing behavior)
-  const showNftConfiguration = raffleType === 'NFTDrop' || raffleType === 'Lucky Sale/NFT Giveaway';
-  // Collection source options should only show for NFTDrop, not for Lucky Sale/NFT Giveaway
+  const showNftConfiguration = raffleType === 'NFTDrop' || raffleType === 'Lucky Sale/NFT Pool';
+  // Collection source options should only show for NFTDrop, not for Lucky Sale/NFT Pool
   const showCollectionSource = raffleType === 'NFTDrop';
 
   // Render filter section (like LandingPage structure)

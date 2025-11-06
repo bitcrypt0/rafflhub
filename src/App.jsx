@@ -24,6 +24,7 @@ if (process.env.NODE_ENV === 'development') {
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
+import AuthCallback from './pages/AuthCallback';
 
 
 import './App.css';
@@ -72,6 +73,10 @@ const AppContent = () => {
           <Route path="/create-raffle" element={<div><div style={{ height: '80px' }} /><CreateRafflePage /></div>} />
           <Route path="/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
           <Route path="/:chainSlug/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
+          {/* OAuth Callback Routes */}
+          <Route path="/auth/callback/twitter" element={<AuthCallback />} />
+          <Route path="/auth/callback/discord" element={<AuthCallback />} />
+          <Route path="/auth/callback/telegram" element={<AuthCallback />} />
         </Routes>
       </main>
       <Footer />

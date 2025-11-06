@@ -23,15 +23,15 @@ import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 
-const RAFFLE_STATE_LABELS = [
+const POOL_STATE_LABELS = [
   'Pending',
   'Active',
   'Ended',
   'Drawing',
   'Completed',
   'Deleted',
-  'Activation Failed',
-  'Prizes Claimed',
+  'ActivationFailed',
+  'AllPrizesClaimed',
   'Unengaged'
 ];
 
@@ -43,7 +43,7 @@ const RaffleCard = ({ raffle }) => {
   const [erc20Symbol, setErc20Symbol] = useState('');
   const { getContractInstance } = useContract();
   const { updateCollabStatus, setCollabLoading, getCollabStatus } = useCollabDetection();
-  const { formatTicketPrice, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
+  const { formatSlotFee, formatPrizeAmount, getCurrencySymbol } = useNativeCurrency();
   const [ticketsSold, setTicketsSold] = useState(null);
   const { winnerCount } = useWinnerCount(raffle.address, raffle.stateNum);
   const [collectionName, setCollectionName] = useState(null);
@@ -138,13 +138,13 @@ const RaffleCard = ({ raffle }) => {
     let isMounted = true;
     async function fetchTicketsSold() {
       try {
-        const raffleContract = getContractInstance && getContractInstance(raffle.address, 'raffle');
-        if (!raffleContract) {
+        const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+        if (!poolContract) {
           if (isMounted) setTicketsSold(null);
           return;
         }
         // Use the same fallback approach as RaffleDetailPage and ProfilePage
-        const count = await getTicketsSoldCount(raffleContract);
+        const count = await getTicketsSoldCount(poolContract);
         if (isMounted) setTicketsSold(count);
       } catch (e) {
         if (isMounted) setTicketsSold(null);
@@ -163,21 +163,21 @@ const RaffleCard = ({ raffle }) => {
       }
 
       try {
-        const raffleContract = getContractInstance(raffle.address, 'raffle');
-        if (!raffleContract) {
+        const poolContract = getContractInstance(raffle.address, 'pool');
+        if (!poolContract) {
           return;
         }
 
         // Fetch values directly like RaffleDetailPage does
-        const [isExternallyPrizedDirect, usesCustomPriceDirect, isEscrowedPrizeDirect] = await Promise.all([
-          raffleContract.isExternallyPrized().catch(() => null),
-          raffleContract.usesCustomPrice().catch(() => null),
-          raffleContract.isEscrowedPrize().catch(() => null)
+        const [isExternallyPrizedDirect, usesCustomFeeDirect, isEscrowedPrizeDirect] = await Promise.all([
+          poolContract.isExternallyPrized().catch(() => null),
+          poolContract.usesCustomFee().catch(() => null),
+          poolContract.isEscrowedPrize().catch(() => null)
         ]);
 
         const directValues = {
           isExternallyPrized: isExternallyPrizedDirect,
-          usesCustomPrice: usesCustomPriceDirect,
+          usesCustomFee: usesCustomFeeDirect,
           isEscrowedPrize: isEscrowedPrizeDirect
         };
 
@@ -303,12 +303,12 @@ const RaffleCard = ({ raffle }) => {
 
       while (retryCount < maxRetries && isMounted) {
         try {
-          const raffleContract = getContractInstance(raffle.address, 'raffle');
-          if (!raffleContract) {
+          const poolContract = getContractInstance(raffle.address, 'pool');
+          if (!poolContract) {
             throw new Error('Failed to get contract instance');
           }
 
-          const holderTokenAddr = await raffleContract.holderTokenAddress();
+          const holderTokenAddr = await poolContract.holderTokenAddress();
           hasHolderToken = holderTokenAddr && holderTokenAddr !== ethers.constants.AddressZero;
           break; // Success, exit retry loop
 
@@ -361,7 +361,7 @@ const RaffleCard = ({ raffle }) => {
       if (dynamicLabel) {
         return dynamicLabel;
       }
-      return RAFFLE_STATE_LABELS[stateNum] || 'Unknown';
+      return POOL_STATE_LABELS[stateNum] || 'Unknown';
     };
 
     const label = getDynamicLabel(raffle.stateNum);
@@ -392,9 +392,9 @@ const RaffleCard = ({ raffle }) => {
     const isExternallyPrized = (directContractValues && directContractValues.isExternallyPrized !== null)
       ? directContractValues.isExternallyPrized
       : raffle.isExternallyPrized;
-    const usesCustomPrice = (directContractValues && directContractValues.usesCustomPrice !== null)
-      ? directContractValues.usesCustomPrice === true
-      : raffle.usesCustomPrice === true;
+    const usesCustomPrice = (directContractValues && directContractValues.usesCustomFee !== null)
+         ? directContractValues.usesCustomFee === true
+         : raffle.usesCustomFee === true;
     const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null)
       ? directContractValues.isEscrowedPrize === true
       : raffle.isEscrowedPrize === true;
@@ -459,7 +459,12 @@ const RaffleCard = ({ raffle }) => {
   return (
     <div className="landing-raffle-card bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
       <div className="flex items-center justify-between mb-4 min-w-0">
-        <h3 className="text-base sm:text-lg font-semibold truncate flex-1 mr-2 min-w-0">{raffle.name}</h3>
+        <h3 
+          className="text-base sm:text-lg font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-[#614E41] transition-colors duration-200" 
+          onClick={handleViewRaffle}
+        >
+          {raffle.name}
+        </h3>
         <div className="flex-shrink-0">
           {getStatusBadge()}
         </div>
@@ -471,12 +476,12 @@ const RaffleCard = ({ raffle }) => {
           <span className="font-mono truncate ml-2">{raffle.creator?.slice(0, 10)}...</span>
         </div>
         <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Ticket Fee:</span>
-          <span className="truncate ml-2">{formatTicketPrice(raffle.ticketPrice || '0')}</span>
+          <span className="text-muted-foreground flex-shrink-0">Slot Fee:</span>
+          <span className="truncate ml-2">{formatSlotFee(raffle.slotFee || '0')}</span>
         </div>
         <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Tickets Sold:</span>
-          <span className="truncate ml-2">{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
+          <span className="text-muted-foreground flex-shrink-0">Slots Sold:</span>
+          <span className="truncate ml-2">{ticketsSold !== null ? `${ticketsSold} / ${raffle.slotLimit}` : 'Loading...'}</span>
         </div>
         <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Winners:</span>
@@ -578,13 +583,6 @@ const RaffleCard = ({ raffle }) => {
           return null;
         })()}
       </div>
-
-      <Button
-        onClick={handleViewRaffle}
-        className="w-full mt-auto group-hover:scale-[1.02] transition-transform duration-200 bg-[#614E41] text-white hover:bg-[#4a3a30] border-0 text-sm sm:text-base py-2 sm:py-3"
-      >
-        Visit Raffle Page
-      </Button>
     </div>
   );
 };
@@ -594,7 +592,7 @@ const RaffleCard = ({ raffle }) => {
 const LandingPage = () => {
   const { connected } = useWallet();
   const { isMobile } = useMobileBreakpoints();
-  const { formatTicketPrice, formatPrizeAmount } = useNativeCurrency();
+  const { formatSlotFee, formatPrizeAmount } = useNativeCurrency();
   const [page, setPage] = useState(1);
 
   // Use the new RaffleService hook (full dataset for filtering)
@@ -668,7 +666,7 @@ const LandingPage = () => {
     } else {
       const wanted = new Set(filters.raffleState.map(s => s.toLowerCase()));
       mobileFilteredSummaries = summaries.filter(s => {
-        const label = RAFFLE_STATE_LABELS[s.stateNum]?.toLowerCase();
+        const label = POOL_STATE_LABELS[s.stateNum]?.toLowerCase();
         return wanted.has(label);
       });
     }

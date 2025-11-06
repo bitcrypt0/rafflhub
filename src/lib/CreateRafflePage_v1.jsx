@@ -11,7 +11,6 @@ import { toast } from '../components/ui/sonner';
 import { contractABIs } from '../contracts/contractABIs';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import TokenGatedSection from '../components/TokenGatedSection';
-import SocialMediaTaskSection from '../components/SocialMediaTaskSection';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
@@ -35,7 +34,7 @@ function ERC1155DropForm() {
     duration: '',
     slotLimit: '',
     winnersCount: '',
-    maxTicketsPerParticipant: '',
+    maxSlotsPerParticipant: '',
     slotFee: '',
   });
 
@@ -99,15 +98,7 @@ function ERC1155DropForm() {
         nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
-        revealTime: 0,
-        // Token-gated params (disabled for non-prized)
-        holderTokenAddress: ethers.constants.AddressZero,
-        holderTokenStandard: 0,
-        minHolderTokenBalance: 0,
-        holderTokenId: 0,
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
+        revealTime: 0
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -330,8 +321,6 @@ const PrizedRaffleForm = () => {
   const [loading, setLoading] = useState(false);
   // Add token-gated state
   const [tokenGatedEnabled, setTokenGatedEnabled] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
@@ -358,10 +347,6 @@ const PrizedRaffleForm = () => {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -400,7 +385,7 @@ const PrizedRaffleForm = () => {
           winnersCount: parseInt(formData.winnersCount),
           maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
           isPrized: true,
-          customSlotFee: slotFee,
+          customSlotFee: customSlotFee,
           erc721Drop: false,
           prizeCollection: ethers.constants.AddressZero,
           standard: 0, // ERC721
@@ -423,11 +408,7 @@ const PrizedRaffleForm = () => {
           holderTokenAddress,
           holderTokenStandard,
           minHolderTokenBalance,
-          holderTokenBalance: minHolderTokenBalance,
           holderTokenId,
-          // Social media params
-          socialEngagementRequired: socialEngagementEnabled,
-          socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
         };
       } else {
         // Existing collection (ERC721 or ERC1155)
@@ -463,10 +444,7 @@ const PrizedRaffleForm = () => {
           holderTokenAddress,
           holderTokenStandard,
           minHolderTokenBalance,
-          holderTokenBalance: minHolderTokenBalance,
           holderTokenId,
-          // Social media params
-          socialEngagementRequired: socialEngagementEnabled
         };
       }
       result = { success: false };
@@ -845,14 +823,6 @@ const PrizedRaffleForm = () => {
           required={true}
         />
 
-        <SocialMediaTaskSection
-          socialEngagementEnabled={socialEngagementEnabled}
-          onSocialEngagementChange={setSocialEngagementEnabled}
-          formData={formData}
-          handleChange={handleChange}
-          required={true}
-        />
-
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -871,17 +841,13 @@ const NonPrizedRaffleForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
-    maxTicketsPerParticipant: '',
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: []
+    maxTicketsPerParticipant: ''
   });
 
   const handleChange = (field, value) => {
@@ -927,13 +893,7 @@ const NonPrizedRaffleForm = () => {
         nativePrizeAmount: 0,
         revealType: 0,
         unrevealedBaseURI: '',
-        revealTime: 0,
-        holderTokenAddress: ethers.constants.AddressZero,
-        holderTokenStandard: 0,
-        minHolderTokenBalance: 0,
-        holderTokenBalance: 0,
-        holderTokenId: 0,
-        socialEngagementRequired: socialEngagementEnabled
+        revealTime: 0
       };
       const result = await executeTransaction(
         contracts.poolDeployer.createPool,
@@ -1092,14 +1052,6 @@ const NonPrizedRaffleForm = () => {
           </div>
         </div>
 
-        <SocialMediaTaskSection
-          socialEngagementEnabled={socialEngagementEnabled}
-          onSocialEngagementChange={setSocialEngagementEnabled}
-          formData={formData}
-          handleChange={handleChange}
-          required={false}
-        />
-
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1122,24 +1074,18 @@ const WhitelistRaffleForm = () => {
   const [loading, setLoading] = useState(false);
   // Add token-gated state
   const [tokenGatedEnabled, setTokenGatedEnabled] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
-    maxSlotsPerParticipant: '',
+    maxTicketsPerParticipant: '',
     // Token-gated fields
     holderTokenAddress: '',
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: []
   });
 
   const handleChange = (field, value) => {
@@ -1197,27 +1143,14 @@ const WhitelistRaffleForm = () => {
         holderTokenAddress,
         holderTokenStandard,
         minHolderTokenBalance,
-        holderTokenBalance: minHolderTokenBalance,
         holderTokenId,
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
-      // Runtime validation - Enhanced debugging
-      console.log('Form data before parsing:', {
-        slotLimit: formData.slotLimit,
-        winnersCount: formData.winnersCount,
-        duration: formData.duration,
-        holderTokenStandard: formData.holderTokenStandard,
-        holderTokenId: formData.holderTokenId,
-        minHolderTokenBalance: formData.minHolderTokenBalance
-      });
-      
-      const undefinedOrEmptyFields = Object.entries(params).filter(([k, v]) => v === undefined || v === '');
-      if (undefinedOrEmptyFields.length > 0) {
-        console.warn('Params contain undefined or empty string values:', undefinedOrEmptyFields);
-      }
-      console.log('Params to be sent to createRaffle:', params);
+      // Runtime validation
+      // const undefinedOrEmptyFields = Object.entries(params).filter(([k, v]) => v === undefined || v === '');
+      // if (undefinedOrEmptyFields.length > 0) {
+      //   console.warn('Params contain undefined or empty string values:', undefinedOrEmptyFields);
+      // }
+      // console.log('Params to be sent to createRaffle:', params);
       let result = { success: false };
       try {
         const tx = await contracts.poolDeployer.createPool(params);
@@ -1378,15 +1311,6 @@ const WhitelistRaffleForm = () => {
           handleChange={handleChange}
           required={true}
         />
-        
-        <SocialMediaTaskSection
-          socialEngagementEnabled={socialEngagementEnabled}
-          onSocialEngagementChange={setSocialEngagementEnabled}
-          formData={formData}
-          handleChange={handleChange}
-          required={false}
-        />
-        
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1407,12 +1331,11 @@ const NewERC721DropForm = () => {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     customSlotFee: '',
@@ -1432,10 +1355,6 @@ const NewERC721DropForm = () => {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: []
   });
 
   useEffect(() => {
@@ -1480,9 +1399,9 @@ const NewERC721DropForm = () => {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
         isPrized: true,
-        customSlotFee: slotFee,
+        customSlotFee: customSlotFee,
         erc721Drop: false,
         erc1155Drop: false,
         prizeCollection: ethers.constants.AddressZero,
@@ -1508,11 +1427,7 @@ const NewERC721DropForm = () => {
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -1803,12 +1718,6 @@ const NewERC721DropForm = () => {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1831,14 +1740,12 @@ function ExistingERC721DropForm() {
   const [loading, setLoading] = useState(false);
   // Add token-gated state
   const [tokenGatedEnabled, setTokenGatedEnabled] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collection: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerUser: '',
     slotFee: '',
@@ -1847,10 +1754,6 @@ function ExistingERC721DropForm() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -1907,12 +1810,7 @@ function ExistingERC721DropForm() {
         holderTokenAddress,
         holderTokenStandard,
         minHolderTokenBalance,
-        holderTokenBalance: tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
         holderTokenId,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -1922,7 +1820,7 @@ function ExistingERC721DropForm() {
         collection: '',
         startTime: '',
         duration: '',
-        slotLimit: '',
+        ticketLimit: '',
         winnersCount: '',
         maxTicketsPerUser: '',
         slotFee: '',
@@ -2113,12 +2011,6 @@ function ExistingERC721DropForm() {
           handleChange={handleChange}
           required={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2139,8 +2031,6 @@ function ExistingERC1155DropForm() {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -2148,7 +2038,7 @@ function ExistingERC1155DropForm() {
     amountPerWinner: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     slotFee: '',
@@ -2158,10 +2048,6 @@ function ExistingERC1155DropForm() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -2212,12 +2098,7 @@ function ExistingERC1155DropForm() {
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
-        holderTokenBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -2229,7 +2110,7 @@ function ExistingERC1155DropForm() {
         amountPerWinner: '',
         startTime: '',
         duration: '',
-        slotLimit: '',
+        ticketLimit: '',
         winnersCount: '',
         maxTicketsPerParticipant: '',
         slotFee: '',
@@ -2440,12 +2321,6 @@ function ExistingERC1155DropForm() {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2639,15 +2514,13 @@ function LuckySaleERC721Form() {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
     tokenId: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     slotFee: '',
@@ -2657,10 +2530,6 @@ function LuckySaleERC721Form() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -2728,12 +2597,7 @@ function LuckySaleERC721Form() {
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -2744,7 +2608,7 @@ function LuckySaleERC721Form() {
           tokenId: '',
           startTime: '',
           duration: '',
-          slotLimit: '',
+          ticketLimit: '',
           winnersCount: '',
           maxTicketsPerParticipant: '',
           slotFee: '',
@@ -2942,12 +2806,6 @@ function LuckySaleERC721Form() {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2969,8 +2827,6 @@ function LuckySaleERC1155Form() {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -2978,7 +2834,7 @@ function LuckySaleERC1155Form() {
     unitsPerWinner: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     slotFee: '',
@@ -2988,10 +2844,6 @@ function LuckySaleERC1155Form() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -3059,12 +2911,7 @@ function LuckySaleERC1155Form() {
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -3076,7 +2923,7 @@ function LuckySaleERC1155Form() {
           unitsPerWinner: '',
           startTime: '',
           duration: '',
-          slotLimit: '',
+          ticketLimit: '',
           winnersCount: '',
           maxTicketsPerParticipant: '',
           slotFee: '',
@@ -3287,12 +3134,6 @@ function LuckySaleERC1155Form() {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -3315,14 +3156,12 @@ function ETHGiveawayForm() {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     ethAmount: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     // Token-gated fields
@@ -3331,10 +3170,6 @@ function ETHGiveawayForm() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   const handleChange = (field, value) => {
@@ -3385,10 +3220,6 @@ function ETHGiveawayForm() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       let result = { success: false };
       try {
@@ -3405,7 +3236,7 @@ function ETHGiveawayForm() {
           ethAmount: '',
           startTime: '',
           duration: '',
-          slotLimit: '',
+          ticketLimit: '',
           winnersCount: '',
           maxTicketsPerParticipant: ''
         });
@@ -3558,12 +3389,6 @@ function ETHGiveawayForm() {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -3585,15 +3410,13 @@ function ERC20GiveawayForm() {
   const { isMobile } = useMobileBreakpoints();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     tokenAddress: '',
     tokenAmount: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     // Token-gated fields
@@ -3602,10 +3425,6 @@ function ERC20GiveawayForm() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
   const [whitelistStatus, setWhitelistStatus] = useState(null); // null | true | false
   const [checkingWhitelist, setCheckingWhitelist] = useState(false);
@@ -3709,10 +3528,6 @@ function ERC20GiveawayForm() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -3723,7 +3538,7 @@ function ERC20GiveawayForm() {
           tokenAmount: '',
           startTime: '',
           duration: '',
-          slotLimit: '',
+          ticketLimit: '',
           winnersCount: '',
           maxTicketsPerParticipant: ''
         });
@@ -3891,12 +3706,6 @@ function ERC20GiveawayForm() {
           required={true}
           useFormDataEnabled={true}
         />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -4007,13 +3816,11 @@ function NewERC1155DropForm() {
   const { getCurrencyLabel } = useNativeCurrency();
   const limits = useRaffleLimits(contracts, true);
   const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
     duration: '',
-    slotLimit: '',
+    ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
     customSlotFee: '',
@@ -4033,10 +3840,6 @@ function NewERC1155DropForm() {
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
     holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
   });
 
   useEffect(() => {
@@ -4108,12 +3911,7 @@ function NewERC1155DropForm() {
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
       };
       const tx = await contracts.poolDeployer.connect(signer).createPool(params);
       await tx.wait();
@@ -4122,7 +3920,7 @@ function NewERC1155DropForm() {
         name: '',
         startTime: '',
         duration: '',
-        slotLimit: '',
+        ticketLimit: '',
         winnersCount: '',
         maxTicketsPerParticipant: '',
         customSlotFee: '',
@@ -4397,12 +4195,6 @@ function NewERC1155DropForm() {
           handleChange={handleChange}
           required={true}
           useFormDataEnabled={true}
-        />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
         />
         <div className="flex gap-4">
           <Button

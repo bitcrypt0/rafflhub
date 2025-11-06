@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from './ui/sonner';
 import { extractRevertReason } from '../utils/errorHandling';
+import { LoadingSpinner } from './ui/loading';
 
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
@@ -130,12 +131,24 @@ const MinterApprovalComponent = () => {
   };
 
   // Load collection details when minter address changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (fetchedCollection && minterAddress && ethers.utils.isAddress(minterAddress) && provider) {
       loadCollectionDetails();
     }
     // eslint-disable-next-line
   }, [minterAddress, fetchedCollection]);
+
+  // Auto-fetch collection when a valid address is entered
+  useEffect(() => {
+    if (!connected || !collectionAddress || !ethers.utils.isAddress(collectionAddress)) return;
+    const t = setTimeout(() => {
+      if (!loading) {
+        fetchCollection();
+      }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionAddress, connected]);
 
   const loadCollectionDetails = async () => {
     try {
@@ -330,25 +343,14 @@ const MinterApprovalComponent = () => {
         {/* Collection Address Input */}
         <div className="space-y-2">
           <Label htmlFor="collection-address">Collection Contract Address</Label>
-          <div className="flex gap-2">
-            <ResponsiveAddressInput
-              id="collection-address"
-              placeholder="0x..."
-              value={collectionAddress}
-              onChange={(e) => setCollectionAddress(e.target.value)}
-              disabled={loading || !connected}
-              className="flex-1"
-            />
-            <Button
-              onClick={fetchCollection}
-              disabled={loading}
-              className="flex items-center gap-2 h-10 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              title={!connected ? "Please connect your wallet" : !collectionAddress ? "Please enter a collection address" : "Load collection information"}
-            >
-              <Search className="h-4 w-4" />
-              {loading ? 'Loading...' : 'Load Info'}
-            </Button>
-          </div>
+          <ResponsiveAddressInput
+            id="collection-address"
+            placeholder="0x..."
+            value={collectionAddress}
+            onChange={(e) => setCollectionAddress(e.target.value)}
+            disabled={loading || !connected}
+            rightElement={loading && <LoadingSpinner size="sm" />}
+          />
         </div>
 
         {/* Show minter approval management UI only if collection is fetched */}

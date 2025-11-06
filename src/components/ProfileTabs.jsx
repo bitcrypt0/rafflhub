@@ -101,7 +101,7 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
 
       <div className="grid grid-cols-2 gap-4 text-xs mb-3">
         <div>
-          <span className="text-muted-foreground">Tickets Sold</span>
+          <span className="text-muted-foreground">Slots Sold</span>
           <p className="font-semibold">{raffle.ticketsSold || 0}/{raffle.maxTickets}</p>
         </div>
         <div>
@@ -314,15 +314,15 @@ const ProfileTabs = ({
   const PurchasedTicketsTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Purchased Tickets</h3>
-        <Badge variant="outline">{purchasedTickets.length} tickets</Badge>
+        <h3 className="text-lg font-semibold">My Slots</h3>
+        <Badge variant="outline">{purchasedTickets.length} slots</Badge>
       </div>
 
       {purchasedTickets.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">You haven't purchased any tickets yet</p>
+            <p className="text-muted-foreground mb-4">You haven't purchased any slots yet</p>
             <Button
               onClick={() => navigate('/')}
               className="bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
@@ -347,7 +347,7 @@ const ProfileTabs = ({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-foreground text-sm">
-                          Purchased {ticket.ticketCount} {ticket.raffleName || ticket.name} ticket{ticket.ticketCount > 1 ? 's' : ''}
+                          Purchased {ticket.ticketCount} {ticket.raffleName || ticket.name} slot{ticket.ticketCount > 1 ? 's' : ''}
                         </h4>
                         <p className="text-muted-foreground text-sm mt-1">
                           {ticket.totalSpent} {getCurrencySymbol()}
@@ -413,13 +413,13 @@ const ProfileTabs = ({
 
         <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tickets Sold</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Slots Sold</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Number(creatorStats.totalParticipants || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {Number(creatorStats.uniqueParticipants || 0).toLocaleString()} entries across all your raffles
+              {Number(creatorStats.uniqueParticipants || 0).toLocaleString()} slots across all your raffles
             </p>
           </CardContent>
         </Card>
@@ -478,7 +478,7 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <span className="text-sm font-medium">Purchased Tickets</span>
+            <span className="text-sm font-medium">My Slots</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -501,7 +501,7 @@ const ProfileTabs = ({
             My Raffles
           </TabsTrigger>
           <TabsTrigger value="purchased">
-            Purchased Tickets
+            My Slots
           </TabsTrigger>
           <TabsTrigger value="dashboard">
             Dashboard

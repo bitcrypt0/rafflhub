@@ -84,8 +84,8 @@ export const useNativeCurrency = () => {
     };
   }, [nativeCurrency.symbol]);
 
-  // Format amount for ticket prices (use more decimals to show exact small amounts)
-  const formatTicketPrice = useMemo(() => {
+  // Format amount for slot fees (use more decimals to show exact small amounts)
+  const formatSlotFee = useMemo(() => {
     return (amount) => formatAmount(amount, { decimals: 8 }); // Increased from 4 to 8 for precision
   }, [formatAmount]);
 
@@ -124,7 +124,7 @@ export const useNativeCurrency = () => {
     return (context = 'general') => {
       switch (context) {
         case 'ticket':
-          return `Ticket Price (${nativeCurrency.symbol})`;
+          return `Slot Fee (${nativeCurrency.symbol})`;
         case 'prize':
           return `Prize Amount (${nativeCurrency.symbol})`;
         case 'revenue':
@@ -146,7 +146,7 @@ export const useNativeCurrency = () => {
     
     // Formatting functions
     formatAmount,
-    formatTicketPrice,
+    formatSlotFee,
     formatPrizeAmount,
     formatRevenueAmount,
     

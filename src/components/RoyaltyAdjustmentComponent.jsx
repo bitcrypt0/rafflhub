@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 import { Settings, Search, AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
+import { LoadingSpinner } from './ui/loading';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -25,6 +27,19 @@ const RoyaltyAdjustmentComponent = () => {
   const handleChange = (field, value) => {
     setCollectionData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Auto-fetch collection info when a valid 0x address is entered
+  useEffect(() => {
+    const addr = collectionData.address;
+    if (!addr || !connected) return;
+    if (!ethers.utils.isAddress(addr)) return;
+
+    const handle = setTimeout(() => {
+      loadCollectionInfo();
+    }, 450);
+
+    return () => clearTimeout(handle);
+  }, [collectionData.address, connected]);
 
   // Check if collection is revealed after loading info
   const checkRevealedStatus = async (contract) => {
@@ -272,22 +287,17 @@ const RoyaltyAdjustmentComponent = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <div className="flex gap-2">
+            <div className="relative">
               <ResponsiveAddressInput
                 value={collectionData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
                 placeholder="0x..."
-                className="flex-1"
               />
-              <button
-                onClick={loadCollectionInfo}
-                disabled={loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-                title={!connected ? "Please connect your wallet" : !collectionData.address ? "Please enter a collection address" : "Load collection information"}
-              >
-                <Search className="h-4 w-4" />
-                {loadingInfo ? 'Loading...' : 'Load Info'}
-              </button>
+              {loadingInfo && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <LoadingSpinner size="sm" showText={false} />
+                </div>
+              )}
             </div>
           </div>
         </div>

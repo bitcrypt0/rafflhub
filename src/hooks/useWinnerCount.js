@@ -20,7 +20,7 @@ export const useWinnerCount = (raffleAddress, raffleState) => {
 
       setLoading(true);
       try {
-        const raffleContract = getContractInstance(raffleAddress, 'raffle');
+        const raffleContract = getContractInstance(raffleAddress, 'pool');
         if (!raffleContract) {
           setWinnerCount(0);
           return;

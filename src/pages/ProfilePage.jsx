@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus, ShoppingCart, Crown, RefreshCw, Activity } from 'lucide-react';
+import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus, ShoppingCart, Crown, RefreshCw, Activity, CircleDot } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,14 +19,17 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import NewMobileProfilePage from './mobile/NewMobileProfilePage';
 
-function mapRaffleState(stateNum) {
+function mapPoolState(stateNum) {
   switch (stateNum) {
     case 0: return 'pending';
     case 1: return 'active';
-    case 2: return 'drawing';
-    case 3: return 'completed';
-    case 4: return 'allPrizesClaimed';
-    case 5: return 'ended';
+    case 2: return 'ended';
+    case 3: return 'drawing';
+    case 4: return 'completed';
+    case 5: return 'deleted';
+    case 6: return 'activationFailed';
+    case 7: return 'allPrizesClaimed';
+    case 8: return 'unengaged';
     default: return 'unknown';
   }
 }
@@ -45,7 +48,7 @@ const ActivityCard = ({ activity }) => {
       case 'ticket_purchase':
         const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
         const quantity = activity.quantity || activity.ticketCount || 1;
-        return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
+        return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
       case 'raffle_created':
         return `Created raffle "${activity.raffleName}"`;
       case 'raffle_deleted':
@@ -176,12 +179,20 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full text-xs">Pending</span>;
       case 'active':
         return <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-xs">Active</span>;
+      case 'ended':
+        return <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">Ended</span>;
       case 'drawing':
         return <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs">Drawing</span>;
       case 'completed':
         return <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">Completed</span>;
-      case 'ended':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">Ended</span>;
+      case 'deleted':
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">Deleted</span>;
+      case 'activationFailed':
+        return <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">Activation Failed</span>;
+      case 'allPrizesClaimed':
+        return <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">All Prizes Claimed</span>;
+      case 'unengaged':
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">Unengaged</span>;
       default:
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">Unknown</span>;
     }
@@ -203,7 +214,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       <div className="space-y-2 text-sm mb-4">
         <div className="flex justify-between">
           <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
-          <span>{raffle.ticketsSold} / {raffle.ticketLimit}</span>
+          <span>{raffle.ticketsSold} / {raffle.slotLimit}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-500 dark:text-gray-400">Revenue:</span>
@@ -245,7 +256,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         <Button
           onClick={async () => {
             try {
-              const raffleContract = getContractInstance(raffle.address, 'raffle');
+              const raffleContract = getContractInstance(raffle.address, 'pool');
               if (!raffleContract) throw new Error('Failed to get raffle contract');
               const result = await executeTransaction(raffleContract.mintToWinner);
               if (result.success) {
@@ -298,7 +309,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
     <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold truncate">{ticket.raffleName}</h3>
-        <span className="text-sm text-gray-500 dark:text-gray-400">{ticket.quantity} tickets</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{ticket.quantity} slots</span>
       </div>
 
       <div className="space-y-1 text-sm mb-3">
@@ -423,7 +434,7 @@ const DesktopProfilePage = () => {
 
         switch (activity.type) {
           case 'ticket_purchase':
-            return `Purchased ${quantity} ${raffleName} ticket${quantity > 1 ? 's' : ''}`;
+            return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
           case 'raffle_created':
             return `Created raffle "${raffleName}"`;
           case 'raffle_deleted':
@@ -460,10 +471,18 @@ const DesktopProfilePage = () => {
             return <ShoppingCart className="h-4 w-4 text-blue-500" />;
           case 'raffle_created':
             return <Plus className="h-4 w-4 text-green-500" />;
+          case 'raffle_deleted':
+            return <Activity className="h-4 w-4 text-red-500" />;
+          case 'prize_won':
+            return <Crown className="h-4 w-4 text-yellow-500" />;
           case 'prize_claimed':
             return <Crown className="h-4 w-4 text-yellow-500" />;
           case 'refund_claimed':
             return <RefreshCw className="h-4 w-4 text-orange-500" />;
+          case 'revenue_withdrawn':
+            return <DollarSign className="h-4 w-4 text-green-500" />;
+          case 'admin_withdrawn':
+            return <DollarSign className="h-4 w-4 text-purple-500" />;
           default:
             return <Activity className="h-4 w-4 text-gray-500" />;
         }
@@ -514,7 +533,7 @@ const DesktopProfilePage = () => {
     }
 
     try {
-      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      const raffleContract = getContractInstance(raffle.address, 'pool');
       if (!raffleContract) {
         throw new Error('Failed to get raffle contract');
       }
@@ -548,18 +567,18 @@ const DesktopProfilePage = () => {
 
   const handleClaimPrize = async (ticket) => {
     try {
-      const raffleContract = getContractInstance(ticket.raffleAddress, 'raffle');
-      if (!raffleContract) {
-        throw new Error('Failed to get raffle contract');
+      const poolContract = getContractInstance(ticket.raffleAddress, 'pool');
+      if (!poolContract) {
+        throw new Error('Failed to get pool contract');
       }
 
       let result;
       if (ticket.prizeAmount > 1) {
         // Multiple prizes - use claimPrizes
-        result = await executeTransaction(raffleContract.claimPrizes, ticket.prizeAmount);
+        result = await executeTransaction(poolContract.claimPrizes, ticket.prizeAmount);
       } else {
         // Single prize - use claimPrize
-        result = await executeTransaction(raffleContract.claimPrize);
+        result = await executeTransaction(poolContract.claimPrize);
       }
 
       if (result.success) {
@@ -581,15 +600,15 @@ const DesktopProfilePage = () => {
 
   const handleClaimRefund = async (ticket) => {
     try {
-      const raffleContract = getContractInstance(ticket.raffleAddress, 'raffle');
-      if (!raffleContract) {
-        throw new Error('Failed to get raffle contract');
+      const poolContract = getContractInstance(ticket.raffleAddress, 'pool');
+      if (!poolContract) {
+        throw new Error('Failed to get pool contract');
       }
 
-      const refundClaimed = await raffleContract.refundedNonWinningTickets(address);
+      const refundClaimed = await poolContract.refundedNonWinningTickets(address);
       const refundClaimedBool = refundClaimed && refundClaimed.gt && refundClaimed.gt(0);
 
-      const result = await executeTransaction(raffleContract.claimRefund);
+      const result = await executeTransaction(poolContract.claimRefund);
 
       if (result.success) {
         toast.success('Refund claimed successfully!');
@@ -625,7 +644,7 @@ const DesktopProfilePage = () => {
   const tabs = [
     { id: 'activity', label: 'Activity', icon: Clock },
     { id: 'created', label: 'My Raffles', icon: Users },
-    { id: 'tickets', label: 'Purchased Tickets', icon: Ticket },
+    { id: 'tickets', label: 'Slots Purchased', icon: CircleDot },
     { id: 'collections', label: 'Creator Dashboard', icon: Settings }
   ];
 
@@ -671,8 +690,8 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-3">
                   <Ticket className="h-8 w-8 text-blue-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalTicketsPurchased || 0).toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">Tickets Purchased</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalSlotsPurchased || 0).toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Slots Purchased</p>
                   </div>
                 </div>
               </div>

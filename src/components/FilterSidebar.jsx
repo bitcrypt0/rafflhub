@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { countRafflesByFilters } from '../utils/filterUtils';
 import { useCollabDetection } from '../contexts/CollabDetectionContext';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import QuickFilters from './QuickFilters';
 
 // Mobile-specific CSS for input sizing
@@ -72,6 +73,7 @@ const FilterSidebar = ({
   className = ""
 }) => {
   const { countEnhancedRaffleTypes } = useCollabDetection();
+  const { getCurrencySymbol } = useNativeCurrency();
 
 
   const headerOffset = useHeaderOffset();
@@ -117,16 +119,16 @@ const FilterSidebar = ({
     prizeType: [
       { value: 'nft', label: 'NFT', count: raffleCounts.prizeType.nft || 0 },
       { value: 'erc20', label: 'ERC20 Token', count: raffleCounts.prizeType.erc20 || 0 },
-      { value: 'eth', label: 'ETH', count: raffleCounts.prizeType.eth || 0 },
+      { value: 'native', label: getCurrencySymbol(), count: raffleCounts.prizeType.native || 0 },
       { value: 'token_giveaway', label: 'Token Giveaway', count: raffleCounts.prizeType.token_giveaway || 0 }
     ],
     prizeStandard: [
       { value: 'erc721', label: 'ERC721', count: raffleCounts.prizeStandard.erc721 || 0 },
       { value: 'erc1155', label: 'ERC1155', count: raffleCounts.prizeStandard.erc1155 || 0 },
       { value: 'erc20', label: 'ERC20', count: raffleCounts.prizeStandard.erc20 || 0 },
-      { value: 'eth', label: 'ETH', count: raffleCounts.prizeStandard.eth || 0 }
+      { value: 'native', label: getCurrencySymbol(), count: raffleCounts.prizeStandard.native || 0 }
     ]
-  }), [raffleCounts]);
+  }), [raffleCounts, getCurrencySymbol]);
 
   // Toggle section expansion
   const toggleSection = useCallback((section) => {

@@ -46,7 +46,7 @@ const Header = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [allRaffles, setAllRaffles] = useState([]);
+  const [allPools, setAllPools] = useState([]);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
   const [mouseInDropdown, setMouseInDropdown] = useState(false);
@@ -88,9 +88,9 @@ const Header = () => {
     };
   }, [showSearch, mouseInDropdown]);
 
-  // Fetch all raffles once for searching
+  // Fetch all pools once for searching
   useEffect(() => {
-    const fetchAllRaffles = async () => {
+    const fetchAllPools = async () => {
       if (!provider || !chainId || !SUPPORTED_NETWORKS[chainId]) {
         return;
       }
@@ -98,50 +98,50 @@ const Header = () => {
         return;
       }
       try {
-        const raffleManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.raffleManager;
-        if (!raffleManagerAddress) {
-          setAllRaffles([]);
+        const protocolManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.protocolManager;
+        if (!protocolManagerAddress) {
+          setAllPools([]);
           hasFetchedRaffles.current = true;
           return;
         }
-        const raffleManagerContract = new ethers.Contract(raffleManagerAddress, contractABIs.raffleManager, provider);
-        const registeredRaffles = await raffleManagerContract.getAllRaffles();
-        if (!registeredRaffles || registeredRaffles.length === 0) {
-          setAllRaffles([]);
+        const protocolManagerContract = new ethers.Contract(protocolManagerAddress, contractABIs.protocolManager, provider);
+        const registeredPools = await protocolManagerContract.getAllPools();
+        if (!registeredPools || registeredPools.length === 0) {
+          setAllPools([]);
           hasFetchedRaffles.current = true;
           return;
         }
-        const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
+        const poolPromises = registeredPools.map(async (poolAddress) => {
           try {
             if (!provider) {
               return null;
             }
-            const raffleContract = new ethers.Contract(raffleAddress, contractABIs.raffle, provider);
-            const name = await raffleContract.name();
+            const poolContract = new ethers.Contract(poolAddress, contractABIs.pool, provider);
+            const name = await poolContract.name();
             return {
-              address: raffleAddress,
+              address: poolAddress,
               name: name
             };
           } catch (error) {
             return null;
           }
         });
-        const raffleData = await Promise.all(rafflePromises);
-        const validRaffles = raffleData.filter(r => r);
-        setAllRaffles(validRaffles);
+        const poolData = await Promise.all(poolPromises);
+        const validPools = poolData.filter(r => r);
+        setAllPools(validPools);
         hasFetchedRaffles.current = true;
       } catch (error) {
-        setAllRaffles([]);
+        setAllPools([]);
         hasFetchedRaffles.current = true;
       }
     };
-    fetchAllRaffles();
+    fetchAllPools();
   }, [provider, chainId]);
 
-  // Monitor allRaffles changes
+  // Monitor allPools changes
   useEffect(() => {
     // Removed debug logging
-  }, [allRaffles]);
+  }, [allPools]);
 
   // Debounced search
   useEffect(() => {
@@ -152,7 +152,7 @@ const Header = () => {
     setSearchLoading(true);
     const handler = setTimeout(() => {
       const term = searchTerm.trim().toLowerCase();
-      const results = allRaffles.filter(r =>
+      const results = allPools.filter(r =>
         (r.name || '').trim().toLowerCase().includes(term) ||
         (r.address || '').trim().toLowerCase() === term ||
         (r.address || '').trim().toLowerCase().includes(term)
@@ -161,7 +161,7 @@ const Header = () => {
       setSearchLoading(false);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchTerm, showSearch, allRaffles]);
+  }, [searchTerm, showSearch, allPools]);
 
   const handleSearchResultClick = (raffleAddress) => {
     const slug = chainId && SUPPORTED_NETWORKS[chainId] ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (chainId || '');

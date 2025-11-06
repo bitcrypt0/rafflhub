@@ -34,7 +34,7 @@ const BrowserCompatibilityTest = ({ raffleAddress = null }) => {
       // Try to get contract ABI if address is provided
       if (raffleAddress && getContractInstance) {
         try {
-          const contract = getContractInstance(raffleAddress, 'raffle');
+          const contract = getContractInstance(raffleAddress, 'pool');
           contractABI = contract?.interface?.fragments || null;
         } catch (error) {
           console.warn('Could not get contract ABI for testing:', error);
