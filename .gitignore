@@ -1,7 +1,6 @@
 node_modules/
 abis/
 docs/
-supabase/
 package-lock.json
 abis.code-workspace
 setup-supabase.ps1
