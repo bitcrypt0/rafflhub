@@ -6,29 +6,40 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if we're in development mode with placeholder values
 const isPlaceholderConfig = supabaseUrl === 'https://your-project-id.supabase.co' || 
-                           supabaseAnonKey === 'your-supabase-anon-key';
+                          supabaseAnonKey === 'your-supabase-anon-key';
 
+// Create Supabase client or mock client
+export const supabase = !supabaseUrl || !supabaseAnonKey ? 
+  // Mock client that won't crash the app
+  {
+    from: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+    auth: { 
+      getSession: () => ({ session: null, error: { message: 'Supabase not configured' } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+    },
+    functions: { invoke: () => ({ data: null, error: { message: 'Supabase not configured' } }) },
+    realtime: { channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }) }) }
+  } :
+  // Real Supabase client
+  createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    }
+  });
+
+// Log warnings/errors for configuration issues
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
-}
-
-if (isPlaceholderConfig) {
+  console.error('❌ Missing Supabase environment variables. Please check your Vercel environment variables.');
+} else if (isPlaceholderConfig) {
   console.warn('⚠️ Using placeholder Supabase configuration. Social media features will be limited until you configure your actual Supabase project.');
 }
-
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  }
-});
 
 // Database table names
 export const TABLES = {
@@ -77,7 +88,15 @@ export const EDGE_FUNCTIONS = {
 // Helper function to call edge functions
 export const callEdgeFunction = async (functionName, payload = {}) => {
   try {
-    // Check if we're using placeholder configuration
+    // Check if we're using placeholder or missing configuration
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error(`❌ Cannot call edge function '${functionName}' - missing Supabase environment variables.`);
+      return { 
+        data: null, 
+        error: { message: 'Supabase not configured. Please set up your environment variables in Vercel.' }
+      };
+    }
+    
     if (isPlaceholderConfig) {
       console.warn(`⚠️ Cannot call edge function '${functionName}' with placeholder Supabase configuration.`);
       return { 
@@ -104,7 +123,15 @@ export const callEdgeFunction = async (functionName, payload = {}) => {
 // Helper function to get user session
 export const getCurrentSession = async () => {
   try {
-    // Check if we're using placeholder configuration
+    // Check if we're using placeholder or missing configuration
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Cannot get session - missing Supabase environment variables.');
+      return { 
+        session: null, 
+        error: { message: 'Supabase not configured. Please set up your environment variables in Vercel.' }
+      };
+    }
+    
     if (isPlaceholderConfig) {
       console.warn('⚠️ Cannot get session with placeholder Supabase configuration.');
       return { 
