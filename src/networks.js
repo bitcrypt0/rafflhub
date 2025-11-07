@@ -96,11 +96,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      protocolManager: '0xd8B3ff54Acf92A12146A490B09588aD01142d882',
-      poolDeployer: '0xA05cfC6642017d6678b0845Fe87F522980fD66e8',
-      revenueManager: '0x3ff06D40476350Ef92Cf19A4B018D98b1E8C30d4',
-      nftFactory: '0x6e30CfA9f20532d09cfCB3E62D3D791B7f99cE89',
-      socialEngagementManager: '0xC1536c882C4Fec5a37014fE8ce7e4D2E9d7A4b4E'
+      protocolManager: '0x9605347110331130B4E33A36493ed8166BcDd4E6',
+      poolDeployer: '0x05Ad67194Ce93eE9125f3314ADa0456855e441aC',
+      revenueManager: '0x2af66A0A5Bc7Ff4c61b538Bc1CAdCd3C2a4A6CC6',
+      nftFactory: '0x0D3f45B7fF629A938b142f9dE2b27FB512485BCB',
+      socialEngagementManager: '0x70134E115E8C387De122d56D439bdB222Df8f511'
     }
   },
   11155111: {

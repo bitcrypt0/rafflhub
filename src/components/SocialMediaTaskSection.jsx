@@ -3,10 +3,15 @@ import { Switch } from './ui/switch';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { CheckCircle, Twitter, MessageCircle, Send, Plus, Trash2 } from 'lucide-react';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { SOCIAL_TASK_CONSTANTS } from '../constants/socialTasks';
+
+// Maximum number of social media tasks allowed
+const MAX_SOCIAL_TASKS = SOCIAL_TASK_CONSTANTS.MAX_TASKS;
 
 const SocialMediaTaskSection = ({
   socialEngagementEnabled,
   onSocialEngagementChange,
+  setSocialEngagementEnabled,
   formData,
   handleChange,
   required = false,
@@ -18,12 +23,20 @@ const SocialMediaTaskSection = ({
   const isEnabled = useFormDataEnabled ? formData.socialEngagementEnabled : socialEngagementEnabled;
   const handleToggleChange = useFormDataEnabled
     ? (value) => handleChange('socialEngagementEnabled', value)
-    : onSocialEngagementChange;
+    : (onSocialEngagementChange || setSocialEngagementEnabled || (() => {
+        console.warn('No toggle change handler provided to SocialMediaTaskSection');
+      }));
 
   // Initialize tasks if not present
   const tasks = formData.socialTasks || [];
   
   const addTask = () => {
+    // Check if maximum task limit reached
+    if (tasks.length >= MAX_SOCIAL_TASKS) {
+      console.warn(`Maximum of ${MAX_SOCIAL_TASKS} social media tasks allowed`);
+      return;
+    }
+    
     const newTasks = [...tasks, {
       id: Date.now(),
       platform: 'twitter',
@@ -93,13 +106,39 @@ const SocialMediaTaskSection = ({
       return `${task.platform.toUpperCase()}: ${actionText} - ${task.target}`;
     });
     
-    return descriptions.join(' | ');
+    return descriptions.join(SOCIAL_TASK_CONSTANTS.TASK_SEPARATOR);
+  };
+  
+  // Validate task description against smart contract limits
+  const validateTaskDescription = (description) => {
+    if (!description) return true;
+    
+    // Check length limit (matching smart contract)
+    if (description.length > SOCIAL_TASK_CONSTANTS.MAX_DESCRIPTION_LENGTH) {
+      console.warn(`Task description too long (max ${SOCIAL_TASK_CONSTANTS.MAX_DESCRIPTION_LENGTH} characters)`);
+      return false;
+    }
+    
+    // Count tasks to ensure we don't exceed limit
+    const taskCount = description.split(SOCIAL_TASK_CONSTANTS.TASK_SEPARATOR).length;
+    if (taskCount > SOCIAL_TASK_CONSTANTS.MAX_TASKS) {
+      console.warn(`Too many tasks (${taskCount}/${SOCIAL_TASK_CONSTANTS.MAX_TASKS})`);
+      return false;
+    }
+    
+    return true;
   };
 
   // Update the contract description whenever tasks change
   React.useEffect(() => {
     if (isEnabled) {
-      handleChange('socialTaskDescription', generateTaskDescription());
+      const description = generateTaskDescription();
+      if (validateTaskDescription(description)) {
+        handleChange('socialTaskDescription', description);
+      } else {
+        console.warn('Generated task description failed validation');
+        // Don't update if validation fails
+      }
     } else {
       handleChange('socialTaskDescription', '');
     }
@@ -298,10 +337,18 @@ const SocialMediaTaskSection = ({
             <button
               type="button"
               onClick={addTask}
-              className="w-full p-3 border-2 border-dashed border-border rounded-lg hover:border-primary/50 hover:bg-muted/20 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+              disabled={tasks.length >= MAX_SOCIAL_TASKS}
+              className={`w-full p-3 border-2 border-dashed rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                tasks.length >= MAX_SOCIAL_TASKS
+                  ? 'border-border/50 bg-muted/10 text-muted-foreground/50 cursor-not-allowed'
+                  : 'border-border hover:border-primary/50 hover:bg-muted/20 text-muted-foreground hover:text-foreground cursor-pointer'
+              }`}
             >
               <Plus className="h-4 w-4" />
-              Add Social Media Task
+              {tasks.length >= MAX_SOCIAL_TASKS 
+                ? `Maximum ${MAX_SOCIAL_TASKS} tasks reached`
+                : `Add Social Media Task (${tasks.length}/${MAX_SOCIAL_TASKS})`
+              }
             </button>
 
             {/* Task Summary */}

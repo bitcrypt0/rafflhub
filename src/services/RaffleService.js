@@ -239,7 +239,7 @@ class RaffleService {
       // Fetch basic raffle data - use sequential calls on mobile for better reliability
       let name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
           maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomFee, isEscrowedPrize;
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isCollabPool, standard, usesCustomFee, isEscrowedPrize;
 
       if (config.isMobile) {
         // Sequential calls on mobile for better reliability
@@ -260,8 +260,8 @@ class RaffleService {
         erc20PrizeToken = await raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero);
         erc20PrizeAmount = await raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0));
         nativePrizeAmount = await raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0));
-        isExternallyPrized = await raffleContract.isExternallyPrized?.().catch((err) => {
-          console.warn(`isExternallyPrized failed for ${raffleAddress}:`, err.message);
+        isCollabPool = await raffleContract.isCollabPool?.().catch((err) => {
+          console.warn(`isCollabPool failed for ${raffleAddress}:`, err.message);
           return false;
         });
         standard = await raffleContract.standard?.().catch((error) => {
@@ -281,7 +281,7 @@ class RaffleService {
         [
           name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
           maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isExternallyPrized, standard, usesCustomFee, isEscrowedPrize
+          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isCollabPool, standard, usesCustomFee, isEscrowedPrize
         ] = await Promise.all([
           this.withRetry(() => raffleContract.name(), `name-${raffleAddress}`, config),
           this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config),
@@ -298,8 +298,8 @@ class RaffleService {
           raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero),
           raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
           raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.isExternallyPrized?.().catch((error) => {
-            console.warn(`[RaffleService] isExternallyPrized failed for ${raffleAddress}:`, error.message);
+          raffleContract.isCollabPool?.().catch((error) => {
+            console.warn(`[RaffleService] isCollabPool failed for ${raffleAddress}:`, error.message);
             return false;
           }),
           raffleContract.standard?.().catch((error) => {
@@ -361,7 +361,7 @@ class RaffleService {
         erc20PrizeToken,
         erc20PrizeAmount,
         nativePrizeAmount,
-        isExternallyPrized: isExternallyPrized,
+        isCollabPool: isCollabPool,
         standard: (standard !== undefined && standard !== null) ? (standard.toNumber ? standard.toNumber() : Number(standard)) : undefined,
         usesCustomFee: usesCustomFee,
         isEscrowedPrize: isEscrowedPrize
@@ -373,8 +373,8 @@ class RaffleService {
           prizeCollection: raffleData.prizeCollection,
           prizeTokenId: raffleData.prizeTokenId,
           prizeTokenIdRaw: prizeTokenId,
-          isExternallyPrized: raffleData.isExternallyPrized,
-          isExternallyPrizedRaw: isExternallyPrized,
+          isCollabPool: raffleData.isCollabPool,
+          isCollabPoolRaw: isCollabPool,
           usesCustomFee: raffleData.usesCustomFee,
           usesCustomFeeRaw: usesCustomFee,
           isEscrowedPrize: raffleData.isEscrowedPrize,

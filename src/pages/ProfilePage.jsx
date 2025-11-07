@@ -650,8 +650,8 @@ const DesktopProfilePage = () => {
 
   const getPrizeType = (raffle) => {
     // Note: This is a simplified version. Full collab detection requires async holderTokenAddress() check
-    // For now, only detecting NFT Collab via isExternallyPrized until async enhancement is implemented
-    if (raffle.isExternallyPrized) return 'NFT Collab';
+    // For now, only detecting NFT Collab via isCollabPool until async enhancement is implemented
+    if (raffle.isCollabPool) return 'NFT Collab';
     if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
       // Display native currency ticker + 'Giveaway' (e.g., 'AVAX Giveaway', 'ETH Giveaway')
       return `${getCurrencySymbol()} Giveaway`;

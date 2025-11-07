@@ -30,15 +30,15 @@ export const getRaffleState = (stateNum) => {
  * @returns {string} - 'prized', 'non_prized', 'nft_collab', or 'whitelist_collab'
  *
  * Collab type priority:
- * 1. NFT Collab: isExternallyPrized returns true (takes precedence)
+ * 1. NFT Collab: isCollabPool returns true (takes precedence)
  * 2. Whitelist Collab: only holderTokenAddress returns valid address (async check in RaffleCard)
  *
- * Note: This synchronous version can only detect NFT Collab via isExternallyPrized.
+ * Note: This synchronous version can only detect NFT Collab via isCollabPool.
  * RaffleCard component implements the complete async detection for both types.
  */
 export const getRaffleType = (raffle) => {
-  // Check for NFT collaboration via isExternallyPrized (immediate check)
-  if (raffle.isExternallyPrized) {
+  // Check for NFT collaboration via isCollabPool (immediate check)
+  if (raffle.isCollabPool) {
     return 'nft_collab';
   }
 

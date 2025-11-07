@@ -64,7 +64,7 @@ function safeSlotFeeToBigNumber(slotFee) {
   }
 }
 
-const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isExternallyPrized, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
+const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isCollabPool, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const { formatSlotFee, getCurrencySymbol } = useNativeCurrency();
@@ -218,7 +218,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const canClaimPrize = () => shouldShowClaimPrize && !prizeAlreadyClaimed;
 
   const canClaimRefund = () => {
-    const prizeFlag = (isPrized === true) || (isExternallyPrized === true) || raffle.isPrized || raffle.isExternallyPrized;
+    const prizeFlag = (isPrized === true) || (isCollabPool === true) || raffle.isPrized || raffle.isCollabPool;
     const refundableState = [4, 5, 7, 8].includes(raffle.stateNum); // Completed, Deleted, Prizes Claimed, Unengaged
     return (
       prizeFlag &&
@@ -304,8 +304,8 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {claimingPrize
-                        ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
-                        : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isExternallyPrized === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
+                        ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isCollabPool === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
+                        : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isCollabPool === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
                     </button>
                   )}
                   {canClaimRefund() && (
@@ -1010,7 +1010,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
       setLoading(false);
     }
 
-    // Trigger fetch only when all prize conditions are met (no dependency on isExternallyPrized)
+    // Trigger fetch only when all prize conditions are met (no dependency on isCollabPool)
     const eligiblePrize = (
       raffle?.isPrized === true &&
       raffle?.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero &&
@@ -1020,7 +1020,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
     if (eligiblePrize) fetchPrizeImageEnhanced();
   }, [raffle, getContractInstance, isEscrowedPrize]);
 
-  // Render only when prize conditions are met (no dependency on isExternallyPrized)
+  // Render only when prize conditions are met (no dependency on isCollabPool)
   const shouldRender = (
     raffle?.isPrized === true &&
     raffle?.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero &&
@@ -2002,7 +2002,7 @@ const RaffleDetailPage = () => {
   const [checkingERC721Approval, setCheckingERC721Approval] = useState(false);
   const [approvingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
-  const [isExternallyPrized, setIsExternallyPrized] = useState(false);
+  const [isCollabPool, setIsCollabPool] = useState(false);
   // If URL includes a chain slug, gently ensure wallet is on the right network
   useEffect(() => {
     async function ensureNetworkFromUrl() {
@@ -2085,66 +2085,6 @@ const RaffleDetailPage = () => {
       setMintingToWinner(false);
     }
   };
-
-  const [showAssignPrizeInput, setShowAssignPrizeInput] = useState(false);
-  const [assignSelectOpen, setAssignSelectOpen] = useState(false);
-
-  const assignPrizeRef = useRef(null);
-  const [assignPrizeAddress, setAssignPrizeAddress] = useState("");
-  const [assignPrizeStandard, setAssignPrizeStandard] = useState(0);
-  const [assignPrizeTokenId, setAssignPrizeTokenId] = useState("");
-  const [assignPrizeAmountPerWinner, setAssignPrizeAmountPerWinner] = useState("");
-  const [assigningPrize, setAssigningPrize] = useState(false);
-  const handleAssignPrize = async () => {
-    setAssigningPrize(true);
-    try {
-      const poolContract = getContractInstance(raffle.address, 'pool');
-      if (!poolContract) throw new Error('Failed to get pool contract');
-      if (!assignPrizeAddress || assignPrizeAddress.length !== 42) throw new Error('Please enter a valid address');
-      let tokenId = assignPrizeTokenId;
-      let amountPerWinner = assignPrizeAmountPerWinner;
-      if (assignPrizeStandard === 0) { // ERC721
-        tokenId = 0;
-        amountPerWinner = 1;
-      } else {
-        if (tokenId === "" || amountPerWinner === "") throw new Error('Token ID and Amount Per Winner are required');
-      }
-      const result = await executeTransaction(() =>
-        poolContract.setExternalPrize(
-          assignPrizeAddress,
-          assignPrizeStandard,
-          tokenId,
-          amountPerWinner
-        )
-      );
-      if (result.success) {
-        toast.success('Prize assigned successfully!');
-        window.location.reload();
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (err) {
-      toast.error(extractRevertReason(err));
-    } finally {
-      setAssigningPrize(false);
-    }
-  };
-
-  // Click-away logic for Assign Prize area (single effect)
-  useEffect(() => {
-    if (!showAssignPrizeInput) return;
-    function handleClickOutside(event) {
-      // If select menu is open, do not treat outside click as a dismiss action
-      if (assignSelectOpen) return;
-      if (assignPrizeRef.current && !assignPrizeRef.current.contains(event.target)) {
-        setShowAssignPrizeInput(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showAssignPrizeInput, assignSelectOpen]);
 
   // Memoize stable values to prevent unnecessary re-renders
   const stableConnected = useMemo(() => connected, [connected]);
@@ -2301,7 +2241,7 @@ const RaffleDetailPage = () => {
           { method: createSafeMethod(poolContract, 'nativePrizeAmount', ethers.BigNumber.from(0)), name: 'nativePrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(poolContract, 'usesCustomFee', false), name: 'usesCustomFee', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
-          { method: createSafeMethod(poolContract, 'isExternallyPrized', false), name: 'isExternallyPrized', required: false, fallback: false },
+          { method: createSafeMethod(poolContract, 'isCollabPool', false), name: 'isCollabPool', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) },
           // Conditionally fetch actual duration only when state is in ended/terminal states
           { method: async () => {
@@ -2332,7 +2272,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, isRefundableFlag, isExternallyPrizedFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2490,10 +2430,10 @@ const RaffleDetailPage = () => {
 	        } catch (_) {}
 
         setIsRefundable(isRefundableFlag);
-        setIsExternallyPrized(isExternallyPrizedFlag);
+        setIsCollabPool(isCollabPoolFlag);
         // If externally prized, re-query prizeCollection
         let updatedPrizeCollection = prizeCollection;
-        if (isExternallyPrizedFlag) {
+        if (isCollabPoolFlag) {
           try {
             updatedPrizeCollection = await poolContract.prizeCollection();
           } catch (e) {
@@ -3117,11 +3057,11 @@ const RaffleDetailPage = () => {
     // Standard prized raffles: winners can claim in Completed (4) or Prizes Claimed (7)
     (raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7)) ||
     // Externally prized raffles (mintable assigned before Active): winners can mint in Completed (4)
-    ((raffle?.isPrized === false) && ((isExternallyPrized === true) || (raffle?.isExternallyPrized === true)) && raffle?.stateNum === 4)
+    ((raffle?.isPrized === false) && ((isCollabPool === true) || (raffle?.isCollabPool === true)) && raffle?.stateNum === 4)
   );
   const prizeAlreadyClaimed = winnerData && winnerData.prizeClaimed;
   const shouldShowClaimRefund =
-    (raffle?.isPrized || raffle?.isExternallyPrized) &&
+    (raffle?.isPrized || raffle?.isCollabPool) &&
     [4,5,7,8].includes(raffle?.stateNum) &&
     eligibleForRefund &&
     refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
@@ -3258,14 +3198,14 @@ const RaffleDetailPage = () => {
   }
 
   // Determine if this is a mintable ERC721 prize (vs escrowed)
-  // For escrowed prizes: isExternallyPrized should be false (prize is held by raffle contract)
-  // For mintable prizes: isExternallyPrized should be true (prize is minted from collection)
+  // For escrowed prizes: isCollabPool should be false (prize is held by raffle contract)
+  // For mintable prizes: isCollabPool should be true (prize is minted from collection)
   const isMintableERC721 = (
     raffle &&
     raffle.prizeCollection &&
     raffle.prizeCollection !== ethers.constants.AddressZero &&
     raffle.standard === 0 &&
-    raffle.isExternallyPrized === true // Only mintable if externally prized
+    raffle.isCollabPool === true // Only mintable if collab pool
   );
 
 
@@ -3335,7 +3275,7 @@ const RaffleDetailPage = () => {
             )}
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              ((raffle.isPrized || isMintableERC721) || (!raffle.isPrized && isExternallyPrized)) &&
+              ((raffle.isPrized || isMintableERC721) || (!raffle.isPrized && isCollabPool)) &&
               raffle.prizeCollection &&
               raffle.prizeCollection !== ethers.constants.AddressZero &&
               (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') &&
@@ -3422,78 +3362,6 @@ const RaffleDetailPage = () => {
                 </Button>
               )}
 
-            {!raffle.isPrized &&
-              raffle.stateNum === 0 &&
-              connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() && (
-                <div className="flex flex-col sm:flex-row gap-2 items-center">
-                  {!showAssignPrizeInput ? (
-                    <Button
-                      onClick={() => setShowAssignPrizeInput(true)}
-                      className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      Assign Prize
-                    </Button>
-                  ) : (
-                    <div ref={assignPrizeRef} className="flex flex-col sm:flex-row gap-2 items-center bg-background p-2 rounded-md relative z-10 w-full sm:w-auto">
-                      <input
-                        type="text"
-                        placeholder="Prize collection address"
-                        value={assignPrizeAddress}
-                        onChange={e => setAssignPrizeAddress(e.target.value)}
-                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-56 font-mono focus:outline-none focus:ring-0"
-                        disabled={assigningPrize}
-                      />
-                      <div className="w-full sm:w-auto" onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-                        <Select
-                          value={String(assignPrizeStandard)}
-                          onValueChange={v => setAssignPrizeStandard(Number(v))}
-                          onOpenChange={(open) => setAssignSelectOpen(open)}
-                        >
-                          <SelectTrigger className="w-full px-3 py-2.5 text-base border-2 border-[#614E41] rounded-lg bg-background">
-                            <SelectValue placeholder="Select Prize Standard" />
-                          </SelectTrigger>
-                          <SelectContent onMouseDown={e => e.stopPropagation()}>
-                            <SelectItem value="0">ERC721</SelectItem>
-                            <SelectItem value="1">ERC1155</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <input
-                        type="number"
-                        placeholder="Prize Token ID"
-                        value={assignPrizeStandard === 0 ? 0 : assignPrizeTokenId}
-                        onChange={e => setAssignPrizeTokenId(e.target.value)}
-                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-32 focus:outline-none focus:ring-0"
-                        disabled={assigningPrize || assignPrizeStandard === 0}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Amount Per Winner"
-                        value={assignPrizeStandard === 0 ? 1 : assignPrizeAmountPerWinner}
-                        onChange={e => setAssignPrizeAmountPerWinner(e.target.value)}
-                        className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-full sm:w-32 focus:outline-none focus:ring-0"
-                        disabled={assigningPrize || assignPrizeStandard === 0}
-                      />
-                      <Button
-                        onClick={handleAssignPrize}
-                        disabled={assigningPrize || !assignPrizeAddress || assignPrizeAddress.length !== 42 || (assignPrizeStandard !== 0 && (assignPrizeTokenId === "" || assignPrizeAmountPerWinner === ""))}
-                        className="bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
-                      >
-                        {assigningPrize ? 'Assigning...' : 'Submit'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowAssignPrizeInput(false)}
-                        disabled={assigningPrize}
-                        className="sm:ml-2 border-2 border-[#614E41]"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-            )}
           </div>
         </div>
 
@@ -3583,7 +3451,7 @@ const RaffleDetailPage = () => {
             mintingToWinner={mintingToWinner}
             handleMintToWinner={handleMintToWinner}
             isEscrowedPrize={isEscrowedPrize}
-            isExternallyPrized={isExternallyPrized}
+            isCollabPool={isCollabPool}
             isPrized={raffle.isPrized}
             isMobile={isMobile}
             onStateChange={triggerRefresh}

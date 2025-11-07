@@ -169,14 +169,14 @@ const RaffleCard = ({ raffle }) => {
         }
 
         // Fetch values directly like RaffleDetailPage does
-        const [isExternallyPrizedDirect, usesCustomFeeDirect, isEscrowedPrizeDirect] = await Promise.all([
-          poolContract.isExternallyPrized().catch(() => null),
+        const [isCollabPoolDirect, usesCustomFeeDirect, isEscrowedPrizeDirect] = await Promise.all([
+          poolContract.isCollabPool().catch(() => null),
           poolContract.usesCustomFee().catch(() => null),
           poolContract.isEscrowedPrize().catch(() => null)
         ]);
 
         const directValues = {
-          isExternallyPrized: isExternallyPrizedDirect,
+          isCollabPool: isCollabPoolDirect,
           usesCustomFee: usesCustomFeeDirect,
           isEscrowedPrize: isEscrowedPrizeDirect
         };
@@ -329,7 +329,7 @@ const RaffleCard = ({ raffle }) => {
 
       // Determine collab type based on priority logic
       let collabType;
-      if (raffle.isExternallyPrized) {
+      if (raffle.isCollabPool) {
         // NFT Collab takes precedence (regardless of holderTokenAddress)
         collabType = 'nft_collab';
       } else if (hasHolderToken) {
@@ -389,9 +389,9 @@ const RaffleCard = ({ raffle }) => {
     }
 
     // Use direct contract values if available, otherwise fall back to raffle service values
-    const isExternallyPrized = (directContractValues && directContractValues.isExternallyPrized !== null)
-      ? directContractValues.isExternallyPrized
-      : raffle.isExternallyPrized;
+    const isCollabPool = (directContractValues && directContractValues.isCollabPool !== null)
+      ? directContractValues.isCollabPool
+      : raffle.isCollabPool;
     const usesCustomPrice = (directContractValues && directContractValues.usesCustomFee !== null)
          ? directContractValues.usesCustomFee === true
          : raffle.usesCustomFee === true;
@@ -418,7 +418,7 @@ const RaffleCard = ({ raffle }) => {
 
   const getPrizeType = () => {
     // Synchronous priority: externally prized raffles are always NFT Collab
-    if (raffle.isExternallyPrized) return 'NFT Collab';
+    if (raffle.isCollabPool) return 'NFT Collab';
 
     // Use async-determined collab status from context (fallback)
     const collabStatus = getCollabStatus(raffle.address);
@@ -563,7 +563,7 @@ const RaffleCard = ({ raffle }) => {
           const prizeType = getPrizeType();
           const isEscrowedNFT = raffle.prizeCollection &&
                                raffle.prizeCollection !== ethers.constants.AddressZero &&
-                               raffle.isExternallyPrized === false;
+                               raffle.isCollabPool === false;
 
           // Hide Prize Amount for escrowed NFT prizes
           if (isEscrowedNFT) {
