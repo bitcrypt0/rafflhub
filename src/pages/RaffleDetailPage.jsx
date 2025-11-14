@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolveChainIdFromSlug } from '../utils/urlNetworks';
-import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown } from 'lucide-react';
+import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send } from 'lucide-react';
+import { getPoolMetadata, hasAnyMetadata, formatSocialLink } from '../utils/poolMetadataService';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -20,7 +21,9 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleStateManager, useRaffleEventListener } from '../hooks/useRaffleService';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip';
 import SocialMediaVerification from '../components/SocialMediaVerification';
+import PoolMetadataDisplay from '../components/PoolMetadataDisplay';
 import signatureService from '../services/signatureService';
+import { parseContractError, logContractError, formatErrorForDisplay } from '../utils/contractErrorHandler';
 import {
   batchContractCalls,
   safeContractCall,
@@ -38,20 +41,11 @@ const POOL_STATE_LABELS = [
   'Drawing',
   'Completed',
   'Deleted',
-  'ActivationFailed',
   'AllPrizesClaimed',
   'Unengaged'
 ];
 
-// Utility to extract only the revert reason from contract errors
-function extractRevertReason(error) {
-  if (error?.reason) return error.reason;
-  if (error?.data?.message) return error.data.message;
-  const msg = error?.message || error?.data?.message || error?.toString() || '';
-  const match = msg.match(/execution reverted:?\s*([^\n]*)/i);
-  if (match && match[1]) return match[1].trim();
-  return msg;
-}
+// Note: Using parseContractError from contractErrorHandler for better custom error handling
 
 // Helper function to safely convert slotFee to BigNumber
 function safeSlotFeeToBigNumber(slotFee) {
@@ -131,7 +125,9 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     try {
       await onPurchase(quantity);
     } catch (error) {
-      toast.error(extractRevertReason(error));
+      const errorDetails = formatErrorForDisplay(error, 'purchase tickets');
+      logContractError(error, 'Purchase Tickets', { quantity });
+      toast.error(errorDetails.message);
     } finally {
       setLoading(false);
     }
@@ -164,7 +160,9 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error(extractRevertReason(err));
+      const errorDetails = formatErrorForDisplay(err, 'activate raffle');
+      logContractError(err, 'Activate Raffle');
+      toast.error(errorDetails.message);
     } finally {
       setActivating(false);
     }
@@ -186,7 +184,9 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
         throw new Error(result.error);
       }
     } catch (error) {
-      toast.error(extractRevertReason(error));
+      const errorDetails = formatErrorForDisplay(error, 'request randomness');
+      logContractError(error, 'Request Randomness');
+      toast.error(errorDetails.message);
     } finally {
       setRequestingRandomness(false);
     }
@@ -208,7 +208,9 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error(extractRevertReason(err));
+      const errorDetails = formatErrorForDisplay(err, 'end raffle');
+      logContractError(err, 'End Raffle');
+      toast.error(errorDetails.message);
     } finally {
       setEndingRaffle(false);
     }
@@ -218,10 +220,14 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const canClaimPrize = () => shouldShowClaimPrize && !prizeAlreadyClaimed;
 
   const canClaimRefund = () => {
-    const prizeFlag = (isPrized === true) || (isCollabPool === true) || raffle.isPrized || raffle.isCollabPool;
+    // Global fee pools: Any pool that doesn't use custom fee (prized or non-prized)
+    // Custom fee pools: Only prized pools with refundable flag
+    const isGlobalFeePool = !raffle.usesCustomFee;
+    const isCustomFeeRefundable = (isPrized === true) || (isCollabPool === true) || raffle.isPrized || raffle.isCollabPool;
     const refundableState = [4, 5, 7, 8].includes(raffle.stateNum); // Completed, Deleted, Prizes Claimed, Unengaged
+    
     return (
-      prizeFlag &&
+      (isGlobalFeePool || isCustomFeeRefundable) &&
       refundableState &&
       refundableAmount && refundableAmount.gt && refundableAmount.gt(0)
     );
@@ -292,7 +298,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
           <div></div>
           </div>
 
-        {(raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
+        {(raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7) ? (
           <>
             <div className="mt-auto">
               {(canClaimPrize() || canClaimRefund()) ? (
@@ -323,7 +329,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   disabled
                   className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Ended'}
+                  {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
                 </button>
               )}
             </div>
@@ -345,7 +351,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   Pool will be available for activation at the scheduled start time.
                 </p>
               </div>
-            ) : raffle.stateNum === 2 && (address?.toLowerCase() === raffle.creator.toLowerCase() || userSlots > 0) ? (
+            ) : (raffle.stateNum === 2 || (raffle.stateNum === 3 && raffle.winnersSelected < raffle.winnersCount)) && (address?.toLowerCase() === raffle.creator.toLowerCase() || userSlots > 0) ? (
               <>
                 <button
                   onClick={handleRequestRandomness}
@@ -355,15 +361,18 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
                 </button>
                 <p className="text-muted-foreground mt-4 text-center text-sm">
-                      The pool has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
+                  {raffle.stateNum === 3 
+                    ? `Batch ${Math.ceil(raffle.winnersSelected / 25)} complete. ${raffle.winnersCount - raffle.winnersSelected} more winner${raffle.winnersCount - raffle.winnersSelected !== 1 ? 's' : ''} needed. ${address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the next batch.`
+                    : `The pool has ended. ${address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.`
+                  }
                 </p>
               </>
-            ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.state === 'Deleted' || raffle.stateNum === 5) ? (
+            ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 6 || raffle.state === 'Deleted' || raffle.stateNum === 5) ? (
               <button
                 disabled
                 className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Ended'}
+                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </button>
             ) : isRaffleEnded() ? (
               <button
@@ -378,7 +387,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 disabled
                 className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Ended'}
+                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </button>
             ) : userSlots >= raffle.maxSlotsPerParticipant ? (
               <button
@@ -1456,7 +1465,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   );
 };
 
-const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange }) => {
+const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange, onWinnersSelectedChange }) => {
   const { getContractInstance, executeTransaction } = useContract();
   const { address: connectedAddress } = useWallet();
   const { formatPrizeAmount } = useNativeCurrency();
@@ -1467,12 +1476,13 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   const [winnerSelectionTx, setWinnerSelectionTx] = useState(null);
   const [collectionName, setCollectionName] = useState(null);
   const [lastWinnersUpdate, setLastWinnersUpdate] = useState(null);
+  const [winnersSelectedCount, setWinnersSelectedCount] = useState(raffle?.winnersSelected || 0);
 
   // WinnersSection is primarily for display - claim logic is handled by parent component
 
   // Event listener for real-time winner updates
   // Stop listening for winner selection events after raffle is completed
-  const isRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 7; // Completed or Prizes Claimed
+  const isRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (was 7, now 6)
   const shouldListenForWinners = !!raffle && !isRaffleCompleted;
 
   const { isListening, eventHistory } = useRaffleEventListener(raffle?.address, {
@@ -1560,9 +1570,9 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       return;
     }
 
-    // Allow fetching winners for states: Drawing (2), Completed (4), Prizes Claimed (7)
-    // This is more robust than only checking for completed states
-    const allowedStates = [2, 4, 7]; // Drawing, Completed, Prizes Claimed
+    // Allow fetching winners for states: Drawing (3), Completed (4), Prizes Claimed (7)
+    // Winners are only available after first batch completes (Drawing state)
+    const allowedStates = [3, 4, 7]; // Drawing, Completed, Prizes Claimed
     if (!allowedStates.includes(raffle.stateNum)) {
       setWinners([]);
       onWinnerCountChange?.(0);
@@ -1605,7 +1615,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
               address: winnerAddress,
               index: i,
               claimedWins: claimedWins.toNumber ? claimedWins.toNumber() : Number(claimedWins),
-              prizeClaimed: prizeClaimed
+              prizeClaimed: prizeClaimed && (prizeClaimed.toNumber ? prizeClaimed.toNumber() > 0 : Number(prizeClaimed) > 0)
             });
           } catch (error) {
             continue;
@@ -1625,6 +1635,51 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   useEffect(() => {
     fetchWinners();
   }, [fetchWinners, lastWinnersUpdate]);
+
+  // Sync winnersSelectedCount with raffle prop when it changes
+  useEffect(() => {
+    if (raffle?.winnersSelected !== undefined) {
+      setWinnersSelectedCount(raffle.winnersSelected);
+    }
+  }, [raffle?.winnersSelected]);
+
+  // Polling mechanism for Drawing state - checks for new winners every 15 seconds
+  useEffect(() => {
+    if (!raffle || raffle.stateNum !== 3) return; // Only poll during Drawing state
+
+    console.log('🎯 WinnersSection: Starting winner polling for Drawing state');
+
+    let lastWinnersCount = winnersSelectedCount;
+
+    const pollingInterval = setInterval(async () => {
+      try {
+        const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+        if (!poolContract) return;
+
+        // Check current winners count on contract
+        const winnersSelectedOnChain = await poolContract.winnersSelected();
+        const currentCount = winnersSelectedOnChain.toNumber ? winnersSelectedOnChain.toNumber() : Number(winnersSelectedOnChain);
+
+        console.log(`🔍 Polling: ${currentCount} winners on-chain, ${lastWinnersCount} in local state`);
+
+        // If new winners detected, fetch the updated list and update count
+        if (currentCount > lastWinnersCount) {
+          console.log(`✨ New winners detected! Fetching updated list...`);
+          setWinnersSelectedCount(currentCount);
+          onWinnersSelectedChange?.(currentCount);
+          await fetchWinners();
+          lastWinnersCount = currentCount;
+        }
+      } catch (error) {
+        console.warn('Winner polling error:', error);
+      }
+    }, 15000); // Poll every 15 seconds
+
+    return () => {
+      console.log('🎯 WinnersSection: Stopping winner polling');
+      clearInterval(pollingInterval);
+    };
+  }, [raffle, raffle?.stateNum, winnersSelectedCount, getContractInstance, fetchWinners, onWinnersSelectedChange]);
 
   // Debug logging removed - state management simplified
 
@@ -1663,49 +1718,51 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           </div>
         );
       case 'Ended':
-        // Quietly show any available winners without a loading spinner
         return (
-          winners.length > 0 ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-sm text-muted-foreground">
-                  {winners.length} winner{winners.length !== 1 ? 's' : ''} selected
-                </div>
-              </div>
-              <div className="max-h-96 overflow-y-auto pr-2">
-                <div className="space-y-3 pb-4">
-                  {winners.map((winner, i) => (
-                    <WinnerCard
-                      key={winner.index}
-                      winner={winner}
-                      index={i}
-                      raffle={raffle}
-                      connectedAddress={connectedAddress}
-                      onToggleExpand={handleToggleExpand}
-                      isExpanded={expandedWinner === i}
-                      stats={winnerStats[winner.address]}
-                      onLoadStats={handleToggleExpand}
-                      collectionName={collectionName}
-                      isEscrowedPrize={isEscrowedPrize}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Raffle Ended</h3>
-              <p className="text-muted-foreground">Raffle has ended. Waiting for winner selection.</p>
-            </div>
-          )
+          <div className="text-center py-8">
+            <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Raffle Ended</h3>
+            <p className="text-muted-foreground">Raffle has ended. Waiting for winner selection to begin.</p>
+          </div>
         );
       case 'Drawing':
         return (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold mb-2">Drawing in Progress</h3>
-            <p className="text-muted-foreground">Winners are being selected. Please wait...</p>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <h3 className="text-lg font-semibold mb-2">Drawing in Progress</h3>
+                <p className="text-muted-foreground">Loading winners...</p>
+              </div>
+            ) : winners.length > 0 ? (
+              <>
+                <div className="max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-3 pb-4">
+                    {winners.map((winner, i) => (
+                      <WinnerCard
+                        key={winner.index}
+                        winner={winner}
+                        index={i}
+                        raffle={raffle}
+                        connectedAddress={connectedAddress}
+                        onToggleExpand={handleToggleExpand}
+                        isExpanded={expandedWinner === i}
+                        stats={winnerStats[winner.address]}
+                        onLoadStats={handleToggleExpand}
+                        collectionName={collectionName}
+                        isEscrowedPrize={isEscrowedPrize}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <h3 className="text-lg font-semibold mb-2">Drawing in Progress</h3>
+                <p className="text-muted-foreground">Winners are being selected. Please wait...</p>
+              </div>
+            )}
           </div>
         );
       case 'Completed':
@@ -1720,11 +1777,6 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
               </div>
             ) : winners.length > 0 ? (
               <>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm text-muted-foreground">
-                    {winners.length} winner{winners.length !== 1 ? 's' : ''} selected
-                  </div>
-                </div>
                 <div className="max-h-96 overflow-y-auto pr-2">
                   <div className="space-y-3 pb-4">
                     {winners.map((winner, i) => (
@@ -1805,6 +1857,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
         const purchasedCount = slotsPurchased.toNumber ? slotsPurchased.toNumber() : Number(slotsPurchased);
         const winningCount = winningSlots.toNumber ? winningSlots.toNumber() : Number(winningSlots);
+        const claimedCount = prizeClaimed.toNumber ? prizeClaimed.toNumber() : Number(prizeClaimed);
 
         setWinnerStats(prev => ({
           ...prev,
@@ -1812,7 +1865,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
             ticketsPurchased: purchasedCount,
             winningTickets: winningCount,
             losingTickets: purchasedCount - winningCount,
-            prizeClaimed: !!prizeClaimed
+            prizeClaimed: claimedCount > 0
           }
         }));
       } catch (e) {
@@ -1826,33 +1879,76 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
   return (
     <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Trophy className="h-5 w-5" />
-        Winners
-        {winnerSelectionTx && (
-          <a
-            href={getExplorerLink(winnerSelectionTx)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline flex items-center gap-1 ml-2"
-            title="View winner selection transaction"
-          >
-            <Trophy className="h-4 w-4" />
-            Transaction
-          </a>
-        )}
-        {isListening && raffle?.state?.toLowerCase() !== 'pending' && (
-          <div className={`w-2 h-2 rounded-full animate-pulse ml-2 ${
-            winners.length > 0
-              ? 'bg-green-500'
-              : 'bg-orange-500'
-          }`} title={
-            winners.length > 0
-              ? 'Real-time updates active - Winners displayed'
-              : 'Real-time updates active - Waiting for winners'
-          }></div>
-        )}
-      </h3>
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-3">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            Winners
+            {winnerSelectionTx && (
+              <a
+                href={getExplorerLink(winnerSelectionTx)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline flex items-center gap-1 ml-2"
+                title="View winner selection transaction"
+              >
+                <Trophy className="h-4 w-4" />
+                Transaction
+              </a>
+            )}
+            {isListening && raffle?.state?.toLowerCase() !== 'pending' && (
+              <div className={`w-2 h-2 rounded-full animate-pulse ml-2 ${
+                winners.length > 0
+                  ? 'bg-green-500'
+                  : 'bg-orange-500'
+              }`} title={
+                winners.length > 0
+                  ? 'Real-time updates active - Winners displayed'
+                  : 'Real-time updates active - Waiting for winners'
+              }></div>
+            )}
+          </h3>
+          
+          {/* Progress indicator - shown during Drawing state */}
+          {raffle?.stateNum === 3 && winners.length > 0 && (
+            <div className="flex items-center gap-2 flex-1 max-w-md ml-auto">
+              <div className="flex-1">
+                <div className="relative w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out rounded-full"
+                    style={{ width: `${Math.min((winnersSelectedCount / raffle.winnersCount) * 100, 100)}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs font-semibold text-foreground whitespace-nowrap">
+                {winnersSelectedCount}/{raffle.winnersCount}
+              </div>
+            </div>
+          )}
+          
+          {/* Completed indicator - shown when all winners selected */}
+          {(raffle?.stateNum === 4 || raffle?.stateNum === 6) && winners.length > 0 && (
+            <div className="flex items-center gap-2 flex-1 max-w-md ml-auto">
+              <div className="flex-1">
+                <div className="relative w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500 ease-out rounded-full"
+                    style={{ width: '100%' }}
+                  >
+                    <div className="absolute inset-0 bg-white/20"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs font-semibold text-green-600 dark:text-green-400 whitespace-nowrap flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                {raffle.winnersCount}/{raffle.winnersCount}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="overflow-y-auto">
         {getStateDisplay()}
       </div>
@@ -1911,6 +2007,13 @@ function getRefundability(raffle) {
   if (raffle.state === 'Deleted') {
     return { label: 'All Slots Refundable', refundable: true, reason: 'Raffle was deleted before ending. All slots are refundable.' };
   }
+  
+  // Global slot fee pools: 80% refund for all participants
+  if (!raffle.usesCustomFee) {
+    return { label: 'Slot Fees Refundable', refundable: true, reason: 'This raffle uses the global slot fee. All participants can claim 80% refunds after completion.' };
+  }
+  
+  // Custom fee pools: existing logic
   if (raffle.isPrized && raffle.winnersCount === 1 && raffle.standard !== undefined && (raffle.standard === 0 || raffle.standard === 1)) {
     return { label: 'Slots Refundable if Deleted', refundable: false, reason: 'Single-winner NFT raffles are not refundable unless deleted before ending.' };
   }
@@ -2003,6 +2106,8 @@ const RaffleDetailPage = () => {
   const [approvingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
   const [isCollabPool, setIsCollabPool] = useState(false);
+  const [poolMetadata, setPoolMetadata] = useState(null);
+  const [loadingMetadata, setLoadingMetadata] = useState(false);
   // If URL includes a chain slug, gently ensure wallet is on the right network
   useEffect(() => {
     async function ensureNetworkFromUrl() {
@@ -2080,7 +2185,22 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error(extractRevertReason(err));
+      // Use enhanced error handler for mintToWinner
+      const errorDetails = logContractError(err, 'mint prize to winner', {
+        raffleAddress: raffle.address,
+        winnerAddress: mintWinnerAddress,
+        prizeType: raffle.standard
+      });
+      
+      // Show user-friendly error message
+      toast.error(errorDetails.message);
+      
+      // Show suggested action if available
+      if (errorDetails.suggestedAction) {
+        setTimeout(() => {
+          toast.info(errorDetails.suggestedAction);
+        }, 500);
+      }
     } finally {
       setMintingToWinner(false);
     }
@@ -2106,7 +2226,7 @@ const RaffleDetailPage = () => {
 
   // Event listener for raffle state changes
   // Stop listening for winner selection events after raffle is completed
-  const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 7; // Completed or Prizes Claimed
+  const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (was 7, now 6)
   const shouldMainListenForWinners = !!raffle && !isMainRaffleCompleted;
 
   const { isListening: isMainListening, eventHistory: mainEventHistory } = useRaffleEventListener(raffleAddress, {
@@ -2230,6 +2350,7 @@ const RaffleDetailPage = () => {
           { method: () => poolContract.slotFee(), name: 'slotFee', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.slotLimit(), name: 'slotLimit', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.winnersCount(), name: 'winnersCount', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => poolContract.winnersSelected(), name: 'winnersSelected', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.maxSlotsPerParticipant(), name: 'maxSlotsPerParticipant', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.isPrized(), name: 'isPrized', required: true, fallback: false },
           { method: () => poolContract.prizeCollection(), name: 'prizeCollection', required: true, fallback: ethers.constants.AddressZero },
@@ -2240,6 +2361,7 @@ const RaffleDetailPage = () => {
           { method: createSafeMethod(poolContract, 'erc20PrizeAmount', ethers.BigNumber.from(0)), name: 'erc20PrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(poolContract, 'nativePrizeAmount', ethers.BigNumber.from(0)), name: 'nativePrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(poolContract, 'usesCustomFee', false), name: 'usesCustomFee', required: false, fallback: false },
+          { method: () => address ? poolContract.hasClaimedGlobalFeeRefund(address) : false, name: 'hasClaimedGlobalFeeRefund', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'isCollabPool', false), name: 'isCollabPool', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) },
@@ -2272,7 +2394,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2342,17 +2464,18 @@ const RaffleDetailPage = () => {
           slotLimit: slotLimit.toNumber(),
           slotsSold,
           winnersCount: winnersCount.toNumber(),
+          winnersSelected: winnersSelected.toNumber(),
           maxSlotsPerParticipant: maxSlotsPerParticipant.toNumber(),
-          isPrized,
-          prizeCollection: !!isPrized ? prizeCollection : null,
+          isPrized: isPrizedContract,
+          prizeCollection,
+          prizeTokenId,
+          standard,
           stateNum: stateNum,
           state: POOL_STATE_LABELS[stateNum] || 'Unknown',
           erc20PrizeToken,
           erc20PrizeAmount,
           nativePrizeAmount,
           usesCustomFee,
-          standard,
-          prizeTokenId,
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
           // Social engagement fields
           socialEngagementRequired: !!socialEngagementRequired,
@@ -2601,6 +2724,29 @@ const RaffleDetailPage = () => {
     fetchEscrowedPrizeFlag();
   }, [raffleAddress, getContractInstance]);
 
+  // Fetch pool metadata from events
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!raffleAddress || !contracts?.poolDeployer) {
+        setPoolMetadata(null);
+        return;
+      }
+
+      setLoadingMetadata(true);
+      try {
+        const metadata = await getPoolMetadata(raffleAddress, contracts.poolDeployer);
+        setPoolMetadata(metadata);
+      } catch (error) {
+        console.error('Error fetching pool metadata:', error);
+        setPoolMetadata(null);
+      } finally {
+        setLoadingMetadata(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [raffleAddress, contracts?.poolDeployer]);
+
   useEffect(() => {
     const checkApproval = async () => {
       if (
@@ -2647,7 +2793,9 @@ const RaffleDetailPage = () => {
       setIs1155Approved(true);
       toast.success('Approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error(extractRevertReason(e));
+      const errorDetails = formatErrorForDisplay(e, 'approve ERC1155');
+      logContractError(e, 'Approve ERC1155');
+      toast.error(errorDetails.message);
     } finally {
       setApproving(false);
     }
@@ -2700,7 +2848,9 @@ const RaffleDetailPage = () => {
       setIsERC20Approved(true);
       toast.success('ERC20 approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error(extractRevertReason(e));
+      const errorDetails = formatErrorForDisplay(e, 'approve ERC20');
+      logContractError(e, 'Approve ERC20');
+      toast.error(errorDetails.message);
     } finally {
       setApprovingERC20(false);
     }
@@ -2758,7 +2908,9 @@ const RaffleDetailPage = () => {
       setIsERC721Approved(true);
       toast.success('ERC721 approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error(extractRevertReason(e));
+      const errorDetails = formatErrorForDisplay(e, 'approve ERC721');
+      logContractError(e, 'Approve ERC721');
+      toast.error(errorDetails.message);
     } finally {
       setApprovingERC721(false);
     }
@@ -2822,16 +2974,12 @@ const RaffleDetailPage = () => {
     // For pools without social engagement requirements, signatureToUse remains '0x'
 
     // Call purchaseSlots with nonce, deadline, and signature
-    try {
-      const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, { value: totalCost });
-      const receipt = await tx.wait();
-      
-      toast.success(`Successfully purchased ${quantity} slot${quantity > 1 ? 's' : ''}!`);
-      // Trigger state refresh instead of page reload
-      triggerRefresh();
-    } catch (error) {
-      throw new Error(extractRevertReason(error));
-    }
+    const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, { value: totalCost });
+    const receipt = await tx.wait();
+    
+    toast.success(`Successfully purchased ${quantity} slot${quantity > 1 ? 's' : ''}!`);
+    // Trigger state refresh instead of page reload
+    triggerRefresh();
   };
 
   const handleDeleteRaffle = async () => {
@@ -2852,8 +3000,9 @@ const RaffleDetailPage = () => {
       toast.success('Raffle deleted successfully!');
         navigate('/');
     } catch (error) {
-
-      toast.error(extractRevertReason(error));
+      const errorDetails = formatErrorForDisplay(error, 'delete raffle');
+      logContractError(error, 'Delete Raffle');
+      toast.error(errorDetails.message);
     } finally {
       setDeletingRaffle(false);
     }
@@ -2864,7 +3013,7 @@ const RaffleDetailPage = () => {
       connected &&
            address?.toLowerCase() === raffle?.creator.toLowerCase() &&
       (raffle?.state === 'Pending' || raffle?.state === 'Active') &&
-      (isRefundable === true || raffle?.usesCustomFee === true)
+      raffle?.usesCustomFee === true // Only pools with custom slot fee can be deleted
     );
   };
 
@@ -2873,7 +3022,7 @@ const RaffleDetailPage = () => {
 
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
-      if (stateNum === 7) { // Prizes Claimed state
+      if (stateNum === 6) { // AllPrizesClaimed state (was 7, now 6)
         return winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
       }
       return POOL_STATE_LABELS[stateNum] || 'Unknown';
@@ -2908,7 +3057,9 @@ const RaffleDetailPage = () => {
       await tx.wait();
       toast.success('Prize withdrawn successfully!');
     } catch (e) {
-      toast.error(extractRevertReason(e));
+      const errorDetails = formatErrorForDisplay(e, 'withdraw prize');
+      logContractError(e, 'Withdraw Prize');
+      toast.error(errorDetails.message);
     } finally {
       setWithdrawingPrize(false);
     }
@@ -2960,12 +3111,13 @@ const RaffleDetailPage = () => {
             if (winnerAddress.toLowerCase() === address.toLowerCase()) {
               const claimedWins = await poolContract.claimedWins(winnerAddress);
               const prizeClaimed = await poolContract.prizeClaimed(winnerAddress);
+              const claimedCount = prizeClaimed.toNumber ? prizeClaimed.toNumber() : Number(prizeClaimed);
               userIsWinner = true;
               userWinnerData = {
                 address: winnerAddress,
                 index: i,
                 claimedWins: claimedWins.toNumber ? claimedWins.toNumber() : Number(claimedWins),
-                prizeClaimed: !!prizeClaimed
+                prizeClaimed: claimedCount > 0
               };
               break;
             }
@@ -2977,16 +3129,14 @@ const RaffleDetailPage = () => {
         setIsWinner(userIsWinner);
         setWinnerData(userWinnerData);
 
-        // Check refund eligibility
-        if (raffle.isPrized) {
-          try {
-            const refundable = await poolContract.getRefundableAmount(address);
-            setRefundableAmount(refundable);
-            setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
-          } catch (e) {
-            setRefundableAmount(null);
-            setEligibleForRefund(false);
-          }
+        // Check refund eligibility for both global fee and custom fee pools
+        try {
+          const refundable = await poolContract.getRefundableAmount(address);
+          setRefundableAmount(refundable);
+          setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
+        } catch (e) {
+          setRefundableAmount(null);
+          setEligibleForRefund(false);
         }
       } catch (error) {
         setIsWinner(false);
@@ -2998,6 +3148,11 @@ const RaffleDetailPage = () => {
 
     checkWinnerStatus();
   }, [raffle, getContractInstance, address]);
+
+  // Handler to update winnersSelected count from WinnersSection
+  const handleWinnersSelectedChange = useCallback((newCount) => {
+    setRaffle(prev => prev ? { ...prev, winnersSelected: newCount } : prev);
+  }, []);
 
   // Auto-refresh logic for Drawing state monitoring
   useEffect(() => {
@@ -3019,50 +3174,59 @@ const RaffleDetailPage = () => {
     }
   }, [raffle?.stateNum, lastDrawingStateTime]);
 
-  // Auto-refresh timer for Drawing state - triggers every 15 seconds
+  // Auto-refresh timer for Drawing state - manages visual indicator and checks for state changes
+  // Winner checking is now handled by WinnersSection component
   useEffect(() => {
     if (!lastDrawingStateTime || raffle?.stateNum !== 3) return;
 
-    console.log('🔄 Starting auto-refresh timer for Drawing state (every 15 seconds)');
+    console.log('🎯 Drawing state active - visual indicator enabled');
 
-    const autoRefreshInterval = setInterval(() => {
+    const autoRefreshInterval = setInterval(async () => {
       setIsAutoRefreshing(true);
       setAutoRefreshCount(prev => prev + 1);
 
-      console.log(`🔄 Auto-refreshing raffle data in Drawing state (attempt ${autoRefreshCount + 1})`);
+      console.log(`🔄 Drawing state monitoring active (${autoRefreshCount + 1})`);
 
-      // Show user notification every few attempts to avoid spam
-      if ((autoRefreshCount + 1) % 4 === 1) { // Show notification every 4th attempt (every minute)
-        toast.info('Checking for winner selection...', {
-          duration: 2000
-        });
+      // Check if pool state has changed (e.g., Drawing -> Completed)
+      try {
+        const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+        if (poolContract) {
+          const currentState = await poolContract.state();
+          const stateNum = currentState.toNumber ? currentState.toNumber() : Number(currentState);
+          
+          // If state changed from Drawing (3) to something else, trigger full refresh
+          if (stateNum !== 3) {
+            console.log(`🎯 State changed from Drawing to ${stateNum}, triggering refresh`);
+            triggerRefresh();
+          }
+        }
+      } catch (error) {
+        console.warn('State polling error:', error);
       }
 
-      // Trigger refresh
-      triggerRefresh();
-
-      // Reset auto-refresh flag after delay
+      // Reset auto-refresh flag after delay (keeps the indicator pulsing)
       setTimeout(() => {
         setIsAutoRefreshing(false);
       }, 3000);
-    }, 15000); // Refresh every 15 seconds
+    }, 15000); // Check every 15 seconds
 
     return () => {
-      console.log('🔄 Stopping auto-refresh timer for Drawing state');
+      console.log('🎯 Drawing state monitoring stopped');
       clearInterval(autoRefreshInterval);
     };
-  }, [lastDrawingStateTime, raffle?.stateNum, autoRefreshCount, triggerRefresh]);
+  }, [lastDrawingStateTime, raffle?.stateNum, raffle?.address, autoRefreshCount, getContractInstance, triggerRefresh]);
 
   const shouldShowClaimPrize = !!winnerData && (
     // Standard prized raffles: winners can claim in Completed (4) or Prizes Claimed (7)
-    (raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7)) ||
+    (raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 6)) ||
     // Externally prized raffles (mintable assigned before Active): winners can mint in Completed (4)
     ((raffle?.isPrized === false) && ((isCollabPool === true) || (raffle?.isCollabPool === true)) && raffle?.stateNum === 4)
   );
   const prizeAlreadyClaimed = winnerData && winnerData.prizeClaimed;
   const shouldShowClaimRefund =
-    (raffle?.isPrized || raffle?.isCollabPool) &&
-    [4,5,7,8].includes(raffle?.stateNum) &&
+    // Show for global fee pools (any pool with !usesCustomFee) or custom fee refundable pools
+    (!raffle?.usesCustomFee || raffle?.isPrized || raffle?.isCollabPool) &&
+    [4,5,6,7].includes(raffle?.stateNum) &&
     eligibleForRefund &&
     refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
 
@@ -3099,7 +3263,22 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      toast.error(extractRevertReason(error));
+      // Use enhanced error handler for better UX
+      const errorDetails = logContractError(error, 'claim prize', {
+        raffleAddress: raffle.address,
+        userAddress: address,
+        prizeType: raffle.standard
+      });
+      
+      // Show user-friendly error message
+      toast.error(errorDetails.message);
+      
+      // Show suggested action if available
+      if (errorDetails.suggestedAction) {
+        setTimeout(() => {
+          toast.info(errorDetails.suggestedAction);
+        }, 500);
+      }
     } finally {
       setClaimingPrize(false);
     }
@@ -3123,7 +3302,9 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      toast.error(extractRevertReason(error));
+      const errorDetails = formatErrorForDisplay(error, 'claim refund');
+      logContractError(error, 'Claim Refund');
+      toast.error(errorDetails.message);
     } finally {
       setClaimingRefund(false);
     }
@@ -3243,11 +3424,13 @@ const RaffleDetailPage = () => {
                 </svg>
               </button>
             </div>
-            <div className="mt-2">
-              <p className="text-muted-foreground">
-                Created by {raffle.creator.slice(0, 10)}...{raffle.creator.slice(-8)}
-              </p>
-            </div>
+            
+            {/* Pool Metadata - displayed right under pool name */}
+            {poolMetadata && hasAnyMetadata(poolMetadata) && (
+              <div className="mt-3">
+                <PoolMetadataDisplay metadata={poolMetadata} loading={loadingMetadata} />
+              </div>
+            )}
 
           </div>
           {/* On mobile, stack state badge and creator actions; on desktop, keep inline */}
@@ -3322,7 +3505,7 @@ const RaffleDetailPage = () => {
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
               isEscrowedPrize &&
-              raffle.stateNum === 8 && (
+              raffle.stateNum === 7 && (
                 <Button
                   onClick={handleWithdrawPrize}
                   className="sm:ml-2 bg-warning text-warning-foreground hover:bg-warning/90"
@@ -3350,7 +3533,9 @@ const RaffleDetailPage = () => {
                         throw new Error(result.error);
                       }
                     } catch (err) {
-                      toast.error(extractRevertReason(err));
+                      const errorDetails = formatErrorForDisplay(err, 'update VRF status');
+                      logContractError(err, 'Update VRF Status');
+                      toast.error(errorDetails.message);
                     } finally {
                       setUpdatingVrfStatus(false);
                     }
@@ -3393,7 +3578,7 @@ const RaffleDetailPage = () => {
             <p className="text-sm text-foreground/70 dark:text-foreground/80">{timeLabel}</p>
           </div>
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
-            {isRefundable && raffle && raffle.standard !== 2 && raffle.standard !== 3 && (() => {
+            {(isRefundable || !raffle?.usesCustomFee) && raffle && (() => {
               const { refundable, reason, label } = getRefundability(raffle);
               return (
                 <span className={`px-3 py-1 rounded-full font-semibold ${refundable ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'} text-xs`}
@@ -3465,6 +3650,7 @@ const RaffleDetailPage = () => {
             isEscrowedPrize={isEscrowedPrize}
             isMobile={isMobile}
             onWinnerCountChange={setWinnerCount}
+            onWinnersSelectedChange={handleWinnersSelectedChange}
           />
         </div>
 
@@ -3473,6 +3659,18 @@ const RaffleDetailPage = () => {
           <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg h-full">
             <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/80 dark:text-foreground">Creator:</span>
+                <a
+                  href={getExplorerLink(raffle.creator, raffle.chainId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
+                  title={raffle.creator}
+                >
+                  {isMobile ? `${raffle.creator.slice(0, 12)}...` : `${raffle.creator.slice(0, 10)}...${raffle.creator.slice(-8)}`}
+                </a>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-foreground/80 dark:text-foreground">Contract Address:</span>
                 <a
@@ -3580,6 +3778,7 @@ const RaffleDetailPage = () => {
           <PrizeImageCard raffle={raffle} isMintableERC721={isMintableERC721} isEscrowedPrize={isEscrowedPrize} />
         </div>
       </div>
+
     </PageContainer>
   );
 };

@@ -36,9 +36,9 @@ export const categorizeRaffles = (raffles) => {
     raffle.stateNum === 3
   );
   
-  // Completed: stateNum === 4 or 7
+  // Completed: stateNum === 4 or 6
   const completed = raffles.filter(raffle => 
-    (raffle.stateNum === 4 || raffle.stateNum === 7)
+    (raffle.stateNum === 4 || raffle.stateNum === 6)
   );
 
   return { pending, active, ended, drawing, completed };

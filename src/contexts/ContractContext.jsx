@@ -115,9 +115,20 @@ export const ContractProvider = ({ children }) => {
   };
 
   // Helper function to handle contract transactions
-  const executeTransaction = async (contractMethod, ...args) => {
+  // Supports transaction options (e.g., { value: ethers.BigNumber })
+  const executeTransaction = async (contractMethod, params, txOptions = {}) => {
     try {
-      const tx = await contractMethod(...args);
+      // Handle functions with no parameters (e.g., activate(), requestRandomWords())
+      let tx;
+      if (params === undefined) {
+        // No params - only pass txOptions if it has properties
+        tx = Object.keys(txOptions).length > 0 
+          ? await contractMethod(txOptions) 
+          : await contractMethod();
+      } else {
+        // Has params - pass both params and txOptions
+        tx = await contractMethod(params, txOptions);
+      }
       const receipt = await tx.wait();
       return { success: true, receipt, hash: tx.hash };
     } catch (error) {

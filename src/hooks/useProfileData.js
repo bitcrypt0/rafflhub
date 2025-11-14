@@ -363,14 +363,13 @@ export const useProfileData = () => {
             const poolContract = getContractInstance(poolAddress, 'pool');
             if (!poolContract) continue;
 
-            const [userSlotsRes, nameRes, priceRes, stateRes, startRes, durationRes, lastPurchaseBlockRes] = await Promise.all([
+            const [userSlotsRes, nameRes, priceRes, stateRes, startRes, durationRes] = await Promise.all([
               executeCall(poolContract.getSlotsPurchased, 'getSlotsPurchased', stableAddress),
               executeCall(poolContract.name, 'name'),
               executeCall(poolContract.slotFee, 'slotFee'),
               executeCall(poolContract.state, 'state'),
               executeCall(poolContract.startTime, 'startTime'),
-              executeCall(poolContract.duration, 'duration'),
-              executeCall(poolContract.lastPurchaseBlock, 'lastPurchaseBlock', stableAddress)
+              executeCall(poolContract.duration, 'duration')
             ]);
 
             const userSlotsBn = userSlotsRes.success ? userSlotsRes.result : ethers.BigNumber.from(0);
@@ -385,22 +384,9 @@ export const useProfileData = () => {
             const duration = durationRes.success ? durationRes.result : ethers.BigNumber.from(0);
             const endTime = new Date((startTime.add(duration)).toNumber() * 1000);
 
-            // Determine a purchase timestamp. Prefer purchaseTimestamps for each slot if available; otherwise fall back to lastPurchaseBlock or startTime.
-            let purchaseTimestampSec = startTime.toNumber ? startTime.toNumber() : Math.floor(Date.now()/1000);
-            try {
-              // Try to fetch the most recent purchase timestamp for this user
-              const idx = userSlots > 0 ? userSlots - 1 : 0;
-              const tsRes = await executeCall(poolContract.purchaseTimestamps, 'purchaseTimestamps', stableAddress, idx);
-              if (tsRes.success && tsRes.result) {
-                purchaseTimestampSec = tsRes.result.toNumber ? tsRes.result.toNumber() : Number(tsRes.result);
-              } else if (lastPurchaseBlockRes.success && lastPurchaseBlockRes.result && provider?.getBlock) {
-                const bn = lastPurchaseBlockRes.result.toNumber ? lastPurchaseBlockRes.result.toNumber() : Number(lastPurchaseBlockRes.result);
-                if (bn > 0) {
-                  const block = await provider.getBlock(bn);
-                  if (block?.timestamp) purchaseTimestampSec = block.timestamp;
-                }
-              }
-            } catch (_) {}
+            // Use pool start time as purchase timestamp fallback
+            // Note: purchaseTimestamps and lastPurchaseBlock were removed in gas optimization
+            const purchaseTimestampSec = startTime.toNumber ? startTime.toNumber() : Math.floor(Date.now()/1000);
 
             const slotData = {
               id: poolAddress,

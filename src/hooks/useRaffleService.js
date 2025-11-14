@@ -327,11 +327,9 @@ export const useRaffleService = (options = {}) => {
       } else if (raffle.stateNum === 5) {
         acc.ended.push(raffle); // deleted pools go to ended
       } else if (raffle.stateNum === 6) {
-        acc.ended.push(raffle); // activation failed pools go to ended
+        acc.completed.push(raffle); // all prizes claimed (was 7, now 6)
       } else if (raffle.stateNum === 7) {
-        acc.completed.push(raffle); // all prizes claimed
-      } else if (raffle.stateNum === 8) {
-        acc.ended.push(raffle); // unengaged pools go to ended
+        acc.ended.push(raffle); // unengaged pools go to ended (was 8, now 7)
       } else {
         acc.ended.push(raffle);
       }

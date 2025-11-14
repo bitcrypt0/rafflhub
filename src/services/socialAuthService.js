@@ -421,7 +421,7 @@ class SocialAuthService {
         steps: [
           'Click "Connect Twitter" button',
           'You will be redirected to Twitter/X',
-          'Authorize FairPad to access your account',
+          'Authorize Dropr to access your account',
           'You will be redirected back to complete the connection'
         ]
       },
@@ -431,7 +431,7 @@ class SocialAuthService {
         steps: [
           'Click "Connect Discord" button',
           'You will be redirected to Discord',
-          'Authorize FairPad to access your account',
+          'Authorize Dropr to access your account',
           'You will be redirected back to complete the connection'
         ]
       },

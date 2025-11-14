@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Switch } from './ui/switch';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { CheckCircle, Twitter, MessageCircle, Send, Plus, Trash2 } from 'lucide-react';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
+import { useNativeCurrency } from '../hooks/useNativeCurrency';
+import { useContract } from '../contexts/ContractContext';
+import { ethers } from 'ethers';
 import { SOCIAL_TASK_CONSTANTS } from '../constants/socialTasks';
 
 // Maximum number of social media tasks allowed
@@ -18,6 +21,32 @@ const SocialMediaTaskSection = ({
   useFormDataEnabled = false
 }) => {
   const { isMobile } = useMobileBreakpoints();
+  const { getCurrencySymbol } = useNativeCurrency();
+  const { contracts } = useContract();
+  const [socialFee, setSocialFee] = useState(null);
+  const [loadingFee, setLoadingFee] = useState(true);
+
+  // Fetch social engagement fee on mount
+  useEffect(() => {
+    const fetchSocialFee = async () => {
+      if (!contracts?.protocolManager) {
+        setLoadingFee(false);
+        return;
+      }
+      
+      try {
+        const fee = await contracts.protocolManager.socialEngagementFee();
+        setSocialFee(fee);
+      } catch (error) {
+        console.error('Error fetching social engagement fee:', error);
+        setSocialFee(null);
+      } finally {
+        setLoadingFee(false);
+      }
+    };
+
+    fetchSocialFee();
+  }, [contracts]);
   
   // Use either separate state or formData.socialEngagementEnabled
   const isEnabled = useFormDataEnabled ? formData.socialEngagementEnabled : socialEngagementEnabled;
@@ -165,6 +194,11 @@ const SocialMediaTaskSection = ({
             <div className="flex-1">
               <label className="font-medium block cursor-pointer text-base mb-1">
                 Enable Social Media Tasks
+                {!loadingFee && socialFee && (
+                  <span className="ml-2 text-base font-medium">
+                    (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                  </span>
+                )}
               </label>
               <p className="text-xs text-muted-foreground">
                 Require participants to complete social media engagement tasks
@@ -202,6 +236,11 @@ const SocialMediaTaskSection = ({
             >
               <label className="font-medium block cursor-pointer text-sm">
                 Enable Social Media Tasks
+                {!loadingFee && socialFee && (
+                  <span className="ml-2 text-sm font-medium">
+                    (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                  </span>
+                )}
               </label>
             </div>
           </div>

@@ -94,7 +94,12 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
     <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-5 shadow-xl border-border/80 transition-all duration-300 min-h-[180px] flex flex-col">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm mb-1 truncate">{raffle.name}</h3>
+          <h3 
+            className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-[#614E41] transition-colors duration-200"
+            onClick={() => onRaffleClick(raffle.address)}
+          >
+            {raffle.name}
+          </h3>
         </div>
         {getStatusBadge()}
       </div>
@@ -114,15 +119,6 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
           <span className="text-muted-foreground">Created</span>
           <p className="font-semibold">{raffle.createdAt ? new Date((raffle.createdAt < 1e12 ? raffle.createdAt * 1000 : raffle.createdAt)).toLocaleString() : 'Unknown'}</p>
         </div>
-      </div>
-
-      <div className="mt-auto">
-        <button
-          onClick={() => onRaffleClick(raffle.address)}
-          className="w-full text-sm bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors"
-        >
-          View Raffle
-        </button>
       </div>
     </div>
   );

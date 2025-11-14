@@ -6,6 +6,13 @@
   { "anonymous": false, "inputs": [
     { "indexed": true, "internalType": "address", "name": "collection", "type": "address" }
   ], "name": "PrizeCollectionCreated", "type": "event" },
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "pool", "type": "address" },
+    { "indexed": false, "internalType": "string", "name": "description", "type": "string" },
+    { "indexed": false, "internalType": "string", "name": "twitterLink", "type": "string" },
+    { "indexed": false, "internalType": "string", "name": "discordLink", "type": "string" },
+    { "indexed": false, "internalType": "string", "name": "telegramLink", "type": "string" }
+  ], "name": "PoolMetadataSet", "type": "event" },
   {
     "inputs": [
       {
@@ -43,7 +50,11 @@
           { "internalType": "uint256", "name": "holderTokenBalance", "type": "uint256" },
           { "internalType": "uint256", "name": "holderTokenId", "type": "uint256" },
           { "internalType": "bool", "name": "socialEngagementRequired", "type": "bool" },
-          { "internalType": "string", "name": "socialTaskDescription", "type": "string" }
+          { "internalType": "string", "name": "socialTaskDescription", "type": "string" },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "twitterLink", "type": "string" },
+          { "internalType": "string", "name": "discordLink", "type": "string" },
+          { "internalType": "string", "name": "telegramLink", "type": "string" }
         ],
         "internalType": "struct PoolDeployer.PoolParams",
         "name": "p",

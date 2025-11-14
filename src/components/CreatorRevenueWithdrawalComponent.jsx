@@ -262,15 +262,19 @@ const CreatorRevenueWithdrawalComponent = () => {
       // Get raffle information
       const [
         creator,
+        revenueRecipient,
         totalRevenue,
         state
       ] = await Promise.all([
         contract.creator(),
+        contract.revenueRecipient(),
         contract.totalCreatorRevenue(),
         contract.state()
       ]);
 
       const isCreator = creator.toLowerCase() === address.toLowerCase();
+      const isRevenueRecipient = revenueRecipient.toLowerCase() === address.toLowerCase();
+      const isBothCreatorAndRecipient = isCreator && isRevenueRecipient;
       
       // Map state number to readable state
       const stateNames = [
@@ -280,9 +284,8 @@ const CreatorRevenueWithdrawalComponent = () => {
         'Drawing',           // 3
         'Completed',         // 4
         'Deleted',           // 5
-        'ActivationFailed',  // 6
-        'AllPrizesClaimed',  // 7
-        'Unengaged'          // 8
+        'AllPrizesClaimed',  // 6
+        'Unengaged'          // 7
       ];
       const stateName = stateNames[state] || 'Unknown';
 
@@ -290,6 +293,8 @@ const CreatorRevenueWithdrawalComponent = () => {
         address: raffleAddress,
         revenueAmount: ethers.utils.formatEther(totalRevenue),
         isCreator,
+        isRevenueRecipient,
+        isBothCreatorAndRecipient,
         raffleState: stateName,
         totalRevenue
       });
@@ -330,8 +335,8 @@ const CreatorRevenueWithdrawalComponent = () => {
       return;
     }
 
-    if (!raffleData.isCreator) {
-      toast.error('You are not the creator of this raffle');
+    if (!raffleData.isRevenueRecipient) {
+      toast.error('You are not the revenue recipient of this raffle');
       return;
     }
 
@@ -426,7 +431,7 @@ const CreatorRevenueWithdrawalComponent = () => {
     ? !raffleData.totalRevenue.isZero()
     : parseFloat(raffleData.revenueAmount) > 0;
 
-  const canWithdraw = raffleData.isCreator &&
+  const canWithdraw = raffleData.isRevenueRecipient &&
                      hasRevenue &&
                      ['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState);
 
@@ -469,10 +474,16 @@ const CreatorRevenueWithdrawalComponent = () => {
               <div>
                 <span className="text-muted-foreground">Your Role:</span>
                 <div className="flex items-center gap-2">
-                  {raffleData.isCreator && (
+                  {raffleData.isBothCreatorAndRecipient && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                       <CheckCircle className="h-3 w-3" />
                       Creator
+                    </span>
+                  )}
+                  {raffleData.isRevenueRecipient && !raffleData.isBothCreatorAndRecipient && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                      <CheckCircle className="h-3 w-3" />
+                      Revenue Recipient
                     </span>
                   )}
                   {raffleData.isOwner && (
@@ -481,7 +492,7 @@ const CreatorRevenueWithdrawalComponent = () => {
                       Owner
                     </span>
                   )}
-                  {!raffleData.isCreator && !raffleData.isOwner && (
+                  {!raffleData.isCreator && !raffleData.isRevenueRecipient && !raffleData.isOwner && (
                     <span className="text-muted-foreground text-xs">No special role</span>
                   )}
                 </div>
@@ -489,25 +500,25 @@ const CreatorRevenueWithdrawalComponent = () => {
             </div>
             
             {/* Status Messages */}
-            {!raffleData.isCreator && (
+            {!raffleData.isRevenueRecipient && (
               <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-destructive" />
                 <span className="text-sm text-destructive">
-                  You are not the creator of this raffle and cannot withdraw revenue.
+                  You are not the revenue recipient of this raffle
                 </span>
               </div>
             )}
 
-            {raffleData.isCreator && !hasRevenue && (
+            {raffleData.isRevenueRecipient && !hasRevenue && (
               <div className="mt-3 p-3 bg-yellow-50/80 dark:bg-yellow-900/20 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <span className="text-sm text-yellow-800">
-                  No revenue available for withdrawal.
+                  No revenue available for withdrawal
                 </span>
               </div>
             )}
 
-            {raffleData.isCreator && !['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState) && (
+            {raffleData.isRevenueRecipient && !['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState) && (
               <div className="mt-3 p-3 bg-blue-50/80 dark:bg-blue-900/20 backdrop-blur-sm border border-blue-200/50 dark:border-blue-700/50 rounded-lg flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <span className="text-sm text-blue-800">
@@ -533,13 +544,13 @@ const CreatorRevenueWithdrawalComponent = () => {
             onClick={handleWithdrawRevenue}
             disabled={loading || !connected || !canWithdraw}
             className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
-            title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isCreator ? "Only raffle creator can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
+            title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
           >
             <DollarSign className="h-4 w-4" />
             {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
           </button>
 
-          {!canWithdraw && raffleData.isCreator && raffleData.address && (
+          {!canWithdraw && raffleData.isRevenueRecipient && raffleData.address && (
             <p className="text-sm text-muted-foreground text-center">
               Withdrawal is not available at this time. Check the raffle state and revenue amount.
             </p>

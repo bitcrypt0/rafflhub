@@ -1,4 +1,19 @@
 [
+  {
+    "inputs": [],
+    "name": "UnauthorizedMinter",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroQuantity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExceedsMaxSupply",
+    "type": "error"
+  },
   { "anonymous": false, "inputs": [
     { "indexed": true, "internalType": "address", "name": "winner", "type": "address" },
     { "indexed": false, "internalType": "uint256", "name": "tokenId", "type": "uint256" }

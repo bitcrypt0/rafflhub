@@ -21,28 +21,7 @@ export const contractABIs = {
   erc721Prize: ERC721PrizeABI,
   erc1155Prize: ERC1155PrizeABI,
   socialEngagementManager: SocialEngagementManagerABI,
-  pool: [
-    ...PoolABI,
-    {
-      "inputs": [],
-      "name": "isRefundable",
-      "outputs": [
-        { "internalType": "bool", "name": "", "type": "bool" }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "holderTokenAddress",
-      "outputs": [
-        { "internalType": "address", "name": "", "type": "address" }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-
-  ],
+  pool: PoolABI,
   erc20: ERC20ABI
 };
 

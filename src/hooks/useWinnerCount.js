@@ -47,7 +47,7 @@ export const useWinnerCount = (raffleAddress, raffleState) => {
  * Utility function to get dynamic label for Prizes Claimed state
  */
 export const getDynamicPrizeLabel = (stateNum, winnerCount) => {
-  if (stateNum === 7) { // Prizes Claimed state
+  if (stateNum === 6) { // AllPrizesClaimed state (was 7, now 6 after ActivationFailed removal)
     return winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
   }
   return null; // Not a prizes claimed state

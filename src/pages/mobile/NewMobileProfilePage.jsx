@@ -41,10 +41,10 @@ const NewMobileProfilePage = () => {
   // Unified raffle state badge renderer (matches LandingPage/RaffleDetailPage styles)
   const renderStateBadge = (value, opts = {}) => {
     const { stateNum, winnerCount } = opts;
-    const labels = ['Pending','Active','Ended','Drawing','Completed','Deleted','ActivationFailed','AllPrizesClaimed','Unengaged'];
+    const labels = ['Pending','Active','Ended','Drawing','Completed','Deleted','AllPrizesClaimed','Unengaged'];
     let label = 'Unknown';
     if (Number.isFinite(stateNum)) {
-      label = (stateNum === 7 && typeof winnerCount === 'number')
+      label = (stateNum === 6 && typeof winnerCount === 'number')
         ? (winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed')
         : (labels[stateNum] || 'Unknown');
     } else if (typeof value === 'string') {
@@ -56,8 +56,6 @@ const NewMobileProfilePage = () => {
         drawing: 'Drawing',
         completed: 'Completed',
         deleted: 'Deleted',
-        activationfailed: 'ActivationFailed',
-        activation_failed: 'ActivationFailed',
         allprizesclaimed: 'AllPrizesClaimed',
         all_prizes_claimed: 'AllPrizesClaimed',
         unengaged: 'Unengaged',
@@ -72,7 +70,6 @@ const NewMobileProfilePage = () => {
       'Drawing': 'bg-purple-100 text-purple-800',
       'Completed': 'bg-blue-100 text-blue-800',
       'Deleted': 'bg-gray-200 text-gray-800',
-      'ActivationFailed': 'bg-red-200 text-red-900',
       'AllPrizesClaimed': 'bg-blue-200 text-blue-900',
       'Prize Claimed': 'bg-blue-200 text-blue-900',
       'Unengaged': 'bg-gray-100 text-gray-800',
@@ -1759,9 +1756,8 @@ const NewMobileProfilePage = () => {
           'Drawing',           // 3
           'Completed',         // 4
           'Deleted',           // 5
-          'ActivationFailed',  // 6
-          'AllPrizesClaimed',  // 7
-          'Unengaged'          // 8
+          'AllPrizesClaimed',  // 6
+          'Unengaged'          // 7
         ];
         const stateIndex = (state && typeof state === 'object' && typeof state.toNumber === 'function')
           ? state.toNumber()

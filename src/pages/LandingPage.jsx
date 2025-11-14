@@ -30,7 +30,6 @@ const POOL_STATE_LABELS = [
   'Drawing',
   'Completed',
   'Deleted',
-  'ActivationFailed',
   'AllPrizesClaimed',
   'Unengaged'
 ];
@@ -56,7 +55,7 @@ const RaffleCard = ({ raffle }) => {
       const now = Math.floor(Date.now() / 1000);
       let label = '';
       let seconds = 0;
-      if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7 || raffle.stateNum === 8) {
+      if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7) {
         // Ended or terminal states
         label = 'Duration';
         const actual = raffle.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
