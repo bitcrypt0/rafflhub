@@ -630,6 +630,11 @@
         "internalType": "uint256",
         "name": "_enforcedSlotFee",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_enforcedWinnerCount",
+        "type": "uint256"
       }
     ],
     "name": "approveKOL",
@@ -650,6 +655,7 @@
       { "internalType": "bool", "name": "approved", "type": "bool" },
       { "internalType": "uint256", "name": "poolLimit", "type": "uint256" },
       { "internalType": "uint256", "name": "enforcedSlotFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "enforcedWinnerCount", "type": "uint256" },
       { "internalType": "uint256", "name": "poolCount", "type": "uint256" }
     ],
     "stateMutability": "view",

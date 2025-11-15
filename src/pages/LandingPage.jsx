@@ -639,7 +639,7 @@ const LandingPage = () => {
             Fairness and Transparency, On-Chain
           </h1>
           <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-            Rafflhub is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
 
@@ -697,7 +697,7 @@ const LandingPage = () => {
             Fairness and Transparency, On-Chain
           </h1>
           <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-            Rafflhub is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
 
@@ -739,7 +739,7 @@ const LandingPage = () => {
               Fairness and Transparency, On-Chain
             </h1>
             <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-              Rafflhub is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+              Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
             </p>
 
           </div>

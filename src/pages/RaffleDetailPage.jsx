@@ -310,8 +310,8 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {claimingPrize
-                        ? (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isCollabPool === true)) && !isEscrowedPrize) ? 'Minting...' : 'Claiming...')
-                        : (( (isMintableERC721 || (raffle?.standard === 1 && raffle?.isCollabPool === true)) && !isEscrowedPrize) ? 'Mint Prize' : 'Claim Prize')}
+                        ? (!isEscrowedPrize ? 'Minting...' : 'Claiming...')
+                        : (!isEscrowedPrize ? 'Mint' : 'Claim Prize')}
                     </button>
                   )}
                   {canClaimRefund() && (

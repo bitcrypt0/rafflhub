@@ -53,7 +53,7 @@ const AppContent = () => {
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
           <div className="text-2xl font-bold mb-2" style={{ fontFamily: 'Orbitron, monospace' }}>
-            Rafflhub
+            Dropr
           </div>
           <div className="text-sm text-muted-foreground">Loading...</div>
         </div>

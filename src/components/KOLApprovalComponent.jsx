@@ -30,6 +30,7 @@ const KOLApprovalComponent = () => {
   const [kolAddress, setKolAddress] = useState('');
   const [poolLimit, setPoolLimit] = useState('');
   const [enforcedSlotFee, setEnforcedSlotFee] = useState('');
+  const [enforcedWinnerCount, setEnforcedWinnerCount] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [collectionName, setCollectionName] = useState('');
@@ -149,6 +150,7 @@ const KOLApprovalComponent = () => {
         approved: details.approved,
         poolLimit: details.poolLimit ? Number(details.poolLimit) : 0,
         enforcedSlotFee: details.enforcedSlotFee ? details.enforcedSlotFee : ethers.BigNumber.from(0),
+        enforcedWinnerCount: details.enforcedWinnerCount ? Number(details.enforcedWinnerCount) : 0,
         poolCount: details.poolCount ? Number(details.poolCount) : 0,
       };
       setKolDetails(normalized);
@@ -191,6 +193,11 @@ const KOLApprovalComponent = () => {
 
     if (!enforcedSlotFee || isNaN(enforcedSlotFee) || parseFloat(enforcedSlotFee) < 0) {
       toast.error('Please enter a valid enforced slot fee');
+      return;
+    }
+
+    if (!enforcedWinnerCount || isNaN(enforcedWinnerCount) || parseInt(enforcedWinnerCount) <= 0) {
+      toast.error('Please enter a valid enforced winner count');
       return;
     }
 
@@ -242,17 +249,19 @@ const KOLApprovalComponent = () => {
       const tx = await contract.approveKOL(
         kolAddress,
         parseInt(poolLimit),
-        enforcedSlotFeeWei
+        enforcedSlotFeeWei,
+        parseInt(enforcedWinnerCount)
       );
       
       await tx.wait();
       toast.success('KOL approved successfully!');
-      setSuccess(`KOL ${kolAddress} approved with pool limit ${poolLimit} and slot fee ${enforcedSlotFee} ETH`);
+      setSuccess(`KOL ${kolAddress} approved with pool limit ${poolLimit}, slot fee ${enforcedSlotFee} ETH, and ${enforcedWinnerCount} winners`);
       
       // Clear form
       setKolAddress('');
       setPoolLimit('');
       setEnforcedSlotFee('');
+      setEnforcedWinnerCount('');
       await fetchKOLDetails();
     } catch (err) {
       console.error('Error approving KOL:', err);
@@ -429,6 +438,7 @@ const KOLApprovalComponent = () => {
                   <div>
                     Enforced Slot Fee: <strong>{ethers.utils.formatEther(kolDetails.enforcedSlotFee)} ETH</strong>
                   </div>
+                  <div>Enforced Winner Count: <strong>{kolDetails.enforcedWinnerCount}</strong></div>
                   <div>Pool Count: <strong>{kolDetails.poolCount}</strong></div>
                 </div>
               )}
@@ -462,6 +472,20 @@ const KOLApprovalComponent = () => {
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="enforcedWinnerCount">Enforced Winner Count</Label>
+                <ResponsiveNumberInput
+                  id="enforcedWinnerCount"
+                  placeholder="Enter winner count (e.g., 5)"
+                  value={enforcedWinnerCount}
+                  onChange={(e) => setEnforcedWinnerCount(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Fixed number of winners that the KOL must use when creating pools
+                </p>
+              </div>
+
               <Button
                 onClick={approveKOL}
                 disabled={
@@ -469,6 +493,7 @@ const KOLApprovalComponent = () => {
                   !validateAddress(kolAddress) || 
                   !poolLimit || 
                   !enforcedSlotFee || 
+                  !enforcedWinnerCount ||
                   loading
                 }
                 className="w-full bg-[#614E41] text-white hover:bg-[#4a3a30]"

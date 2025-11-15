@@ -44,7 +44,7 @@ export const PageLoading = ({
     <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       <div className="text-center space-y-4 px-4">
         <div className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontFamily: 'Orbitron, monospace' }}>
-          Rafflhub
+          Dropr
         </div>
         
         <LoadingSpinner 

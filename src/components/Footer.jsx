@@ -23,7 +23,7 @@ const Footer = () => {
       <div className="w-full px-4 sm:px-8 lg:px-12 py-2 sm:py-4">
         <div className="flex flex-col sm:flex-row sm:justify-between justify-center items-center gap-2 sm:gap-4 w-full min-h-[44px] sm:min-h-0 text-center">
           <div className="text-sm text-muted-foreground sm:ml-0 flex-shrink-0">
-            © {currentYear} Rafflhub. All rights reserved.
+            © {currentYear} Dropr. All rights reserved.
           </div>
 
           {/* Social Links */}

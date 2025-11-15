@@ -325,7 +325,7 @@ export default function Homepage() {
         <div className="reveal">
           <SectionTitle 
             title="The End of Opaque Whitelists Allocations, Botted Mints, and Rigged Giveaways"
-            subtitle="Traditional Web3 distribution methods are broken. Rafflhub fixes them with innovative raffle-based technology."
+            subtitle="Traditional Web3 distribution methods are broken. Dropr fixes them with innovative raffle-based technology."
           />
         </div>
         
@@ -429,7 +429,7 @@ export default function Homepage() {
       <Section id="video-demo" className="py-20 bg-background">
         <div className="reveal">
           <SectionTitle 
-            title="Watch Rafflhub in Action"
+            title="Watch Dropr in Action"
           />
         </div>
         
@@ -443,7 +443,7 @@ export default function Homepage() {
                     <Play className="h-12 w-12 text-primary-foreground ml-1" />
                   </div>
                   <p className="text-foreground font-semibold">Video Coming Soon</p>
-                  <p className="text-muted-foreground text-sm mt-2">Complete walkthrough of the Rafflhub platform</p>
+                  <p className="text-muted-foreground text-sm mt-2">Complete walkthrough of the Dropr platform</p>
                 </div>
               </div>
               {/* This is where the actual video embed would go */}

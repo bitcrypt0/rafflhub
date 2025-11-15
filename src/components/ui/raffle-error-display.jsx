@@ -20,7 +20,7 @@ export const RaffleErrorDisplay = ({
       case 'CONTRACTS_NOT_AVAILABLE':
         return {
           title: 'Network Not Supported',
-          message: 'Rafflhub is not available on this network. Check back soon!',
+          message: 'Dropr is not available on this network. Check back soon!',
           icon: <AlertCircle className="h-8 w-8 text-orange-500" />,
           showRetry: false,
           showCreate: false
