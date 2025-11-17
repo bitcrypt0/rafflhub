@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap');
+/* Import modern design system styles */
+@import url('./styles/typography.css');
+@import url('./styles/colors.css');
+@import url('./styles/spacing.css');
 @import url('./styles/beige.css');
 
 
@@ -415,6 +418,7 @@
     input, textarea, select {
       font-size: 16px !important;
       -webkit-appearance: none;
+      appearance: none;
       border-radius: 0;
     }
 
@@ -430,6 +434,7 @@
       background-color: hsl(var(--background)) !important;
       color: hsl(var(--foreground)) !important;
       -webkit-appearance: none !important;
+      appearance: none !important;
       -webkit-tap-highlight-color: transparent !important;
       touch-action: manipulation !important;
       user-select: text !important;
@@ -1121,9 +1126,6 @@ html.dim-blue .winner-text-highlight {
 
 
 /* Light beige helper: applies beige background only in light theme */
-@layer utilities {
-  .beige-surface {}
-}
 /* Ensure beige background only when light theme is active */
 html.light .beige-surface, .light .beige-surface {
   background-color: #F5E9DC !important;

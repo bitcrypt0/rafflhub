@@ -250,7 +250,7 @@ export default function Homepage() {
   const faqItems = parseFaq(faqMd);
 
   return (
-    <div className="bg-background text-foreground overflow-x-hidden">
+    <div className="bg-background text-foreground overflow-x-hidden -mb-8">
       {/* Hero Section */}
       <Section id="hero" className="min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-20 sm:pt-0">
         <GeometricBackground />
@@ -266,16 +266,18 @@ export default function Homepage() {
                 Community Rewards
               </span>
             </h1>
-            <p className="hero-subtext text-xl sm:text-2xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+            <p className="hero-subtext text-sm sm:text-lg text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
               Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
             </p>
             
             <div className="hero-cta flex flex-col items-center gap-6 mb-6 sm:mb-12">
               <Link
                 to="/app"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-lg"
               >
-                Launch Your Pool
+                Launch Dapp
               </Link>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button
@@ -358,7 +360,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-foreground">Automated Prize Distribution</h3>
+            <h3 className="text-xl font-bold mb-3 text-foreground">Trustless Prize Distribution</h3>
             <p className="text-muted-foreground">Smart contracts handle prize distribution without need for manual intervention</p>
           </div>
         </div>
@@ -373,52 +375,45 @@ export default function Homepage() {
           />
         </div>
 
-        <div className="card-grid mt-16">
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="hidden lg:block absolute top-24 left-0 right-0 h-0.5 bg-primary/20"></div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-              <div className="card-item relative">
-                <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                    <span className="text-2xl font-bold text-primary-foreground">1</span>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
-                  <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                    <Target className="h-4 w-4" />
-                    <span>Flexible Configuration</span>
-                  </div>
-                </div>
+        <div className="card-grid grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 mt-16">
+          <div className="card-item relative">
+            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
+              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                <span className="text-2xl font-bold text-primary-foreground">1</span>
               </div>
-
-              <div className="card-item relative">
-                <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                    <span className="text-2xl font-bold text-primary-foreground">2</span>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
-                  <p className="text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                    <Shuffle className="h-4 w-4" />
-                    <span>Provably Fair</span>
-                  </div>
-                </div>
+              <h3 className="text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
+              <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                <Target className="h-4 w-4" />
+                <span>Flexible Configuration</span>
               </div>
+            </div>
+          </div>
 
-              <div className="card-item relative">
-                <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                    <span className="text-2xl font-bold text-primary-foreground">3</span>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4 text-foreground">Automatic Distribution</h3>
-                  <p className="text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                    <Award className="h-4 w-4" />
-                    <span>Instant Claims</span>
-                  </div>
-                </div>
+          <div className="card-item relative">
+            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
+              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                <span className="text-2xl font-bold text-primary-foreground">2</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
+              <p className="text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                <Shuffle className="h-4 w-4" />
+                <span>Provably Fair</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-item relative">
+            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
+              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                <span className="text-2xl font-bold text-primary-foreground">3</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 text-foreground">Prize Distribution</h3>
+              <p className="text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                <Award className="h-4 w-4" />
+                <span>Instant Claims</span>
               </div>
             </div>
           </div>
@@ -474,8 +469,8 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground">For Projects</h3>
-            <p className="text-muted-foreground mb-6">Fair whitelist distribution for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Projects</h3>
+            <p className="text-muted-foreground mb-6">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
@@ -496,8 +491,8 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <TrendingUp className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground">For Influencers/KOLs</h3>
-            <p className="text-muted-foreground mb-6">Trusted giveaways that protect your reputation. Build authentic engagement with provably fair mechanics.</p>
+            <h3 className="text-2xl font-bold mb-4 text-foreground whitespace-nowrap">KOLs & Influencers</h3>
+            <p className="text-muted-foreground mb-6">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
@@ -518,8 +513,8 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Globe className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground">For Creators</h3>
-            <p className="text-muted-foreground mb-6">Transparent distribution of rewards to holders of CCM tokens by creators.</p>
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Creators</h3>
+            <p className="text-muted-foreground mb-6">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />

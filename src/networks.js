@@ -44,10 +44,10 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://testnet.bscscan.com',
     nativeCurrency: { name: 'Test BNB', symbol: 'tBNB', decimals: 18 },
     contractAddresses: {
-      protocolManager: '0xa3F0AF8E90644bF0a371fABf8Ed688371352E2Fb',
-      poolDeployer: '0x422D280BFd76f4533F670706AA0eeC63A2e1330a',
-      revenueManager: '0x2472e38aE1b868D1Dd0EFB59762D4e5f793a551f',
-      nftFactory: '0xb52606980b0a000adfc27F0de0DC49d2CDA1d6a5',
+      protocolManager: '0x...',
+      poolDeployer: '0x...',
+      revenueManager: '0x...',
+      nftFactory: '0x...',
       socialEngagementManager: '0x...'
     }
   },
@@ -96,11 +96,11 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      protocolManager: '0xd69bFC658f6b7091efb281700Ec37dA9F568cbd8',
-      poolDeployer: '0x5E70061D6EeE22fc3Eaf499C795c13e68912f1A6',
-      revenueManager: '0xD6D58e69cd9Fafa53b5fAe4c61239381c5dD6D48',
-      nftFactory: '0x056f4E07C3b73b48451D2a1D7Ce88BE07636656E',
-      socialEngagementManager: '0xa9e692b81409a075BF17127602E59579860d1Ca9'
+      protocolManager: '0x8f463C247067fAe650b3E7B1bc80083ec88f26BE',
+      poolDeployer: '0x1D65c3CdcCc5ACC243f50427540ad1EeE9c6fC4F',
+      revenueManager: '0x997aDc63E0aA703Eb6479C6f405Adb0Ae455A3BA',
+      nftFactory: '0xD97B141C2D91013983bd1a31957EaF3df4712aE8',
+      socialEngagementManager: '0x9F1173268a27aD8715295B5CECa25fBdF7c7fC9e'
     }
   },
   11155111: {

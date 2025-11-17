@@ -1709,13 +1709,13 @@ const CreateRafflePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      <div className={`${isMobile ? 'px-4' : 'container mx-auto px-8'}`}>
+      <div className={`${isMobile ? 'px-4' : 'container mx-auto px-8'} pt-8 pb-4`}>
         {/* Page Header */}
-        <div className={`text-center ${isMobile ? 'mb-6 mt-4' : 'mb-4'}`}>
-          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-2' : 'text-4xl mb-4'}`}>
-            Create an on-chain pool for your community
+        <div className="text-center mb-8">
+          <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-2' : ''}`}>
+            Create an on-chain raffle for your community
           </h1>
-          <p className={`font-semibold ${isMobile ? 'text-base' : 'text-2xl'}`}>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
             Click <a href="#" onClick={(e) => { e.preventDefault(); setIsFilterOpen(true); }} className="text-primary hover:text-primary/90 no-underline font-medium transition-colors">here</a> to configure your pool
           </p>
         </div>
@@ -1931,7 +1931,7 @@ function LuckySaleERC721Form() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Pool Name</label>
+            <label className="block text-base font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -1941,7 +1941,7 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Prize Collection Address</label>
+            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -2625,7 +2625,7 @@ function ETHGiveawayForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={`block font-medium mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>Raffle Name</label>
+            <label className="block text-base font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}

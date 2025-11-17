@@ -4,8 +4,8 @@ import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CollabDetectionProvider } from './contexts/CollabDetectionContext';
-import { Header } from './components/Layout';
-import Footer from './components/Footer';
+import HeaderModern from './components/layout/HeaderModern';
+import FooterModern from './components/layout/FooterModern';
 import { Toaster } from './components/ui/sonner';
 import { useMobileBreakpoints } from './hooks/useMobileBreakpoints';
 import ErrorBoundary from './components/ui/error-boundary';
@@ -63,23 +63,23 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Header />
-      <main className="flex-1 min-h-0">
+      <HeaderModern />
+      <main className="flex-1 min-h-0 pt-20 pb-8">
         <Routes>
           {/* Marketing Homepage at root; dapp at /app */}
           <Route path="/" element={<Homepage />} />
-          <Route path="/app" element={<div><div style={{ height: '80px' }} /><LandingPage /></div>} />
-          <Route path="/profile" element={<div><div style={{ height: '80px' }} /><ProfilePage /></div>} />
-          <Route path="/create-raffle" element={<div><div style={{ height: '80px' }} /><CreateRafflePage /></div>} />
-          <Route path="/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
-          <Route path="/:chainSlug/raffle/:raffleAddress" element={<div><div style={{ height: '80px' }} /><RaffleDetailPage /></div>} />
+          <Route path="/app" element={<LandingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/create-raffle" element={<CreateRafflePage />} />
+          <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
+          <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           {/* OAuth Callback Routes */}
           <Route path="/auth/callback/twitter" element={<AuthCallback />} />
           <Route path="/auth/callback/discord" element={<AuthCallback />} />
           <Route path="/auth/callback/telegram" element={<AuthCallback />} />
         </Routes>
       </main>
-      <Footer />
+      <FooterModern />
       <Toaster />
       {performanceMonitor}
     </div>

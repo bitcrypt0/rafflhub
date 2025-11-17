@@ -20,7 +20,7 @@ const PoolMetadataFields = ({ formData, handleChange, isMobile = false }) => {
     isMobile ? 'text-base' : ''
   }`;
 
-  const labelClass = "block text-sm font-medium text-foreground mb-2";
+  const labelClass = "block text-base font-medium text-foreground mb-2";
 
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden">
@@ -28,11 +28,10 @@ const PoolMetadataFields = ({ formData, handleChange, isMobile = false }) => {
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-6 hover:bg-muted/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-foreground">Pool Information (Optional)</h3>
-          <Info className="h-4 w-4 text-muted-foreground" title="Add description and social links to help participants learn more about your raffle" />
+          <h3 className="font-semibold text-base text-foreground">Pool Information (Optional)</h3>
         </div>
         {isExpanded ? (
           <ChevronUp className="h-5 w-5 text-muted-foreground" />

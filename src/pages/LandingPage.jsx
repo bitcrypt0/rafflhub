@@ -633,19 +633,19 @@ const LandingPage = () => {
   // Show wallet connection prompt if not connected
   if (!connected) {
     return (
-      <PageContainer className="py-4">
-        <div className={`text-center ${isMobile ? 'mb-6' : 'mb-4'}`}>
-          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+      <PageContainer className="pt-8 pb-4">
+        <div className="text-center mb-8">
+          <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
             Fairness and Transparency, On-Chain
           </h1>
-          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
+          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
             Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
 
         <div className={`text-center ${isMobile ? 'py-8' : 'py-16'}`}>
           <Trophy className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
-          <h3 className={`font-semibold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>Connect Your Wallet</h3>
+          <h3 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-xl mb-2' : ''}`}>Connect Your Wallet</h3>
           <p className={`text-muted-foreground mb-6 ${isMobile ? 'text-sm' : 'text-base'}`}>
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
@@ -691,12 +691,12 @@ const LandingPage = () => {
   // Show error message (only when not using summaries path)
   if (!canUseSummariesForCurrentFilters && error) {
     return (
-      <PageContainer className="py-8">
+      <PageContainer className="pt-8 pb-4">
         <div className="mb-8 text-center">
-          <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+          <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
             Fairness and Transparency, On-Chain
           </h1>
-          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
+          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
             Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
@@ -732,13 +732,13 @@ const LandingPage = () => {
 
 
       <div className="min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
-        <PageContainer className="py-4">
+        <PageContainer className="pt-8 pb-4">
           {/* Header */}
-          <div className={`text-center ${isMobile ? 'mb-6' : 'mb-8'}`}>
-            <h1 className={`font-bold ${isMobile ? 'text-2xl mb-3' : 'text-4xl mb-4'}`}>
+          <div className="text-center mb-8">
+            <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
               Fairness and Transparency, On-Chain
             </h1>
-            <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
+            <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
               Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
             </p>
 

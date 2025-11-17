@@ -96,11 +96,34 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Brand colors for Rafflhub
+        // Enhanced Brand Colors for Dropr
         brand: {
-          primary: "#614E41", // Dark brown
-          secondary: "#F5E9DC", // Cream/off-white
-          accent: "#FFFFFF", // White
+          50: "#FDF8F3",
+          100: "#F7EDE1", 
+          200: "#EAD4B8",
+          300: "#D4A96E",
+          400: "#B6834F",
+          500: "#614E41", // Primary brand color
+          600: "#4A3A2F",
+          700: "#3A2C23",
+          800: "#2A1F18",
+          900: "#1A1410",
+          950: "#0F0A08",
+        },
+        // Extended Neutral Palette
+        neutral: {
+          0: "#FFFFFF",
+          50: "#FAFAFA",
+          100: "#F5F5F5",
+          200: "#E5E5E5",
+          300: "#D4D4D4",
+          400: "#A3A3A3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0A0A0A",
         },
       },
       borderRadius: {

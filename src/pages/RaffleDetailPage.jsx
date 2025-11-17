@@ -3327,10 +3327,10 @@ const RaffleDetailPage = () => {
                          error.toLowerCase().includes('signer') ||
                          error.toLowerCase().includes('initializing');
     return (
-      <PageContainer variant="wide" className="py-8">
+      <PageContainer variant="wide" className="pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h2 className={isMobile ? "text-lg font-semibold mb-2" : "text-2xl font-semibold mb-2"}>
+          <h2 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-lg mb-2' : ''}`}>
             {isWalletError ? "Wallet Connection Issue" : "Failed to Load Raffle"}
           </h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
@@ -3360,10 +3360,10 @@ const RaffleDetailPage = () => {
 
   if (!raffle) {
     return (
-      <PageContainer variant="wide" className="py-8">
+      <PageContainer variant="wide" className="pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className={isMobile ? "text-lg font-semibold mb-2" : "text-2xl font-semibold mb-2"}>Raffle Not Found</h2>
+          <h2 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-lg mb-2' : ''}`}>Raffle Not Found</h2>
           <p className="text-muted-foreground mb-4">
             The raffle you're looking for doesn't exist or has been removed.
           </p>
@@ -3392,7 +3392,7 @@ const RaffleDetailPage = () => {
 
 
   return (
-    <PageContainer variant="wide" className="py-8">
+    <PageContainer variant="wide" className="pt-8 pb-4">
       <div className="mb-8">
         <button
           onClick={() => navigate('/app')}
@@ -3559,23 +3559,23 @@ const RaffleDetailPage = () => {
         )}
       </div>
 
-      <div className="detail-beige-card mb-8 p-6 bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
+      <div className="detail-beige-card mb-8 p-4 bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center items-center">
           <div>
-            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.slotsSold}</p>
-            <p className="text-sm text-foreground/70 dark:text-foreground/80">Slots Sold</p>
+            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotsSold}</p>
+            <p className="text-xs text-foreground/70 dark:text-foreground/80">Slots Sold</p>
           </div>
           <div>
-            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.slotLimit}</p>
-            <p className="text-sm text-foreground/70 dark:text-foreground/80">Total Slots</p>
+            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit}</p>
+            <p className="text-xs text-foreground/70 dark:text-foreground/80">Total Slots</p>
           </div>
           <div>
-            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{raffle.winnersCount}</p>
-            <p className="text-sm text-foreground/70 dark:text-foreground/80">Winners</p>
+            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.winnersCount}</p>
+            <p className="text-xs text-foreground/70 dark:text-foreground/80">Winners</p>
           </div>
           <div>
-            <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{timeValue}</p>
-            <p className="text-sm text-foreground/70 dark:text-foreground/80">{timeLabel}</p>
+            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{timeValue}</p>
+            <p className="text-xs text-foreground/70 dark:text-foreground/80">{timeLabel}</p>
           </div>
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
             {(isRefundable || !raffle?.usesCustomFee) && raffle && (() => {
@@ -3668,11 +3668,11 @@ const RaffleDetailPage = () => {
                   className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
                   title={raffle.creator}
                 >
-                  {isMobile ? `${raffle.creator.slice(0, 12)}...` : `${raffle.creator.slice(0, 10)}...${raffle.creator.slice(-8)}`}
+                  {isMobile ? `${raffle.creator.slice(0, 12)}...` : `${raffle.creator.slice(0, 16)}...`}
                 </a>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Contract Address:</span>
+                <span className="text-foreground/80 dark:text-foreground">Pool Contract:</span>
                 <a
                   href={getExplorerLink(raffle.address, raffle.chainId)}
                   target="_blank"
@@ -3680,7 +3680,7 @@ const RaffleDetailPage = () => {
                   className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
                   title={raffle.address}
                 >
-                  {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 10)}...${raffle.address.slice(-8)}`}
+                  {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 16)}...`}
                 </a>
               </div>
               <div className="flex justify-between items-center">

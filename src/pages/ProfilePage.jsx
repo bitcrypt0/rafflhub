@@ -629,10 +629,10 @@ const DesktopProfilePage = () => {
 
   if (!connected) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
+      <div className="container mx-auto px-4 pt-8 pb-4">
+        <div className="text-center mb-8">
 
-          <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
+          <h2 className="text-3xl font-bold mb-4 font-display">Connect Your Wallet</h2>
           <p className="text-muted-foreground">
             Please connect your wallet to view your profile and activity.
           </p>
@@ -665,11 +665,11 @@ const DesktopProfilePage = () => {
   }
 
   return (
-    <PageContainer variant="profile" className={isMobile ? 'py-4' : 'py-8'}>
-      <div className={isMobile ? 'mb-6' : 'mb-8'}>
+    <PageContainer variant="profile" className="pt-8 pb-4">
+      <div className="mb-8">
         <div className={`${isMobile ? 'mb-4' : 'flex items-center justify-between mb-4'}`}>
           <div>
-            <h1 className={`font-bold mb-2 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Profile</h1>
+            <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-2' : ''}`}>Profile</h1>
             <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
               Track activities, manage your raffles, revenue and collections
             </p>
