@@ -337,63 +337,80 @@ const HeaderModern = () => {
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <div className="flex flex-col gap-6 mt-6">
-                    {/* Navigation */}
-                    <nav className="flex flex-col gap-2">
-                      {dropdownItems.map((item) => (
-                        <Button
-                          key={item.href}
-                          variant="ghost"
-                          className="justify-start gap-3"
-                          onClick={() => {
-                            navigate(item.href);
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.label}
-                        </Button>
-                      ))}
-                    </nav>
-
-                    {/* Wallet section */}
-                    <div className="space-y-3">
-                      {connected ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
-                            <Wallet className="h-4 w-4" />
-                            <span className="text-sm font-mono">
-                              {formatAddress(address)}
-                            </span>
-                          </div>
+                  <div className="flex flex-col gap-4 mt-6">
+                    {/* Navigation Section */}
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3">Navigation</h3>
+                      <nav className="flex flex-col gap-1 px-2">
+                        {dropdownItems.map((item) => (
                           <Button
-                            variant="outline"
-                            className="w-full justify-start gap-2"
+                            key={item.href}
+                            variant="ghost"
+                            className="justify-start gap-3 h-10"
                             onClick={() => {
-                              disconnect();
+                              navigate(item.href);
                               setMobileMenuOpen(false);
                             }}
                           >
-                            <LogOut className="h-4 w-4" />
-                            Disconnect
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
                           </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          className="w-full gap-2"
-                          onClick={() => {
-                            handleConnectWallet();
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          <Wallet className="h-4 w-4" />
-                          Connect Wallet
-                        </Button>
-                      )}
+                        ))}
+                      </nav>
                     </div>
 
-                    {/* Network selector */}
-                    <NetworkSelector />
+                    {/* Divider */}
+                    <div className="border-t border-border"></div>
+
+                    {/* Wallet Section */}
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3">Wallet</h3>
+                      <div className="px-2 space-y-2">
+                        {connected ? (
+                          <>
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                              <Wallet className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-mono flex-1">
+                                {formatAddress(address)}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start gap-2 h-10"
+                              onClick={() => {
+                                disconnect();
+                                setMobileMenuOpen(false);
+                              }}
+                            >
+                              <LogOut className="h-4 w-4" />
+                              Disconnect
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            className="w-full gap-2 h-10"
+                            onClick={() => {
+                              handleConnectWallet();
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <Wallet className="h-4 w-4" />
+                            Connect Wallet
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-border"></div>
+
+                    {/* Network Section */}
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3">Network</h3>
+                      <div className="px-2">
+                        <NetworkSelector />
+                      </div>
+                    </div>
                   </div>
                 </SheetContent>
               </Sheet>
@@ -599,15 +616,14 @@ const HeaderModern = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => navigate('/create-raffle')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Raffle Pool
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/create-raffle')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Raffle Pool
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={disconnect}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Disconnect

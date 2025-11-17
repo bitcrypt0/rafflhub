@@ -76,7 +76,7 @@ const NewMobileProfilePage = () => {
       'Unknown': 'bg-gray-100 text-gray-800'
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>
+      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>
     );
   };
 
@@ -2156,18 +2156,15 @@ const NewMobileProfilePage = () => {
                   {raffle.name || `Raffle ${raffle.address.slice(0, 8)}...`}
                 </h4>
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span className="font-medium">State:</span> {renderStateBadge(raffle.state, { stateNum: raffle.stateNum })}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     <span className="font-medium">Slots Sold:</span> {raffle.ticketsSold || 0} / {raffle.maxTickets || 'Unlimited'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+                  </div>
+                  <div className="text-xs text-muted-foreground">
                     <span className="font-medium">Revenue:</span> {formatRevenueAmount(raffle.revenue || '0')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+                  </div>
+                  <div className="text-xs text-muted-foreground">
                     <span className="font-medium">Created:</span> {raffle.createdAt ? new Date((raffle.createdAt < 1e12 ? raffle.createdAt * 1000 : raffle.createdAt)).toLocaleString() : 'Unknown'}
-                  </p>
+                  </div>
                 </div>
               </div>
 
@@ -2237,7 +2234,7 @@ const NewMobileProfilePage = () => {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground text-sm mb-1">
-                  {ticket.raffleName || `Raffle ${ticket.raffleAddress?.slice(0, 8)}...`}
+                  {ticket.raffleName || ticket.poolName || ticket.name || `Raffle ${ticket.raffleAddress?.slice(0, 8)}...`}
                 </h4>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">

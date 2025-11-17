@@ -91,8 +91,8 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-5 shadow-xl border-border/80 transition-all duration-300 min-h-[180px] flex flex-col">
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl transition-all duration-300 min-h-[160px] flex flex-col">
+      <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <h3 
             className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-[#614E41] transition-colors duration-200"
@@ -104,7 +104,7 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
         {getStatusBadge()}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+      <div className="grid grid-cols-2 gap-3 text-xs mb-2">
         <div>
           <span className="text-muted-foreground">Slots Sold</span>
           <p className="font-semibold">{raffle.ticketsSold || 0}/{raffle.maxTickets}</p>
@@ -245,17 +245,17 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {activities.slice(0, 10).map((activity, index) => (
-            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
+            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5">
                   {activity.icon}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">{activity.title}</p>
-                  <p className="text-sm text-muted-foreground">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
+                  <p className="font-medium text-sm text-foreground">{activity.title}</p>
+                  <p className="text-xs text-muted-foreground">{activity.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{activity.timestamp}</p>
                 </div>
               </div>
             </div>
@@ -328,7 +328,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {purchasedTickets.map((ticket) => (
             <Card key={ticket.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
@@ -381,7 +381,7 @@ const ProfileTabs = ({
     <div className="space-y-6">
       {/* Stats Cards - Responsive Grid */}
       <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
-        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Raffles</CardTitle>
             <Plus className="h-4 w-4 text-muted-foreground" />
@@ -394,7 +394,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Withdrawable Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -407,7 +407,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Slots Sold</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -420,7 +420,7 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
 
-        <Card className={isMobile ? 'w-full overflow-hidden' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />

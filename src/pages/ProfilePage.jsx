@@ -686,39 +686,39 @@ const DesktopProfilePage = () => {
           <div className="mb-8">
             <h2 className={`font-semibold mb-4 ${isMobile ? 'text-lg' : 'text-xl'}`}>Activity Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <Ticket className="h-8 w-8 text-blue-500" />
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-2">
+                  <Ticket className="h-6 w-6 text-blue-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalSlotsPurchased || 0).toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">Slots Purchased</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalSlotsPurchased || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Slots Purchased</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <Plus className="h-8 w-8 text-green-500" />
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-6 w-6 text-green-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalRafflesCreated || 0).toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">Raffles Created</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalRafflesCreated || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Raffles Created</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-8 w-8 text-yellow-500" />
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-yellow-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{Number(activityStats.totalPrizesWon || 0).toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">Total Wins</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalPrizesWon || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Total Wins</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-xl border-border/80 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-orange-500" />
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-6 w-6 text-orange-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>
                       {(() => {
                         const bn = activityStats.totalClaimableRefunds;
                         const symbol = getCurrencySymbol();
@@ -735,7 +735,7 @@ const DesktopProfilePage = () => {
                         }
                       })()}
                     </p>
-                    <p className="text-sm text-muted-foreground">Total Claimable Refunds</p>
+                    <p className="text-xs text-muted-foreground">Total Claimable Refunds</p>
                   </div>
                 </div>
               </div>

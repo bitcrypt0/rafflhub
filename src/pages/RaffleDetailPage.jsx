@@ -269,28 +269,28 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 </Tooltip>
               )}
             </span>
-              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{formatSlotFee(raffle.slotFee || '0')}</p>
+              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{formatSlotFee(raffle.slotFee || '0')}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Remaining slots:</span>
-              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit - raffle.slotsSold}</p>
+              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit - raffle.slotsSold}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Your slots:</span>
-            <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{userSlots || 0}</p>
+            <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{userSlots || 0}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Winning Chance:</span>
-            <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
+            <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Max per user:</span>
-              <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.maxSlotsPerParticipant}</p>
+              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.maxSlotsPerParticipant}</p>
             </div>
             {canClaimRefund() && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Your Refundable Amount:</span>
-                <p className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>
+                <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>
                   {ethers.utils.formatEther(refundableAmount)} {getCurrencySymbol()}
                 </p>
               </div>
@@ -3560,21 +3560,21 @@ const RaffleDetailPage = () => {
       </div>
 
       <div className="detail-beige-card mb-8 p-4 bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center items-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center items-center text-sm">
           <div>
-            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotsSold}</p>
+            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotsSold}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Slots Sold</p>
           </div>
           <div>
-            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit}</p>
+            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Total Slots</p>
           </div>
           <div>
-            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.winnersCount}</p>
+            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.winnersCount}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Winners</p>
           </div>
           <div>
-            <p className={`font-bold mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{timeValue}</p>
+            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{timeValue}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">{timeLabel}</p>
           </div>
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
@@ -3660,7 +3660,7 @@ const RaffleDetailPage = () => {
             <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Creator:</span>
+                <span className="text-muted-foreground">Creator:</span>
                 <a
                   href={getExplorerLink(raffle.creator, raffle.chainId)}
                   target="_blank"
@@ -3672,7 +3672,7 @@ const RaffleDetailPage = () => {
                 </a>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Pool Contract:</span>
+                <span className="text-muted-foreground">Pool Contract:</span>
                 <a
                   href={getExplorerLink(raffle.address, raffle.chainId)}
                   target="_blank"
@@ -3684,11 +3684,11 @@ const RaffleDetailPage = () => {
                 </a>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Start Time:</span>
+                <span className="text-muted-foreground">Start Time:</span>
                 <span>{new Date(raffle.startTime * 1000).toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground flex items-center gap-1">
+                <span className="text-muted-foreground flex items-center gap-1">
                   Raffle Duration
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -3714,16 +3714,16 @@ const RaffleDetailPage = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Slot Fee:</span>
+                <span className="text-muted-foreground">End Time:</span>
                 <span>{formatSlotFee(raffle.slotFee)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-foreground/80 dark:text-foreground">Total Participants:</span>
+                <span className="text-muted-foreground">Total Participants:</span>
                 <span>{Number(raffle.uniqueParticipants || 0).toLocaleString()}</span>
               </div>
                   {raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0) && (
                     <div className="flex justify-between items-center">
-                      <span className="text-foreground/80 dark:text-foreground">Prize Amount:</span>
+                      <span className="text-muted-foreground">Prize Amount:</span>
                       <span>{formatPrizeAmount(raffle.nativePrizeAmount)}</span>
                     </div>
                   )}
@@ -3733,7 +3733,7 @@ const RaffleDetailPage = () => {
               {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
                 <>
                 <div className="flex justify-between">
-                  <span className="text-foreground/80 dark:text-foreground">Prize Collection:</span>
+                  <span className="text-muted-foreground">Prize Collection:</span>
                     <a
                       href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
                       target="_blank"

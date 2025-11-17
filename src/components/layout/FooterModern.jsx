@@ -140,12 +140,9 @@ const FooterModern = () => {
 
   return (
     <footer className="relative bg-background border-t border-border/50 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-50/20 via-transparent to-brand-100/20 pointer-events-none" />
-      
       {/* Newsletter section - Only show on Homepage */}
       {isHomepage && (
-      <div className="relative border-b border-border/30 bg-gradient-to-r from-brand-500/5 to-brand-600/5">
+      <div className="relative border-b border-border/30 bg-muted/30">
         <div className="container mx-auto px-6 py-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -154,7 +151,7 @@ const FooterModern = () => {
             transition={{ duration: 0.6 }}
             className="max-w-4xl mx-auto text-center"
           >
-            <Badge className="mb-4 bg-gradient-to-r from-brand-500 to-brand-600 text-white border-0">
+            <Badge className="mb-4 bg-primary text-primary-foreground border-0">
               Stay Updated
             </Badge>
             <h2 className="text-3xl font-bold mb-4 font-display">
@@ -175,7 +172,7 @@ const FooterModern = () => {
               />
               <Button 
                 type="submit" 
-                className="h-12 px-8 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white"
+                className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {isSubscribed ? 'Subscribed!' : 'Subscribe'}
               </Button>
@@ -209,7 +206,7 @@ const FooterModern = () => {
             <motion.div variants={itemVariants} className="lg:col-span-1">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold font-display bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">
+                  <h3 className="text-xl font-bold font-display text-foreground">
                     Dropr
                   </h3>
                   <Badge variant="secondary" className="text-xs">
@@ -334,9 +331,7 @@ const FooterModern = () => {
         </div>
       </div>
 
-      {/* Decorative gradient overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50" />
-    </footer>
+</footer>
   );
 };
 
