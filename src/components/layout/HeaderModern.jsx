@@ -59,7 +59,7 @@ const HeaderModern = () => {
   } = useWallet();
   const { contracts, getContractInstance } = useContract();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
-  const { isMobile, isInitialized } = useMobileBreakpoints();
+  const { isMobile, isTablet, isInitialized } = useMobileBreakpoints();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -264,7 +264,7 @@ const HeaderModern = () => {
     );
   }
 
-  if (isMobile) {
+  if (isMobile || isTablet) {
     return (
       <motion.header 
         variants={headerVariants}
@@ -298,16 +298,6 @@ const HeaderModern = () => {
                 className="relative"
               >
                 <Search className="h-4 w-4" />
-                <AnimatePresence>
-                  {searchOpen && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="absolute inset-0 bg-primary rounded-md"
-                    />
-                  )}
-                </AnimatePresence>
               </Button>
             </motion.div>
 
@@ -422,6 +412,7 @@ const HeaderModern = () => {
         <AnimatePresence>
           {searchOpen && (
             <motion.div
+              ref={searchContainerRef}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}

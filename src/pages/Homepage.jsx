@@ -474,15 +474,15 @@ export default function Homepage() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Supports ERC721 & ERC1155 standards</span>
+                <span className="text-sm text-muted-foreground">Supports ERC721 & ERC1155 standards</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Flexible launch strategies</span>
+                <span className="text-sm text-muted-foreground">Flexible launch strategies</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span>Inter-community collabs simplified</span>
+                <span className="text-sm text-muted-foreground">Inter-community collabs simplified</span>
               </li>
             </ul>
           </div>
@@ -496,15 +496,15 @@ export default function Homepage() {
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Build reputation and trust</span>
+                 <span className="text-sm text-muted-foreground">Build reputation and trust</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Flexible prize options for community rewards</span>
+                 <span className="text-sm text-muted-foreground">Flexible prize options for community rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Project collabs made easy</span>
+                 <span className="text-sm text-muted-foreground">Project collabs made easy</span>
                </li>
              </ul>
           </div>
@@ -518,15 +518,15 @@ export default function Homepage() {
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Token-gated raffles for holder rewards</span>
+                 <span className="text-sm text-muted-foreground">Token-gated raffles for holder rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Flexible prize options for holder rewards</span>
+                 <span className="text-sm text-muted-foreground">Flexible prize options for holder rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span>Easy collabs with projects and other creators</span>
+                 <span className="text-sm text-muted-foreground">Easy collabs with projects and other creators</span>
                </li>
              </ul>
           </div>
@@ -587,6 +587,8 @@ export default function Homepage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               to="/app"
+              target="_blank"
+              rel="noopener noreferrer"
               className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-xl bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
             >
               Launch Your Raffle Now
