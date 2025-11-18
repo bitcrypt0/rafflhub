@@ -65,6 +65,15 @@
     }
   }
 
+  /* iOS zoom prevention - enforce 16px minimum on form inputs */
+  @media (max-width: 640px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: max(16px, var(--text-base)) !important;
+    }
+  }
+
 
   /* Let browser handle focus naturally - no custom overrides */
 

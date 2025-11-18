@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
@@ -27,6 +28,7 @@ const NewMobileProfilePage = () => {
   const [activeDashboardComponent, setActiveDashboardComponent] = useState(null);
   const { getCurrencySymbol, formatRevenueAmount } = useNativeCurrency();
 
+  
   // Use existing data hook - match desktop data usage
   const {
     userActivity,
@@ -344,21 +346,18 @@ const NewMobileProfilePage = () => {
   // Dashboard section rendering with all four components
   const renderDashboardSection = () => {
     if (activeDashboardComponent) {
-      return renderDashboardComponent(activeDashboardComponent);
+      return (
+        <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
+          {/* Component renders immediately in full viewport */}
+          {renderDashboardComponent(activeDashboardComponent)}
+        </div>
+      );
     }
 
     return (
       <div className="p-4 space-y-4 mobile-component-container">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Creator Dashboard</h3>
-          {activeDashboardComponent && (
-            <button
-              onClick={() => setActiveDashboardComponent(null)}
-              className="text-sm text-primary hover:text-primary/80"
-            >
-              ← Back
-            </button>
-          )}
         </div>
 
         {/* Creator Stats - Match Desktop Calculations Exactly */}
@@ -759,96 +758,119 @@ const NewMobileProfilePage = () => {
           <h3 className="text-lg font-semibold">Royalty & Reveal</h3>
         </div>
 
-        {/* Collection Lookup */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <ResponsiveAddressInput
-              value={state.collectionData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="0x..."
-              className="flex-1"
-            />
-          </div>
-        </div>
-
-        {/* Collection Info Display */}
-        {state.collectionInfo && (
-          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
-            <h4 className="font-semibold">Collection Information</h4>
-            <div className="space-y-2 text-sm">
-              <div className="break-words"><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
-              {state.collectionInfo.symbol && (
-                <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionInfo.symbol}</div>
-              )}
-              <div><span className="font-medium">Type:</span> {state.collectionInfo.type?.toUpperCase()}</div>
-              <div className="break-all">
-                <span className="font-medium">Owner:</span>
-                <span className="ml-1 font-mono text-xs">{state.collectionInfo.owner}</span>
-              </div>
-              <div><span className="font-medium">Current Royalty:</span> {(parseFloat(state.collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%</div>
-              <div className="break-all">
-                <span className="font-medium">Royalty Recipient:</span>
-                <span className="ml-1 font-mono text-xs">{state.collectionInfo.currentRoyaltyRecipient}</span>
-              </div>
-              {state.isRevealed !== null && (
-                <div><span className="font-medium">Revealed:</span> {state.isRevealed ? 'Yes' : 'No'}</div>
-              )}
-            </div>
-
-            {/* Reveal Button */}
-            {state.collectionInfo.isOwner && state.isRevealed === false && (
-              <button
-                onClick={handleReveal}
-                disabled={state.revealing || !connected}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {state.revealing ? 'Revealing...' : 'Reveal Collection'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Royalty Update Form */}
-        {state.collectionInfo && state.collectionInfo.isOwner && (
-          <div className="space-y-4">
-            <h4 className="font-semibold">Update Royalty Settings</h4>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  New Royalty Percentage (%)
-                </label>
-                <ResponsiveNumberInput
-                  min="0"
-                  step="0.01"
-                  value={state.collectionData.royaltyPercentage}
-                  onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                  placeholder="2.5"
-                />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Royalty & Reveal Management
+            </CardTitle>
+            <CardDescription>
+              Manage royalties and reveal collections for your NFT contracts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Collection Lookup */}
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Search className="h-4 w-4" />
+                <h3 className="text-sm font-medium">Collection Lookup</h3>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  New Royalty Recipient
-                </label>
+                <label className="block text-sm font-medium mb-1">Collection Address</label>
                 <ResponsiveAddressInput
-                  value={state.collectionData.royaltyRecipient}
-                  onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                  value={state.collectionData.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
                   placeholder="0x..."
+                  className="flex-1"
                 />
               </div>
             </div>
 
-            <button
-              onClick={handleUpdateRoyalty}
-              disabled={state.loading || !connected || !state.collectionInfo || !state.collectionInfo.isOwner}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
-            >
-              <Settings className="h-4 w-4" />
-              {state.loading ? 'Updating...' : 'Update Royalty Settings'}
-            </button>
-          </div>
-        )}
+            {/* Collection Info Display */}
+            {state.collectionInfo && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Collection Information</h3>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="break-words"><span className="font-medium">Name:</span> {state.collectionInfo.name}</div>
+                  {state.collectionInfo.symbol && (
+                    <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionInfo.symbol}</div>
+                  )}
+                  <div><span className="font-medium">Type:</span> {state.collectionInfo.type?.toUpperCase()}</div>
+                  <div className="break-all">
+                    <span className="font-medium">Owner:</span>
+                    <span className="ml-1 font-mono text-xs">{state.collectionInfo.owner}</span>
+                  </div>
+                  <div><span className="font-medium">Current Royalty:</span> {(parseFloat(state.collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%</div>
+                  <div className="break-all">
+                    <span className="font-medium">Royalty Recipient:</span>
+                    <span className="ml-1 font-mono text-xs">{state.collectionInfo.currentRoyaltyRecipient}</span>
+                  </div>
+                  {state.isRevealed !== null && (
+                    <div><span className="font-medium">Revealed:</span> {state.isRevealed ? 'Yes' : 'No'}</div>
+                  )}
+                </div>
+
+                {/* Reveal Button */}
+                {state.collectionInfo.isOwner && state.isRevealed === false && (
+                  <button
+                    onClick={handleReveal}
+                    disabled={state.revealing || !connected}
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {state.revealing ? 'Revealing...' : 'Reveal Collection'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Royalty Update Form */}
+            {state.collectionInfo && state.collectionInfo.isOwner && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Update Royalty Settings</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      New Royalty Percentage (%)
+                    </label>
+                    <ResponsiveNumberInput
+                      min="0"
+                      step="0.01"
+                      value={state.collectionData.royaltyPercentage}
+                      onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                      placeholder="2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      New Royalty Recipient
+                    </label>
+                    <ResponsiveAddressInput
+                      value={state.collectionData.royaltyRecipient}
+                      onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                      placeholder="0x..."
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleUpdateRoyalty}
+                  disabled={state.loading || !connected || !state.collectionInfo || !state.collectionInfo.isOwner}
+                  className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+                >
+                  <Settings className="h-4 w-4" />
+                  {state.loading ? 'Updating...' : 'Update Royalty Settings'}
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -1166,6 +1188,18 @@ const NewMobileProfilePage = () => {
           <h3 className="text-lg font-semibold">Minter Approval Management</h3>
         </div>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Minter Approval Management
+            </CardTitle>
+            <CardDescription>
+              Manage minter approvals for collections and control royalty enforcement exemptions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+
         {/* Error/Success Messages */}
         {state.error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -1183,78 +1217,89 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Collection Lookup */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <ResponsiveAddressInput
-              value={state.collectionAddress}
-              onChange={(e) => {
-                updateMinterState({ collectionAddress: e.target.value });
-                
-                // Auto-fetch when address changes
-                const value = e.target.value;
-                if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
-                  setTimeout(() => {
-                    if (!state.loading) {
-                      fetchCollection();
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Search className="h-4 w-4" />
+                <h3 className="text-sm font-medium">Collection Lookup</h3>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Address</label>
+                <ResponsiveAddressInput
+                  value={state.collectionAddress}
+                  onChange={(e) => {
+                    updateMinterState({ collectionAddress: e.target.value });
+                    
+                    // Auto-fetch when address changes
+                    const value = e.target.value;
+                    if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
+                      setTimeout(() => {
+                        if (!state.loading) {
+                          fetchCollection();
+                        }
+                      }, 350);
                     }
-                  }, 350);
-                }
-              }}
-              placeholder="0x..."
-              className="flex-1"
-            />
-          </div>
-        </div>
+                  }}
+                  placeholder="0x..."
+                  className="flex-1"
+                />
+              </div>
+            </div>
 
         {/* Collection Info */}
-        {state.fetchedCollection && (
-          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
-            <h4 className="font-semibold">Collection Information</h4>
-            <div className="text-sm space-y-2">
-              <div className="break-all">
-                <span className="font-medium">Address:</span>
-                <span className="ml-1 font-mono text-xs">{state.fetchedCollection}</span>
-              </div>
-              <div className="break-words"><span className="font-medium">Name:</span> {state.collectionName}</div>
-              {state.collectionSymbol && (
-                <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionSymbol}</div>
-              )}
-              <div><span className="font-medium">Type:</span> {state.collectionType?.toUpperCase()}</div>
-              <div className="break-all">
-                <span className="font-medium">Current Minter:</span>
-                <span className="ml-1 font-mono text-xs">{state.currentMinter || 'None'}</span>
-              </div>
-              <div><span className="font-medium">Minter Locked:</span> {state.isLocked ? 'Yes' : 'No'}</div>
-            </div>
+            {state.fetchedCollection && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <UserPlus className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Collection Information</h3>
+                </div>
+                <div className="text-sm space-y-2">
+                  <div className="break-all">
+                    <span className="font-medium">Address:</span>
+                    <span className="ml-1 font-mono text-xs">{state.fetchedCollection}</span>
+                  </div>
+                  <div className="break-words"><span className="font-medium">Name:</span> {state.collectionName}</div>
+                  {state.collectionSymbol && (
+                    <div className="break-words"><span className="font-medium">Symbol:</span> {state.collectionSymbol}</div>
+                  )}
+                  <div><span className="font-medium">Type:</span> {state.collectionType?.toUpperCase()}</div>
+                  <div className="break-all">
+                    <span className="font-medium">Current Minter:</span>
+                    <span className="ml-1 font-mono text-xs">{state.currentMinter || 'None'}</span>
+                  </div>
+                  <div><span className="font-medium">Minter Locked:</span> {state.isLocked ? 'Yes' : 'No'}</div>
+                </div>
 
-            {/* Lock/Unlock Button */}
-            <div className="pt-2 border-t border-[#614E41]">
-              <button
-                onClick={toggleMinterApprovalLock}
-                disabled={state.loading || !connected}
-                className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
-              </button>
-            </div>
-          </div>
-        )}
+                {/* Lock/Unlock Button */}
+                <div className="pt-2 border-t border-border">
+                  <button
+                    onClick={toggleMinterApprovalLock}
+                    disabled={state.loading || !connected}
+                    className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
+                  </button>
+                </div>
+              </div>
+            )}
 
         {/* Minter Management */}
-        {state.fetchedCollection && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Minter Address</label>
-              <ResponsiveAddressInput
-                value={state.minterAddress}
-                onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
-                placeholder="0x..."
-              />
-              {state.minterAddress && state.isApproved && (
-                <p className="text-sm text-green-600 mt-1">✓ This address is currently the minter</p>
-              )}
-            </div>
+            {state.fetchedCollection && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <UserPlus className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Minter Management</h3>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Minter Address</label>
+                  <ResponsiveAddressInput
+                    value={state.minterAddress}
+                    onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
+                    placeholder="0x..."
+                  />
+                  {state.minterAddress && state.isApproved && (
+                    <p className="text-sm text-green-600 mt-1">✓ This address is currently the minter</p>
+                  )}
+                </div>
 
             <div className="flex flex-col gap-2">
               <button
@@ -1287,15 +1332,15 @@ const NewMobileProfilePage = () => {
             </div>
 
             {/* Royalty Enforcement Exemption Utility */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium mb-1">Royalty Enforcement Exemption Address</label>
-              <ResponsiveAddressInput
-                value={state.minterAddress}
-                onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
-                placeholder="0x..."
-              />
+                <div className="space-y-3 pt-3 border-t border-border">
+                  <label className="block text-sm font-medium mb-1">Royalty Enforcement Exemption Address</label>
+                  <ResponsiveAddressInput
+                    value={state.minterAddress}
+                    onChange={(e) => updateMinterState({ minterAddress: e.target.value })}
+                    placeholder="0x..."
+                  />
 
-              <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
                 <button
                   onClick={async () => {
                     try {
@@ -1371,19 +1416,21 @@ const NewMobileProfilePage = () => {
               </div>
             </div>
 
-          </div>
-        )}
+              </div>
+            )}
 
-        {state.isLocked && state.fetchedCollection && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-800">
-                Minter approval is locked for this collection. Use the unlock button above to enable changes.
-              </span>
-            </div>
-          </div>
-        )}
+            {state.isLocked && state.fetchedCollection && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm text-yellow-800">
+                    Minter approval is locked for this collection. Use the unlock button above to enable changes.
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -1622,68 +1669,90 @@ const NewMobileProfilePage = () => {
           <h3 className="text-lg font-semibold">Create New Token ID & Set Token URI</h3>
         </div>
 
-        {/* Collection Lookup */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">ERC1155 Collection Address</label>
-            <ResponsiveAddressInput
-                value={state.collectionData.address}
-                onChange={(e) => {
-                  updateTokenCreatorState({
-                    collectionData: { ...state.collectionData, address: e.target.value }
-                  });
-                  
-                  // Auto-fetch when address changes
-                  const value = e.target.value;
-                  if (value && ethers.utils.isAddress(value) && connected && !state.loadingInfo) {
-                    setTimeout(() => {
-                      if (!state.loadingInfo) {
-                        loadCollectionInfo();
-                      }
-                    }, 400);
-                  }
-                }}
-                placeholder="0x..."
-                className="flex-1"
-              />
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Token Creator
+            </CardTitle>
+            <CardDescription>
+              Add new token IDs to ERC1155 collections and set metadata URIs
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
 
-        {/* Collection Info Display */}
-        {state.collectionInfo && (
-          <div className={`p-4 rounded-lg border ${state.collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-muted/50'}`}>
-            <h4 className="text-sm text-muted-foreground mb-2">Collection Information</h4>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p className="break-all"><span className="text-muted-foreground">Address:</span> {state.collectionInfo.address}</p>
-              <p className="break-all"><span className="text-muted-foreground">Owner:</span> {state.collectionInfo.owner}</p>
-              <p><span className="text-muted-foreground">You are owner:</span> {state.collectionInfo.isOwner ? '✅ Yes' : '❌ No'}</p>
-              <p><span className="text-muted-foreground">Type:</span> {state.collectionInfo.type === 'erc721' ? '❌ ERC721 Collection (Incompatible)' : '✅ ERC1155 Collection'}</p>
+        {/* Collection Lookup */}
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Search className="h-4 w-4" />
+                <h3 className="text-sm font-medium">Collection Lookup</h3>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">ERC1155 Collection Address</label>
+                <ResponsiveAddressInput
+                    value={state.collectionData.address}
+                    onChange={(e) => {
+                      updateTokenCreatorState({
+                        collectionData: { ...state.collectionData, address: e.target.value }
+                      });
+                      
+                      // Auto-fetch when address changes
+                      const value = e.target.value;
+                      if (value && ethers.utils.isAddress(value) && connected && !state.loadingInfo) {
+                        setTimeout(() => {
+                          if (!state.loadingInfo) {
+                            loadCollectionInfo();
+                          }
+                        }, 400);
+                      }
+                    }}
+                    placeholder="0x..."
+                    className="flex-1"
+                  />
+              </div>
             </div>
 
-            {state.collectionInfo.isBlocked && (
-              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <span className="text-sm text-destructive">
-                  This component only works with ERC1155 collections. The provided address is an ERC721 collection. Please use the appropriate component for ERC721 collections.
-                </span>
-              </div>
-            )}
+        {/* Collection Info Display */}
+            {state.collectionInfo && (
+              <div className={`space-y-4 p-4 border border-border rounded-lg ${state.collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-muted/50'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Collection Information</h3>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <p className="break-all"><span className="font-medium">Address:</span> {state.collectionInfo.address}</p>
+                  <p className="break-all"><span className="font-medium">Owner:</span> {state.collectionInfo.owner}</p>
+                  <p><span className="font-medium">You are owner:</span> {state.collectionInfo.isOwner ? '✅ Yes' : '❌ No'}</p>
+                  <p><span className="font-medium">Type:</span> {state.collectionInfo.type === 'erc721' ? '❌ ERC721 Collection (Incompatible)' : '✅ ERC1155 Collection'}</p>
+                </div>
 
-            {!state.collectionInfo.isBlocked && !state.collectionInfo.isOwner && (
-              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <span className="text-sm text-destructive">
-                  You are not the owner of this collection and cannot create new tokens.
-                </span>
+                {state.collectionInfo.isBlocked && (
+                  <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
+                      This component only works with ERC1155 collections. The provided address is an ERC721 collection. Please use the appropriate component for ERC721 collections.
+                    </span>
+                  </div>
+                )}
+
+                {!state.collectionInfo.isBlocked && !state.collectionInfo.isOwner && (
+                  <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
+                      You are not the owner of this collection and cannot create new tokens.
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
         {/* Create New Token Section */}
-        {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
-          <div className="space-y-4">
-            <h4 className="font-semibold">Create New Token ID</h4>
+            {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Plus className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Create New Token ID</h3>
+                </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Token ID</label>
@@ -1721,9 +1790,12 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Set Token URI Section */}
-        {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
-          <div className="space-y-4">
-            <h4 className="font-semibold">Set Token URI</h4>
+            {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Search className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Set Token URI</h3>
+                </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Token ID</label>
@@ -1758,6 +1830,8 @@ const NewMobileProfilePage = () => {
             </button>
           </div>
         )}
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -1973,37 +2047,56 @@ const NewMobileProfilePage = () => {
           <h3 className="text-lg font-semibold">Creator Mint & Revenue Withdrawal</h3>
         </div>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Creator Mint & Revenue Withdrawal
+            </CardTitle>
+            <CardDescription>
+              Withdraw revenue from completed raffles and mint creator tokens
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+
         {/* Raffle Lookup */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Raffle Address</label>
-            <ResponsiveAddressInput
-              value={state.raffleData.address}
-              onChange={(e) => {
-                updateRevenueState({
-                  raffleData: { ...state.raffleData, address: e.target.value }
-                });
-                
-                // Auto-fetch when address changes
-                const value = e.target.value;
-                if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
-                  setTimeout(() => {
-                    if (!state.loading) {
-                      loadRaffleInfo(value);
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Search className="h-4 w-4" />
+                <h3 className="text-sm font-medium">Raffle Lookup</h3>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Raffle Address</label>
+                <ResponsiveAddressInput
+                  value={state.raffleData.address}
+                  onChange={(e) => {
+                    updateRevenueState({
+                      raffleData: { ...state.raffleData, address: e.target.value }
+                    });
+                    
+                    // Auto-fetch when address changes
+                    const value = e.target.value;
+                    if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
+                      setTimeout(() => {
+                        if (!state.loading) {
+                          loadRaffleInfo(value);
+                        }
+                      }, 400);
                     }
-                  }, 400);
-                }
-              }}
-              placeholder="0x..."
-              className="flex-1"
-            />
-          </div>
-        </div>
+                  }}
+                  placeholder="0x..."
+                  className="flex-1"
+                />
+              </div>
+            </div>
 
         {/* Quick Access to Created Raffles */}
-        {createdRaffles.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="font-semibold">Your Created Raffles</h4>
+            {createdRaffles.length > 0 && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Your Created Raffles</h3>
+                </div>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {createdRaffles.slice(0, 5).map((raffle) => (
                 <button
@@ -2020,42 +2113,45 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Raffle Info Display */}
-        {state.raffleData.address && state.raffleData.raffleState !== 'unknown' && (
-          <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-4 space-y-3">
-            <h4 className="font-semibold">Raffle Information</h4>
-            <div className="space-y-2 text-sm">
-              <div className="break-all">
-                <span className="font-medium">Address:</span>
-                <span className="ml-1 font-mono text-xs">{state.raffleData.address}</span>
-              </div>
-              <div className="flex items-center gap-2"><span className="font-medium">State:</span> {renderStateBadge(state.raffleData.raffleState, { stateNum: state.raffleData.stateNum, winnerCount: state.raffleData.winnerCount })}</div>
-              <div><span className="font-medium">You are creator:</span> {state.raffleData.isCreator ? 'Yes' : 'No'}</div>
-              <div><span className="font-medium">Available Revenue:</span> {state.raffleData.revenueAmount} {getCurrencySymbol()}</div>
-            </div>
-
-            {/* Withdrawal Status */}
-            {state.raffleData.isCreator && (
-              <div className="mt-4">
-                {canWithdraw ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="text-sm text-green-800">
-                      ✓ Revenue withdrawal is available
-                    </div>
+            {state.raffleData.address && state.raffleData.raffleState !== 'unknown' && (
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Raffle Information</h3>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="break-all">
+                    <span className="font-medium">Address:</span>
+                    <span className="ml-1 font-mono text-xs">{state.raffleData.address}</span>
                   </div>
-                ) : (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="text-sm text-yellow-800">
-                      {parseFloat(state.raffleData.revenueAmount) <= 0
-                        ? 'No revenue available for withdrawal'
-                        : `Revenue withdrawal not available - raffle state: ${state.raffleData.raffleState}`
-                      }
-                    </div>
+                  <div className="flex items-center gap-2"><span className="font-medium">State:</span> {renderStateBadge(state.raffleData.raffleState, { stateNum: state.raffleData.stateNum, winnerCount: state.raffleData.winnerCount })}</div>
+                  <div><span className="font-medium">You are creator:</span> {state.raffleData.isCreator ? 'Yes' : 'No'}</div>
+                  <div><span className="font-medium">Available Revenue:</span> {state.raffleData.revenueAmount} {getCurrencySymbol()}</div>
+                </div>
+
+                {/* Withdrawal Status */}
+                {state.raffleData.isCreator && (
+                  <div className="mt-4">
+                    {canWithdraw ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="text-sm text-green-800">
+                          ✓ Revenue withdrawal is available
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <div className="text-sm text-yellow-800">
+                          {parseFloat(state.raffleData.revenueAmount) <= 0
+                            ? 'No revenue available for withdrawal'
+                            : `Revenue withdrawal not available - raffle state: ${state.raffleData.raffleState}`
+                          }
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
-          </div>
-        )}
 
         {/* Withdrawal Button */}
         {state.raffleData.isCreator && (
@@ -2070,50 +2166,51 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Creator Mint Section - matches desktop implementation */}
-        <div className="space-y-4 border-t border-[#614E41] pt-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">Creator Mint</h3>
-            <p className="text-sm text-muted-foreground">
-              Mint tokens directly to winners or any address
-            </p>
-          </div>
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="h-4 w-4" />
+                <h3 className="text-sm font-medium">Creator Mint</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mint tokens directly to winners or any address
+              </p>
 
-          {/* Collection Type Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Collection Type</label>
-            <Select
-              value={state.mintData.collectionType}
-              onValueChange={(value) => handleMintDataChange('collectionType', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select collection type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="erc721">ERC721</SelectItem>
-                <SelectItem value="erc1155">ERC1155</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Collection Type Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Type</label>
+                <Select
+                  value={state.mintData.collectionType}
+                  onValueChange={(value) => handleMintDataChange('collectionType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select collection type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="erc721">ERC721</SelectItem>
+                    <SelectItem value="erc1155">ERC1155</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Collection Address */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <ResponsiveAddressInput
-              value={state.mintData.collectionAddress}
-              onChange={(e) => handleMintDataChange('collectionAddress', e.target.value)}
-              placeholder="0x..."
-            />
-          </div>
+              {/* Collection Address */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Collection Address</label>
+                <ResponsiveAddressInput
+                  value={state.mintData.collectionAddress}
+                  onChange={(e) => handleMintDataChange('collectionAddress', e.target.value)}
+                  placeholder="0x..."
+                />
+              </div>
 
-          {/* Recipient Address */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Recipient Address</label>
-            <ResponsiveAddressInput
-              value={state.mintData.recipient}
-              onChange={(e) => handleMintDataChange('recipient', e.target.value)}
-              placeholder="0x..."
-            />
-          </div>
+              {/* Recipient Address */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Recipient Address</label>
+                <ResponsiveAddressInput
+                  value={state.mintData.recipient}
+                  onChange={(e) => handleMintDataChange('recipient', e.target.value)}
+                  placeholder="0x..."
+                />
+              </div>
 
           {/* Token ID (ERC1155 only) */}
           {state.mintData.collectionType === 'erc1155' && (
@@ -2149,14 +2246,16 @@ const NewMobileProfilePage = () => {
             {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}
           </button>
 
-          {!connected && (
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-muted-foreground text-sm">
-                Please connect your wallet to use creator mint functionality.
-              </p>
+              {!connected && (
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-muted-foreground text-sm">
+                    Please connect your wallet to use creator mint functionality.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   };
