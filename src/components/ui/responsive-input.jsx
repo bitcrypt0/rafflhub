@@ -74,14 +74,14 @@ const ResponsiveInput = React.forwardRef(({
         
         // Mobile-specific optimizations
         isMobile && [
-          "text-base", // Prevents zoom on iOS (16px minimum)
+          "text-[length:var(--text-base)]", // Uses fluid typography (16px minimum prevents iOS zoom)
           "min-h-[44px]", // Proper touch targets for mobile
           "touch-manipulation", // Optimizes touch interactions
         ],
         
         // Desktop/tablet optimizations
         !isMobile && [
-          "text-sm", // Smaller text for desktop
+          "text-[length:var(--text-base)]", // Consistent with fluid typography system
           "min-h-[40px]", // Standard height for desktop
         ],
         
@@ -137,14 +137,14 @@ export const ResponsiveTextarea = React.forwardRef(({
         
         // Mobile-specific optimizations
         isMobile && [
-          "text-base", // Prevents zoom on iOS
+          "text-[length:var(--text-base)]", // Uses fluid typography (prevents iOS zoom)
           "min-h-[44px]", // Proper touch targets
           "touch-manipulation",
         ],
         
         // Desktop/tablet optimizations
         !isMobile && [
-          "text-sm",
+          "text-[length:var(--text-base)]", // Consistent with fluid typography system
         ],
         
         className
