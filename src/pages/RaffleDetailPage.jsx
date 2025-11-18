@@ -245,7 +245,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
 
   return (
     <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Slots
       </h3>
@@ -269,28 +269,28 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 </Tooltip>
               )}
             </span>
-              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{formatSlotFee(raffle.slotFee || '0')}</p>
+              <p className="font-body text-[length:var(--text-base)] font-medium">{formatSlotFee(raffle.slotFee || '0')}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Remaining slots:</span>
-              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit - raffle.slotsSold}</p>
+              <p className="font-body text-[length:var(--text-base)] font-medium">{raffle.slotLimit - raffle.slotsSold}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Your slots:</span>
-            <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{userSlots || 0}</p>
+            <p className="font-body text-[length:var(--text-base)] font-medium">{userSlots || 0}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Winning Chance:</span>
-            <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
+            <p className="font-body text-[length:var(--text-base)] font-medium">{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Max per user:</span>
-              <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.maxSlotsPerParticipant}</p>
+              <p className="font-body text-[length:var(--text-base)] font-medium">{raffle.maxSlotsPerParticipant}</p>
             </div>
             {canClaimRefund() && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Your Refundable Amount:</span>
-                <p className={`font-medium ${isMobile ? 'text-base' : 'text-lg'}`}>
+                <p className="font-body text-[length:var(--text-base)] font-medium">
                   {ethers.utils.formatEther(refundableAmount)} {getCurrencySymbol()}
                 </p>
               </div>
@@ -436,7 +436,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   <div className="p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total Cost:</span>
-                      <span className={`font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
+                      <span className="font-body text-[length:var(--text-base)] font-bold">
                         {formatSlotFee(safeSlotFeeToBigNumber(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
                       </span>
                     </div>
@@ -1705,7 +1705,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Raffle Pending</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Raffle Pending</h3>
             <p className="text-muted-foreground">Winners will be announced after the raffle ends and drawing is complete.</p>
           </div>
         );
@@ -1713,7 +1713,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <Users className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Raffle Active</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Raffle Active</h3>
             <p className="text-muted-foreground">Raffle is currently active. Winners will be announced after it ends.</p>
           </div>
         );
@@ -1721,7 +1721,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Raffle Ended</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Raffle Ended</h3>
             <p className="text-muted-foreground">Raffle has ended. Waiting for winner selection to begin.</p>
           </div>
         );
@@ -1731,7 +1731,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <h3 className="text-lg font-semibold mb-2">Drawing in Progress</h3>
+                <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Drawing in Progress</h3>
                 <p className="text-muted-foreground">Loading winners...</p>
               </div>
             ) : winners.length > 0 ? (
@@ -1759,7 +1759,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
             ) : (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <h3 className="text-lg font-semibold mb-2">Drawing in Progress</h3>
+                <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Drawing in Progress</h3>
                 <p className="text-muted-foreground">Winners are being selected. Please wait...</p>
               </div>
             )}
@@ -1809,7 +1809,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <Trash2 className="h-12 w-12 text-foreground/60 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Raffle Deleted</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Raffle Deleted</h3>
             <p className="text-muted-foreground">This raffle has been deleted and is no longer active.</p>
           </div>
         );
@@ -1817,7 +1817,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Activation Failed</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Activation Failed</h3>
             <p className="text-muted-foreground">Raffle activation failed. Please contact support or try again.</p>
           </div>
         );
@@ -1825,7 +1825,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         return (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Unengaged Raffle</h3>
+            <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-2">Unengaged Raffle</h3>
             <p className="text-muted-foreground">This raffle had fewer participants than the required number of winners before its duration elapsed.</p>
           </div>
         );
@@ -1881,7 +1881,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+          <h3 className="font-display text-[length:var(--text-lg)] font-semibold flex items-center gap-2">
             <Trophy className="h-5 w-5" />
             Winners
             {winnerSelectionTx && (
@@ -3330,7 +3330,7 @@ const RaffleDetailPage = () => {
       <PageContainer variant="wide" className="pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-          <h2 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-lg mb-2' : ''}`}>
+          <h2 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">
             {isWalletError ? "Wallet Connection Issue" : "Failed to Load Raffle"}
           </h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
@@ -3363,7 +3363,7 @@ const RaffleDetailPage = () => {
       <PageContainer variant="wide" className="pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-lg mb-2' : ''}`}>Raffle Not Found</h2>
+          <h2 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">Raffle Not Found</h2>
           <p className="text-muted-foreground mb-4">
             The raffle you're looking for doesn't exist or has been removed.
           </p>
@@ -3406,7 +3406,7 @@ const RaffleDetailPage = () => {
           <div>
 
             <div className="flex items-center gap-2">
-              <h1 className={isMobile ? "text-xl font-bold mb-2" : "text-3xl font-bold mb-2"}>{raffle.name}</h1>
+              <h1 className="font-display text-[length:var(--text-3xl)] font-bold mb-2 leading-tight">{raffle.name}</h1>
               <button
                 onClick={() => {
                   const shareUrl = `${window.location.origin}${makeSharePath()}`;
@@ -3562,15 +3562,15 @@ const RaffleDetailPage = () => {
       <div className="detail-beige-card mb-8 p-4 bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 text-center items-center text-sm">
           <div>
-            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotsSold}</p>
+            <p className="font-body text-[length:var(--text-base)] font-medium mb-1">{raffle.slotsSold}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Slots Sold</p>
           </div>
           <div>
-            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.slotLimit}</p>
+            <p className="font-body text-[length:var(--text-base)] font-medium mb-1">{raffle.slotLimit}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Total Slots</p>
           </div>
           <div>
-            <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{raffle.winnersCount}</p>
+            <p className="font-body text-[length:var(--text-base)] font-medium mb-1">{raffle.winnersCount}</p>
             <p className="text-xs text-foreground/70 dark:text-foreground/80">Winners</p>
           </div>
           <div>
@@ -3661,15 +3661,12 @@ const RaffleDetailPage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Creator:</span>
-                <a
-                  href={getExplorerLink(raffle.creator, raffle.chainId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
+                <span
+                  className="font-mono text-foreground"
                   title={raffle.creator}
                 >
                   {isMobile ? `${raffle.creator.slice(0, 12)}...` : `${raffle.creator.slice(0, 16)}...`}
-                </a>
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Pool Contract:</span>
@@ -3677,7 +3674,7 @@ const RaffleDetailPage = () => {
                   href={getExplorerLink(raffle.address, raffle.chainId)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
+                  className="font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                   title={raffle.address}
                 >
                   {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 16)}...`}

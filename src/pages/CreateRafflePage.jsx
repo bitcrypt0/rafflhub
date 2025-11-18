@@ -173,35 +173,35 @@ const WhitelistRaffleForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Coins className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Whitelist Raffle</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Whitelist Raffle</h3>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Pool Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={(e) => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={(e) => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -221,13 +221,13 @@ const WhitelistRaffleForm = () => {
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -247,13 +247,13 @@ const WhitelistRaffleForm = () => {
               value={formData.slotLimit || ''}
               onChange={(e) => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -268,13 +268,13 @@ const WhitelistRaffleForm = () => {
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -288,7 +288,7 @@ const WhitelistRaffleForm = () => {
               type="number"
               value={1}
               disabled
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background opacity-60 cursor-not-allowed"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background opacity-60 cursor-not-allowed"
               required
             />
           </div>
@@ -633,32 +633,32 @@ const NewERC721DropForm = () => {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">New ERC721 Collection Pool</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">New ERC721 Collection Pool</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Pool Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={(e) => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={(e) => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -678,13 +678,13 @@ const NewERC721DropForm = () => {
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -704,13 +704,13 @@ const NewERC721DropForm = () => {
               value={formData.slotLimit || ''}
               onChange={(e) => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -725,12 +725,12 @@ const NewERC721DropForm = () => {
               value={formData.winnersCount || ''}
               onChange={(e) => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -745,18 +745,18 @@ const NewERC721DropForm = () => {
               value={formData.maxSlotsPerParticipant || ''}
                   onChange={(e) => handleChange('maxSlotsPerParticipant', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
               value={formData.customSlotFee || ''}
                   onChange={(e) => handleChange('customSlotFee', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               placeholder="Leave empty to use protocol default"
             />
           </div>
@@ -766,53 +766,53 @@ const NewERC721DropForm = () => {
           <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium mb-2">Collection Name</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Name</label>
               <input
                 type="text"
                 value={formData.collectionName || ''}
                 onChange={(e) => handleChange('collectionName', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 required
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Collection Symbol</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Symbol</label>
               <input
                 type="text"
                 value={formData.collectionSymbol || ''}
                 onChange={(e) => handleChange('collectionSymbol', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 required
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Base URI</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Base URI</label>
               <input
                 type="url"
                 value={formData.baseURI || ''}
                 onChange={(e) => handleChange('baseURI', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 required
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Max Supply</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Max Supply</label>
               <input
                 type="number"
                 value={formData.maxSupply || ''}
                 onChange={(e) => handleChange('maxSupply', e.target.value)}
                 onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Percentage (%)</label>
               <input
                 type="number"
                 value={formData.royaltyPercentage || ''}
                 onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
                 onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 min="0"
                 step="0.01"
                 placeholder="e.g. 5 for 5%"
@@ -820,12 +820,12 @@ const NewERC721DropForm = () => {
               <span className="text-xs text-muted-foreground">Enter as a percentage (e.g. 5 for 5%)</span>
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Recipient</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Recipient</label>
               <input
                 type="text"
                 value={formData.royaltyRecipient || ''}
                 onChange={e => handleChange('royaltyRecipient', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required
                 pattern="^0x[a-fA-F0-9]{40}$"
@@ -833,13 +833,13 @@ const NewERC721DropForm = () => {
               <span className="text-xs text-muted-foreground">Must be a valid Ethereum address</span>
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Reveal Type</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Type</label>
               <Select
                 value={formData.revealType}
                 onValueChange={value => handleChange('revealType', value)}
                 required
               >
-                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                <SelectTrigger className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background">
                   <SelectValue placeholder="Select Reveal Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -854,24 +854,24 @@ const NewERC721DropForm = () => {
             </div>
             {(formData.revealType === '1' || formData.revealType === '2') && (
               <div>
-                <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Unrevealed Base URI</label>
                 <input
                   type="url"
                   value={formData.unrevealedBaseURI || ''}
                   onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                   required={formData.revealType === '1' || formData.revealType === '2'}
                 />
               </div>
             )}
             {formData.revealType === '2' && (
               <div>
-                <label className="block text-base font-medium mb-2">Reveal Time</label>
+                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Time</label>
                 <input
                   type="datetime-local"
                   value={formData.revealTime || ''}
                   onChange={e => handleChange('revealTime', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                   required={formData.revealType === '2'}
                 />
               </div>
@@ -1061,22 +1061,22 @@ function ExistingERC721DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Existing ERC721 Prize Pool</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC721 Prize Pool</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Pool Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -1095,17 +1095,17 @@ function ExistingERC721DropForm() {
             </div>
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1126,12 +1126,12 @@ function ExistingERC721DropForm() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1152,12 +1152,12 @@ function ExistingERC721DropForm() {
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1172,12 +1172,12 @@ function ExistingERC721DropForm() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1192,20 +1192,20 @@ function ExistingERC721DropForm() {
               min="1"
               value={formData.maxTicketsPerUser || ''}
               onChange={e => handleChange('maxTicketsPerUser', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
+          <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
             min="0"
             step="any"
             value={formData.slotFee || ''}
                   onChange={e => handleChange('slotFee', e.target.value)}
-            className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+            className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
             required
           />
         </div>
@@ -1389,22 +1389,22 @@ function ExistingERC1155DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Package className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Existing ERC1155 Collection Pool</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC1155 Collection Pool</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Pool Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -1423,39 +1423,39 @@ function ExistingERC1155DropForm() {
             </div>
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
             <input
               type="number"
               min="0"
               value={formData.tokenId || ''}
               onChange={e => handleChange('tokenId', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Amount Per Winner</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Amount Per Winner</label>
             <input
               type="number"
               min="1"
               value={formData.amountPerWinner || ''}
               onChange={e => handleChange('amountPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1475,13 +1475,13 @@ function ExistingERC1155DropForm() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1501,13 +1501,13 @@ function ExistingERC1155DropForm() {
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1522,12 +1522,12 @@ function ExistingERC1155DropForm() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1541,19 +1541,19 @@ function ExistingERC1155DropForm() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                 onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
               value={formData.slotFee || ''}
                   onChange={e => handleChange('slotFee', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               placeholder="Leave empty to use protocol default"
             />
           </div>
@@ -1931,17 +1931,17 @@ function LuckySaleERC721Form() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Pool Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -1960,28 +1960,28 @@ function LuckySaleERC721Form() {
             </div>
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
             <input
               type="number"
               min="0"
               value={formData.tokenId || ''}
               onChange={e => handleChange('tokenId', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2001,12 +2001,12 @@ function LuckySaleERC721Form() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2026,12 +2026,12 @@ function LuckySaleERC721Form() {
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2046,12 +2046,12 @@ function LuckySaleERC721Form() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2065,20 +2065,20 @@ function LuckySaleERC721Form() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                 onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
+          <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
             step="any"
             value={formData.slotFee || ''}
                   onChange={e => handleChange('slotFee', e.target.value)}
-            className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+            className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
             required
           />
         </div>
@@ -2280,22 +2280,22 @@ function LuckySaleERC1155Form() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">Lucky Sale (ERC1155 Escrowed Prize)</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Lucky Sale (ERC1155 Escrowed Prize)</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -2314,39 +2314,39 @@ function LuckySaleERC1155Form() {
             </div>
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
             <input
               type="number"
               min="0"
               value={formData.tokenId || ''}
               onChange={e => handleChange('tokenId', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Units Per Winner</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Units Per Winner</label>
             <input
               type="number"
               min="1"
               value={formData.unitsPerWinner || ''}
               onChange={e => handleChange('unitsPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2366,13 +2366,13 @@ function LuckySaleERC1155Form() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2392,13 +2392,13 @@ function LuckySaleERC1155Form() {
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2413,12 +2413,12 @@ function LuckySaleERC1155Form() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2432,20 +2432,20 @@ function LuckySaleERC1155Form() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                 onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
         </div>
         <div>
-          <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
+          <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
           <input
             type="number"
             step="any"
             value={formData.slotFee || ''}
                   onChange={e => handleChange('slotFee', e.target.value)}
-            className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+            className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
             required
           />
         </div>
@@ -2625,39 +2625,39 @@ function ETHGiveawayForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">{getCurrencyLabel('prize')}</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('prize')}</label>
             <input
               type="number"
               min="0.00000001"
               step="any"
               value={formData.ethAmount || ''}
               onChange={e => handleChange('ethAmount', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2677,13 +2677,13 @@ function ETHGiveawayForm() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2702,13 +2702,13 @@ function ETHGiveawayForm() {
               type="number"
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2723,12 +2723,12 @@ function ETHGiveawayForm() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2742,7 +2742,7 @@ function ETHGiveawayForm() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                 onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
@@ -2964,17 +2964,17 @@ function ERC20GiveawayForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">ERC20 Token Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">ERC20 Token Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -2993,29 +2993,29 @@ function ERC20GiveawayForm() {
             </div>
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Total Token Amount</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Total Token Amount</label>
             <input
               type="number"
               min="0.00000001"
               step="any"
               value={formData.tokenAmount || ''}
               onChange={e => handleChange('tokenAmount', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -3035,13 +3035,13 @@ function ERC20GiveawayForm() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -3060,12 +3060,12 @@ function ERC20GiveawayForm() {
               type="number"
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3080,12 +3080,12 @@ function ERC20GiveawayForm() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3099,7 +3099,7 @@ function ERC20GiveawayForm() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                 onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
@@ -3395,32 +3395,32 @@ function NewERC1155DropForm() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className="text-xl font-semibold">New ERC1155 Collection Raffle</h3>
+        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">New ERC1155 Collection Raffle</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
             <input
               type="text"
               value={formData.name || ''}
               onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Start Time</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
             <input
               type="datetime-local"
               value={formData.startTime || ''}
               onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Duration (minutes)
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
               {limits.minDuration && limits.maxDuration && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -3440,13 +3440,13 @@ function NewERC1155DropForm() {
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Slot Limit
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
               {limits.minSlot && limits.maxSlot && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -3465,12 +3465,12 @@ function NewERC1155DropForm() {
               type="number"
               value={formData.slotLimit || ''}
               onChange={e => handleChange('slotLimit', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3485,12 +3485,12 @@ function NewERC1155DropForm() {
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3504,40 +3504,40 @@ function NewERC1155DropForm() {
               type="number"
               value={formData.maxSlotsPerParticipant || ''}
                   onChange={(e) => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
 
 
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">{getCurrencyLabel('ticket')}</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')}</label>
             <input
               type="number"
               step="0.001"
               value={formData.customSlotFee || ''}
                   onChange={e => handleChange('customSlotFee', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               placeholder="Leave empty to use protocol default"
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
             <input
               type="number"
               value={formData.prizeTokenId || ''}
               onChange={e => handleChange('prizeTokenId', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Amount Per Winner</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Amount Per Winner</label>
             <input
               type="number"
               value={formData.amountPerWinner || ''}
               onChange={e => handleChange('amountPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
           </div>
@@ -3547,31 +3547,31 @@ function NewERC1155DropForm() {
           <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium mb-2">Base URI</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Base URI</label>
               <input
                 type="url"
                 value={formData.baseURI || ''}
                 onChange={e => handleChange('baseURI', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 required
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Max Supply</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Max Supply</label>
               <input
                 type="number"
                 value={formData.maxSupply || ''}
                 onChange={e => handleChange('maxSupply', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Percentage (%)</label>
               <input
                 type="number"
                 value={formData.royaltyPercentage || ''}
                 onChange={e => handleChange('royaltyPercentage', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                 min="0"
                 step="0.01"
                 placeholder="e.g. 5 for 5%"
@@ -3579,12 +3579,12 @@ function NewERC1155DropForm() {
               <span className="text-xs text-muted-foreground">Enter as a percentage (e.g. 5 for 5%)</span>
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Recipient</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Recipient</label>
               <input
                 type="text"
                 value={formData.royaltyRecipient || ''}
                 onChange={e => handleChange('royaltyRecipient', e.target.value)}
-                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required
                 pattern="^0x[a-fA-F0-9]{40}$"
@@ -3592,13 +3592,13 @@ function NewERC1155DropForm() {
               <span className="text-xs text-muted-foreground">Must be a valid Ethereum address</span>
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Reveal Type</label>
+              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Type</label>
               <Select
                 value={formData.revealType}
                 onValueChange={value => handleChange('revealType', value)}
                 required
               >
-                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                <SelectTrigger className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background">
                   <SelectValue placeholder="Select Reveal Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3610,24 +3610,24 @@ function NewERC1155DropForm() {
             </div>
             {(formData.revealType === '1' || formData.revealType === '2') && (
               <div>
-                <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Unrevealed Base URI</label>
                 <input
                   type="url"
                   value={formData.unrevealedBaseURI || ''}
                   onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                   required={formData.revealType === '1' || formData.revealType === '2'}
                 />
               </div>
             )}
             {formData.revealType === '2' && (
               <div>
-                <label className="block text-base font-medium mb-2">Reveal Time</label>
+                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Time</label>
                 <input
                   type="datetime-local"
                   value={formData.revealTime || ''}
                   onChange={e => handleChange('revealTime', e.target.value)}
-                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
                   required={formData.revealType === '2'}
                 />
               </div>

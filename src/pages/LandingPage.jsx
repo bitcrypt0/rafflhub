@@ -377,7 +377,7 @@ const RaffleCard = ({ raffle }) => {
       'Unengaged': 'bg-gray-100 text-gray-800',
       'Unknown': 'bg-gray-100 text-gray-800'
     };
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+    return <span className={`px-2 py-1 rounded-full font-body text-[length:var(--text-xs)] font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
 
   // Enhanced NFT type detection based on correct understanding of contract flags
@@ -459,7 +459,7 @@ const RaffleCard = ({ raffle }) => {
     <div className="landing-raffle-card bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
       <div className="flex items-center justify-between mb-4 min-w-0">
         <h3 
-          className="text-base sm:text-lg font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-[#614E41] transition-colors duration-200" 
+          className="font-display text-[length:var(--text-lg)] font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-[#614E41] transition-colors duration-200" 
           onClick={handleViewRaffle}
         >
           {raffle.name}
@@ -470,31 +470,31 @@ const RaffleCard = ({ raffle }) => {
       </div>
 
       <div className="space-y-2 mb-4 min-w-0">
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Creator:</span>
           <span className="font-mono truncate ml-2">{raffle.creator?.slice(0, 10)}...</span>
         </div>
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Slot Fee:</span>
           <span className="truncate ml-2">{formatSlotFee(raffle.slotFee || '0')}</span>
         </div>
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Slots Sold:</span>
           <span className="truncate ml-2">{ticketsSold !== null ? `${ticketsSold} / ${raffle.slotLimit}` : 'Loading...'}</span>
         </div>
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
           <span className="text-muted-foreground flex-shrink-0">Winners:</span>
           <span className="truncate ml-2">{raffle.winnersCount}</span>
         </div>
-        <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
           <span className="text-muted-foreground flex-shrink-0">{timeLabel}:</span>
           <span className="truncate ml-2">{timeRemaining}</span>
         </div>
         {/* Hide Type until full raffle data is available to avoid misleading placeholder */}
         {!raffle.isSummary && (
-          <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+          <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
             <span className="text-muted-foreground flex-shrink-0">Type:</span>
-            <span className="px-2 py-1 rounded-full text-xs sm:text-sm bg-muted/20 truncate ml-2">{getPrizeType()}</span>
+            <span className="px-2 py-1 rounded-full font-body text-[length:var(--text-sm)] bg-muted/20 truncate ml-2">{getPrizeType()}</span>
           </div>
         )}
         {(() => {
@@ -523,7 +523,7 @@ const RaffleCard = ({ raffle }) => {
 
 
             return (
-              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
                 <span className="text-muted-foreground flex-shrink-0">Prize Token ID:</span>
                 <span className={`truncate ml-2 ${collectionSymbol || collectionName ? '' : 'font-mono'}`}>
                   {displayValue}
@@ -547,7 +547,7 @@ const RaffleCard = ({ raffle }) => {
 
 
             return (
-              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
                 <span className="text-muted-foreground flex-shrink-0">Prize Collection:</span>
                 <span className={`truncate ml-2 ${hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}`}>
                   {displayValue}
@@ -572,7 +572,7 @@ const RaffleCard = ({ raffle }) => {
           // Show Prize Amount for Token Giveaways and other giveaways
           if (prizeType === 'Token Giveaway' || prizeType.includes('Giveaway')) {
             return (
-              <div className="flex justify-between items-center text-xs sm:text-sm min-w-0">
+              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
                 <span className="text-muted-foreground flex-shrink-0">Prize Amount:</span>
                 <span className="truncate ml-2">{getPrizeAmount()}</span>
               </div>
@@ -635,18 +635,18 @@ const LandingPage = () => {
     return (
       <PageContainer className="pt-8 pb-4">
         <div className="text-center mb-8">
-          <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
+          <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
             Fairness and Transparency, On-Chain
           </h1>
-          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
+          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
 
-        <div className={`text-center ${isMobile ? 'py-8' : 'py-16'}`}>
-          <Trophy className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
-          <h3 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-xl mb-2' : ''}`}>Connect Your Wallet</h3>
-          <p className={`text-muted-foreground mb-6 ${isMobile ? 'text-sm' : 'text-base'}`}>
+        <div className="text-center py-12">
+          <Trophy className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <h3 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">Connect Your Wallet</h3>
+          <p className="font-body text-[length:var(--text-base)] text-muted-foreground mb-6">
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
@@ -693,10 +693,10 @@ const LandingPage = () => {
     return (
       <PageContainer className="pt-8 pb-4">
         <div className="mb-8 text-center">
-          <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
+          <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
             Fairness and Transparency, On-Chain
           </h1>
-          <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
+          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
           </p>
         </div>
@@ -735,10 +735,10 @@ const LandingPage = () => {
         <PageContainer className="pt-8 pb-4">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-3' : ''}`}>
+            <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
               Fairness and Transparency, On-Chain
             </h1>
-            <p className={`text-muted-foreground max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'} leading-relaxed`}>
+            <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
             </p>
 
@@ -759,7 +759,7 @@ const LandingPage = () => {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="font-body text-muted-foreground hover:text-foreground"
                 >
                   Clear All Filters
                 </Button>
@@ -791,12 +791,12 @@ const LandingPage = () => {
                       Prev
                     </button>
                     {range.map((item, idx) => item === '...'
-                      ? <span key={`ellipsis-top-${idx}`} className="px-1 text-muted-foreground">…</span>
+                      ? <span key={`ellipsis-top-${idx}`} className="px-1 font-body text-muted-foreground">…</span>
                       : (
                         <button
                           key={`page-top-${item}`}
                           onClick={() => setPage(item)}
-                          className={`px-1 text-sm leading-none ${currentPageSafe === item ? 'font-semibold text-foreground' : 'text-foreground/80'} bg-transparent`}
+                          className={`px-1 font-body text-[length:var(--text-sm)] leading-none ${currentPageSafe === item ? 'font-semibold text-foreground' : 'text-foreground/80'} bg-transparent`}
                           aria-label={`Go to page ${item}`}
                         >{item}</button>
                       )

@@ -44,10 +44,10 @@ const Section = ({ id, className = '', containerClassName = '', children }) => (
 const SectionTitle = ({ eyebrow, title, subtitle, className = '' }) => (
   <div className={`text-center mb-8 sm:mb-10 lg:mb-14 ${className}`}>
     {eyebrow && (
-      <div className="text-xs sm:text-sm tracking-wide uppercase text-primary mb-2 font-semibold">{eyebrow}</div>
+      <div className="font-display text-[length:var(--text-sm)] tracking-wider uppercase text-primary mb-2 font-semibold">{eyebrow}</div>
     )}
-    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-foreground">{title}</h2>
-    {subtitle && <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-3xl mx-auto">{subtitle}</p>}
+    <h2 className="font-display text-[length:var(--text-4xl)] font-bold mb-3 text-foreground leading-tight tracking-tighter">{title}</h2>
+    {subtitle && <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-3xl mx-auto leading-relaxed">{subtitle}</p>}
   </div>
 );
 
@@ -256,7 +256,7 @@ export default function Homepage() {
         <GeometricBackground />
         <div className="relative z-10 w-full py-12 sm:py-20">
           <div className="text-center max-w-6xl mx-auto">
-            <h1 className="hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-foreground leading-tight sm:leading-snug">
+            <h1 className="hero-headline font-display text-[length:var(--text-5xl)] font-bold mb-4 sm:mb-6 text-foreground leading-tight tracking-tighter">
               Explore New Strategies to Distribute{' '}
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 NFTs
@@ -266,7 +266,7 @@ export default function Homepage() {
                 Community Rewards
               </span>
             </h1>
-            <p className="hero-subtext text-sm sm:text-base md:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-4xl mx-auto leading-relaxed">
+            <p className="hero-subtext font-body text-[length:var(--text-lg)] text-muted-foreground mb-6 sm:mb-8 max-w-4xl mx-auto leading-relaxed">
               Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
             </p>
             
@@ -275,14 +275,14 @@ export default function Homepage() {
                 to="/app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-lg"
+                className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-[length:var(--text-lg)]"
               >
                 Launch Dapp
               </Link>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button
                   onClick={() => document.getElementById('video-demo').scrollIntoView({ behavior: 'smooth' })}
-                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold text-lg"
+                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold text-[length:var(--text-lg)]"
                 >
                   <Play className="mr-2 h-5 w-5" />
                   Watch Demo
@@ -291,7 +291,7 @@ export default function Homepage() {
                   href="https://docs.rafflhub.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold"
+                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
                 >
                   <BookOpen className="mr-2 h-5 w-5" />
                   Read Documentation
@@ -300,7 +300,7 @@ export default function Homepage() {
             </div>
 
             {/* Trust signals */}
-            <div className="hero-cta flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
+            <div className="hero-cta flex flex-wrap justify-center items-center gap-6 font-body text-[length:var(--text-sm)] text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
                 <span>Chainlink VRF Powered</span>
@@ -336,32 +336,32 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">No More Insider Favoritism</h3>
-            <p className="text-sm text-muted-foreground">Cryptographically secure randomness ensures every participant has an equal chance</p>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">No More Insider Favoritism</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Cryptographically secure randomness ensures every participant has an equal chance</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Cpu className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Discourage Bot Attacks</h3>
-            <p className="text-sm text-muted-foreground">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Discourage Bot Attacks</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Build Community Trust</h3>
-            <p className="text-sm text-muted-foreground">Transparent, verifiable processes that communities can audit and trust</p>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Build Community Trust</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Transparent, verifiable processes that communities can audit and trust</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Trustless Prize Distribution</h3>
-            <p className="text-sm text-muted-foreground">Smart contracts handle prize distribution without need for manual intervention</p>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Trustless Prize Distribution</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Smart contracts handle prize distribution without need for manual intervention</p>
           </div>
         </div>
       </Section>
@@ -381,9 +381,9 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">1</span>
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
-              <p className="text-sm text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
-              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Create Raffle</h3>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
+              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Target className="h-4 w-4" />
                 <span>Flexible Configuration</span>
               </div>
@@ -395,9 +395,9 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">2</span>
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
-              <p className="text-sm text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
-              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Chainlink VRF</h3>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
+              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Shuffle className="h-4 w-4" />
                 <span>Provably Fair</span>
               </div>
@@ -409,9 +409,9 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">3</span>
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Prize Distribution</h3>
-              <p className="text-sm text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
-              <div className="flex items-center justify-center gap-2 text-sm text-primary">
+              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Prize Distribution</h3>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
+              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Award className="h-4 w-4" />
                 <span>Instant Claims</span>
               </div>
@@ -437,8 +437,8 @@ export default function Homepage() {
                   <div className="w-16 h-16 sm:w-24 sm:h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
                     <Play className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground ml-1" />
                   </div>
-                  <p className="text-foreground font-semibold text-sm sm:text-base">Video Coming Soon</p>
-                  <p className="text-muted-foreground text-xs sm:text-sm mt-2">Complete walkthrough of the Dropr platform</p>
+                  <p className="text-foreground font-semibold font-body text-[length:var(--text-base)]">Video Coming Soon</p>
+                  <p className="text-muted-foreground font-body text-[length:var(--text-sm)] mt-2">Complete walkthrough of the Dropr platform</p>
                 </div>
               </div>
               {/* This is where the actual video embed would go */}
@@ -469,20 +469,20 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Projects</h3>
-            <p className="text-sm text-muted-foreground mb-6">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Projects</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-6 leading-relaxed">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
+            <ul className="space-y-2 font-body text-[length:var(--text-sm)] text-muted-foreground">
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">Supports ERC721 & ERC1155 standards</span>
+                <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Supports ERC721 & ERC1155 standards</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">Flexible launch strategies</span>
+                <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Flexible launch strategies</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">Inter-community collabs simplified</span>
+                <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Inter-community collabs simplified</span>
               </li>
             </ul>
           </div>
@@ -491,20 +491,20 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <TrendingUp className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground whitespace-nowrap">KOLs & Influencers</h3>
-            <p className="text-sm text-muted-foreground mb-6">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground whitespace-nowrap leading-snug">KOLs & Influencers</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-6 leading-relaxed">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
+            <ul className="space-y-2 font-body text-[length:var(--text-sm)] text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Build reputation and trust</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Build reputation and trust</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Flexible prize options for community rewards</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Flexible prize options for community rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Project collabs made easy</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Project collabs made easy</span>
                </li>
              </ul>
           </div>
@@ -513,20 +513,20 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Globe className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Creators</h3>
-            <p className="text-sm text-muted-foreground mb-6">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Creators</h3>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-6 leading-relaxed">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
+            <ul className="space-y-2 font-body text-[length:var(--text-sm)] text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Token-gated raffles for holder rewards</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Token-gated raffles for holder rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Flexible prize options for holder rewards</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Flexible prize options for holder rewards</span>
                </li>
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
-                 <span className="text-sm text-muted-foreground">Easy collabs with projects and other creators</span>
+                 <span className="font-body text-[length:var(--text-sm)] text-muted-foreground">Easy collabs with projects and other creators</span>
                </li>
              </ul>
           </div>

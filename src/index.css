@@ -23,9 +23,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-size: 16px;
-    line-height: 1.6;
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-normal);
     font-family: var(--font-body);
     /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
@@ -68,125 +68,125 @@
 
   /* Let browser handle focus naturally - no custom overrides */
 
-  /* Increase font sizes for better legibility */
+  /* Typography inherits from typography.css fluid scale */
   h1 {
-    font-size: 2.5rem; /* 40px */
+    font-size: var(--text-4xl);
     font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tighter);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   h2 {
-    font-size: 2rem; /* 32px */
+    font-size: var(--text-3xl);
     font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: 0.02em;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   h3 {
-    font-size: 1.75rem; /* 28px */
+    font-size: var(--text-2xl);
     font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: 0.02em;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   h4 {
-    font-size: 1.5rem; /* 24px */
+    font-size: var(--text-xl);
     font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-normal);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   h5 {
-    font-size: 1.25rem; /* 20px */
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
+    font-size: var(--text-lg);
+    font-weight: 500;
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-normal);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   h6 {
-    font-size: 1.125rem; /* 18px */
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
+    font-size: var(--text-base);
+    font-weight: 500;
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-normal);
     font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
   p {
-    font-size: 1.0625rem; /* 17px */
-    line-height: 1.6;
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase button text size */
+  /* Button text uses base size */
   button {
-    font-size: 1rem; /* 16px */
+    font-size: var(--text-base);
     font-weight: 500;
-    letter-spacing: 0.025em;
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase input text size */
+  /* Input text uses base size (16px minimum to prevent iOS zoom) */
   input, textarea, select {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: max(16px, var(--text-base));
+    letter-spacing: var(--tracking-normal);
     font-family: var(--font-body);
   }
 
-  /* Increase label text size */
+  /* Label text uses base size */
   label {
-    font-size: 1rem; /* 16px */
+    font-size: var(--text-base);
     font-weight: 500;
-    letter-spacing: 0.025em;
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase badge text size */
+  /* Badge text uses small size */
   .badge, [class*="badge"] {
-    font-size: 0.875rem; /* 14px */
+    font-size: var(--text-sm);
     font-weight: 500;
-    letter-spacing: 0.025em;
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase card title text size */
+  /* Card title uses xl size */
   .card-title, [class*="card-title"] {
-    font-size: 1.25rem; /* 20px */
+    font-size: var(--text-xl);
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: var(--tracking-tight);
     font-family: var(--font-display);
   }
 
-  /* Increase card description text size */
+  /* Card description uses base size */
   .card-description, [class*="card-description"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase navigation text size */
+  /* Navigation text uses base size */
   nav a, .nav-link {
-    font-size: 1rem; /* 16px */
+    font-size: var(--text-base);
     font-weight: 500;
-    letter-spacing: 0.025em;
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase table text size */
+  /* Table text uses base size */
   table {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
   th, td {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
   /* Table headers should use Raleway */
@@ -195,22 +195,22 @@
     font-weight: 600;
   }
 
-  /* Increase alert text size */
+  /* Alert text uses base size */
   .alert, [class*="alert"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase tooltip text size */
+  /* Tooltip text uses small size */
   .tooltip, [class*="tooltip"] {
-    font-size: 0.875rem; /* 14px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase modal text size */
+  /* Modal text uses base size */
   .modal, [class*="modal"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
   /* Modal headers should use Raleway */
@@ -218,10 +218,10 @@
     font-family: var(--font-display);
   }
 
-  /* Increase sidebar text size */
+  /* Sidebar text uses base size */
   .sidebar, [class*="sidebar"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
+    font-size: var(--text-base);
+    letter-spacing: var(--tracking-normal);
   }
 
   /* Sidebar headers should use Raleway */
@@ -231,15 +231,15 @@
 
   /* Mobile-first form text size */
   .form-control, [class*="form-control"] {
-    font-size: 1rem; /* 16px - prevents zoom on iOS */
-    letter-spacing: 0.025em;
+    font-size: max(16px, var(--text-base)); /* 16px minimum prevents zoom on iOS */
+    letter-spacing: var(--tracking-normal);
     /* Better mobile input styling */
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
   }
 
-  /* Form headers should use Raleway */
-  .form-header, .form-title, label[for], .form-label {
+  /* Form headers use display font */
+  .form-header, .form-title {
     font-family: var(--font-display);
     font-weight: 600;
   }
@@ -248,97 +248,26 @@
   @media (max-width: 767px) {
     .form-control, [class*="form-control"] {
       padding: 1rem;
-      font-size: 1rem; /* Maintain 16px to prevent zoom */
+      font-size: max(16px, var(--text-base)); /* Maintain 16px minimum to prevent zoom */
     }
 
     label, .form-label {
-      font-size: 1rem;
+      font-size: var(--text-base);
       margin-bottom: 0.5rem;
     }
   }
 
-  /* Increase status badge text size */
+  /* Status badge uses small size */
   .status-badge {
-    font-size: 0.875rem; /* 14px */
+    font-size: var(--text-sm);
     font-weight: 500;
-    letter-spacing: 0.025em;
+    letter-spacing: var(--tracking-normal);
   }
 
-  /* Increase small text size */
-  small, .text-sm {
-    font-size: 0.875rem; /* 14px */
-    letter-spacing: 0.025em;
-  }
-
-  /* Increase extra small text size */
-  .text-xs {
-    font-size: 0.8125rem; /* 13px */
-    letter-spacing: 0.025em;
-  }
-
-  /* Increase large text size */
-  .text-lg {
-    font-size: 1.125rem; /* 18px */
-    letter-spacing: 0.025em;
-  }
-
-  /* Increase extra large text size */
-  .text-xl {
-    font-size: 1.25rem; /* 20px */
-    letter-spacing: 0.02em;
-  }
-
-  /* Increase 2xl text size */
-  .text-2xl {
-    font-size: 1.5rem; /* 24px */
-    letter-spacing: 0.02em;
-  }
-
-  /* Increase 3xl text size */
-  .text-3xl {
-    font-size: 1.875rem; /* 30px */
-    letter-spacing: 0.02em;
-  }
-
-  /* Increase 4xl text size */
-  .text-4xl {
-    font-size: 2.25rem; /* 36px */
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: 0.02em;
-  }
-
-  /* Mobile-responsive typography overrides */
-  @media (max-width: 640px) {
-    .text-4xl {
-      font-size: 1.25rem; /* 20px */
-      line-height: 1.2;
-    }
-
-    .text-3xl {
-      font-size: 1.125rem; /* 18px */
-      line-height: 1.3;
-    }
-
-    .text-2xl {
-      font-size: 1.125rem; /* 18px */
-      line-height: 1.3;
-    }
-
-    .text-xl {
-      font-size: 1rem; /* 16px */
-      line-height: 1.4;
-    }
-
-    /* Form labels optimized for mobile */
-    label, .form-label {
-      font-size: 0.875rem; /* 14px */
-    }
-
-    /* Card titles optimized for mobile */
-    .card-title, [class*="card-title"] {
-      font-size: 1rem; /* 16px */
-    }
+  /* Small text inherits from typography.css */
+  small {
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-normal);
   }
 
   /* Ensure all page headers use Raleway */
@@ -359,15 +288,7 @@
     font-weight: 600;
   }
 
-  /* Any element with font-semibold class should use Raleway */
-  .font-semibold {
-    font-family: var(--font-display);
-  }
-
-  /* Any element with font-bold class should use Raleway */
-  .font-bold {
-    font-family: var(--font-display);
-  }
+  /* Font weight classes do NOT change font-family - removed problematic overrides */
 
   /* Mobile-first utility classes */
   .mobile-container {
