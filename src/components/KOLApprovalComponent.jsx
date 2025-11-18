@@ -38,6 +38,7 @@ const KOLApprovalComponent = () => {
   const [collectionType, setCollectionType] = useState(null);
   const [kolDetails, setKolDetails] = useState(null);
   const [kolDetailsLoading, setKolDetailsLoading] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // Fetch collection details by address
   const fetchCollection = async () => {
@@ -48,6 +49,7 @@ const KOLApprovalComponent = () => {
     setCollectionSymbol('');
     setCollectionType(null);
     setKolDetails(null);
+    setIsOwner(false);
 
     if (!collectionAddress || !ethers.utils.isAddress(collectionAddress)) {
       setError('Please enter a valid collection address');
@@ -78,6 +80,16 @@ const KOLApprovalComponent = () => {
         setCollectionType('erc721');
         setFetchedCollection(collectionAddress);
         setSuccess(`ERC721 Collection found: ${name} (${symbol})`);
+        
+        // Check if current user is the owner
+        try {
+          const owner = await erc721Contract.owner();
+          const isUserOwner = owner.toLowerCase() === address.toLowerCase();
+          setIsOwner(isUserOwner);
+        } catch (e) {
+          setIsOwner(false);
+        }
+        
         return;
       } catch (erc721Error) {
         console.log('Not an ERC721 collection, trying ERC1155...');
@@ -104,6 +116,16 @@ const KOLApprovalComponent = () => {
         setCollectionType('erc1155');
         setFetchedCollection(collectionAddress);
         setSuccess('ERC1155 Collection found');
+        
+        // Check if current user is the owner
+        try {
+          const owner = await erc1155Contract.owner();
+          const isUserOwner = owner.toLowerCase() === address.toLowerCase();
+          setIsOwner(isUserOwner);
+        } catch (e) {
+          setIsOwner(false);
+        }
+        
         return;
       } catch (erc1155Error) {
         console.log('Not an ERC1155 collection either');
@@ -543,14 +565,15 @@ const KOLApprovalComponent = () => {
           </Alert>
         )}
 
-        {/* Info Alert */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Note:</strong> Only the collection owner can approve KOLs. The KOL approval allows 
-            the specified address to create pools with the given parameters for this collection.
-          </AlertDescription>
-        </Alert>
+        {/* Info Alert - Only show when collection is fetched and user is owner */}
+        {fetchedCollection && isOwner && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Note:</strong> Only the collection owner can approve KOLs. KOL approval allows the approved address to create pools using this collection as prize.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );

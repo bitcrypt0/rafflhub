@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -11,6 +11,7 @@ import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select';
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
+import KOLApprovalComponent from '../../components/KOLApprovalComponent';
 
 import { SUPPORTED_NETWORKS } from '../../networks';
 
@@ -103,6 +104,21 @@ const NewMobileProfilePage = () => {
       fetchedCollection: '',
       error: '',
       success: ''
+    },
+    kol: {
+      loading: false,
+      collectionAddress: '',
+      kolAddress: '',
+      poolLimit: '',
+      enforcedSlotFee: '',
+      enforcedWinnerCount: '',
+      error: '',
+      success: '',
+      collectionName: '',
+      collectionSymbol: '',
+      collectionType: null,
+      kolDetails: null,
+      kolDetailsLoading: false
     },
     tokenCreator: {
       loading: false,
@@ -404,6 +420,21 @@ const NewMobileProfilePage = () => {
             </div>
           </button>
 
+          {/* KOL Approval Management */}
+          <button
+            onClick={() => setActiveDashboardComponent('kol')}
+            data-dashboard-card
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-primary" />
+              <div>
+                <div className="font-medium">KOL Approval Management</div>
+                <div className="text-sm text-muted-foreground">Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees</div>
+              </div>
+            </div>
+          </button>
+
           {/* Create New Token ID & Set Token URI */}
           <button
             onClick={() => setActiveDashboardComponent('tokenCreator')}
@@ -447,6 +478,8 @@ const NewMobileProfilePage = () => {
         return renderRoyaltyComponent(handleBack);
       case 'minter':
         return renderMinterComponent(handleBack);
+      case 'kol':
+        return renderKOLComponent(handleBack);
       case 'tokenCreator':
         return renderTokenCreatorComponent(handleBack);
       case 'revenue':
@@ -471,6 +504,15 @@ const NewMobileProfilePage = () => {
       updateRoyaltyState({
         collectionData: { ...state.collectionData, [field]: value }
       });
+      
+      // Auto-fetch when address changes
+      if (field === 'address' && value && ethers.utils.isAddress(value) && connected && !state.loadingInfo) {
+        setTimeout(() => {
+          if (!state.loadingInfo) {
+            loadCollectionInfo();
+          }
+        }, 450);
+      }
     };
 
     const loadCollectionInfo = async () => {
@@ -721,22 +763,12 @@ const NewMobileProfilePage = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <div className="flex gap-2">
-              <ResponsiveAddressInput
-                value={state.collectionData.address}
-                onChange={(e) => handleChange('address', e.target.value)}
-                placeholder="0x..."
-                className="flex-1"
-              />
-              <button
-                onClick={loadCollectionInfo}
-                disabled={state.loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                <Search className="h-4 w-4" />
-                {state.loadingInfo ? 'Loading...' : 'Load'}
-              </button>
-            </div>
+            <ResponsiveAddressInput
+              value={state.collectionData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              placeholder="0x..."
+              className="flex-1"
+            />
           </div>
         </div>
 
@@ -1125,9 +1157,6 @@ const NewMobileProfilePage = () => {
       }
     };
 
-    // Auto-load collection details when minter address changes - removed useEffect to prevent dependency issues
-    // Users can manually check minter status by re-fetching collection if needed
-
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
@@ -1157,22 +1186,24 @@ const NewMobileProfilePage = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Collection Address</label>
-            <div className="flex gap-2">
-              <ResponsiveAddressInput
-                value={state.collectionAddress}
-                onChange={(e) => updateMinterState({ collectionAddress: e.target.value })}
-                placeholder="0x..."
-                className="flex-1"
-              />
-              <button
-                onClick={fetchCollection}
-                disabled={state.loading || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                <Search className="h-4 w-4" />
-                {state.loading ? 'Loading...' : 'Fetch Collection'}
-              </button>
-            </div>
+            <ResponsiveAddressInput
+              value={state.collectionAddress}
+              onChange={(e) => {
+                updateMinterState({ collectionAddress: e.target.value });
+                
+                // Auto-fetch when address changes
+                const value = e.target.value;
+                if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
+                  setTimeout(() => {
+                    if (!state.loading) {
+                      fetchCollection();
+                    }
+                  }, 350);
+                }
+              }}
+              placeholder="0x..."
+              className="flex-1"
+            />
           </div>
         </div>
 
@@ -1353,6 +1384,25 @@ const NewMobileProfilePage = () => {
             </div>
           </div>
         )}
+      </div>
+    );
+  };
+
+  // KOL Approval Management Component - Mobile Implementation
+  const renderKOLComponent = (handleBack) => {
+    return (
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+            ← Back
+          </button>
+          <h3 className="text-lg font-semibold">KOL Approval Management</h3>
+        </div>
+
+        {/* KOL Approval Component - Mobile Optimized */}
+        <div className="w-full">
+          <KOLApprovalComponent />
+        </div>
       </div>
     );
   };
@@ -1576,24 +1626,26 @@ const NewMobileProfilePage = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">ERC1155 Collection Address</label>
-            <div className="flex gap-2">
-              <ResponsiveAddressInput
+            <ResponsiveAddressInput
                 value={state.collectionData.address}
-                onChange={(e) => updateTokenCreatorState({
-                  collectionData: { ...state.collectionData, address: e.target.value }
-                })}
+                onChange={(e) => {
+                  updateTokenCreatorState({
+                    collectionData: { ...state.collectionData, address: e.target.value }
+                  });
+                  
+                  // Auto-fetch when address changes
+                  const value = e.target.value;
+                  if (value && ethers.utils.isAddress(value) && connected && !state.loadingInfo) {
+                    setTimeout(() => {
+                      if (!state.loadingInfo) {
+                        loadCollectionInfo();
+                      }
+                    }, 400);
+                  }
+                }}
                 placeholder="0x..."
                 className="flex-1"
               />
-              <button
-                onClick={loadCollectionInfo}
-                disabled={state.loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                <Search className="h-4 w-4" />
-                {state.loadingInfo ? 'Loading...' : 'Load'}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -1925,24 +1977,26 @@ const NewMobileProfilePage = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Raffle Address</label>
-            <div className="flex gap-2">
-              <ResponsiveAddressInput
-                value={state.raffleData.address}
-                onChange={(e) => updateRevenueState({
+            <ResponsiveAddressInput
+              value={state.raffleData.address}
+              onChange={(e) => {
+                updateRevenueState({
                   raffleData: { ...state.raffleData, address: e.target.value }
-                })}
-                placeholder="0x..."
-                className="flex-1"
-              />
-              <button
-                onClick={() => loadRaffleInfo(state.raffleData.address)}
-                disabled={state.loading || !connected}
-                className="flex items-center gap-2 px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                <Search className="h-4 w-4" />
-                {state.loading ? 'Loading...' : 'Load'}
-              </button>
-            </div>
+                });
+                
+                // Auto-fetch when address changes
+                const value = e.target.value;
+                if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
+                  setTimeout(() => {
+                    if (!state.loading) {
+                      loadRaffleInfo(value);
+                    }
+                  }, 400);
+                }
+              }}
+              placeholder="0x..."
+              className="flex-1"
+            />
           </div>
         </div>
 
