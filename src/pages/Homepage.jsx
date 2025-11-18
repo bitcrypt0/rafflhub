@@ -42,12 +42,12 @@ const Section = ({ id, className = '', containerClassName = '', children }) => (
 );
 
 const SectionTitle = ({ eyebrow, title, subtitle, className = '' }) => (
-  <div className={`text-center mb-10 sm:mb-14 ${className}`}>
+  <div className={`text-center mb-8 sm:mb-10 lg:mb-14 ${className}`}>
     {eyebrow && (
-      <div className="text-sm tracking-wide uppercase text-primary mb-2 font-semibold">{eyebrow}</div>
+      <div className="text-xs sm:text-sm tracking-wide uppercase text-primary mb-2 font-semibold">{eyebrow}</div>
     )}
-    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-foreground">{title}</h2>
-    {subtitle && <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">{subtitle}</p>}
+    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-foreground">{title}</h2>
+    {subtitle && <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-3xl mx-auto">{subtitle}</p>}
   </div>
 );
 
@@ -252,11 +252,11 @@ export default function Homepage() {
   return (
     <div className="bg-background text-foreground overflow-x-hidden -mb-8">
       {/* Hero Section */}
-      <Section id="hero" className="min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-20 sm:pt-0">
+      <Section id="hero" className="min-h-[90vh] sm:min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-16 sm:pt-0">
         <GeometricBackground />
-        <div className="relative z-10 w-full py-20">
+        <div className="relative z-10 w-full py-12 sm:py-20">
           <div className="text-center max-w-6xl mx-auto">
-            <h1 className="hero-headline text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-foreground leading-snug sm:leading-tight">
+            <h1 className="hero-headline text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-foreground leading-tight sm:leading-snug">
               Explore New Strategies to Distribute{' '}
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 NFTs
@@ -266,7 +266,7 @@ export default function Homepage() {
                 Community Rewards
               </span>
             </h1>
-            <p className="hero-subtext text-sm sm:text-lg text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+            <p className="hero-subtext text-sm sm:text-base md:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-4xl mx-auto leading-relaxed">
               Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
             </p>
             
@@ -336,7 +336,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-foreground">No More Insider Favoritism</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">No More Insider Favoritism</h3>
             <p className="text-muted-foreground">Cryptographically secure randomness ensures every participant has an equal chance</p>
           </div>
           
@@ -344,7 +344,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Cpu className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-foreground">Discourage Bot Attacks</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Discourage Bot Attacks</h3>
             <p className="text-muted-foreground">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
           </div>
           
@@ -352,7 +352,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-foreground">Build Community Trust</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Build Community Trust</h3>
             <p className="text-muted-foreground">Transparent, verifiable processes that communities can audit and trust</p>
           </div>
           
@@ -360,7 +360,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-foreground">Trustless Prize Distribution</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Trustless Prize Distribution</h3>
             <p className="text-muted-foreground">Smart contracts handle prize distribution without need for manual intervention</p>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">1</span>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
               <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Target className="h-4 w-4" />
@@ -395,7 +395,7 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">2</span>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
               <p className="text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Shuffle className="h-4 w-4" />
@@ -409,7 +409,7 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">3</span>
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-foreground">Prize Distribution</h3>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Prize Distribution</h3>
               <p className="text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Award className="h-4 w-4" />
@@ -469,7 +469,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground">Projects</h3>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Projects</h3>
             <p className="text-muted-foreground mb-6">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -491,7 +491,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <TrendingUp className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground whitespace-nowrap">KOLs & Influencers</h3>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground whitespace-nowrap">KOLs & Influencers</h3>
             <p className="text-muted-foreground mb-6">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
@@ -513,7 +513,7 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
               <Globe className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-foreground">Creators</h3>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Creators</h3>
             <p className="text-muted-foreground mb-6">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
@@ -550,17 +550,17 @@ export default function Homepage() {
                 className="rounded-2xl border border-border bg-card overflow-hidden"
               >
                 <Accordion.Header>
-                  <Accordion.Trigger className="w-full p-6 flex items-center justify-between text-left font-semibold hover:bg-primary/5 transition-colors group">
-                    <span className="pr-4 text-foreground group-hover:text-primary">{item.q}</span>
+                  <Accordion.Trigger className="w-full p-4 sm:p-6 flex items-center justify-between text-left font-semibold hover:bg-primary/5 transition-colors group">
+                    <span className="pr-4 text-base sm:text-lg text-foreground group-hover:text-primary leading-relaxed">{item.q}</span>
                     <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 data-[state=open]:rotate-180 text-primary" />
                   </Accordion.Trigger>
                 </Accordion.Header>
-                <Accordion.Content className="px-6 pb-6 pt-2 border-t border-border overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
+                <Accordion.Content className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-border overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      p: (props) => <p className="text-muted-foreground mb-3 leading-relaxed" {...props} />,
-                      li: (props) => <li className="list-disc ml-5 text-muted-foreground mb-1" {...props} />,
+                      p: (props) => <p className="text-sm sm:text-base text-muted-foreground mb-3 leading-relaxed" {...props} />,
+                      li: (props) => <li className="list-disc ml-5 text-sm sm:text-base text-muted-foreground mb-1" {...props} />,
                       strong: (props) => <strong className="text-primary font-semibold" {...props} />,
                       a: (props) => <a className="text-primary underline hover:text-primary/80" {...props} />
                     }}
@@ -575,19 +575,19 @@ export default function Homepage() {
       </Section>
 
       {/* Final CTA */}
-      <Section id="final-cta" className="py-20 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+      <Section id="final-cta" className="py-16 sm:py-20 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
         <div className="reveal text-center">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
             Ready to Build Community Trust?
           </h2>
-          <p className="text-xl sm:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 opacity-90 max-w-3xl mx-auto">
             Deploy Your First Raffle - No Code Required
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               to="/app"
-              className="pulse-btn inline-flex items-center justify-center px-10 py-5 rounded-xl bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-xl"
+              className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-xl bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
             >
               Launch Your Raffle Now
             </Link>
@@ -595,10 +595,10 @@ export default function Homepage() {
               href="https://rafflhub.gitbook.io/rafflhub"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-10 py-5 rounded-xl border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-xl"
+              className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-xl border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-lg sm:text-xl"
             >
-              <BookOpen className="mr-3 h-6 w-6" />
-              View Documentation
+              <BookOpen className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
+              Read Documentation
             </a>
           </div>
           
