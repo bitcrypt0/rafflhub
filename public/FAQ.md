@@ -12,7 +12,7 @@ A: All raffle participants are eligible to call `requestRandomWords()` in raffle
 **Q: What happens if all available slots from a raffle doesn't sell out?**
 A: If the raffle had enough participants for the required number of winners to be selected, the raffle will proceed to the drawing state and winners will be selected from available participants. However, for scenarios where raffles have fewer participants than the required number of winners, such raffles transition into the 'Unengaged' state and participants are able to claim refunds of all purchased slots.
 
-**Q: Can I use my own NFT collection as prizes?**
+**Q: Can I use items from other NFT collections as prizes?**
 A: Yes, NFTs from external collections can be used as prizes in raffles but only after such collections have been whitelisted.
 
 **Q: How are prizes distributed to winners?**

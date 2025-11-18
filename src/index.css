@@ -14,7 +14,7 @@
   /* Mobile-first responsive design */
   html {
     font-size: 16px; /* Base font size for mobile */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-body);
     /* Prevent zoom on input focus on iOS */
     -webkit-text-size-adjust: 100%;
     /* Smooth scrolling */
@@ -26,7 +26,7 @@
     font-size: 16px;
     line-height: 1.6;
     letter-spacing: 0.025em;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-body);
     /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
     /* Better font rendering */
@@ -36,7 +36,7 @@
 
   * {
     @apply border-border;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-body);
     /* Better box sizing */
     box-sizing: border-box;
     /* Let browser handle focus outlines naturally */
@@ -74,7 +74,7 @@
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     color: hsl(var(--foreground));
   }
 
@@ -83,39 +83,44 @@
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
+    color: hsl(var(--foreground));
   }
 
   h3 {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    font-family: var(--font-display);
+    color: hsl(var(--foreground));
+  }
+
+  h4 {
     font-size: 1.5rem; /* 24px */
     font-weight: 600;
     line-height: 1.4;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
-  }
-
-  h4 {
-    font-size: 1.25rem; /* 20px */
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
+    color: hsl(var(--foreground));
   }
 
   h5 {
-    font-size: 1.125rem; /* 18px */
-    font-weight: 500;
+    font-size: 1.25rem; /* 20px */
+    font-weight: 600;
     line-height: 1.4;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
+    color: hsl(var(--foreground));
   }
 
   h6 {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
     line-height: 1.4;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
+    color: hsl(var(--foreground));
   }
 
   p {
@@ -135,7 +140,7 @@
   input, textarea, select {
     font-size: 1rem; /* 16px */
     letter-spacing: 0.025em;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-body);
   }
 
   /* Increase label text size */
@@ -157,7 +162,7 @@
     font-size: 1.25rem; /* 20px */
     font-weight: 600;
     letter-spacing: 0.02em;
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
   }
 
   /* Increase card description text size */
@@ -186,7 +191,7 @@
 
   /* Table headers should use Raleway */
   th {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     font-weight: 600;
   }
 
@@ -210,7 +215,7 @@
 
   /* Modal headers should use Raleway */
   .modal h1, .modal h2, .modal h3, .modal h4, .modal h5, .modal h6 {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
   }
 
   /* Increase sidebar text size */
@@ -221,7 +226,7 @@
 
   /* Sidebar headers should use Raleway */
   .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6 {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
   }
 
   /* Mobile-first form text size */
@@ -235,7 +240,7 @@
 
   /* Form headers should use Raleway */
   .form-header, .form-title, label[for], .form-label {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     font-weight: 600;
   }
 
@@ -338,30 +343,30 @@
 
   /* Ensure all page headers use Raleway */
   .page-header, .page-title, .section-header, .section-title {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     font-weight: 600;
   }
 
   /* Component headers should use Raleway */
   .component-header, .component-title {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     font-weight: 600;
   }
 
   /* Dashboard headers should use Raleway */
   .dashboard-header, .dashboard-title {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
     font-weight: 600;
   }
 
   /* Any element with font-semibold class should use Raleway */
   .font-semibold {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
   }
 
   /* Any element with font-bold class should use Raleway */
   .font-bold {
-    font-family: 'Raleway', sans-serif;
+    font-family: var(--font-display);
   }
 
   /* Mobile-first utility classes */

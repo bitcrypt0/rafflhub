@@ -337,7 +337,7 @@ export default function Homepage() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">No More Insider Favoritism</h3>
-            <p className="text-muted-foreground">Cryptographically secure randomness ensures every participant has an equal chance</p>
+            <p className="text-sm text-muted-foreground">Cryptographically secure randomness ensures every participant has an equal chance</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
@@ -345,7 +345,7 @@ export default function Homepage() {
               <Cpu className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Discourage Bot Attacks</h3>
-            <p className="text-muted-foreground">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
+            <p className="text-sm text-muted-foreground">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
@@ -353,7 +353,7 @@ export default function Homepage() {
               <Users className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Build Community Trust</h3>
-            <p className="text-muted-foreground">Transparent, verifiable processes that communities can audit and trust</p>
+            <p className="text-sm text-muted-foreground">Transparent, verifiable processes that communities can audit and trust</p>
           </div>
           
           <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
@@ -361,7 +361,7 @@ export default function Homepage() {
               <Zap className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">Trustless Prize Distribution</h3>
-            <p className="text-muted-foreground">Smart contracts handle prize distribution without need for manual intervention</p>
+            <p className="text-sm text-muted-foreground">Smart contracts handle prize distribution without need for manual intervention</p>
           </div>
         </div>
       </Section>
@@ -382,7 +382,7 @@ export default function Homepage() {
                 <span className="text-2xl font-bold text-primary-foreground">1</span>
               </div>
               <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Create Raffle</h3>
-              <p className="text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
+              <p className="text-sm text-muted-foreground mb-4">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Target className="h-4 w-4" />
                 <span>Flexible Configuration</span>
@@ -396,7 +396,7 @@ export default function Homepage() {
                 <span className="text-2xl font-bold text-primary-foreground">2</span>
               </div>
               <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Chainlink VRF</h3>
-              <p className="text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
+              <p className="text-sm text-muted-foreground mb-4">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Shuffle className="h-4 w-4" />
                 <span>Provably Fair</span>
@@ -410,7 +410,7 @@ export default function Homepage() {
                 <span className="text-2xl font-bold text-primary-foreground">3</span>
               </div>
               <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Prize Distribution</h3>
-              <p className="text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
+              <p className="text-sm text-muted-foreground mb-4">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
               <div className="flex items-center justify-center gap-2 text-sm text-primary">
                 <Award className="h-4 w-4" />
                 <span>Instant Claims</span>
@@ -430,15 +430,15 @@ export default function Homepage() {
         
         <div className="reveal mt-12">
           <div className="max-w-4xl mx-auto">
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-primary/5 border border-border">
+            <div className="relative aspect-[16/9] sm:aspect-video rounded-2xl overflow-hidden shadow-2xl bg-primary/5 border border-border">
               {/* Placeholder for video embed */}
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
-                    <Play className="h-12 w-12 text-primary-foreground ml-1" />
+                <div className="text-center px-4">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
+                    <Play className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground ml-1" />
                   </div>
-                  <p className="text-foreground font-semibold">Video Coming Soon</p>
-                  <p className="text-muted-foreground text-sm mt-2">Complete walkthrough of the Dropr platform</p>
+                  <p className="text-foreground font-semibold text-sm sm:text-base">Video Coming Soon</p>
+                  <p className="text-muted-foreground text-xs sm:text-sm mt-2">Complete walkthrough of the Dropr platform</p>
                 </div>
               </div>
               {/* This is where the actual video embed would go */}
@@ -470,7 +470,7 @@ export default function Homepage() {
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Projects</h3>
-            <p className="text-muted-foreground mb-6">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
+            <p className="text-sm text-muted-foreground mb-6">Fairly distribute whitelist spots for new mints. Eliminate gas wars and ensure equal opportunity for all community members.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
@@ -492,7 +492,7 @@ export default function Homepage() {
               <TrendingUp className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground whitespace-nowrap">KOLs & Influencers</h3>
-            <p className="text-muted-foreground mb-6">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
+            <p className="text-sm text-muted-foreground mb-6">Host trustless giveaways that protect your reputation. Build authentic engagement with your community using provably fair raffling mechanics.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
@@ -514,7 +514,7 @@ export default function Homepage() {
               <Globe className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-foreground">Creators</h3>
-            <p className="text-muted-foreground mb-6">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
+            <p className="text-sm text-muted-foreground mb-6">Grow your community and holder base by transparently distributing rewards to holders of creator tokens.</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
                <li className="flex items-center gap-2">
                  <CheckCircle className="h-4 w-4 text-primary" />
@@ -559,8 +559,8 @@ export default function Homepage() {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      p: (props) => <p className="text-sm sm:text-base text-muted-foreground mb-3 leading-relaxed" {...props} />,
-                      li: (props) => <li className="list-disc ml-5 text-sm sm:text-base text-muted-foreground mb-1" {...props} />,
+                      p: (props) => <p className="text-sm text-muted-foreground mb-3 leading-relaxed" {...props} />,
+                      li: (props) => <li className="list-disc ml-5 text-sm text-muted-foreground mb-1" {...props} />,
                       strong: (props) => <strong className="text-primary font-semibold" {...props} />,
                       a: (props) => <a className="text-primary underline hover:text-primary/80" {...props} />
                     }}
@@ -578,7 +578,7 @@ export default function Homepage() {
       <Section id="final-cta" className="py-16 sm:py-20 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
         <div className="reveal text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
-            Ready to Build Community Trust?
+            Ready to Build Trust with Your Community?
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 opacity-90 max-w-3xl mx-auto">
             Deploy Your First Raffle - No Code Required
