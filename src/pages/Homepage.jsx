@@ -559,8 +559,8 @@ export default function Homepage() {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      p: (props) => <p className="text-sm text-muted-foreground mb-3 leading-relaxed" {...props} />,
-                      li: (props) => <li className="list-disc ml-5 text-sm text-muted-foreground mb-1" {...props} />,
+                      p: (props) => <p className="text-sm text-muted-foreground" {...props} />,
+                      li: (props) => <li className="list-disc ml-5 text-sm text-muted-foreground" {...props} />,
                       strong: (props) => <strong className="text-primary font-semibold" {...props} />,
                       a: (props) => <a className="text-primary underline hover:text-primary/80" {...props} />
                     }}
