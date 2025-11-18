@@ -154,7 +154,7 @@
 
   /* Label text uses base size */
   label {
-    font-size: var(--text-base);
+    font-size: var(--text-base) !important;
     font-weight: 500;
     letter-spacing: var(--tracking-normal);
   }
@@ -261,7 +261,7 @@
     }
 
     label, .form-label {
-      font-size: var(--text-base);
+      font-size: var(--text-base) !important;
       margin-bottom: 0.5rem;
     }
   }
@@ -790,6 +790,7 @@
     .mobile-utility-page-content label {
       color: hsl(var(--foreground)) !important;
       font-weight: 500 !important;
+      font-size: var(--text-base) !important;
       margin-bottom: 8px !important;
       display: block !important;
     }
