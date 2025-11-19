@@ -13,17 +13,17 @@
 
 /* Fluid typography scale using clamp() */
 :root {
-  /* Text sizes - fluid between mobile and desktop (mobile-optimized) */
-  --text-xs: clamp(0.8125rem, 0.75rem + 0.25vw, 0.875rem);    /* 13-14px (improved mobile readability) */
-  --text-sm: clamp(0.9375rem, 0.875rem + 0.375vw, 1rem);      /* 15-16px (improved mobile readability) */
-  --text-base: clamp(1rem, 0.95rem + 0.5vw, 1.125rem);        /* 16-18px (tighter range) */
-  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.25rem);         /* 18-20px (better scaling) */
-  --text-xl: clamp(1.25rem, 1.1rem + 1vw, 1.5rem);            /* 20-24px (better scaling) */
-  --text-2xl: clamp(1.5rem, 1.25rem + 1.25vw, 2rem);          /* 24-32px (better scaling) */
-  --text-3xl: clamp(1.875rem, 1.5rem + 1.5vw, 2.5rem);        /* 30-40px (better scaling) */
-  --text-4xl: clamp(1.875rem, 1.75rem + 1.75vw, 3rem);        /* 30-48px (reduced mobile size) */
-  --text-5xl: clamp(2.25rem, 2rem + 2.5vw, 4rem);             /* 36-64px (reduced mobile size) */
-  --text-6xl: clamp(3.75rem, 3rem + 3.75vw, 5rem);
+  /* Text sizes - modernized and compact */
+  --text-xs: 0.75rem;                                         /* 12px fixed */
+  --text-sm: clamp(0.8125rem, 0.8rem + 0.1vw, 0.875rem);      /* 13px - 14px */
+  --text-base: clamp(0.9375rem, 0.9rem + 0.25vw, 1rem);       /* 15px - 16px */
+  --text-lg: clamp(1.0625rem, 1.05rem + 0.2vw, 1.125rem);     /* 17px - 18px */
+  --text-xl: clamp(1.25rem, 1.2rem + 0.25vw, 1.375rem);       /* 20px - 22px */
+  --text-2xl: clamp(1.5rem, 1.45rem + 0.5vw, 1.75rem);        /* 24px - 28px */
+  --text-3xl: clamp(1.875rem, 1.8rem + 0.75vw, 2.25rem);      /* 30px - 36px */
+  --text-4xl: clamp(2.25rem, 2.1rem + 1vw, 3rem);             /* 36px - 48px */
+  --text-5xl: clamp(3rem, 2.8rem + 1.5vw, 3.75rem);           /* 48px - 60px */
+  --text-6xl: clamp(3.75rem, 3.5rem + 2vw, 4.5rem);           /* 60px - 72px */
   
   /* Line heights optimized for readability */
   --leading-tight: 1.25;
