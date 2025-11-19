@@ -4,7 +4,7 @@ import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle } from 'lucide-react';
+import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
+import VestingConfigurationComponent from '../../components/VestingConfigurationComponent';
 
 import { SUPPORTED_NETWORKS } from '../../networks';
 
@@ -404,6 +405,21 @@ const NewMobileProfilePage = () => {
             </div>
           </button>
 
+          {/* Creator Token Vesting */}
+          <button
+            onClick={() => setActiveDashboardComponent('vesting')}
+            data-dashboard-card
+            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Lock className="h-5 w-5 text-primary" />
+              <div>
+                <div className="font-medium">Creator Token Vesting</div>
+                <div className="text-sm text-muted-foreground">Configure vesting schedules for creator token allocations</div>
+              </div>
+            </div>
+          </button>
+
           {/* Minter Approval */}
           <button
             onClick={() => setActiveDashboardComponent('minter')}
@@ -475,6 +491,8 @@ const NewMobileProfilePage = () => {
     switch (componentType) {
       case 'royalty':
         return renderRoyaltyComponent(handleBack);
+      case 'vesting':
+        return renderVestingComponent(handleBack);
       case 'minter':
         return renderMinterComponent(handleBack);
       case 'kol':
@@ -871,6 +889,21 @@ const NewMobileProfilePage = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+    );
+  };
+
+  // Vesting Configuration Component - Mobile Wrapper
+  const renderVestingComponent = (handleBack) => {
+    return (
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+            ← Back
+          </button>
+          <h2 className="text-xl font-semibold">Creator Token Vesting</h2>
+        </div>
+        <VestingConfigurationComponent />
       </div>
     );
   };

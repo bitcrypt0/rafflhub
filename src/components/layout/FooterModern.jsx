@@ -52,25 +52,25 @@ const FooterModern = () => {
       title: 'Resources',
       items: [
         { label: 'Documentation', href: '/docs', icon: ArrowRight },
-        { label: 'Blog', href: '/blog', icon: ArrowRight },
-        { label: 'Tutorials', href: '/tutorials', icon: ArrowRight },
+        { label: 'Blog', href: '#', icon: ArrowRight },
+        { label: 'Tutorials', href: '#', icon: ArrowRight },
       ]
     },
     {
       title: 'Company',
       items: [
-        { label: 'About Us', href: '/about', icon: Users },
-        { label: 'Careers', href: '/careers', icon: ArrowRight },
-        { label: 'Press Kit', href: '/press', icon: ArrowRight },
+        { label: 'About Us', href: '#', icon: Users },
+        { label: 'Careers', href: '#', icon: ArrowRight },
+        { label: 'Press Kit', href: '#', icon: ArrowRight },
       ]
     },
     {
       title: 'Legal',
       items: [
-        { label: 'Terms of Service', href: '/terms', icon: Shield },
-        { label: 'Privacy Policy', href: '/privacy', icon: Shield },
-        { label: 'Cookie Policy', href: '/cookies', icon: Shield },
-        { label: 'Compliance', href: '/compliance', icon: Shield },
+        { label: 'Terms of Service', href: '#', icon: Shield },
+        { label: 'Privacy Policy', href: '#', icon: Shield },
+        { label: 'Cookie Policy', href: '#', icon: Shield },
+        { label: 'Compliance', href: '#', icon: Shield },
       ]
     }
   ];
@@ -264,15 +264,24 @@ const FooterModern = () => {
                 <ul className="space-y-3">
                   {section.items.map((item) => (
                     <li key={item.href}>
-                      <Link
-                        to={item.href}
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
-                      >
-                        <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                        <span className="group-hover:translate-x-1 transition-transform duration-200">
-                          {item.label}
-                        </span>
-                      </Link>
+                      {item.href === '#' ? (
+                        <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group cursor-pointer">
+                          <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                          <span className="group-hover:translate-x-1 transition-transform duration-200">
+                            {item.label}
+                          </span>
+                        </div>
+                      ) : (
+                        <Link
+                          to={item.href}
+                          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+                        >
+                          <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                          <span className="group-hover:translate-x-1 transition-transform duration-200">
+                            {item.label}
+                          </span>
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -291,13 +300,20 @@ const FooterModern = () => {
                       <ul className="space-y-3 pt-2">
                         {section.items.map((item) => (
                           <li key={item.href}>
-                            <Link
-                              to={item.href}
-                              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
-                            >
-                              <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                              <span>{item.label}</span>
-                            </Link>
+                            {item.href === '#' ? (
+                              <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group cursor-pointer">
+                                <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                <span>{item.label}</span>
+                              </div>
+                            ) : (
+                              <Link
+                                to={item.href}
+                                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+                              >
+                                <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                <span>{item.label}</span>
+                              </Link>
+                            )}
                           </li>
                         ))}
                       </ul>
