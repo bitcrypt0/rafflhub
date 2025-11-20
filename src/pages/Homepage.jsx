@@ -410,7 +410,7 @@ export default function Homepage() {
                 <span className="text-2xl font-bold text-primary-foreground">3</span>
               </div>
               <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Prize Distribution</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Winners claim prizes directly from smart contracts. No manual intervention or trust required.</p>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Prize availability guaranteed. Winners can always claim prizes from raffle contracts.</p>
               <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Award className="h-4 w-4" />
                 <span>Instant Claims</span>

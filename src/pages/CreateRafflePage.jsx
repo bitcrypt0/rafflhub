@@ -3773,4 +3773,3 @@ function useInternalCollectionStatus(address, contracts) {
 }
 
 export default CreateRafflePage;
-

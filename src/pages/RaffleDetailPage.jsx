@@ -1499,8 +1499,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     },
     onStateChange: (newState, blockNumber) => {
 
-      // If state changed to completed (4) or prizes claimed (7), fetch winners
-      if (newState === 4 || newState === 7) {
+      if (newState === 4 || newState === 6) {
         setLastWinnersUpdate(Date.now());
         setTimeout(() => {
           fetchWinners();
@@ -1570,9 +1569,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       return;
     }
 
-    // Allow fetching winners for states: Drawing (3), Completed (4), Prizes Claimed (7)
-    // Winners are only available after first batch completes (Drawing state)
-    const allowedStates = [3, 4, 7]; // Drawing, Completed, Prizes Claimed
+    const allowedStates = [3, 4, 6];
     if (!allowedStates.includes(raffle.stateNum)) {
       setWinners([]);
       onWinnerCountChange?.(0);
@@ -3312,7 +3309,7 @@ const RaffleDetailPage = () => {
 
   if (loading || isReconnecting) {
     return (
-      <PageContainer>
+      <PageContainer className="max-w-[85rem]">
         <ContentLoading
           message={isReconnecting ? "Reconnecting wallet..." : "Loading raffle details..."}
           isMobile={isMobile}
@@ -3327,7 +3324,7 @@ const RaffleDetailPage = () => {
                          error.toLowerCase().includes('signer') ||
                          error.toLowerCase().includes('initializing');
     return (
-      <PageContainer variant="wide" className="pt-8 pb-4">
+      <PageContainer variant="wide" className="max-w-[85rem] pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
           <h2 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">
@@ -3360,7 +3357,7 @@ const RaffleDetailPage = () => {
 
   if (!raffle) {
     return (
-      <PageContainer variant="wide" className="pt-8 pb-4">
+      <PageContainer variant="wide" className="max-w-[85rem] pt-8 pb-4">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">Raffle Not Found</h2>
@@ -3392,7 +3389,7 @@ const RaffleDetailPage = () => {
 
 
   return (
-    <PageContainer variant="wide" className="pt-8 pb-4">
+    <PageContainer variant="wide" className="max-w-[85rem] pt-8 pb-4">
       <div className="mb-8">
         <button
           onClick={() => navigate('/app')}

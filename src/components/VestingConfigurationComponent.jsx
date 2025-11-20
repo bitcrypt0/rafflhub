@@ -6,8 +6,6 @@ import { toast } from './ui/sonner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Clock, Lock, Unlock, Calendar, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
-import ERC721PrizeABI from '../contracts/ERC721Prize.min.abi.json';
-import ERC1155PrizeABI from '../contracts/ERC1155Prize.min.abi.json';
 
 const VestingConfigurationComponent = () => {
   const { address, provider } = useWallet();
@@ -44,7 +42,7 @@ const VestingConfigurationComponent = () => {
     setLoading(true);
     try {
       // Try ERC721 first
-      let contract = getContractInstance(addressToFetch, ERC721PrizeABI);
+      let contract = getContractInstance(addressToFetch, 'erc721Prize');
       let isERC721Contract = false;
 
       try {
@@ -54,7 +52,7 @@ const VestingConfigurationComponent = () => {
         }
       } catch (e) {
         // Not ERC721, try ERC1155
-        contract = getContractInstance(addressToFetch, ERC1155PrizeABI);
+        contract = getContractInstance(addressToFetch, 'erc1155Prize');
       }
 
       // Get owner
@@ -234,19 +232,9 @@ const VestingConfigurationComponent = () => {
 
       let tx;
       if (isERC721) {
-        tx = await executeTransaction(
-          fetchedCollection,
-          'configureCreatorVesting',
-          [cliffEnd, numberOfUnlocks, durationBetweenUnlocks],
-          'Configuring vesting...'
-        );
+        tx = await executeTransaction(() => fetchedCollection.configureCreatorVesting(cliffEnd, numberOfUnlocks, durationBetweenUnlocks));
       } else {
-        tx = await executeTransaction(
-          fetchedCollection,
-          'configureCreatorVesting',
-          [tokenId, cliffEnd, numberOfUnlocks, durationBetweenUnlocks],
-          'Configuring vesting...'
-        );
+        tx = await executeTransaction(() => fetchedCollection.configureCreatorVesting(tokenId, cliffEnd, numberOfUnlocks, durationBetweenUnlocks));
       }
 
       if (tx) {

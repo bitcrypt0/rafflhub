@@ -143,7 +143,7 @@ const FooterModern = () => {
       {/* Newsletter section - Only show on Homepage */}
       {isHomepage && (
       <div className="relative border-b border-border/30 bg-muted/30">
-        <div className="container mx-auto px-6 py-10">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -194,7 +194,7 @@ const FooterModern = () => {
 
       {/* Main footer content */}
       <div className="relative">
-        <div className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -263,7 +263,7 @@ const FooterModern = () => {
                 <h4 className="font-semibold mb-4 font-display">{section.title}</h4>
                 <ul className="space-y-3">
                   {section.items.map((item) => (
-                    <li key={item.href}>
+                    <li key={item.label}>
                       {item.href === '#' ? (
                         <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group cursor-pointer">
                           <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -299,7 +299,7 @@ const FooterModern = () => {
                     <AccordionContent>
                       <ul className="space-y-3 pt-2">
                         {section.items.map((item) => (
-                          <li key={item.href}>
+                          <li key={item.label}>
                             {item.href === '#' ? (
                               <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group cursor-pointer">
                                 <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -327,7 +327,7 @@ const FooterModern = () => {
 
         {/* Bottom bar */}
         <div className="border-t border-border/30">
-          <div className="container mx-auto px-6 py-6">
+          <div className="max-w-7xl mx-auto px-6 py-6">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}

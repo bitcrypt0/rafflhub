@@ -8,3 +8,4 @@ temp_types.ts
 generate-error-selectors.js
 .env.local
 setup-supabase.ps1
+.trae/
