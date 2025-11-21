@@ -446,7 +446,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               <button
                 onClick={handlePurchase}
                 disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement)}
-                className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 <Ticket className="h-4 w-4" />
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}

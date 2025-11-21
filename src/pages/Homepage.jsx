@@ -326,7 +326,7 @@ export default function Homepage() {
       <Section id="problem" className="py-20 bg-card">
         <div className="reveal">
           <SectionTitle 
-            title="The End of Opaque Whitelists Allocations, Botted Mints, and Rigged Giveaways"
+            title="The End of Opaque Whitelist Allocations, Botted Mints, and Rigged Giveaways"
             subtitle="Traditional Web3 distribution methods are broken. Dropr fixes them with innovative raffle-based technology."
           />
         </div>
@@ -371,7 +371,7 @@ export default function Homepage() {
         <div className="reveal">
           <SectionTitle 
             title="How It Works"
-            subtitle="Three simple steps to create provably fair raffles that your community will trust"
+            subtitle="Three simple steps to create provably fair raffles that your community can trust"
           />
         </div>
 
@@ -396,7 +396,7 @@ export default function Homepage() {
                 <span className="text-2xl font-bold text-primary-foreground">2</span>
               </div>
               <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Chainlink VRF</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Verifiable randomness ensures fair winner selection. Every draw is cryptographically secure and auditable.</p>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Participants request randomness ensuring fair winner selection. Every draw is cryptographically secure and auditable.</p>
               <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Shuffle className="h-4 w-4" />
                 <span>Provably Fair</span>
@@ -459,8 +459,8 @@ export default function Homepage() {
       <Section id="use-cases" className="py-20 bg-background">
         <div className="reveal">
           <SectionTitle 
-             title="Built for Web3 Communities"
-             subtitle="Whether you're launching NFTs, rewarding holders, or building engagement"
+             title="Built for Web3"
+             subtitle="Launch NFT drops, grow and reward communities, build genuine engagement"
            />
         </div>
 

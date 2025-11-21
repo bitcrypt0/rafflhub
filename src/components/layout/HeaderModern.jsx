@@ -290,16 +290,18 @@ const HeaderModern = () => {
           {/* Right side actions */}
           <div className="flex items-center gap-2">
             {/* Search */}
-            <motion.div variants={itemVariants}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSearchToggle}
-                className="relative"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </motion.div>
+            {!isHomepage && (
+              <motion.div variants={itemVariants}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSearchToggle}
+                  className="relative"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            )}
 
             {/* Theme toggle */}
             <motion.div variants={itemVariants}>
@@ -525,9 +527,10 @@ const HeaderModern = () => {
             className="flex items-center gap-3"
           >
             {/* Search */}
-            <div className="relative" ref={searchContainerRef}>
-              <AnimatePresence>
-                {searchOpen ? (
+            {!isHomepage && (
+              <div className="relative" ref={searchContainerRef}>
+                <AnimatePresence>
+                  {searchOpen ? (
                   <motion.div
                     initial={{ width: 40, opacity: 0 }}
                     animate={{ width: 300, opacity: 1 }}
@@ -578,7 +581,7 @@ const HeaderModern = () => {
                       </motion.div>
                     )}
                   </motion.div>
-                ) : (
+                  ) : (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -587,15 +590,16 @@ const HeaderModern = () => {
                   >
                     <Search className="h-4 w-4" />
                   </Button>
-                )}
-              </AnimatePresence>
-            </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Network selector */}
-            <NetworkSelector />
+            {!isHomepage && <NetworkSelector />}
 
             {/* Wallet */}
-            {connected ? (
+            {!isHomepage && (connected ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="gap-2 hover:bg-muted/50">
@@ -628,7 +632,7 @@ const HeaderModern = () => {
               >
                 Connect Wallet
               </Button>
-            )}
+            ))}
 
             {/* Theme toggle */}
             <Button
@@ -644,13 +648,15 @@ const HeaderModern = () => {
             </Button>
 
             {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-muted/50 relative"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            {!isHomepage && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-muted/50 relative"
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+            )}
           </motion.div>
         </div>
       </div>

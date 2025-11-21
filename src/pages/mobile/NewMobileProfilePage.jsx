@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
@@ -28,6 +28,7 @@ const NewMobileProfilePage = () => {
   const [activeTab, setActiveTab] = useState('activity');
   const [activeDashboardComponent, setActiveDashboardComponent] = useState(null);
   const { getCurrencySymbol, formatRevenueAmount } = useNativeCurrency();
+  const fetchSeqRef = useRef(0);
 
   
   // Use existing data hook - match desktop data usage
@@ -919,8 +920,19 @@ const NewMobileProfilePage = () => {
       }));
     };
 
+    const sanitizeAddress = (addr) => {
+      if (!addr) return '';
+      const trimmed = String(addr).trim().replace(/\u200B|\u200C|\u200D|\u2060|\uFEFF/g, '');
+      const normalizedPrefix = trimmed.startsWith('0X') ? '0x' + trimmed.slice(2) : trimmed;
+      console.log('sanitizeAddress', { input: addr, output: normalizedPrefix });
+      return normalizedPrefix;
+    };
+
     const validateAddress = (address) => {
-      return ethers.utils.isAddress(address);
+      const a = sanitizeAddress(address);
+      const isValid = ethers.utils.isAddress(a);
+      console.log('validateAddress', { input: address, sanitized: a, isValid });
+      return isValid;
     };
 
     const extractRevertReason = (error) => {
@@ -934,7 +946,9 @@ const NewMobileProfilePage = () => {
     };
 
     // Fetch collection details by address - matches desktop implementation exactly
-    const fetchCollection = async () => {
+    const fetchCollection = async (addrParam) => {
+      const mySeq = ++fetchSeqRef.current;
+      console.log('minter.fetchCollection.begin', { seq: mySeq, raw: addrParam });
       updateMinterState({
         error: '',
         success: '',
@@ -947,12 +961,15 @@ const NewMobileProfilePage = () => {
         collectionType: null
       });
 
-      if (!validateAddress(state.collectionAddress)) {
+      const addr = sanitizeAddress(addrParam ?? state.collectionAddress);
+      if (!validateAddress(addr)) {
+        console.warn('minter.fetchCollection.invalidAddress', { addr });
         updateMinterState({ error: 'Please enter a valid Ethereum contract address.' });
         return;
       }
 
       if (!provider) {
+        console.warn('minter.fetchCollection.noProvider');
         updateMinterState({ error: 'Provider not available.' });
         return;
       }
@@ -960,9 +977,16 @@ const NewMobileProfilePage = () => {
       try {
         updateMinterState({ loading: true });
 
+        const bytecode = await provider.getCode(addr);
+        console.log('minter.fetchCollection.bytecode', { addr, bytecode });
+        if (!bytecode || bytecode === '0x') {
+          updateMinterState({ error: 'The provided address is not a contract.' , loading: false });
+          return;
+        }
+
         // Try fetching with ERC721 ABI first - matches desktop exactly
         let contract = new ethers.Contract(
-          state.collectionAddress,
+          addr,
           contractABIs.erc721Prize,
           provider
         );
@@ -982,10 +1006,11 @@ const NewMobileProfilePage = () => {
             collectionType: 'erc721'
           });
           isERC721 = true;
+          console.log('minter.fetchCollection.detectedERC721', { addr, locked, currentMinter });
         } catch (err) {
           // If ERC721 ABI fails, try ERC1155 ABI - matches desktop
           contract = new ethers.Contract(
-            state.collectionAddress,
+            addr,
             contractABIs.erc1155Prize,
             provider
           );
@@ -998,7 +1023,9 @@ const NewMobileProfilePage = () => {
               currentMinter,
               collectionType: 'erc1155'
             });
+            console.log('minter.fetchCollection.detectedERC1155', { addr, locked, currentMinter });
           } catch (err) {
+            console.error('minter.fetchCollection.detectFailed', { addr, error: err?.message });
             updateMinterState({
               error: 'Failed to fetch collection: ' + err.message,
               collectionType: null,
@@ -1028,21 +1055,28 @@ const NewMobileProfilePage = () => {
           } catch (e) {
             collectionSymbol = 'N/A';
           }
+          console.log('minter.fetchCollection.erc721Meta', { name: collectionName, symbol: collectionSymbol });
         } else {
           collectionName = 'ERC1155 Collection';
           collectionSymbol = 'N/A';
+          console.log('minter.fetchCollection.erc1155Meta');
         }
 
-        updateMinterState({
-          fetchedCollection: state.collectionAddress,
-          collectionName,
-          collectionSymbol,
-          success: `Collection loaded successfully!`,
-          loading: false
-        });
+        // Ignore stale requests: only update if latest sequence
+        const stillCurrent = (mySeq === fetchSeqRef.current);
+        console.log('minter.fetchCollection.complete', { seq: mySeq, stillCurrent, addr, currentInput: dashboardStates.minter.collectionAddress });
+        if (stillCurrent) {
+          updateMinterState({
+            fetchedCollection: addr,
+            collectionName,
+            collectionSymbol,
+            success: `Collection loaded successfully!`,
+            loading: false
+          });
+        }
 
       } catch (error) {
-        console.error('Error fetching collection:', error);
+        console.error('minter.fetchCollection.error', { addr, error: error?.message });
         updateMinterState({
           error: 'Failed to fetch collection: ' + error.message,
           loading: false
@@ -1052,7 +1086,8 @@ const NewMobileProfilePage = () => {
 
     // Load collection details when minter address changes
     const loadCollectionDetails = async () => {
-      if (!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || !provider) {
+      const minterAddr = sanitizeAddress(state.minterAddress);
+      if (!state.fetchedCollection || !minterAddr || !validateAddress(minterAddr) || !provider) {
         return;
       }
 
@@ -1067,7 +1102,7 @@ const NewMobileProfilePage = () => {
 
         const currentMinter = await contract.minter();
         updateMinterState({
-          isApproved: currentMinter.toLowerCase() === state.minterAddress.toLowerCase(),
+          isApproved: currentMinter.toLowerCase() === minterAddr.toLowerCase(),
           currentMinter,
           loading: false
         });
@@ -1086,7 +1121,8 @@ const NewMobileProfilePage = () => {
         return;
       }
 
-      if (!state.minterAddress || !validateAddress(state.minterAddress)) {
+      const targetMinter = sanitizeAddress(state.minterAddress);
+      if (!targetMinter || !validateAddress(targetMinter)) {
         toast.error('Please enter a valid Ethereum address');
         return;
       }
@@ -1111,7 +1147,7 @@ const NewMobileProfilePage = () => {
           );
         }
 
-        const tx = await contract.setMinterApproval(state.minterAddress, approved);
+        const tx = await contract.setMinterApproval(targetMinter, approved);
         await tx.wait();
 
         toast.success(`Minter ${approved ? 'set' : 'removed'} successfully!`);
@@ -1260,14 +1296,18 @@ const NewMobileProfilePage = () => {
                 <ResponsiveAddressInput
                   value={state.collectionAddress}
                   onChange={(e) => {
-                    updateMinterState({ collectionAddress: e.target.value });
+                    const raw = e.target.value;
+                    const addr = sanitizeAddress(raw);
+                    console.log('minter.input.change', { raw, sanitized: addr });
+                    updateMinterState({ collectionAddress: addr });
                     
-                    // Auto-fetch when address changes
-                    const value = e.target.value;
-                    if (value && ethers.utils.isAddress(value) && connected && !state.loading) {
+                    // Auto-fetch when address changes (using sanitized address)
+                    if (addr && ethers.utils.isAddress(addr) && connected && !state.loading) {
+                      console.log('minter.autofetch.trigger', { addr });
                       setTimeout(() => {
                         if (!state.loading) {
-                          fetchCollection();
+                          console.log('minter.autofetch.start', { addr });
+                          fetchCollection(addr);
                         }
                       }, 350);
                     }
@@ -1307,7 +1347,7 @@ const NewMobileProfilePage = () => {
                   <button
                     onClick={toggleMinterApprovalLock}
                     disabled={state.loading || !connected}
-                    className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
                   </button>
@@ -2012,6 +2052,11 @@ const NewMobileProfilePage = () => {
         return;
       }
 
+      if (!ethers.utils.isAddress(state.mintData.recipient)) {
+        toast.error('Please enter a valid recipient address');
+        return;
+      }
+
       const quantity = parseInt(state.mintData.quantity);
       if (isNaN(quantity) || quantity <= 0) {
         toast.error('Please enter a valid quantity');
@@ -2038,11 +2083,11 @@ const NewMobileProfilePage = () => {
         let result;
         if (state.mintData.collectionType === 'erc721') {
           // ERC721: creatorMint(address to, uint256 quantity)
-          result = await executeTransaction(contract.creatorMint, state.mintData.recipient, quantity);
+          result = await executeTransaction(() => contract.creatorMint(state.mintData.recipient, quantity));
         } else {
           // ERC1155: creatorMint(address to, uint256 id, uint256 quantity)
           const tokenId = parseInt(state.mintData.tokenId);
-          result = await executeTransaction(contract.creatorMint, state.mintData.recipient, tokenId, quantity);
+          result = await executeTransaction(() => contract.creatorMint(state.mintData.recipient, tokenId, quantity));
         }
 
         if (result.success) {
@@ -2273,7 +2318,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={handleCreatorMint}
             disabled={state.mintLoading || !connected || !state.mintData.collectionAddress || !state.mintData.recipient || !state.mintData.quantity || (state.mintData.collectionType === 'erc1155' && !state.mintData.tokenId)}
-            className="w-full bg-green-600 text-white px-6 py-2.5 h-10 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <Plus className="h-4 w-4" />
             {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}

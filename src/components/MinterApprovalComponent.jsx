@@ -42,6 +42,12 @@ const MinterApprovalComponent = () => {
   // 1. Add state: collectionType ('erc721' | 'erc1155' | null)
   const [collectionType, setCollectionType] = useState(null);
 
+  const sanitizeAddress = (addr) => {
+    if (!addr) return '';
+    const trimmed = String(addr).trim().replace(/\u200B|\u200C|\u200D|\u2060|\uFEFF/g, '');
+    return trimmed.startsWith('0X') ? '0x' + trimmed.slice(2) : trimmed;
+  };
+
   // Fetch collection details by address
   const fetchCollection = async () => {
     setError('');
@@ -53,7 +59,8 @@ const MinterApprovalComponent = () => {
     setCollectionName('');
     setCollectionSymbol('');
     setCollectionType(null); // Reset collection type
-    if (!ethers.utils.isAddress(collectionAddress)) {
+    const addr = sanitizeAddress(collectionAddress);
+    if (!ethers.utils.isAddress(addr)) {
       setError('Please enter a valid Ethereum contract address.');
       return;
     }
@@ -65,7 +72,7 @@ const MinterApprovalComponent = () => {
       setLoading(true);
       // Try fetching with ERC721 ABI first
       let contract = new ethers.Contract(
-        collectionAddress,
+        addr,
         contractABIs.erc721Prize,
         provider
       );
@@ -80,7 +87,7 @@ const MinterApprovalComponent = () => {
       } catch (err) {
         // If ERC721 ABI fails, try ERC1155 ABI
         contract = new ethers.Contract(
-          collectionAddress,
+          addr,
           contractABIs.erc1155Prize,
           provider
         );
@@ -122,7 +129,7 @@ const MinterApprovalComponent = () => {
         setCollectionName('ERC1155 Collection');
         setCollectionSymbol('N/A');
       }
-      setFetchedCollection(collectionAddress);
+      setFetchedCollection(addr);
     } catch (err) {
       setError('Failed to fetch collection: ' + err.message);
     } finally {
@@ -140,7 +147,8 @@ const MinterApprovalComponent = () => {
 
   // Auto-fetch collection when a valid address is entered
   useEffect(() => {
-    if (!connected || !collectionAddress || !ethers.utils.isAddress(collectionAddress)) return;
+    const addr = sanitizeAddress(collectionAddress);
+    if (!connected || !addr || !ethers.utils.isAddress(addr)) return;
     const t = setTimeout(() => {
       if (!loading) {
         fetchCollection();
@@ -154,14 +162,16 @@ const MinterApprovalComponent = () => {
     try {
       setLoading(true);
       setError('');
+      const abi = collectionType === 'erc1155' ? contractABIs.erc1155Prize : contractABIs.erc721Prize;
       const contract = new ethers.Contract(
         fetchedCollection,
-        contractABIs.erc721Prize,
+        abi,
         provider
       );
-        const currentMinter = await contract.minter();
-        setIsApproved(currentMinter.toLowerCase() === minterAddress.toLowerCase());
-        setCurrentMinter(currentMinter);
+      const currentMinter = await contract.minter();
+      const sanitizedMinter = sanitizeAddress(minterAddress);
+      setIsApproved(currentMinter.toLowerCase() === sanitizedMinter.toLowerCase());
+      setCurrentMinter(currentMinter);
     } catch (err) {
       setError('Failed to load collection details: ' + err.message);
     } finally {
@@ -174,7 +184,8 @@ const MinterApprovalComponent = () => {
       toast.error('Please fetch a collection and enter a valid minter address');
       return;
     }
-    if (!ethers.utils.isAddress(minterAddress)) {
+    const target = sanitizeAddress(minterAddress);
+    if (!ethers.utils.isAddress(target)) {
       toast.error('Please enter a valid Ethereum address');
       return;
     }
@@ -200,9 +211,9 @@ const MinterApprovalComponent = () => {
 
       let tx;
       if (collectionType === 'erc721') {
-        tx = await contract.setMinterApproval(minterAddress, approved);
+        tx = await contract.setMinterApproval(target, approved);
       } else if (collectionType === 'erc1155') {
-        tx = await contract.setMinterApproval(minterAddress, approved);
+        tx = await contract.setMinterApproval(target, approved);
       }
       await tx.wait();
       toast.success(`Minter ${approved ? 'set' : 'removed'} successfully!`);
@@ -403,7 +414,7 @@ const MinterApprovalComponent = () => {
                   onChange={(e) => setMinterAddress(e.target.value)}
                   disabled={loading}
                 />
-                {minterAddress && !ethers.utils.isAddress(minterAddress) && (
+                {minterAddress && !ethers.utils.isAddress(sanitizeAddress(minterAddress)) && (
                   <p className="text-sm text-red-600">Invalid Ethereum address</p>
                 )}
               </div>
@@ -411,7 +422,7 @@ const MinterApprovalComponent = () => {
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
-                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(sanitizeAddress(minterAddress)) || loading}
                   onClick={async () => {
                     try {
                       setLoading(true);
@@ -421,7 +432,7 @@ const MinterApprovalComponent = () => {
                         collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
                         provider
                       );
-                      const exempt = await contract.isRoyaltyEnforcementExempt(minterAddress);
+                      const exempt = await contract.isRoyaltyEnforcementExempt(sanitizeAddress(minterAddress));
                       toast.success(exempt ? 'Address is exempt from royalty enforcement' : 'Address is NOT exempt');
                     } catch (err) {
                       toast.error(`Failed to check exemption: ${extractRevertReason(err)}`);
@@ -435,7 +446,7 @@ const MinterApprovalComponent = () => {
 
                 <Button
                   className="bg-[#614E41] text-white hover:bg-[#4a3a30]"
-                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(sanitizeAddress(minterAddress)) || loading}
                   onClick={async () => {
                     try {
                       setLoading(true);
@@ -446,7 +457,7 @@ const MinterApprovalComponent = () => {
                         collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
                         signer
                       );
-                      const tx = await contract.setRoyaltyEnforcementExemption(minterAddress, true);
+                      const tx = await contract.setRoyaltyEnforcementExemption(sanitizeAddress(minterAddress), true);
                       await tx.wait();
                       toast.success('Exemption granted successfully');
                     } catch (err) {
@@ -461,7 +472,7 @@ const MinterApprovalComponent = () => {
 
                 <Button
                   variant="destructive"
-                  disabled={!fetchedCollection || !ethers.utils.isAddress(minterAddress) || loading}
+                  disabled={!fetchedCollection || !ethers.utils.isAddress(sanitizeAddress(minterAddress)) || loading}
                   onClick={async () => {
                     try {
                       setLoading(true);
@@ -472,7 +483,7 @@ const MinterApprovalComponent = () => {
                         collectionType === 'erc721' ? contractABIs.erc721Prize : contractABIs.erc1155Prize,
                         signer
                       );
-                      const tx = await contract.setRoyaltyEnforcementExemption(minterAddress, false);
+                      const tx = await contract.setRoyaltyEnforcementExemption(sanitizeAddress(minterAddress), false);
                       await tx.wait();
                       toast.success('Exemption revoked successfully');
                     } catch (err) {
@@ -505,7 +516,7 @@ const MinterApprovalComponent = () => {
               )}
             </div>
 
-            {minterAddress && validateAddress(minterAddress) && (
+              {minterAddress && validateAddress(sanitizeAddress(minterAddress)) && (
               <div className="space-y-2">
                 <Label>Current Status</Label>
                 <div className="flex items-center gap-2">
@@ -536,7 +547,7 @@ const MinterApprovalComponent = () => {
                 onClick={() => setMinterApproval(true)}
                 disabled={loading || isApproved || isLocked}
                 className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
+                title={!minterAddress ? "Please enter a minter address" : !validateAddress(sanitizeAddress(minterAddress)) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -549,7 +560,7 @@ const MinterApprovalComponent = () => {
                 onClick={() => setMinterApproval(false)}
                 disabled={loading || !isApproved || isLocked}
                 className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!minterAddress ? "Please enter a minter address" : !validateAddress(minterAddress) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
+                title={!minterAddress ? "Please enter a minter address" : !validateAddress(sanitizeAddress(minterAddress)) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

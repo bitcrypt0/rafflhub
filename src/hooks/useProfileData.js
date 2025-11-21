@@ -16,8 +16,8 @@ function mapPoolState(stateNum) {
     case 3: return 'drawing';
     case 4: return 'completed';
     case 5: return 'deleted';
-    case 6: return 'activationFailed';
-    case 7: return 'allPrizesClaimed';
+    case 6: return 'allPrizesClaimed';
+    case 7: return 'unengaged';
     case 8: return 'unengaged';
     default: return 'unknown';
   }
@@ -78,8 +78,8 @@ export const useProfileData = () => {
       case 3: return 'drawing';
       case 4: return 'completed';
       case 5: return 'deleted';
-      case 6: return 'activationFailed';
-      case 7: return 'allPrizesClaimed';
+      case 6: return 'allPrizesClaimed';
+      case 7: return 'unengaged';
       case 8: return 'unengaged';
       default: return 'unknown';
     }
