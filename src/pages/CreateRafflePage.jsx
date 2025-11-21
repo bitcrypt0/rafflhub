@@ -319,7 +319,7 @@ const WhitelistRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -898,7 +898,7 @@ const NewERC721DropForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1229,7 +1229,7 @@ function ExistingERC721DropForm() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             Create Raffle
           </Button>
@@ -1578,7 +1578,7 @@ function ExistingERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2102,7 +2102,7 @@ function LuckySaleERC721Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2469,7 +2469,7 @@ function LuckySaleERC1155Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2768,7 +2768,7 @@ function ETHGiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>

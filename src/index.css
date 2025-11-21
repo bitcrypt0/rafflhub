@@ -948,6 +948,7 @@
   .reveal-delay-3 { transition-delay: 360ms; }
   .hover-lift { transition: transform 200ms ease, box-shadow 200ms ease; }
   .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgb(0 0 0 / 0.08); }
+  button.force-pill { border-radius: 9999px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1066,4 +1067,3 @@ html.dim-blue .winner-text-highlight {
 html.light .beige-surface, .light .beige-surface {
   background-color: #F5E9DC !important;
 }
-

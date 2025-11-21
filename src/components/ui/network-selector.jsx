@@ -97,7 +97,7 @@ const NetworkSelector = () => {
   return (
     <div className="flex items-center gap-2">
       <Select value={chainId ? String(chainId) : ''} onValueChange={handleChange} disabled={pending}>
-        <SelectTrigger className="min-w-[160px] sm:min-w-[180px] header-accent-surface text-foreground">
+        <SelectTrigger className="min-w-[160px] sm:min-w-[180px] header-accent-surface text-foreground rounded-full">
           <SelectValue placeholder="Select Network" />
         </SelectTrigger>
         <SelectContent className="border-border">

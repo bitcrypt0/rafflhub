@@ -544,7 +544,7 @@ const HeaderModern = () => {
                       placeholder="Search raffles..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-10 bg-background/50 backdrop-blur-sm focus:ring-0 focus:border-border focus-visible:ring-0 focus-visible:border-border"
+                      className="pl-10 pr-10 bg-background/50 backdrop-blur-sm focus:ring-0 focus:border-border focus-visible:ring-0 focus-visible:border-border rounded-full"
                     />
                     <Button
                       variant="ghost"

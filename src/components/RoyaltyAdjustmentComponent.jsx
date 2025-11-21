@@ -359,7 +359,7 @@ const RoyaltyAdjustmentComponent = () => {
                 <button
                   onClick={handleReveal}
                   disabled={revealing || isRevealed || !collectionInfo.isOwner}
-                  className="px-4 py-2 h-10 bg-[#614E41] text-white rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                  className="px-4 py-2 h-10 bg-[#614E41] text-white rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
                   title={!collectionInfo.isOwner ? "Only collection owner can reveal" : isRevealed ? "Collection already revealed" : "Reveal collection"}
                 >
                   {revealing ? 'Revealing...' : 'Reveal Collection'}
@@ -411,7 +411,7 @@ const RoyaltyAdjustmentComponent = () => {
             <button
               onClick={handleUpdateRoyalty}
               disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
               title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !collectionData.royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
               <Settings className="h-4 w-4" />

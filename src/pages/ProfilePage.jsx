@@ -270,7 +270,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
             }
           }}
           disabled={!raffle.isCreator}
-          className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+          className="bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
           title={raffle.isCreator ? "Mint NFT to winner" : "Only raffle creator can mint to winner"}
         >
           Mint to Winner
@@ -805,4 +805,3 @@ const DesktopProfilePage = () => {
 };
 
 export default ProfilePage;
-

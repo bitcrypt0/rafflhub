@@ -17,8 +17,8 @@ export const getRaffleState = (stateNum) => {
     3: 'drawing',
     4: 'completed',
     5: 'deleted',
-    6: 'activation_failed',
-    7: 'all_prizes_claimed',
+    6: 'all_prizes_claimed',
+    7: 'unengaged',
     8: 'unengaged'
   };
   return stateMap[stateNum] || 'ended';

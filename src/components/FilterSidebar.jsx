@@ -106,8 +106,8 @@ const FilterSidebar = ({
       { value: 'drawing', label: 'Drawing', count: raffleCounts.raffleState.drawing || 0 },
       { value: 'completed', label: 'Completed', count: raffleCounts.raffleState.completed || 0 },
       { value: 'deleted', label: 'Deleted', count: raffleCounts.raffleState.deleted || 0 },
-      { value: 'activation_failed', label: 'Activation Failed', count: raffleCounts.raffleState.activation_failed || 0 },
-      { value: 'all_prizes_claimed', label: 'Prizes Claimed', count: raffleCounts.raffleState.all_prizes_claimed || 0 },
+      
+      { value: 'all_prizes_claimed', label: 'All Prizes Claimed', count: raffleCounts.raffleState.all_prizes_claimed || 0 },
       { value: 'unengaged', label: 'Unengaged', count: raffleCounts.raffleState.unengaged || 0 }
     ],
     raffleType: [
@@ -118,9 +118,8 @@ const FilterSidebar = ({
     ],
     prizeType: [
       { value: 'nft', label: 'NFT', count: raffleCounts.prizeType.nft || 0 },
-      { value: 'erc20', label: 'ERC20 Token', count: raffleCounts.prizeType.erc20 || 0 },
-      { value: 'native', label: getCurrencySymbol(), count: raffleCounts.prizeType.native || 0 },
-      { value: 'token_giveaway', label: 'Token Giveaway', count: raffleCounts.prizeType.token_giveaway || 0 }
+      { value: 'erc20', label: 'ERC20', count: raffleCounts.prizeType.erc20 || 0 },
+      { value: 'native', label: getCurrencySymbol(), count: raffleCounts.prizeType.native || 0 }
     ],
     prizeStandard: [
       { value: 'erc721', label: 'ERC721', count: raffleCounts.prizeStandard.erc721 || 0 },

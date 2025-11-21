@@ -837,7 +837,7 @@ const NewMobileProfilePage = () => {
                   <button
                     onClick={handleReveal}
                     disabled={state.revealing || !connected}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {state.revealing ? 'Revealing...' : 'Reveal Collection'}
                   </button>
@@ -881,7 +881,7 @@ const NewMobileProfilePage = () => {
                 <button
                   onClick={handleUpdateRoyalty}
                   disabled={state.loading || !connected || !state.collectionInfo || !state.collectionInfo.isOwner}
-                  className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+                  className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
                 >
                   <Settings className="h-4 w-4" />
                   {state.loading ? 'Updating...' : 'Update Royalty Settings'}
@@ -1347,7 +1347,7 @@ const NewMobileProfilePage = () => {
                   <button
                     onClick={toggleMinterApprovalLock}
                     disabled={state.loading || !connected}
-                    className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
                   </button>
@@ -1378,7 +1378,7 @@ const NewMobileProfilePage = () => {
               <button
                 onClick={() => setMinterApproval(true)}
                 disabled={state.loading || state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : state.isApproved ? "Address is already the minter" : state.isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {state.loading ? (
@@ -1392,7 +1392,7 @@ const NewMobileProfilePage = () => {
               <button
                 onClick={() => setMinterApproval(false)}
                 disabled={state.loading || !state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : !state.isApproved ? "Address is not currently the minter" : state.isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {state.loading ? (
@@ -1432,7 +1432,7 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-gray-100 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gray-100 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Check exemption
                 </button>
@@ -1457,7 +1457,7 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Grant Exemption
                 </button>
@@ -1482,7 +1482,7 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Revoke Exemption
                 </button>
@@ -1854,7 +1854,7 @@ const NewMobileProfilePage = () => {
             <button
               onClick={handleCreateNewToken}
               disabled={state.loading || !connected || !state.collectionInfo.isOwner || state.collectionInfo.isBlocked || !state.tokenCreationData.tokenId || !state.tokenCreationData.maxSupply}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Plus className="h-4 w-4" />
               {state.loading ? 'Creating...' : 'Create New Token ID'}
@@ -1896,7 +1896,7 @@ const NewMobileProfilePage = () => {
             <button
               onClick={handleSetTokenURI}
               disabled={state.loading || !connected || !state.collectionInfo.isOwner || state.collectionInfo.isBlocked || !state.uriData.tokenId || !state.uriData.tokenURI}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Search className="h-4 w-4" />
               {state.loading ? 'Setting...' : 'Set Token URI'}
@@ -2236,7 +2236,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={handleWithdrawRevenue}
             disabled={state.loading || !connected || !canWithdraw}
-            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <DollarSign className="h-4 w-4" />
             {state.loading ? 'Withdrawing...' : `Withdraw ${state.raffleData.revenueAmount} ${getCurrencySymbol()}`}
@@ -2318,7 +2318,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={handleCreatorMint}
             disabled={state.mintLoading || !connected || !state.mintData.collectionAddress || !state.mintData.recipient || !state.mintData.quantity || (state.mintData.collectionType === 'erc1155' && !state.mintData.tokenId)}
-            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <Plus className="h-4 w-4" />
             {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}
@@ -2360,7 +2360,7 @@ const NewMobileProfilePage = () => {
             </p>
             <button
               onClick={() => navigate('/create-raffle')}
-              className="bg-[#614E41] text-white px-6 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors"
+              className="bg-[#614E41] text-white px-6 py-2 rounded-full hover:bg-[#4a3a30] transition-colors"
             >
               Create Your First Raffle
             </button>

@@ -224,7 +224,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     // Custom fee pools: Only prized pools with refundable flag
     const isGlobalFeePool = !raffle.usesCustomFee;
     const isCustomFeeRefundable = (isPrized === true) || (isCollabPool === true) || raffle.isPrized || raffle.isCollabPool;
-    const refundableState = [4, 5, 7, 8].includes(raffle.stateNum); // Completed, Deleted, Prizes Claimed, Unengaged
+    const refundableState = [4, 5, 6, 8].includes(raffle.stateNum); // Completed, Deleted, AllPrizesClaimed, Unengaged
     
     return (
       (isGlobalFeePool || isCustomFeeRefundable) &&
@@ -307,7 +307,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <button
                       onClick={handleClaimPrize}
                       disabled={claimingPrize || !connected}
-                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
+                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {claimingPrize
                         ? (!isEscrowedPrize ? 'Minting...' : 'Claiming...')
@@ -318,7 +318,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <button
                       onClick={handleClaimRefund}
                       disabled={claimingRefund || !connected}
-                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
+                      className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {claimingRefund ? 'Claiming...' : 'Claim Refund'}
                     </button>
@@ -327,7 +327,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               ) : (
                 <button
                   disabled
-                  className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-full opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
                 </button>
@@ -341,7 +341,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               <button
                 onClick={handleActivateRaffle}
                 disabled={activating}
-                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {activating ? 'Activating...' : 'Activate Pool'}
               </button>
@@ -356,7 +356,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 <button
                   onClick={handleRequestRandomness}
                   disabled={requestingRandomness}
-                  className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
                 </button>
@@ -370,7 +370,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
             ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 6 || raffle.state === 'Deleted' || raffle.stateNum === 5) ? (
               <button
                 disabled
-                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-full opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </button>
@@ -378,21 +378,21 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               <button
                 onClick={handleEndRaffle}
                 disabled={endingRaffle}
-                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {endingRaffle ? 'Ending...' : 'End Pool'}
               </button>
             ) : maxPurchasable <= 0 ? (
               <button
                 disabled
-                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-full opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </button>
             ) : userSlots >= raffle.maxSlotsPerParticipant ? (
               <button
                 disabled
-                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-lg opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-muted text-muted-foreground px-6 py-3 rounded-full opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
               >
                 Limit Reached
               </button>
@@ -446,7 +446,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               <button
                 onClick={handlePurchase}
                 disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement)}
-                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 <Ticket className="h-4 w-4" />
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}
@@ -3083,7 +3083,7 @@ const RaffleDetailPage = () => {
   // Check winner status when raffle data changes
   useEffect(() => {
     const checkWinnerStatus = async () => {
-      if (!raffle || !address || ![4,5,7,8].includes(raffle.stateNum)) {
+      if (!raffle || !address || ![4,5,6,8].includes(raffle.stateNum)) {
         setIsWinner(false);
         setEligibleForRefund(false);
         setRefundableAmount(null);
@@ -3445,7 +3445,7 @@ const RaffleDetailPage = () => {
             {canDelete() && (
                 <Button
                 onClick={handleDeleteRaffle}
-                className="flex items-center gap-2 bg-[#614E41] text-white px-4 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors text-sm font-medium"
                 title={raffle.slotsSold > 0 ? "Delete pool (refunds will be processed automatically)" : "Delete this pool"}
                   disabled={deletingRaffle}
               >
@@ -3466,7 +3466,7 @@ const RaffleDetailPage = () => {
                 {!showMintInput ? (
                   <Button
                     onClick={() => setShowMintInput(true)}
-                    className="bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     Mint to Winner
                   </Button>
@@ -3483,7 +3483,7 @@ const RaffleDetailPage = () => {
                     <Button
                       onClick={handleMintToWinner}
                       disabled={mintingToWinner || !mintWinnerAddress || mintWinnerAddress.length !== 42}
-                      className="bg-[#614E41] text-white px-4 py-2 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
+                      className="bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50"
                     >
                       {mintingToWinner ? 'Minting...' : 'Submit'}
                     </Button>
@@ -3505,7 +3505,7 @@ const RaffleDetailPage = () => {
               raffle.stateNum === 7 && (
                 <Button
                   onClick={handleWithdrawPrize}
-                  className="sm:ml-2 bg-warning text-warning-foreground hover:bg-warning/90"
+                  className="sm:ml-2 bg-[#614E41] text-white hover:bg-[#4a3a30]"
                   disabled={withdrawingPrize}
                 >
                   {withdrawingPrize ? 'Withdrawing...' : 'Withdraw Prize'}
@@ -3538,7 +3538,7 @@ const RaffleDetailPage = () => {
                     }
                   }}
                   disabled={updatingVrfStatus}
-                  className="sm:ml-2 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="sm:ml-2 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {updatingVrfStatus ? 'Updating...' : 'Update VRF Status'}
                 </Button>

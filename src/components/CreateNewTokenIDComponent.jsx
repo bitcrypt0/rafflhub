@@ -354,7 +354,7 @@ const CreateNewTokenIDComponent = () => {
             <button
               onClick={handleCreateNewToken}
               disabled={loading || !connected || !collectionInfo.isOwner || collectionInfo.isBlocked || !tokenCreationData.tokenId || !tokenCreationData.maxSupply}
-              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
+              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can create new tokens" : !tokenCreationData.tokenId || !tokenCreationData.maxSupply ? "Please fill in all required fields" : "Create new token ID"}
             >
               {loading ? 'Creating...' : 'Create New Token ID'}
@@ -400,7 +400,7 @@ const CreateNewTokenIDComponent = () => {
             <button
               onClick={handleSetTokenURI}
               disabled={loading || !connected || !collectionInfo.isOwner || collectionInfo.isBlocked || !uriData.tokenId || !uriData.tokenURI}
-              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
+              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can set URIs" : !uriData.tokenId || !uriData.tokenURI ? "Please fill in all required fields" : "Set token URI"}
             >
               {loading ? 'Setting...' : 'Set Token URI'}
