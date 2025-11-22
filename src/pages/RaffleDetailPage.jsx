@@ -1465,15 +1465,15 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                   <div className="text-sm font-medium text-muted-foreground mb-2">Participation Details</div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="space-y-0.5">
-                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Tickets Purchased</span>
+                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Slots Purchased</span>
                       <div className="font-semibold text-base">{stats.ticketsPurchased}</div>
                     </div>
                     <div className="space-y-0.5">
-                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Winning Tickets</span>
+                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Winning Slots</span>
                       <div className="font-semibold text-base text-green-600">{stats.winningTickets}</div>
                     </div>
                     <div className="space-y-0.5">
-                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Losing Tickets</span>
+                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Losing Slots</span>
                       <div className="font-semibold text-base text-red-600">{stats.losingTickets}</div>
                     </div>
                     <div className="space-y-0.5">
@@ -3773,10 +3773,6 @@ const RaffleDetailPage = () => {
                     return formatDuration(displaySeconds);
                   })()}
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">End Time:</span>
-                <span>{formatSlotFee(raffle.slotFee)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Participants:</span>
