@@ -245,7 +245,7 @@ const VestingConfigurationComponent = () => {
       }
     } catch (error) {
       console.error('Error configuring vesting:', error);
-      toast.error(`Failed to configure vesting: ${error.message}`);
+      notifyError(error, { action: 'configureVesting' });
     } finally {
       setConfiguring(false);
     }

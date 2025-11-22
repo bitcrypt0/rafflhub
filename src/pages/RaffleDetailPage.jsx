@@ -14,6 +14,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
+import { notifyError } from '../utils/notificationService';
 import { PageLoading, ContentLoading } from '../components/ui/loading';
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
@@ -127,7 +128,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'purchase tickets');
       logContractError(error, 'Purchase Tickets', { quantity });
-      toast.error(errorDetails.message);
+      notifyError(error, { action: 'purchaseSlots' });
     } finally {
       setLoading(false);
     }
@@ -149,6 +150,13 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      // Preflight simulate to surface revert reason
+      try {
+        await poolContract.callStatic.activate();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'activatePool', phase: 'preflight' });
+        throw simErr;
+      }
       const result = await executeTransaction(poolContract.activate);
       if (result.success) {
         toast.success('Pool activated successfully!');
@@ -162,7 +170,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     } catch (err) {
       const errorDetails = formatErrorForDisplay(err, 'activate raffle');
       logContractError(err, 'Activate Raffle');
-      toast.error(errorDetails.message);
+      notifyError(err, { action: 'activatePool' });
     } finally {
       setActivating(false);
     }
@@ -173,6 +181,13 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      // Preflight simulate to surface revert reason
+      try {
+        await poolContract.callStatic.requestRandomWords();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'requestRandomness', phase: 'preflight' });
+        throw simErr;
+      }
       const result = await executeTransaction(poolContract.requestRandomWords);
       if (result.success) {
         toast.success('Randomness requested successfully!');
@@ -186,6 +201,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'request randomness');
       logContractError(error, 'Request Randomness');
+      notifyError(error, { action: 'requestRandomness' });
     } finally {
       setRequestingRandomness(false);
     }
@@ -2194,6 +2210,13 @@ const RaffleDetailPage = () => {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
       if (!mintWinnerAddress || mintWinnerAddress.length !== 42) throw new Error('Please enter a valid address');
+      // Preflight to surface revert reason
+      try {
+        await poolContract.callStatic.mintToWinner(mintWinnerAddress);
+      } catch (simErr) {
+        notifyError(simErr, { action: 'mintToWinner', phase: 'preflight' });
+        throw simErr;
+      }
       const result = await executeTransaction(() => poolContract.mintToWinner(mintWinnerAddress));
       if (result.success) {
         toast.success('mintToWinner() executed successfully!');
@@ -2202,22 +2225,12 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (err) {
-      // Use enhanced error handler for mintToWinner
       const errorDetails = logContractError(err, 'mint prize to winner', {
         raffleAddress: raffle.address,
         winnerAddress: mintWinnerAddress,
         prizeType: raffle.standard
       });
-      
-      // Show user-friendly error message
-      toast.error(errorDetails.message);
-      
-      // Show suggested action if available
-      if (errorDetails.suggestedAction) {
-        setTimeout(() => {
-          toast.info(errorDetails.suggestedAction);
-        }, 500);
-      }
+      notifyError(err, { action: 'mintToWinner' });
     } finally {
       setMintingToWinner(false);
     }
@@ -2812,7 +2825,7 @@ const RaffleDetailPage = () => {
     } catch (e) {
       const errorDetails = formatErrorForDisplay(e, 'approve ERC1155');
       logContractError(e, 'Approve ERC1155');
-      toast.error(errorDetails.message);
+      notifyError(e, { action: 'approveERC1155' });
     } finally {
       setApproving(false);
     }
@@ -2867,7 +2880,7 @@ const RaffleDetailPage = () => {
     } catch (e) {
       const errorDetails = formatErrorForDisplay(e, 'approve ERC20');
       logContractError(e, 'Approve ERC20');
-      toast.error(errorDetails.message);
+      notifyError(e, { action: 'approveERC20' });
     } finally {
       setApprovingERC20(false);
     }
@@ -2927,7 +2940,7 @@ const RaffleDetailPage = () => {
     } catch (e) {
       const errorDetails = formatErrorForDisplay(e, 'approve ERC721');
       logContractError(e, 'Approve ERC721');
-      toast.error(errorDetails.message);
+      notifyError(e, { action: 'approveERC721' });
     } finally {
       setApprovingERC721(false);
     }
@@ -3011,6 +3024,13 @@ const RaffleDetailPage = () => {
         throw new Error('Contract instance not available');
       }
 
+      // Preflight simulate to capture revert reason
+      try {
+        await poolContract.callStatic.deletePool();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'deletePool', phase: 'preflight' });
+        throw simErr;
+      }
       const tx = await poolContract.deletePool();
       await tx.wait();
 
@@ -3019,7 +3039,7 @@ const RaffleDetailPage = () => {
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'delete raffle');
       logContractError(error, 'Delete Raffle');
-      toast.error(errorDetails.message);
+      notifyError(error, { action: 'deletePool' });
     } finally {
       setDeletingRaffle(false);
     }
@@ -3070,13 +3090,20 @@ const RaffleDetailPage = () => {
     setWithdrawingPrize(true);
     try {
       const contract = getContractInstance(raffleAddress, 'pool');
+      // Preflight simulate to capture revert reason even if RPC hides it during gas estimation
+      try {
+        await contract.callStatic.withdrawEscrowedPrize();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'withdrawPrize', phase: 'preflight' });
+        throw simErr;
+      }
       const tx = await contract.withdrawEscrowedPrize();
       await tx.wait();
       toast.success('Prize withdrawn successfully!');
     } catch (e) {
       const errorDetails = formatErrorForDisplay(e, 'withdraw prize');
       logContractError(e, 'Withdraw Prize');
-      toast.error(errorDetails.message);
+      notifyError(e, { action: 'withdrawPrize' });
     } finally {
       setWithdrawingPrize(false);
     }
@@ -3264,6 +3291,13 @@ const RaffleDetailPage = () => {
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      // Preflight simulate to capture revert reason
+      try {
+        await poolContract.callStatic.claimPrize();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'claimPrize', phase: 'preflight' });
+        throw simErr;
+      }
       const result = await executeTransaction(poolContract.claimPrize);
       if (result.success) {
         let prizeType = 'prize';
@@ -3280,22 +3314,12 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (error) {
-      // Use enhanced error handler for better UX
       const errorDetails = logContractError(error, 'claim prize', {
         raffleAddress: raffle.address,
         userAddress: address,
         prizeType: raffle.standard
       });
-      
-      // Show user-friendly error message
-      toast.error(errorDetails.message);
-      
-      // Show suggested action if available
-      if (errorDetails.suggestedAction) {
-        setTimeout(() => {
-          toast.info(errorDetails.suggestedAction);
-        }, 500);
-      }
+      notifyError(error, { action: 'claimPrize' });
     } finally {
       setClaimingPrize(false);
     }
@@ -3310,6 +3334,13 @@ const RaffleDetailPage = () => {
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      // Preflight simulate to surface revert reason
+      try {
+        await poolContract.callStatic.claimRefund();
+      } catch (simErr) {
+        notifyError(simErr, { action: 'claimRefund', phase: 'preflight' });
+        throw simErr;
+      }
       const result = await executeTransaction(poolContract.claimRefund);
       if (result.success) {
         toast.success('Successfully claimed your refund!');
@@ -3321,7 +3352,7 @@ const RaffleDetailPage = () => {
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'claim refund');
       logContractError(error, 'Claim Refund');
-      toast.error(errorDetails.message);
+      notifyError(error, { action: 'claimRefund' });
     } finally {
       setClaimingRefund(false);
     }
@@ -3566,7 +3597,7 @@ const RaffleDetailPage = () => {
                     } catch (err) {
                       const errorDetails = formatErrorForDisplay(err, 'update VRF status');
                       logContractError(err, 'Update VRF Status');
-                      toast.error(errorDetails.message);
+                      notifyError(err, { action: 'updateVRFStatus' });
                     } finally {
                       setUpdatingVrfStatus(false);
                     }

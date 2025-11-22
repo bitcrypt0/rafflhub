@@ -11,6 +11,7 @@ import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { notifyError } from '../../utils/notificationService';
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
@@ -401,7 +402,7 @@ const NewMobileProfilePage = () => {
             </div>
           </button>
 
-          {/* Creator Token Vesting */}
+          {/* Configure Creator Allocation Vesting */}
           <button
             onClick={() => setActiveDashboardComponent('vesting')}
             data-dashboard-card
@@ -410,7 +411,7 @@ const NewMobileProfilePage = () => {
             <div className="flex items-center gap-3">
               <Lock className="h-5 w-5 text-primary" />
               <div>
-                <div className="font-medium">Creator Token Vesting</div>
+                <div className="font-medium">Configure Creator Allocation Vesting</div>
                 <div className="text-sm text-muted-foreground">Configure vesting schedules for creator token allocations</div>
               </div>
             </div>
@@ -692,7 +693,7 @@ const NewMobileProfilePage = () => {
         console.log('royalty.load.success');
       } catch (error) {
         console.error('royalty.load.error', error);
-        toast.error('Error loading collection info: ' + error.message);
+        notifyError(error, { action: 'loadCollectionInfoMobile' });
         updateRoyaltyState({ collectionInfo: null, isRevealed: null });
       } finally {
         updateRoyaltyState({ loadingInfo: false });
@@ -747,6 +748,7 @@ const NewMobileProfilePage = () => {
         }
       } catch (error) {
         console.error('Error updating royalty:', error);
+        notifyError(error, { action: 'updateRoyaltyMobile' });
       } finally {
         updateRoyaltyState({ loading: false });
       }
@@ -772,6 +774,7 @@ const NewMobileProfilePage = () => {
           throw new Error(result.error);
         }
       } catch (error) {
+        notifyError(error, { action: 'revealCollectionMobile' });
       } finally {
         updateRoyaltyState({ revealing: false });
       }
@@ -915,7 +918,7 @@ const NewMobileProfilePage = () => {
           <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
           </Button>
-          <h2 className="text-xl font-semibold">Creator Token Vesting</h2>
+          <h2 className="text-xl font-semibold">Configure Creator Allocation Vesting</h2>
         </div>
         <VestingConfigurationComponent />
       </div>
@@ -1170,7 +1173,7 @@ const NewMobileProfilePage = () => {
         });
 
       } catch (err) {
-        toast.error(`Failed to set minter approval: ${extractRevertReason(err)}`);
+        notifyError(err, { action: 'setMinterApprovalMobile' });
       } finally {
         updateMinterState({ loading: false });
       }
@@ -1214,7 +1217,7 @@ const NewMobileProfilePage = () => {
             return;
           }
         } catch (e) {
-          toast.error('Failed to get contract owner');
+          notifyError(e, { action: 'getOwnerMobile' });
           updateMinterState({ loading: false });
           return;
         }
@@ -1255,7 +1258,7 @@ const NewMobileProfilePage = () => {
 
       } catch (err) {
         console.error('Error in toggleMinterApprovalLock:', err);
-        toast.error(`Failed to ${state.isLocked ? 'unlock' : 'lock'} minter approval: ${extractRevertReason(err)}`);
+        notifyError(err, { action: state.isLocked ? 'unlockMinterApprovalMobile' : 'lockMinterApprovalMobile' });
       } finally {
         updateMinterState({ loading: false });
       }
@@ -1445,10 +1448,10 @@ const NewMobileProfilePage = () => {
                       const exempt = await contract.isRoyaltyEnforcementExempt(state.minterAddress);
                       toast.success(exempt ? 'Address is exempt from royalty enforcement' : 'Address is NOT exempt');
                     } catch (err) {
-                      toast.error(`Failed to check exemption: ${extractRevertReason(err)}`);
-                    } finally {
-                      updateMinterState({ loading: false });
-                    }
+                      notifyError(err, { action: 'checkExemptionMobile' });
+                      } finally {
+                        updateMinterState({ loading: false });
+                      }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
                   variant="primary"
@@ -1472,7 +1475,7 @@ const NewMobileProfilePage = () => {
                       await tx.wait();
                       toast.success('Exemption granted successfully');
                     } catch (err) {
-                      toast.error(`Failed to grant exemption: ${extractRevertReason(err)}`);
+                      notifyError(err, { action: 'grantExemptionMobile' });
                     } finally {
                       updateMinterState({ loading: false });
                     }
@@ -1499,7 +1502,7 @@ const NewMobileProfilePage = () => {
                       await tx.wait();
                       toast.success('Exemption revoked successfully');
                     } catch (err) {
-                      toast.error(`Failed to revoke exemption: ${extractRevertReason(err)}`);
+                      notifyError(err, { action: 'revokeExemptionMobile' });
                     } finally {
                       updateMinterState({ loading: false });
                     }
@@ -2006,7 +2009,7 @@ const NewMobileProfilePage = () => {
 
       } catch (error) {
         console.error('Error loading raffle info:', error);
-        toast.error('Error loading raffle info: ' + error.message);
+        notifyError(error, { action: 'loadRaffleInfoMobile' });
         updateRevenueState({
           raffleData: {
             address: raffleAddress,
@@ -2057,7 +2060,7 @@ const NewMobileProfilePage = () => {
         }
       } catch (error) {
         console.error('Error withdrawing revenue:', error);
-        toast.error('Error withdrawing revenue: ' + error.message);
+        notifyError(error, { action: 'withdrawRevenueMobile' });
       } finally {
         updateRevenueState({ loading: false });
       }
@@ -2135,7 +2138,7 @@ const NewMobileProfilePage = () => {
         }
       } catch (error) {
         console.error('Error minting tokens:', error);
-        toast.error('Error minting tokens: ' + error.message);
+        notifyError(error, { action: 'creatorMintMobile' });
       } finally {
         updateRevenueState({ mintLoading: false });
       }

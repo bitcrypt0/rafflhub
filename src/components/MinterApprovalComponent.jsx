@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from './ui/sonner';
 import { extractRevertReason } from '../utils/errorHandling';
+import { notifyError } from '../utils/notificationService';
 import { LoadingSpinner } from './ui/loading';
 
 import { Label } from './ui/label';
@@ -220,7 +221,7 @@ const MinterApprovalComponent = () => {
       setIsApproved(approved);
       setMinterAddress('');
     } catch (err) {
-      toast.error(`Failed to set minter approval: ${extractRevertReason(err)}`);
+      notifyError(err, { action: 'setMinterApproval' });
     } finally {
       setLoading(false);
     }
@@ -296,7 +297,7 @@ const MinterApprovalComponent = () => {
       setIsLocked(!isLocked);
     } catch (err) {
       console.error('Error in toggleMinterApprovalLock:', err);
-      toast.error(`Failed to ${isLocked ? 'unlock' : 'lock'} minter approval: ${extractRevertReason(err)}`);
+      notifyError(err, { action: isLocked ? 'unlockMinterApproval' : 'lockMinterApproval' });
     } finally {
       setLoading(false);
     }
@@ -435,10 +436,10 @@ const MinterApprovalComponent = () => {
                       const exempt = await contract.isRoyaltyEnforcementExempt(sanitizeAddress(minterAddress));
                       toast.success(exempt ? 'Address is exempt from royalty enforcement' : 'Address is NOT exempt');
                     } catch (err) {
-                      toast.error(`Failed to check exemption: ${extractRevertReason(err)}`);
-                    } finally {
-                      setLoading(false);
-                    }
+                      notifyError(err, { action: 'checkExemption' });
+                      } finally {
+                        setLoading(false);
+                      }
                   }}
                 >
                   Check exemption
@@ -462,7 +463,7 @@ const MinterApprovalComponent = () => {
                       await tx.wait();
                       toast.success('Exemption granted successfully');
                     } catch (err) {
-                      toast.error(`Failed to grant exemption: ${extractRevertReason(err)}`);
+                      notifyError(err, { action: 'grantExemption' });
                     } finally {
                       setLoading(false);
                     }
@@ -488,7 +489,7 @@ const MinterApprovalComponent = () => {
                       await tx.wait();
                       toast.success('Exemption revoked successfully');
                     } catch (err) {
-                      toast.error(`Failed to revoke exemption: ${extractRevertReason(err)}`);
+                      notifyError(err, { action: 'revokeExemption' });
                     } finally {
                       setLoading(false);
                     }

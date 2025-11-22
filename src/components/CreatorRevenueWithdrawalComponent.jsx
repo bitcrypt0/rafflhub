@@ -8,6 +8,7 @@ import { ResponsiveAddressInput } from './ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { LoadingSpinner } from './ui/loading';
+import { notifyError } from '../utils/notificationService';
 import { Button } from './ui/button';
 
 const CreatorRevenueWithdrawalComponent = () => {
@@ -240,7 +241,7 @@ const CreatorRevenueWithdrawalComponent = () => {
       }
     } catch (error) {
       console.error('Error minting tokens:', error);
-      toast.error('Error minting tokens: ' + error.message);
+      notifyError(error, { action: 'creatorMint' });
     } finally {
       setMintLoading(false);
     }
@@ -372,7 +373,7 @@ const CreatorRevenueWithdrawalComponent = () => {
       }
     } catch (error) {
       console.error('Error withdrawing revenue:', error);
-      toast.error('Error withdrawing revenue: ' + error.message);
+      notifyError(error, { action: 'withdrawRevenue' });
     } finally {
       setLoading(false);
     }
@@ -679,4 +680,3 @@ const CreatorRevenueWithdrawalComponent = () => {
 };
 
 export default CreatorRevenueWithdrawalComponent;
-
