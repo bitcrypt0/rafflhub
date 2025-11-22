@@ -9,3 +9,4 @@ generate-error-selectors.js
 .env.local
 setup-supabase.ps1
 .trae/
+extras/

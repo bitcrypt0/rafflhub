@@ -6,6 +6,7 @@ import ERC721PrizeABI from './ERC721Prize.min.abi.json';
 import ERC1155PrizeABI from './ERC1155Prize.min.abi.json';
 import PoolABI from './Pool.min.abi.json';
 import SocialEngagementManagerABI from './SocialEngagementManager.min.abi.json';
+import KOLApprovalABI from './KOLApproval.json';
 
 const ERC20ABI = [
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -21,8 +22,8 @@ export const contractABIs = {
   erc721Prize: ERC721PrizeABI,
   erc1155Prize: ERC1155PrizeABI,
   socialEngagementManager: SocialEngagementManagerABI,
+  kolApproval: KOLApprovalABI,
   pool: PoolABI,
   erc20: ERC20ABI
 };
-
 

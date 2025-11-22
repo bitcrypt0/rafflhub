@@ -41,7 +41,7 @@ const VestingConfigurationComponent = () => {
 
     setLoading(true);
     try {
-      // Try ERC721 first
+      // Try ERC721 first; if not, switch to ERC1155 explicitly
       let contract = getContractInstance(addressToFetch, 'erc721Prize');
       let isERC721Contract = false;
 
@@ -49,9 +49,10 @@ const VestingConfigurationComponent = () => {
         const supportsERC721 = await contract.supportsInterface('0x80ac58cd');
         if (supportsERC721) {
           isERC721Contract = true;
+        } else {
+          contract = getContractInstance(addressToFetch, 'erc1155Prize');
         }
       } catch (e) {
-        // Not ERC721, try ERC1155
         contract = getContractInstance(addressToFetch, 'erc1155Prize');
       }
 

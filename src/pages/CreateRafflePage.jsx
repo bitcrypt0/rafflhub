@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { toast } from '../components/ui/sonner';
+import { notifyError } from '../utils/notificationService';
 import { contractABIs } from '../contracts/contractABIs';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import TokenGatedSection from '../components/TokenGatedSection';
@@ -88,7 +89,7 @@ const WhitelistRaffleForm = () => {
         isPrized: false,
         customSlotFee: 0,
         erc721Drop: false,
-        erc1155Drop: false,
+        erc1155Drop: true,
         prizeCollection: ethers.constants.AddressZero,
         standard: 0,
         prizeTokenId: 0,
@@ -319,7 +320,9 @@ const WhitelistRaffleForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -523,7 +526,7 @@ const NewERC721DropForm = () => {
         isPrized: true,
         customSlotFee: customSlotFee,
         erc721Drop: false,
-        erc1155Drop: false,
+        erc1155Drop: true,
         prizeCollection: ethers.constants.AddressZero,
         standard: 0, // ERC721
         prizeTokenId: 0,
@@ -623,7 +626,7 @@ const NewERC721DropForm = () => {
         });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      toast.error(extractRevertReason(error));
+      notifyError(error, { action: 'createPool' });
     } finally {
       setLoading(false);
     }
@@ -898,7 +901,9 @@ const NewERC721DropForm = () => {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -1229,9 +1234,12 @@ function ExistingERC721DropForm() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            disabled={loading || !connected}
+            variant="primary"
+            size="lg"
+            className="flex-1"
           >
-            Create Raffle
+            {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
         </div>
       </form>
@@ -1257,7 +1265,7 @@ function ExistingERC1155DropForm() {
     duration: '',
     slotLimit: '',
     winnersCount: '',
-    maxTicketsPerParticipant: '',
+    maxSlotsPerParticipant: '',
     slotFee: '',
     // Token-gated fields
     tokenGatedEnabled: false,
@@ -1291,18 +1299,18 @@ function ExistingERC1155DropForm() {
       const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
-      const slotFee = formData.slotFee ? ethers.utils.parseEther(formData.slotFee) : 0;
+      const slotFee = formData.slotFee && formData.slotFee !== '' ? ethers.utils.parseEther(String(formData.slotFee)) : 0;
       const params = {
         name: formData.name,
         startTime,
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
         isPrized: true,
         customSlotFee: slotFee,
         erc721Drop: false,
-        erc1155Drop: false,
+        erc1155Drop: true,
         prizeCollection: formData.collectionAddress,
         standard: 1, // ERC1155
         prizeTokenId: parseInt(formData.tokenId),
@@ -1321,11 +1329,11 @@ function ExistingERC1155DropForm() {
         unrevealedBaseURI: '',
         revealTime: 0,
         // Token-gated params
-        holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
+        holderTokenAddress: formData.tokenGatedEnabled ? (formData.holderTokenAddress || ethers.constants.AddressZero) : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
-        holderTokenBalance: formData.tokenGatedEnabled ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.utils.parseUnits(String(formData.minHolderTokenBalance), 18) : 0,
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.utils.parseUnits(String(formData.minHolderTokenBalance), 18) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && formData.holderTokenId !== '' ? parseInt(formData.holderTokenId) : 0,
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
         socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
@@ -1355,7 +1363,7 @@ function ExistingERC1155DropForm() {
         duration: '',
         slotLimit: '',
         winnersCount: '',
-        maxTicketsPerParticipant: '',
+        maxSlotsPerParticipant: '',
         slotFee: '',
         tokenGatedEnabled: false,
         holderTokenAddress: '',
@@ -1365,7 +1373,7 @@ function ExistingERC1155DropForm() {
       });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      toast.error(error.message || 'Error creating raffle');
+      notifyError(error, { action: 'createPool' });
     } finally {
       setLoading(false);
     }
@@ -1578,7 +1586,9 @@ function ExistingERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2102,7 +2112,9 @@ function LuckySaleERC721Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2469,7 +2481,9 @@ function LuckySaleERC1155Form() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -2768,7 +2782,9 @@ function ETHGiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -3125,7 +3141,9 @@ function ERC20GiveawayForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
           </Button>
@@ -3385,7 +3403,7 @@ function NewERC1155DropForm() {
       });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      toast.error(error.message || 'Error creating raffle');
+      notifyError(error, { action: 'createPool' });
     } finally {
       setLoading(false);
     }
@@ -3654,7 +3672,9 @@ function NewERC1155DropForm() {
           <Button
             type="submit"
             disabled={loading || !connected}
-            className="flex-1 bg-[#614E41] text-white px-6 py-3 rounded-lg hover:bg-[#4a3a30] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            variant="primary"
+            size="lg"
+            className="flex-1 text-base h-12"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>

@@ -10,6 +10,7 @@ import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
@@ -298,7 +299,7 @@ const NewMobileProfilePage = () => {
         {userActivity.slice(0, 10).map((activity, index) => (
           <div
             key={activity.id || index}
-            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card border border-border rounded-lg p-4 hover:bg-card/90 transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 mt-1">
@@ -321,20 +322,14 @@ const NewMobileProfilePage = () => {
                 </div>
 
                 <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => handleRaffleClick(activity.raffleAddress)}
-                    className="text-sm bg-[#614E41] text-white px-3 py-1.5 rounded-md hover:bg-[#4a3a30] transition-colors"
-                  >
-                    View Pool
-                  </button>
-
                   {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
-                    <button
+                    <Button
                       onClick={() => claimRefund(activity.raffleAddress)}
-                      className="text-sm bg-green-500/10 text-green-600 px-3 py-1.5 rounded-md hover:bg-green-500/20 transition-colors"
+                      variant="primary"
+                      size="sm"
                     >
                       Claim Refund
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -364,21 +359,21 @@ const NewMobileProfilePage = () => {
 
         {/* Creator Stats - Match Desktop Calculations Exactly */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.length}</div>
             <div className="text-sm text-muted-foreground">Total Raffles</div>
           </div>
-          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.filter(r => r.state === 'active').length}</div>
             <div className="text-sm text-muted-foreground">Active Raffles</div>
           </div>
-          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">
               {formatRevenueAmount(activityStats.withdrawableRevenue || '0')}
             </div>
             <div className="text-sm text-muted-foreground">Total Revenue</div>
           </div>
-          <div className="bg-card beige-surface border border-[#614E41] rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">
               {createdRaffles.length > 0 ?
                 Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0}%
@@ -395,7 +390,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('royalty')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Settings className="h-5 w-5 text-primary" />
@@ -410,7 +405,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('vesting')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Lock className="h-5 w-5 text-primary" />
@@ -425,7 +420,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('minter')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <UserPlus className="h-5 w-5 text-primary" />
@@ -440,7 +435,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('kol')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
@@ -455,7 +450,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('tokenCreator')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <Plus className="h-5 w-5 text-primary" />
@@ -470,7 +465,7 @@ const NewMobileProfilePage = () => {
           <button
             onClick={() => setActiveDashboardComponent('revenue')}
             data-dashboard-card
-            className="w-full bg-card beige-surface border border-[#614E41] rounded-lg p-4 text-left hover:bg-muted/30 transition-colors"
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
           >
             <div className="flex items-center gap-3">
               <DollarSign className="h-5 w-5 text-primary" />
@@ -519,23 +514,34 @@ const NewMobileProfilePage = () => {
     };
 
     const handleChange = (field, value) => {
-      updateRoyaltyState({
-        collectionData: { ...state.collectionData, [field]: value }
-      });
-      
-      // Auto-fetch when address changes
-      if (field === 'address' && value && ethers.utils.isAddress(value) && connected && !state.loadingInfo) {
-        setTimeout(() => {
-          if (!state.loadingInfo) {
-            loadCollectionInfo();
-          }
-        }, 450);
+      const next = { ...state.collectionData, [field]: value };
+      updateRoyaltyState({ collectionData: next });
+      if (field === 'address') {
+        const addr = (value || '').trim();
+        console.log('royalty.handleChange.address', { addr, connected, hasProvider: !!provider, loadingInfo: state.loadingInfo });
+        if (ethers.utils.isAddress(addr) && !state.loadingInfo) {
+          console.log('royalty.handleChange.scheduleLoad', { delayMs: 400 });
+          setTimeout(() => {
+            console.log('royalty.handleChange.invokeLoad', { invokedAddr: addr, loadingInfo: state.loadingInfo });
+            if (!state.loadingInfo) {
+              loadCollectionInfo(addr);
+            }
+          }, 400);
+        }
       }
     };
 
-    const loadCollectionInfo = async () => {
-      if (!state.collectionData.address || !connected) {
-        toast.error('Please enter a collection address and connect your wallet');
+    const loadCollectionInfo = async (addrOverride) => {
+      const addr = ((addrOverride ?? state.collectionData.address) || '').trim();
+      console.log('royalty.load.start', { addr, connected, hasProvider: !!provider });
+      if (!ethers.utils.isAddress(addr)) {
+        console.warn('royalty.load.invalidAddress', { addr });
+        toast.error('Please enter a valid collection address');
+        return;
+      }
+      if (!provider) {
+        console.warn('royalty.load.noProvider');
+        toast.error('Provider not available. Please connect your wallet');
         return;
       }
 
@@ -547,12 +553,13 @@ const NewMobileProfilePage = () => {
 
         // Try ERC721 first
         try {
-          const erc721Contract = getContractInstance(state.collectionData.address, 'erc721Prize');
+          const erc721Contract = getContractInstance(addr, 'erc721Prize');
           if (erc721Contract) {
             // Test if it's actually ERC721 using proper detection methods
             try {
               // Check if it supports ERC721 interface
-              const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd'); // ERC721 interface ID
+              const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd');
+              console.log('royalty.detect.erc721.supports', { supportsERC721 });
               if (supportsERC721) {
                 contract = erc721Contract;
                 detectedType = 'erc721';
@@ -561,27 +568,31 @@ const NewMobileProfilePage = () => {
               // Try alternative method - check for ERC721-specific function
               try {
                 // Try calling balanceOf with one parameter (address) - ERC721 specific
-                await erc721Contract.balanceOf(state.collectionData.address);
+                await erc721Contract.balanceOf(addr);
+                console.log('royalty.detect.erc721.balanceOf.success');
                 contract = erc721Contract;
                 detectedType = 'erc721';
               } catch (e2) {
                 // Not ERC721
+                console.log('royalty.detect.erc721.balanceOf.fail', { error: e2?.message });
               }
             }
           }
         } catch (error) {
           // ERC721 failed, continue to ERC1155
+          console.log('royalty.detect.erc721.error', { error: error?.message });
         }
 
         // If ERC721 failed, try ERC1155
         if (!contract) {
           try {
-            const erc1155Contract = getContractInstance(state.collectionData.address, 'erc1155Prize');
+            const erc1155Contract = getContractInstance(addr, 'erc1155Prize');
             if (erc1155Contract) {
               // Test if it's actually ERC1155 using proper detection methods
               try {
                 // Check if it supports ERC1155 interface
-                const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26'); // ERC1155 interface ID
+                const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26');
+                console.log('royalty.detect.erc1155.supports', { supportsERC1155 });
                 if (supportsERC1155) {
                   contract = erc1155Contract;
                   detectedType = 'erc1155';
@@ -591,15 +602,18 @@ const NewMobileProfilePage = () => {
                 try {
                   // Try calling uri(0) - ERC1155 specific
                   await erc1155Contract.uri(0);
+                  console.log('royalty.detect.erc1155.uri.success');
                   contract = erc1155Contract;
                   detectedType = 'erc1155';
                 } catch (e2) {
                   // Not ERC1155
+                  console.log('royalty.detect.erc1155.uri.fail', { error: e2?.message });
                 }
               }
             }
           } catch (error) {
             // Neither worked
+            console.log('royalty.detect.erc1155.error', { error: error?.message });
           }
         }
 
@@ -608,6 +622,7 @@ const NewMobileProfilePage = () => {
         }
 
         // Update the collection type in state
+        console.log('royalty.detect.done', { detectedType });
         updateRoyaltyState({
           collectionData: { ...state.collectionData, type: detectedType }
         });
@@ -621,25 +636,19 @@ const NewMobileProfilePage = () => {
           if (typeof contract.name === 'function') {
             name = await contract.name();
           }
-        } catch (e) {
-          // name() not available or failed
-        }
+        } catch (e) {}
 
         try {
           if (typeof contract.symbol === 'function') {
             symbol = await contract.symbol();
           }
-        } catch (e) {
-          // symbol() not available or failed
-        }
+        } catch (e) {}
 
         try {
           if (typeof contract.owner === 'function') {
             owner = await contract.owner();
           }
-        } catch (e) {
-          // owner() not available or failed
-        }
+        } catch (e) {}
 
         const isOwner = owner !== 'Unknown' && owner.toLowerCase() === address.toLowerCase();
 
@@ -650,7 +659,7 @@ const NewMobileProfilePage = () => {
 
         updateRoyaltyState({
           collectionInfo: {
-            address: state.collectionData.address,
+            address: addr,
             name,
             symbol,
             owner,
@@ -667,25 +676,27 @@ const NewMobileProfilePage = () => {
             royaltyRecipient: royaltyRecipient
           }
         });
+        console.log('royalty.load.info', { name, symbol, owner, isOwner, royaltyPercentage: royaltyPercentage.toString(), royaltyRecipient });
 
         // Check revealed status - match desktop implementation
         try {
-          // Use isRevealed() function (bool) - matches desktop
           const revealed = await contract.isRevealed();
           updateRoyaltyState({ isRevealed: !!revealed });
+          console.log('royalty.load.revealed', { revealed: !!revealed });
         } catch (e) {
-          // If isRevealed() does not exist, fallback to null
-          console.log('Could not fetch reveal status:', e.message);
+          console.log('royalty.load.revealed.fail', { error: e?.message });
           updateRoyaltyState({ isRevealed: null });
         }
 
         toast.success('Collection loaded successfully!');
+        console.log('royalty.load.success');
       } catch (error) {
-        console.error('Error loading collection info:', error);
+        console.error('royalty.load.error', error);
         toast.error('Error loading collection info: ' + error.message);
         updateRoyaltyState({ collectionInfo: null, isRevealed: null });
       } finally {
         updateRoyaltyState({ loadingInfo: false });
+        console.log('royalty.load.end');
       }
     };
 
@@ -736,7 +747,6 @@ const NewMobileProfilePage = () => {
         }
       } catch (error) {
         console.error('Error updating royalty:', error);
-        toast.error('Error updating royalty: ' + error.message);
       } finally {
         updateRoyaltyState({ loading: false });
       }
@@ -762,7 +772,6 @@ const NewMobileProfilePage = () => {
           throw new Error(result.error);
         }
       } catch (error) {
-        toast.error('Error revealing collection: ' + (error.message || error));
       } finally {
         updateRoyaltyState({ revealing: false });
       }
@@ -771,9 +780,9 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+          <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
-          </button>
+          </Button>
           <h3 className="text-lg font-semibold">Royalty & Reveal</h3>
         </div>
 
@@ -789,7 +798,7 @@ const NewMobileProfilePage = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Collection Lookup */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="h-4 w-4" />
                 <h3 className="text-sm font-medium">Collection Lookup</h3>
@@ -807,7 +816,7 @@ const NewMobileProfilePage = () => {
 
             {/* Collection Info Display */}
             {state.collectionInfo && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <Settings className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Collection Information</h3>
@@ -834,20 +843,22 @@ const NewMobileProfilePage = () => {
 
                 {/* Reveal Button */}
                 {state.collectionInfo.isOwner && state.isRevealed === false && (
-                  <button
+                  <Button
                     onClick={handleReveal}
                     disabled={state.revealing || !connected}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    variant="primary"
+                    size="md"
+                    className="w-full"
                   >
                     {state.revealing ? 'Revealing...' : 'Reveal Collection'}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
 
             {/* Royalty Update Form */}
             {state.collectionInfo && state.collectionInfo.isOwner && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <Settings className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Update Royalty Settings</h3>
@@ -878,14 +889,16 @@ const NewMobileProfilePage = () => {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={handleUpdateRoyalty}
                   disabled={state.loading || !connected || !state.collectionInfo || !state.collectionInfo.isOwner}
-                  className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+                  variant="primary"
+                  size="md"
+                  className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
                 >
                   <Settings className="h-4 w-4" />
                   {state.loading ? 'Updating...' : 'Update Royalty Settings'}
-                </button>
+                </Button>
               </div>
             )}
           </CardContent>
@@ -899,9 +912,9 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+          <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
-          </button>
+          </Button>
           <h2 className="text-xl font-semibold">Creator Token Vesting</h2>
         </div>
         <VestingConfigurationComponent />
@@ -1251,9 +1264,9 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+          <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
-          </button>
+          </Button>
           <h3 className="text-lg font-semibold">Minter Approval Management</h3>
         </div>
 
@@ -1286,7 +1299,7 @@ const NewMobileProfilePage = () => {
         )}
 
         {/* Collection Lookup */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="h-4 w-4" />
                 <h3 className="text-sm font-medium">Collection Lookup</h3>
@@ -1320,7 +1333,7 @@ const NewMobileProfilePage = () => {
 
         {/* Collection Info */}
             {state.fetchedCollection && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <UserPlus className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Collection Information</h3>
@@ -1344,20 +1357,22 @@ const NewMobileProfilePage = () => {
 
                 {/* Lock/Unlock Button */}
                 <div className="pt-2 border-t border-border">
-                  <button
+                  <Button
                     onClick={toggleMinterApprovalLock}
                     disabled={state.loading || !connected}
-                    className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    variant="primary"
+                    size="md"
+                    className="w-full flex items-center justify-center gap-2"
                   >
                     {state.loading ? 'Processing...' : state.isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
         {/* Minter Management */}
             {state.fetchedCollection && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <UserPlus className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Minter Management</h3>
@@ -1375,10 +1390,12 @@ const NewMobileProfilePage = () => {
                 </div>
 
             <div className="flex flex-col gap-2">
-              <button
+              <Button
                 onClick={() => setMinterApproval(true)}
                 disabled={state.loading || state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                variant="primary"
+                size="md"
+                className="w-full flex items-center justify-center gap-2"
                 title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : state.isApproved ? "Address is already the minter" : state.isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {state.loading ? (
@@ -1387,12 +1404,14 @@ const NewMobileProfilePage = () => {
                   <UserPlus className="h-4 w-4" />
                 )}
                 Set Minter
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => setMinterApproval(false)}
                 disabled={state.loading || !state.isApproved || state.isLocked || !state.minterAddress || !validateAddress(state.minterAddress)}
-                className="w-full bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                variant="primary"
+                size="md"
+                className="w-full flex items-center justify-center gap-2"
                 title={!state.minterAddress ? "Please enter a minter address" : !validateAddress(state.minterAddress) ? "Please enter a valid address" : !state.isApproved ? "Address is not currently the minter" : state.isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {state.loading ? (
@@ -1401,7 +1420,7 @@ const NewMobileProfilePage = () => {
                   <UserPlus className="h-4 w-4" />
                 )}
                 Remove Minter
-              </button>
+              </Button>
             </div>
 
             {/* Royalty Enforcement Exemption Utility */}
@@ -1414,7 +1433,7 @@ const NewMobileProfilePage = () => {
                   />
 
                   <div className="flex flex-col gap-2">
-                <button
+                <Button
                   onClick={async () => {
                     try {
                       updateMinterState({ loading: true, error: '' });
@@ -1432,12 +1451,14 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-gray-100 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
                 >
                   Check exemption
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={async () => {
                     try {
                       updateMinterState({ loading: true, error: '' });
@@ -1457,12 +1478,14 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-[#614E41] text-white px-4 py-2 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
                 >
                   Grant Exemption
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={async () => {
                     try {
                       updateMinterState({ loading: true, error: '' });
@@ -1482,10 +1505,12 @@ const NewMobileProfilePage = () => {
                     }
                   }}
                   disabled={!state.fetchedCollection || !state.minterAddress || !validateAddress(state.minterAddress) || state.loading}
-                  className="w-full bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
                 >
                   Revoke Exemption
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1513,9 +1538,9 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+          <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
-          </button>
+          </Button>
           <h3 className="text-lg font-semibold">KOL Approval Management</h3>
         </div>
 
@@ -1736,9 +1761,9 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={handleBack} className="text-primary hover:text-primary/80">
+          <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
-          </button>
+          </Button>
           <h3 className="text-lg font-semibold">Create New Token ID & Set Token URI</h3>
         </div>
 
@@ -1755,7 +1780,7 @@ const NewMobileProfilePage = () => {
           <CardContent className="space-y-6">
 
         {/* Collection Lookup */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="h-4 w-4" />
                 <h3 className="text-sm font-medium">Collection Lookup</h3>
@@ -1787,7 +1812,7 @@ const NewMobileProfilePage = () => {
 
         {/* Collection Info Display */}
             {state.collectionInfo && (
-              <div className={`space-y-4 p-4 border border-border rounded-lg ${state.collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-muted/50'}`}>
+              <div className={`space-y-4 p-4 border border-border rounded-lg ${state.collectionInfo.isBlocked ? 'bg-destructive/10 border-destructive/20' : 'bg-card'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Collection Information</h3>
@@ -1821,7 +1846,7 @@ const NewMobileProfilePage = () => {
 
         {/* Create New Token Section */}
             {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <Plus className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Create New Token ID</h3>
@@ -1851,20 +1876,22 @@ const NewMobileProfilePage = () => {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleCreateNewToken}
               disabled={state.loading || !connected || !state.collectionInfo.isOwner || state.collectionInfo.isBlocked || !state.tokenCreationData.tokenId || !state.tokenCreationData.maxSupply}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              variant="primary"
+              size="md"
+              className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Plus className="h-4 w-4" />
               {state.loading ? 'Creating...' : 'Create New Token ID'}
-            </button>
+            </Button>
           </div>
         )}
 
         {/* Set Token URI Section */}
             {state.collectionInfo && state.collectionInfo.isOwner && !state.collectionInfo.isBlocked && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <Search className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Set Token URI</h3>
@@ -1893,14 +1920,16 @@ const NewMobileProfilePage = () => {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleSetTokenURI}
               disabled={state.loading || !connected || !state.collectionInfo.isOwner || state.collectionInfo.isBlocked || !state.uriData.tokenId || !state.uriData.tokenURI}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              variant="primary"
+              size="md"
+              className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               <Search className="h-4 w-4" />
               {state.loading ? 'Setting...' : 'Set Token URI'}
-            </button>
+            </Button>
           </div>
         )}
           </CardContent>
@@ -2138,7 +2167,7 @@ const NewMobileProfilePage = () => {
           <CardContent className="space-y-6">
 
         {/* Raffle Lookup */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="h-4 w-4" />
                 <h3 className="text-sm font-medium">Raffle Lookup</h3>
@@ -2170,7 +2199,7 @@ const NewMobileProfilePage = () => {
 
         {/* Quick Access to Created Raffles */}
             {createdRaffles.length > 0 && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <ShoppingCart className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Your Created Raffles</h3>
@@ -2180,7 +2209,7 @@ const NewMobileProfilePage = () => {
                 <button
                   key={raffle.address}
                   onClick={() => loadRaffleInfo(raffle.address)}
-                  className="w-full text-left bg-muted/30 beige-surface border border-[#614E41] rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  className="w-full text-left bg-card border border-border rounded-lg p-3 hover:bg-card/90 transition-colors"
                 >
                   <div className="text-sm font-medium">{raffle.name || `Raffle ${raffle.address.slice(0, 8)}...`}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">State: {renderStateBadge(raffle.state, { stateNum: raffle.stateNum })}</div>
@@ -2192,7 +2221,7 @@ const NewMobileProfilePage = () => {
 
         {/* Raffle Info Display */}
             {state.raffleData.address && state.raffleData.raffleState !== 'unknown' && (
-              <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="h-4 w-4" />
                   <h3 className="text-sm font-medium">Raffle Information</h3>
@@ -2233,18 +2262,20 @@ const NewMobileProfilePage = () => {
 
         {/* Withdrawal Button */}
         {state.raffleData.isCreator && (
-          <button
+          <Button
             onClick={handleWithdrawRevenue}
             disabled={state.loading || !connected || !canWithdraw}
-            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            variant="primary"
+            size="md"
+            className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <DollarSign className="h-4 w-4" />
             {state.loading ? 'Withdrawing...' : `Withdraw ${state.raffleData.revenueAmount} ${getCurrencySymbol()}`}
-          </button>
+          </Button>
         )}
 
         {/* Creator Mint Section - matches desktop implementation */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="h-4 w-4" />
                 <h3 className="text-sm font-medium">Creator Mint</h3>
@@ -2315,17 +2346,19 @@ const NewMobileProfilePage = () => {
           </div>
 
           {/* Mint Button */}
-          <button
+          <Button
             onClick={handleCreatorMint}
             disabled={state.mintLoading || !connected || !state.mintData.collectionAddress || !state.mintData.recipient || !state.mintData.quantity || (state.mintData.collectionType === 'erc1155' && !state.mintData.tokenId)}
-            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            variant="primary"
+            size="md"
+            className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <Plus className="h-4 w-4" />
             {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}
-          </button>
+          </Button>
 
               {!connected && (
-                <div className="text-center p-4 bg-muted rounded-lg">
+                <div className="text-center p-4 bg-card rounded-lg">
                   <p className="text-muted-foreground text-sm">
                     Please connect your wallet to use creator mint functionality.
                   </p>
@@ -2358,12 +2391,13 @@ const NewMobileProfilePage = () => {
             <p className="text-muted-foreground text-sm mb-4">
               You haven't created any raffles yet. Start by creating your first raffle!
             </p>
-            <button
+            <Button
               onClick={() => navigate('/create-raffle')}
-              className="bg-[#614E41] text-white px-6 py-2 rounded-full hover:bg-[#4a3a30] transition-colors"
+              variant="primary"
+              size="md"
             >
               Create Your First Raffle
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -2379,7 +2413,7 @@ const NewMobileProfilePage = () => {
         {createdRaffles.map((raffle) => (
           <div
             key={raffle.address}
-            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card border border-border rounded-lg p-4 hover:bg-card/90 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -2412,12 +2446,13 @@ const NewMobileProfilePage = () => {
             </div>
 
             <div className="flex gap-2 mt-3">
-              <button
+              <Button
                 onClick={() => handleRaffleClick(raffle.address)}
-                className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+                variant="primary"
+                size="sm"
               >
                 View Details
-              </button>
+              </Button>
             </div>
           </div>
         ))}
@@ -2460,7 +2495,7 @@ const NewMobileProfilePage = () => {
         {purchasedTickets.map((ticket, index) => (
           <div
             key={ticket.id || index}
-            className="bg-card beige-surface border border-[#614E41] rounded-lg p-4 hover:bg-muted/30 transition-colors"
+            className="bg-card border border-border rounded-lg p-4 hover:bg-card/90 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -2524,12 +2559,12 @@ const NewMobileProfilePage = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
-      <div className="bg-card beige-surface border-b border-[#614E41] p-4">
+      <div className="bg-background border-b border-border p-4">
         <h1 className="text-2xl font-bold mb-2">Profile</h1>
         <p className="text-sm text-muted-foreground mb-4">
           Track activities and manage your raffles
         </p>
-        <div className="bg-muted/50 beige-surface border border-[#614E41] rounded-lg p-3">
+        <div className="bg-card border border-border rounded-lg p-3">
           <p className="text-sm font-medium">Connected Account:</p>
           <p className="text-xs font-mono break-all">{address}</p>
         </div>
@@ -2544,7 +2579,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'activity'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
+                : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Activity</span>
@@ -2555,7 +2590,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'created'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
+                : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
             <span className="text-sm font-medium">My Raffles</span>
@@ -2566,7 +2601,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'purchased'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
+                : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Slots</span>
@@ -2577,7 +2612,7 @@ const NewMobileProfilePage = () => {
             className={`p-4 rounded-lg border transition-colors ${
               activeTab === 'dashboard'
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-[#614E41] bg-background hover:bg-muted text-foreground'
+                : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
             <span className="text-sm font-medium">Dashboard</span>

@@ -7,6 +7,8 @@ import { toast } from './ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 import { LoadingSpinner } from './ui/loading';
+import { notifyError } from '../utils/notificationService';
+import { Button } from './ui/button';
 
 const CreateNewTokenIDComponent = () => {
   const { connected, address } = useWallet();
@@ -214,7 +216,7 @@ const CreateNewTokenIDComponent = () => {
       }
     } catch (error) {
       console.error('Error creating new token:', error);
-      toast.error(`Failed to create new token: ${error.message}`);
+      notifyError(error, { action: 'createNewToken' });
     } finally {
       setLoading(false);
     }
@@ -270,7 +272,7 @@ const CreateNewTokenIDComponent = () => {
       }
     } catch (error) {
       console.error('Error setting URI:', error);
-      toast.error(`Failed to set URI: ${error.message}`);
+      notifyError(error, { action: 'setTokenURI' });
     } finally {
       setLoading(false);
     }
@@ -351,14 +353,16 @@ const CreateNewTokenIDComponent = () => {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleCreateNewToken}
               disabled={loading || !connected || !collectionInfo.isOwner || collectionInfo.isBlocked || !tokenCreationData.tokenId || !tokenCreationData.maxSupply}
-              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
+              variant="primary"
+              size="md"
+              className="w-full"
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can create new tokens" : !tokenCreationData.tokenId || !tokenCreationData.maxSupply ? "Please fill in all required fields" : "Create new token ID"}
             >
               {loading ? 'Creating...' : 'Create New Token ID'}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -397,14 +401,16 @@ const CreateNewTokenIDComponent = () => {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleSetTokenURI}
               disabled={loading || !connected || !collectionInfo.isOwner || collectionInfo.isBlocked || !uriData.tokenId || !uriData.tokenURI}
-              className={`w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm`}
+              variant="primary"
+              size="md"
+              className="w-full"
               title={!connected ? "Please connect your wallet" : !collectionInfo.isOwner ? "Only collection owner can set URIs" : !uriData.tokenId || !uriData.tokenURI ? "Please fill in all required fields" : "Set token URI"}
             >
               {loading ? 'Setting...' : 'Set Token URI'}
-            </button>
+            </Button>
           </div>
         )}
     </div>

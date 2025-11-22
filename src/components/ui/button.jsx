@@ -9,17 +9,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Brand-first variants
+        primary:
+          "bg-brand-500 text-white shadow-sm hover:bg-brand-600 focus-visible:ring-brand/20",
+        secondary:
+          "border-2 border-brand-500 text-brand-500 bg-transparent shadow-sm hover:bg-brand-500/10 focus-visible:ring-brand/15",
+        tertiary:
+          "text-brand-500 bg-transparent hover:bg-brand-500/10",
+        // Backward compatibility aliases
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:ring-primary/20",
+          "bg-brand-500 text-white shadow-sm hover:bg-brand-600 focus-visible:ring-brand/20",
+        outline:
+          "border-2 border-brand-500 text-brand-500 bg-transparent shadow-sm hover:bg-brand-500/10",
+        ghost:
+          "text-brand-500 hover:bg-brand-500/10",
+        link: "text-brand-500 underline-offset-4 hover:underline",
+        // Semantic variants retained
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 focus-visible:ring-destructive/20",
-        outline:
-          "border border-border bg-background shadow-sm hover:bg-muted hover:text-muted-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost:
-          "hover:bg-muted hover:text-muted-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
         success:
           "bg-success text-success-foreground shadow-sm hover:bg-success/90 focus-visible:ring-success/20",
         warning:
@@ -28,6 +35,7 @@ const buttonVariants = cva(
           "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90 focus-visible:ring-accent/20",
       },
       size: {
+        md: "h-10 px-4 py-2 text-[length:var(--text-base)] has-[>svg]:px-3",
         default: "h-10 px-4 py-2 text-[length:var(--text-base)] has-[>svg]:px-3",
         sm: "h-8 gap-1.5 px-3 py-2 text-[length:var(--text-sm)] has-[>svg]:px-2.5",
         lg: "h-12 px-6 py-3 text-[length:var(--text-base)] has-[>svg]:px-4",
@@ -36,8 +44,8 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "primary",
+      size: "md",
     },
   }
 )
@@ -58,6 +66,8 @@ const Button = React.forwardRef(function Button(
     <Comp
       ref={ref}
       data-slot="button"
+      type={props.type ?? "button"}
+      aria-disabled={props.disabled ? true : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

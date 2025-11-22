@@ -7,6 +7,7 @@ import { toast } from './ui/sonner';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 import { LoadingSpinner } from './ui/loading';
+import { Button } from './ui/button';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -356,14 +357,16 @@ const RoyaltyAdjustmentComponent = () => {
                 <span className="text-sm font-semibold">
                   {isRevealed === null ? 'Unknown' : isRevealed ? 'Revealed' : 'Not Revealed'}
                 </span>
-                <button
+                <Button
                   onClick={handleReveal}
                   disabled={revealing || isRevealed || !collectionInfo.isOwner}
-                  className="px-4 py-2 h-10 bg-[#614E41] text-white rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                  variant="primary"
+                  size="md"
+                  className="px-4 py-2 h-10 shadow-sm text-sm"
                   title={!collectionInfo.isOwner ? "Only collection owner can reveal" : isRevealed ? "Collection already revealed" : "Reveal collection"}
                 >
                   {revealing ? 'Revealing...' : 'Reveal Collection'}
-                </button>
+                </Button>
               </div>
             </div>
             
@@ -408,15 +411,17 @@ const RoyaltyAdjustmentComponent = () => {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={handleUpdateRoyalty}
               disabled={loading || !connected || !collectionInfo || !collectionInfo.isOwner}
-              className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+              variant="primary"
+              size="md"
+              className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
               title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !collectionData.royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
               <Settings className="h-4 w-4" />
               {loading ? 'Updating...' : 'Update Royalty Settings'}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -432,4 +437,3 @@ const RoyaltyAdjustmentComponent = () => {
 };
 
 export default RoyaltyAdjustmentComponent;
-

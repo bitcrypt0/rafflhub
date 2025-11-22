@@ -281,7 +281,8 @@ const ProfileTabs = ({
             <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
             <Button
               onClick={() => navigate('/create-raffle')}
-              className="bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
+              variant="primary"
+              size="md"
             >
               Create Your First Raffle
             </Button>
@@ -321,7 +322,8 @@ const ProfileTabs = ({
             <p className="text-muted-foreground mb-4">You haven't purchased any slots yet</p>
             <Button
               onClick={() => navigate('/')}
-              className="bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
+              variant="primary"
+              size="md"
             >
               Browse Raffles
             </Button>
@@ -361,8 +363,9 @@ const ProfileTabs = ({
                   {ticket.canClaimPrize && (
                     <Button
                       size="sm"
+                      variant="primary"
                       onClick={() => onClaimPrize(ticket)}
-                      className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors"
+                      className="flex-1"
                     >
                       <Award className="h-4 w-4 mr-1" />
                       Claim Prize

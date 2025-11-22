@@ -5,6 +5,7 @@ import { useWallet } from './WalletContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
 import { safeContractCall, getPlatformConfig } from '../utils/contractCallUtils';
+import { notifyError } from '../utils/notificationService';
 import { handleError, extractRevertReason } from '../utils/errorHandling';
 
 const ContractContext = createContext();
@@ -132,19 +133,8 @@ export const ContractProvider = ({ children }) => {
       const receipt = await tx.wait();
       return { success: true, receipt, hash: tx.hash };
     } catch (error) {
-      let message = 'Transaction failed';
-      if (error?.reason) {
-        message = error.reason;
-      } else if (error?.data?.message) {
-        message = error.data.message;
-      } else if (error?.message) {
-        message = error.message;
-      }
-
-      // Only show toast error if this is a user-facing transaction
-      // Let individual components handle their own error display for better UX
-      console.error('Contract transaction failed:', message);
-      return { success: false, error: message };
+      const msg = notifyError(error, { kind: 'tx' });
+      return { success: false, error: msg };
     }
   };
 
@@ -166,35 +156,11 @@ export const ContractProvider = ({ children }) => {
       if (result.success) {
         return { success: true, result: result.result };
       } else {
-        throw new Error(result.error);
+        throw result.error || new Error(`${methodName} failed`);
       }
     } catch (error) {
-      let message = 'Contract call failed';
-
-      // Handle "missing revert data" errors specifically
-      if (error.message.includes('missing revert data') ||
-          error.message.includes('call exception') ||
-          error.code === 'CALL_EXCEPTION') {
-        message = 'Network connectivity issue - please try again';
-      } else if (error?.reason) {
-        message = error.reason;
-      } else if (error?.data?.message) {
-        message = error.data.message;
-      } else if (error?.message) {
-        message = error.message;
-      }
-
-      // Use centralized error handling for consistent behavior
-      handleError(error, {
-        context: {
-          operation: methodName,
-          isReadOnly: true,
-          isContractCall: true
-        },
-        fallbackMessage: `${methodName} failed`
-      });
-
-      return { success: false, error: message };
+      const msg = notifyError(error, { kind: 'call', methodName });
+      return { success: false, error: msg };
     }
   };
 

@@ -3,7 +3,7 @@
  * Provides consistent error processing and toast notification management
  */
 
-import { toast } from '../components/ui/sonner';
+import { notifyError } from './notificationService';
 
 /**
  * Extract and clean error messages from various error types
@@ -96,7 +96,7 @@ export const handleError = (error, options = {}) => {
   const message = extractRevertReason(error);
   
   if (showToast && shouldShowErrorToast(error, context)) {
-    toast.error(message || fallbackMessage);
+    notifyError(error, context);
   }
   
   return message;
@@ -117,7 +117,7 @@ export const handleTransactionError = (error, options = {}) => {
   console.error(`Transaction error in ${operation}:`, error);
   
   if (showToast && shouldShowErrorToast(error, { isTransaction: true })) {
-    toast.error(message);
+    notifyError(error, { operation });
   }
   
   return message;
@@ -139,7 +139,7 @@ export const handleContractCallError = (error, methodName, options = {}) => {
   
   // Only show toast for required calls or critical errors
   if (showToast && (isRequired || shouldShowErrorToast(error, { isReadOnly: true }))) {
-    toast.error(`${methodName} failed: ${message}`);
+    notifyError(error, { methodName });
   }
   
   return message;

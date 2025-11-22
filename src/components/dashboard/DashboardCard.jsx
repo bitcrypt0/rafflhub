@@ -114,9 +114,11 @@ const DashboardCard = ({
             <DialogTrigger asChild>
               <Button
                 onClick={handleModalOpen}
+                variant="primary"
+                size="md"
                 className={cn(
-                  "w-full bg-[#614E41] text-white",
-                  "hover:bg-[#4a3a30] transition-all duration-200",
+                  "w-full",
+                  "transition-all duration-200",
                   "shadow-sm hover:shadow-md h-10 text-sm"
                 )}
               >
@@ -144,13 +146,12 @@ const DashboardCard = ({
           <>
             <Button
               onClick={handleToggle}
+              variant="primary"
+              size={isMobile ? "lg" : "md"}
               className={cn(
-                "w-full bg-[#614E41] text-white",
-                "hover:bg-[#4a3a30] transition-all duration-200",
+                "w-full",
+                "transition-all duration-200",
                 "shadow-sm hover:shadow-md",
-                // Responsive button sizing
-                isMobile ? "h-12 text-base" : "h-10 text-sm", // Larger buttons on mobile
-                // Button state styling
                 isExpanded && "mb-4"
               )}
             >

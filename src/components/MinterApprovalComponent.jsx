@@ -445,7 +445,8 @@ const MinterApprovalComponent = () => {
                 </Button>
 
                 <Button
-                  className="bg-[#614E41] text-white hover:bg-[#4a3a30]"
+                  variant="primary"
+                  size="md"
                   disabled={!fetchedCollection || !ethers.utils.isAddress(sanitizeAddress(minterAddress)) || loading}
                   onClick={async () => {
                     try {
@@ -546,7 +547,9 @@ const MinterApprovalComponent = () => {
               <Button
                 onClick={() => setMinterApproval(true)}
                 disabled={loading || isApproved || isLocked}
-                className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="md"
+                className="flex-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(sanitizeAddress(minterAddress)) ? "Please enter a valid address" : isApproved ? "Address is already the minter" : isLocked ? "Minter approval is locked" : "Set as minter"}
               >
                 {loading ? (
@@ -559,7 +562,9 @@ const MinterApprovalComponent = () => {
               <Button
                 onClick={() => setMinterApproval(false)}
                 disabled={loading || !isApproved || isLocked}
-                className="flex-1 bg-[#614E41] text-white hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="primary"
+                size="md"
+                className="flex-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!minterAddress ? "Please enter a minter address" : !validateAddress(sanitizeAddress(minterAddress)) ? "Please enter a valid address" : !isApproved ? "Address is not currently the minter" : isLocked ? "Minter approval is locked" : "Remove minter"}
               >
                 {loading ? (
@@ -574,12 +579,9 @@ const MinterApprovalComponent = () => {
             <Button
               onClick={toggleMinterApprovalLock}
               disabled={loading}
-              variant={isLocked ? "default" : "outline"}
-              className={`w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                isLocked
-                  ? 'bg-[#614E41] text-white hover:bg-[#4a3a30]'
-                  : 'border-[#614E41] text-[#614E41] hover:bg-[#614E41]/10'
-              }`}
+              variant={isLocked ? "primary" : "secondary"}
+              size="md"
+              className="w-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={isLocked ? "Unlock minter approval to allow changes" : "Lock minter approval to prevent changes"}
             >
               {loading ? (

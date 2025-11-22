@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from './ui/sonner';
 import { extractRevertReason } from '../utils/errorHandling';
+import { notifyError } from '../utils/notificationService';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -287,7 +288,7 @@ const KOLApprovalComponent = () => {
       await fetchKOLDetails();
     } catch (err) {
       console.error('Error approving KOL:', err);
-      toast.error(`Failed to approve KOL: ${extractRevertReason(err)}`);
+      notifyError(err, { action: 'approveKOL' });
       setError(`Failed to approve KOL: ${extractRevertReason(err)}`);
     } finally {
       setLoading(false);
@@ -332,7 +333,7 @@ const KOLApprovalComponent = () => {
       await fetchKOLDetails();
     } catch (err) {
       console.error('Error revoking KOL:', err);
-      toast.error(`Failed to revoke KOL: ${extractRevertReason(err)}`);
+      notifyError(err, { action: 'revokeKOL' });
       setError(`Failed to revoke KOL: ${extractRevertReason(err)}`);
     } finally {
       setLoading(false);
@@ -518,7 +519,9 @@ const KOLApprovalComponent = () => {
                   !enforcedWinnerCount ||
                   loading
                 }
-                className="w-full bg-[#614E41] text-white hover:bg-[#4a3a30]"
+                variant="primary"
+                size="md"
+                className="w-full"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

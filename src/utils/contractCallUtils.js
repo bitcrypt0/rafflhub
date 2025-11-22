@@ -141,9 +141,9 @@ export const safeContractCall = async (contractMethod, methodName, options = {})
       // If this is the last attempt or a critical error
       if (attempt === retries) {
         if (required) {
-          throw new Error(`Failed to call ${methodName} after ${retries} attempts: ${error.message}`);
+          throw error;
         }
-        return { success: false, result: fallbackValue, error: error.message };
+        return { success: false, result: fallbackValue, error };
       }
     }
   }

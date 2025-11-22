@@ -8,6 +8,7 @@ import { ResponsiveAddressInput } from './ui/responsive-input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { LoadingSpinner } from './ui/loading';
+import { Button } from './ui/button';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
@@ -540,15 +541,17 @@ const CreatorRevenueWithdrawalComponent = () => {
 
         {/* Withdrawal Button */}
         <div className="space-y-4">
-          <button
+          <Button
             onClick={handleWithdrawRevenue}
             disabled={loading || !connected || !canWithdraw}
-            className="w-full bg-[#614E41] text-white px-6 py-2.5 h-10 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm text-sm"
+            variant="primary"
+            size="md"
+            className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
             title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
           >
             <DollarSign className="h-4 w-4" />
             {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
-          </button>
+          </Button>
 
           {!canWithdraw && raffleData.isRevenueRecipient && raffleData.address && (
             <p className="text-sm text-muted-foreground text-center">
@@ -657,14 +660,16 @@ const CreatorRevenueWithdrawalComponent = () => {
                 )}
 
                 {/* Mint Button */}
-                <button
+                <Button
                   onClick={handleCreatorMint}
                   disabled={mintLoading || !connected || !collectionInfo.isOwner || !mintData.recipient || !mintData.quantity || (collectionInfo.type === 'erc1155' && !mintData.tokenId)}
-                  className="w-full bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  variant="primary"
+                  size="lg"
+                  className="w-full flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Zap className="h-4 w-4" />
                   {mintLoading ? 'Minting...' : `Mint ${collectionInfo.type.toUpperCase()} Token(s)`}
-                </button>
+                </Button>
               </div>
             )}
           </div>

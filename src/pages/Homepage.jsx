@@ -28,6 +28,7 @@ import {
   Cpu,
   Eye
 } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as Accordion from '@radix-ui/react-accordion';
@@ -275,23 +276,25 @@ export default function Homepage() {
                 to="/app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-[length:var(--text-lg)]"
+                className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-[length:var(--text-lg)]"
               >
                 Launch Dapp
               </Link>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button
+                <Button
                   onClick={() => document.getElementById('video-demo').scrollIntoView({ behavior: 'smooth' })}
-                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold text-[length:var(--text-lg)]"
+                  variant="secondary"
+                  size="lg"
+                  className="hero-cta"
                 >
                   <Play className="mr-2 h-5 w-5" />
                   Watch Demo
-                </button>
+                </Button>
                 <a
                   href="https://docs.rafflhub.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-xl border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
+                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-full border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
                 >
                   <BookOpen className="mr-2 h-5 w-5" />
                   Read Documentation
@@ -589,7 +592,7 @@ export default function Homepage() {
               to="/app"
               target="_blank"
               rel="noopener noreferrer"
-              className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-xl bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
+              className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
             >
               Launch Your Raffle Now
             </Link>
@@ -597,7 +600,7 @@ export default function Homepage() {
               href="https://rafflhub.gitbook.io/rafflhub"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-xl border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-lg sm:text-xl"
+              className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-lg sm:text-xl"
             >
               <BookOpen className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
               Read Documentation
