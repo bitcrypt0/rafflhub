@@ -476,7 +476,7 @@ const KOLApprovalComponent = () => {
                   disabled={loading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Maximum number of participants allowed in the KOL's pool
+                  The allowed number of raffle pools a KOL can create using your collection as prize
                 </p>
               </div>
 

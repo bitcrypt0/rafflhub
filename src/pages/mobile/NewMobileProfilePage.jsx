@@ -402,7 +402,7 @@ const NewMobileProfilePage = () => {
             </div>
           </button>
 
-          {/* Configure Creator Allocation Vesting */}
+          {/* Configure Creator Allocation & Vesting */}
           <button
             onClick={() => setActiveDashboardComponent('vesting')}
             data-dashboard-card
@@ -918,7 +918,7 @@ const NewMobileProfilePage = () => {
           <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
           </Button>
-          <h2 className="text-xl font-semibold">Configure Creator Allocation Vesting</h2>
+          <h2 className="text-xl font-semibold">Configure Creator Allocation & Vesting</h2>
         </div>
         <VestingConfigurationComponent />
       </div>

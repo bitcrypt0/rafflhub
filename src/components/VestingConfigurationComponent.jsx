@@ -6,6 +6,7 @@ import { toast } from './ui/sonner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Clock, Lock, Unlock, Calendar, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { notifyError } from '../utils/notificationService';
 
 const VestingConfigurationComponent = () => {
   const { address, provider } = useWallet();
@@ -27,6 +28,8 @@ const VestingConfigurationComponent = () => {
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [vestingInfo, setVestingInfo] = useState(null);
   const [configuring, setConfiguring] = useState(false);
+  const [allocationPercent, setAllocationPercent] = useState('');
+  const [allocationTokenId, setAllocationTokenId] = useState('');
 
   // Fetch collection details
   const fetchCollectionDetails = async (addressToFetch) => {
@@ -70,11 +73,12 @@ const VestingConfigurationComponent = () => {
 
       // Get collection info
       if (isERC721Contract) {
-        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount] = await Promise.all([
+        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
           contract.maxSupply(),
           contract.creationTime(),
           contract.vestingConfigured(),
-          contract.creatorClaimedCount()
+          contract.creatorClaimedCount(),
+          contract.getUnlockedAmount()
         ]);
 
         const creatorAllocation = maxSupply.div(5);
@@ -85,6 +89,7 @@ const VestingConfigurationComponent = () => {
           creationTime: creationTime.toString(),
           vestingConfigured,
           creatorClaimedCount: creatorClaimedCount.toString(),
+          unlockedAmount: unlockedAmount.toString(),
           isERC721: true
         };
 
@@ -109,11 +114,12 @@ const VestingConfigurationComponent = () => {
         }
       } else {
         // ERC1155
-        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount] = await Promise.all([
+        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
           contract.maxSupply(tokenId),
           contract.tokenCreationTime(tokenId),
           contract.vestingConfigured(tokenId),
-          contract.creatorClaimedCount(tokenId)
+          contract.creatorClaimedCount(tokenId),
+          contract.getUnlockedAmount(tokenId)
         ]);
 
         const creatorAllocation = maxSupply.div(5);
@@ -124,6 +130,7 @@ const VestingConfigurationComponent = () => {
           creationTime: creationTime.toString(),
           vestingConfigured,
           creatorClaimedCount: creatorClaimedCount.toString(),
+          unlockedAmount: unlockedAmount.toString(),
           isERC721: false,
           tokenId
         };
@@ -251,6 +258,33 @@ const VestingConfigurationComponent = () => {
     }
   };
 
+  const declareAllocation = async () => {
+    if (!fetchedCollection || !collectionInfo) {
+      toast.error('Please enter a valid collection address');
+      return;
+    }
+    try {
+      const pct = Number(allocationPercent);
+      if (!isFinite(pct) || pct <= 0 || pct > 100) {
+        toast.error('Enter a valid percentage between 0 and 100');
+        return;
+      }
+      const basisPoints = ethers.BigNumber.from(Math.round(pct * 100));
+      if (isERC721) {
+        await fetchedCollection.callStatic.declareCreatorAllocation(basisPoints);
+        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(basisPoints));
+      } else {
+        const tid = allocationTokenId ? parseInt(allocationTokenId) : tokenId;
+        await fetchedCollection.callStatic.declareCreatorAllocation(tid, basisPoints);
+        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(tid, basisPoints));
+      }
+      toast.success('Creator allocation declared');
+      await fetchCollectionDetails(collectionAddress);
+    } catch (error) {
+      notifyError(error, { action: 'declareCreatorAllocation' });
+    }
+  };
+
   // Format timestamp to readable date
   const formatDate = (timestamp) => {
     if (!timestamp || timestamp === '0') return 'Not set';
@@ -338,12 +372,16 @@ const VestingConfigurationComponent = () => {
                 <p className="font-semibold">{collectionInfo.maxSupply}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Creator Allocation (20%):</span>
+                <span className="text-muted-foreground">Creator Allocation:</span>
                 <p className="font-semibold">{collectionInfo.creatorAllocation} tokens</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Already Claimed:</span>
                 <p className="font-semibold">{collectionInfo.creatorClaimedCount} tokens</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Unlocked Amount:</span>
+                <p className="font-semibold">{collectionInfo.unlockedAmount} tokens</p>
               </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground">Creation Time:</span>
@@ -401,6 +439,35 @@ const VestingConfigurationComponent = () => {
                 <p className="font-semibold text-lg text-green-600">{vestingInfo.availableToMint} tokens</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Declare Creator Allocation (placed above configure) */}
+      {collectionInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Declare Creator Allocation
+            </CardTitle>
+            <CardDescription>
+              Declare the creator allocation percentage for this collection
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isERC721 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Token ID (ERC1155 only)</label>
+                <input type="number" placeholder="1" value={allocationTokenId} onChange={(e) => setAllocationTokenId(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Allocation Percentage (%)</label>
+              <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
+              <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%)</p>
+            </div>
+            <Button onClick={declareAllocation} disabled={!allocationPercent} className="w-full">Declare Allocation</Button>
           </CardContent>
         </Card>
       )}
@@ -492,6 +559,8 @@ const VestingConfigurationComponent = () => {
         </Card>
       )}
 
+      
+
       {/* Help Section */}
       <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <CardHeader>
@@ -500,7 +569,7 @@ const VestingConfigurationComponent = () => {
             About Vesting
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-xs text-blue-700 dark:text-blue-300 space-y-2">
+        <CardContent className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
           <p>
             Vesting prevents creators from immediately minting and selling their entire 20% allocation, protecting holders from rug pulls.
           </p>
