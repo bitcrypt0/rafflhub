@@ -258,7 +258,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   );
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
       <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Slots
@@ -323,7 +323,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       disabled={claimingPrize || !connected}
                       variant="primary"
                       size="lg"
-                      className="w-full"
+                      className="flex-1"
                     >
                       {claimingPrize
                         ? (!isEscrowedPrize ? 'Minting...' : 'Claiming...')
@@ -336,7 +336,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       disabled={claimingRefund || !connected}
                       variant="primary"
                       size="lg"
-                      className="w-full"
+                      className="flex-1"
                     >
                       {claimingRefund ? 'Claiming...' : 'Claim Refund'}
                     </Button>
