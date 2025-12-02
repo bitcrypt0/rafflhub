@@ -171,8 +171,9 @@
       { "internalType": "bool", "name": "approved", "type": "bool" },
       { "internalType": "uint256", "name": "poolLimit", "type": "uint256" },
       { "internalType": "uint256", "name": "enforcedSlotFee", "type": "uint256" },
-      { "internalType": "uint256", "name": "enforcedWinnerCount", "type": "uint256" },
-      { "internalType": "uint256", "name": "poolCount", "type": "uint256" }
+      { "internalType": "uint256", "name": "winnerLimit", "type": "uint256" },
+      { "internalType": "uint256", "name": "poolCount", "type": "uint256" },
+      { "internalType": "uint256", "name": "winnerCount", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
