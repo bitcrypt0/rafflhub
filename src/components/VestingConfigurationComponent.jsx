@@ -28,6 +28,8 @@ const VestingConfigurationComponent = () => {
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [vestingInfo, setVestingInfo] = useState(null);
   const [configuring, setConfiguring] = useState(false);
+  const [declaring, setDeclaring] = useState(false);
+  const [cutting, setCutting] = useState(false);
   const [allocationPercent, setAllocationPercent] = useState('');
   const [allocationTokenId, setAllocationTokenId] = useState('');
 
@@ -73,15 +75,14 @@ const VestingConfigurationComponent = () => {
 
       // Get collection info
       if (isERC721Contract) {
-        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
+        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
           contract.maxSupply(),
+          contract.creatorAllocation(),
           contract.creationTime(),
           contract.vestingConfigured(),
           contract.creatorClaimedCount(),
           contract.getUnlockedAmount()
         ]);
-
-        const creatorAllocation = maxSupply.div(5);
 
         const info = {
           maxSupply: maxSupply.toString(),
@@ -114,15 +115,14 @@ const VestingConfigurationComponent = () => {
         }
       } else {
         // ERC1155
-        const [maxSupply, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
+        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
           contract.maxSupply(tokenId),
+          contract.creatorAllocation(tokenId),
           contract.tokenCreationTime(tokenId),
           contract.vestingConfigured(tokenId),
           contract.creatorClaimedCount(tokenId),
           contract.getUnlockedAmount(tokenId)
         ]);
-
-        const creatorAllocation = maxSupply.div(5);
 
         const info = {
           maxSupply: maxSupply.toString(),
@@ -212,7 +212,7 @@ const VestingConfigurationComponent = () => {
       return;
     }
 
-    // Validation - check that cliff date is at least 7 days from now
+    // Validation - check that cliff date is selected
     if (!cliffDateTime) {
       toast.error('Please select a cliff end date and time');
       return;
@@ -220,15 +220,14 @@ const VestingConfigurationComponent = () => {
 
     const cliffDate = new Date(cliffDateTime);
     const now = new Date();
-    const minCliffDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days from now
     
-    if (cliffDate < minCliffDate) {
-      toast.error('Cliff period must be at least 7 days from now');
+    if (cliffDate < now) {
+      toast.error('Cliff date must be in the future');
       return;
     }
 
-    if (unlockIntervalDays < 7) {
-      toast.error('Unlock interval must be at least 7 days');
+    if (unlockIntervalDays < 1) {
+      toast.error('Unlock interval must be at least 1 day');
       return;
     }
 
@@ -280,25 +279,29 @@ const VestingConfigurationComponent = () => {
       toast.error('Please enter a valid collection address');
       return;
     }
+    setDeclaring(true);
     try {
       const pct = Number(allocationPercent);
       if (!isFinite(pct) || pct <= 0 || pct > 100) {
         toast.error('Enter a valid percentage between 0 and 100');
+        setDeclaring(false);
         return;
       }
-      const basisPoints = ethers.BigNumber.from(Math.round(pct * 100));
+      const percentage = ethers.BigNumber.from(pct);
       if (isERC721) {
-        await fetchedCollection.callStatic.declareCreatorAllocation(basisPoints);
-        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(basisPoints));
+        await fetchedCollection.callStatic.declareCreatorAllocation(percentage);
+        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(percentage));
       } else {
         const tid = allocationTokenId ? parseInt(allocationTokenId) : tokenId;
-        await fetchedCollection.callStatic.declareCreatorAllocation(tid, basisPoints);
-        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(tid, basisPoints));
+        await fetchedCollection.callStatic.declareCreatorAllocation(tid, percentage);
+        await executeTransaction(() => fetchedCollection.declareCreatorAllocation(tid, percentage));
       }
       toast.success('Creator allocation declared');
       await fetchCollectionDetails(collectionAddress);
     } catch (error) {
-      notifyError(error, { action: 'declareCreatorAllocation' });
+      notifyError(error, { action: 'declareAllocation' });
+    } finally {
+      setDeclaring(false);
     }
   };
 
@@ -308,26 +311,29 @@ const VestingConfigurationComponent = () => {
       toast.error('Please enter a valid collection address');
       return;
     }
-
+    setCutting(true);
     try {
       const pct = Number(allocationPercent);
       if (!isFinite(pct) || pct <= 0 || pct > 100) {
         toast.error('Enter a valid percentage between 0 and 100');
+        setCutting(false);
         return;
       }
-      const basisPoints = ethers.BigNumber.from(Math.round(pct * 100));
+      const percentage = ethers.BigNumber.from(pct);
       if (isERC721) {
-        await fetchedCollection.callStatic.cutSupply(basisPoints);
-        await executeTransaction(() => fetchedCollection.cutSupply(basisPoints));
+        await fetchedCollection.callStatic.cutSupply(percentage);
+        await executeTransaction(() => fetchedCollection.cutSupply(percentage));
       } else {
         const tid = allocationTokenId ? parseInt(allocationTokenId) : tokenId;
-        await fetchedCollection.callStatic.cutSupply(tid, basisPoints);
-        await executeTransaction(() => fetchedCollection.cutSupply(tid, basisPoints));
+        await fetchedCollection.callStatic.cutSupply(tid, percentage);
+        await executeTransaction(() => fetchedCollection.cutSupply(tid, percentage));
       }
       toast.success('Supply cut successfully');
       await fetchCollectionDetails(collectionAddress);
     } catch (error) {
       notifyError(error, { action: 'cutSupply' });
+    } finally {
+      setCutting(false);
     }
   };
 
@@ -513,7 +519,9 @@ const VestingConfigurationComponent = () => {
               <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
               <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%). This will reduce both maxSupply and creatorAllocation proportionally.</p>
             </div>
-            <Button onClick={cutSupply} disabled={!allocationPercent} className="w-full">Cut Supply</Button>
+            <Button onClick={cutSupply} disabled={!allocationPercent || cutting} className="w-full">
+              {cutting ? 'Cutting...' : 'Cut Supply'}
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -542,7 +550,9 @@ const VestingConfigurationComponent = () => {
               <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
               <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%)</p>
             </div>
-            <Button onClick={declareAllocation} disabled={!allocationPercent} className="w-full">Declare Allocation</Button>
+            <Button onClick={declareAllocation} disabled={!allocationPercent || declaring} className="w-full">
+              {declaring ? 'Declaring...' : 'Declare Allocation'}
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -567,7 +577,6 @@ const VestingConfigurationComponent = () => {
                 value={cliffDateTime}
                 onChange={(e) => setCliffDateTime(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                min={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
               />
               <p className="text-xs text-muted-foreground">
                 Select the date and time when the cliff period ends. Must be at least 7 days from now.
