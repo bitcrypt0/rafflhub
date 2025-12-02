@@ -42,7 +42,7 @@ const UnifiedDashboardGrid = ({
     },
     {
       id: 'vesting',
-      title: 'Configure Creator Allocation & Vesting',
+      title: 'Supply, Creator Allocation & Vesting Management',
       description: 'Configure vesting schedules for creator token allocations to prevent rug pulls',
       component: VestingConfigurationComponent,
       priority: 2

@@ -411,7 +411,7 @@ const NewMobileProfilePage = () => {
             <div className="flex items-center gap-3">
               <Lock className="h-5 w-5 text-primary" />
               <div>
-                <div className="font-medium">Configure Creator Allocation Vesting</div>
+                <div className="font-medium">Supply, Creator Allocation & Vesting Management</div>
                 <div className="text-sm text-muted-foreground">Configure vesting schedules for creator token allocations</div>
               </div>
             </div>
@@ -918,7 +918,7 @@ const NewMobileProfilePage = () => {
           <Button onClick={handleBack} variant="tertiary" size="md">
             ← Back
           </Button>
-          <h2 className="text-xl font-semibold">Configure Creator Allocation & Vesting</h2>
+          <h2 className="text-xl font-semibold">Supply, Creator Allocation & Vesting Management</h2>
         </div>
         <VestingConfigurationComponent />
       </div>

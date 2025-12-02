@@ -31,7 +31,7 @@ const KOLApprovalComponent = () => {
   const [kolAddress, setKolAddress] = useState('');
   const [poolLimit, setPoolLimit] = useState('');
   const [enforcedSlotFee, setEnforcedSlotFee] = useState('');
-  const [enforcedWinnerCount, setEnforcedWinnerCount] = useState('');
+  const [winnerLimit, setWinnerLimit] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [collectionName, setCollectionName] = useState('');
@@ -173,8 +173,9 @@ const KOLApprovalComponent = () => {
         approved: details.approved,
         poolLimit: details.poolLimit ? Number(details.poolLimit) : 0,
         enforcedSlotFee: details.enforcedSlotFee ? details.enforcedSlotFee : ethers.BigNumber.from(0),
-        enforcedWinnerCount: details.enforcedWinnerCount ? Number(details.enforcedWinnerCount) : 0,
+        winnerLimit: details.winnerLimit ? Number(details.winnerLimit) : 0,
         poolCount: details.poolCount ? Number(details.poolCount) : 0,
+        winnerCount: details.winnerCount ? Number(details.winnerCount) : 0,
       };
       setKolDetails(normalized);
     } catch (err) {
@@ -219,8 +220,8 @@ const KOLApprovalComponent = () => {
       return;
     }
 
-    if (!enforcedWinnerCount || isNaN(enforcedWinnerCount) || parseInt(enforcedWinnerCount) <= 0) {
-      toast.error('Please enter a valid enforced winner count');
+    if (!winnerLimit || isNaN(winnerLimit) || parseInt(winnerLimit) <= 0) {
+      toast.error('Please enter a valid winner limit');
       return;
     }
 
@@ -273,18 +274,18 @@ const KOLApprovalComponent = () => {
         kolAddress,
         parseInt(poolLimit),
         enforcedSlotFeeWei,
-        parseInt(enforcedWinnerCount)
+        parseInt(winnerLimit)
       );
       
       await tx.wait();
       toast.success('KOL approved successfully!');
-      setSuccess(`KOL ${kolAddress} approved with pool limit ${poolLimit}, slot fee ${enforcedSlotFee} ETH, and ${enforcedWinnerCount} winners`);
+      toast.success(`KOL ${kolAddress} approved with pool limit ${poolLimit}, slot fee ${enforcedSlotFee} ETH, and ${winnerLimit} winner limit`);
       
       // Clear form
       setKolAddress('');
       setPoolLimit('');
       setEnforcedSlotFee('');
-      setEnforcedWinnerCount('');
+      setWinnerLimit('');
       await fetchKOLDetails();
     } catch (err) {
       console.error('Error approving KOL:', err);
@@ -402,20 +403,19 @@ const KOLApprovalComponent = () => {
           </div>
 
           {fetchedCollection && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Collection Found</span>
-              </div>
-              <div className="text-sm text-green-700 space-y-1">
-                <p><strong>Name:</strong> {collectionName}</p>
-                <p><strong>Symbol:</strong> {collectionSymbol}</p>
-                <p><strong>Type:</strong> {collectionType?.toUpperCase()}</p>
-                <div className="mt-2">
-                  <Label className="text-sm">Address</Label>
-                  <p className="text-sm font-mono bg-green-100 text-green-800 p-2 rounded break-words">
-                    {fetchedCollection}
-                  </p>
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span> {collectionName}
+                </div>
+                <div>
+                  <span className="font-medium">Symbol:</span> {collectionSymbol}
+                </div>
+                <div>
+                  <span className="font-medium">Type:</span> {collectionType?.toUpperCase()}
+                </div>
+                <div>
+                  <span className="font-medium">Owner:</span> {isOwner ? 'You' : 'Other'}
                 </div>
               </div>
             </div>
@@ -461,8 +461,9 @@ const KOLApprovalComponent = () => {
                   <div>
                     Enforced Slot Fee: <strong>{ethers.utils.formatEther(kolDetails.enforcedSlotFee)} ETH</strong>
                   </div>
-                  <div>Enforced Winner Count: <strong>{kolDetails.enforcedWinnerCount}</strong></div>
+                  <div>Winner Limit: <strong>{kolDetails.winnerLimit}</strong></div>
                   <div>Pool Count: <strong>{kolDetails.poolCount}</strong></div>
+                  <div>Winner Count: <strong>{kolDetails.winnerCount}</strong></div>
                 </div>
               )}
 
@@ -496,16 +497,16 @@ const KOLApprovalComponent = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="enforcedWinnerCount">Enforced Winner Count</Label>
+                <Label htmlFor="winnerLimit">Winner Limit</Label>
                 <ResponsiveNumberInput
-                  id="enforcedWinnerCount"
-                  placeholder="Enter winner count (e.g., 5)"
-                  value={enforcedWinnerCount}
-                  onChange={(e) => setEnforcedWinnerCount(e.target.value)}
+                  id="winnerLimit"
+                  placeholder="Enter winner limit (e.g., 5)"
+                  value={winnerLimit}
+                  onChange={(e) => setWinnerLimit(e.target.value)}
                   disabled={loading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Fixed number of winners that the KOL must use when creating pools
+                  Total winner limit that the KOL can allocate across all pools
                 </p>
               </div>
 
@@ -516,7 +517,7 @@ const KOLApprovalComponent = () => {
                   !validateAddress(kolAddress) || 
                   !poolLimit || 
                   !enforcedSlotFee || 
-                  !enforcedWinnerCount ||
+                  !winnerLimit ||
                   loading
                 }
                 variant="primary"

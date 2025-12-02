@@ -321,5 +321,8 @@
   },
   { "inputs": [], "name": "creatorAllocation", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "creatorAllocationDeclared", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" },
-  { "inputs": [ { "internalType": "uint256", "name": "_percentage", "type": "uint256" } ], "name": "declareCreatorAllocation", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+  { "inputs": [ { "internalType": "uint256", "name": "_percentage", "type": "uint256" } ], "name": "declareCreatorAllocation", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [ { "internalType": "uint256", "name": "_percentage", "type": "uint256" } ], "name": "cutSupply", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "_kol", "type": "address" } ], "name": "getKOLApprovalDetails", "outputs": [ { "internalType": "bool", "name": "approved", "type": "bool" }, { "internalType": "uint256", "name": "poolLimit", "type": "uint256" }, { "internalType": "uint256", "name": "enforcedSlotFee", "type": "uint256" }, { "internalType": "uint256", "name": "winnerLimit", "type": "uint256" }, { "internalType": "uint256", "name": "poolCount", "type": "uint256" }, { "internalType": "uint256", "name": "winnerCount", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "_kol", "type": "address" }, { "internalType": "uint256", "name": "_winnersCount", "type": "uint256" } ], "name": "incrementKOLApprovedCounts", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
 ]

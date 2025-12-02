@@ -19,7 +19,7 @@ const VestingConfigurationComponent = () => {
   const [loading, setLoading] = useState(false);
 
   // Vesting configuration state
-  const [cliffDays, setCliffDays] = useState(7);
+  const [cliffDateTime, setCliffDateTime] = useState('');
   const [numberOfUnlocks, setNumberOfUnlocks] = useState(2);
   const [unlockIntervalDays, setUnlockIntervalDays] = useState(7);
   const [tokenId, setTokenId] = useState(1); // For ERC1155
@@ -168,6 +168,13 @@ const VestingConfigurationComponent = () => {
     }
   };
 
+  // Set default cliff date to 7 days from now
+  useEffect(() => {
+    const defaultCliff = new Date();
+    defaultCliff.setDate(defaultCliff.getDate() + 7);
+    setCliffDateTime(defaultCliff.toISOString().slice(0, 16));
+  }, []);
+
   // Auto-fetch collection details when address changes
   useEffect(() => {
     // Debounce to avoid excessive calls while typing
@@ -205,9 +212,18 @@ const VestingConfigurationComponent = () => {
       return;
     }
 
-    // Validation
-    if (cliffDays < 7) {
-      toast.error('Cliff period must be at least 7 days');
+    // Validation - check that cliff date is at least 7 days from now
+    if (!cliffDateTime) {
+      toast.error('Please select a cliff end date and time');
+      return;
+    }
+
+    const cliffDate = new Date(cliffDateTime);
+    const now = new Date();
+    const minCliffDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days from now
+    
+    if (cliffDate < minCliffDate) {
+      toast.error('Cliff period must be at least 7 days from now');
       return;
     }
 
@@ -235,7 +251,7 @@ const VestingConfigurationComponent = () => {
 
     setConfiguring(true);
     try {
-      const cliffEnd = Math.floor(Date.now() / 1000) + (cliffDays * 86400);
+      const cliffEnd = Math.floor(cliffDate.getTime() / 1000); // Convert to Unix timestamp
       const durationBetweenUnlocks = unlockIntervalDays * 86400;
 
       let tx;
@@ -258,6 +274,7 @@ const VestingConfigurationComponent = () => {
     }
   };
 
+  // Declare creator allocation function
   const declareAllocation = async () => {
     if (!fetchedCollection || !collectionInfo) {
       toast.error('Please enter a valid collection address');
@@ -282,6 +299,35 @@ const VestingConfigurationComponent = () => {
       await fetchCollectionDetails(collectionAddress);
     } catch (error) {
       notifyError(error, { action: 'declareCreatorAllocation' });
+    }
+  };
+
+  // Cut supply function
+  const cutSupply = async () => {
+    if (!fetchedCollection || !collectionInfo) {
+      toast.error('Please enter a valid collection address');
+      return;
+    }
+
+    try {
+      const pct = Number(allocationPercent);
+      if (!isFinite(pct) || pct <= 0 || pct > 100) {
+        toast.error('Enter a valid percentage between 0 and 100');
+        return;
+      }
+      const basisPoints = ethers.BigNumber.from(Math.round(pct * 100));
+      if (isERC721) {
+        await fetchedCollection.callStatic.cutSupply(basisPoints);
+        await executeTransaction(() => fetchedCollection.cutSupply(basisPoints));
+      } else {
+        const tid = allocationTokenId ? parseInt(allocationTokenId) : tokenId;
+        await fetchedCollection.callStatic.cutSupply(tid, basisPoints);
+        await executeTransaction(() => fetchedCollection.cutSupply(tid, basisPoints));
+      }
+      toast.success('Supply cut successfully');
+      await fetchCollectionDetails(collectionAddress);
+    } catch (error) {
+      notifyError(error, { action: 'cutSupply' });
     }
   };
 
@@ -313,10 +359,10 @@ const VestingConfigurationComponent = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
-            Collection Details
+            Supply, Creator Allocation & Vesting Management
           </CardTitle>
           <CardDescription>
-            Enter your collection address to view and configure vesting
+            Enter your collection address to view and configure supply, creator allocation and vesting
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -443,6 +489,35 @@ const VestingConfigurationComponent = () => {
         </Card>
       )}
 
+      {/* Cut Supply Section */}
+      {collectionInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Cut Supply
+            </CardTitle>
+            <CardDescription>
+              Reduce the maximum supply and proportionally reduce creator allocation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isERC721 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Token ID (ERC1155 only)</label>
+                <input type="number" placeholder="1" value={allocationTokenId} onChange={(e) => setAllocationTokenId(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cut Percentage (%)</label>
+              <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
+              <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%). This will reduce both maxSupply and creatorAllocation proportionally.</p>
+            </div>
+            <Button onClick={cutSupply} disabled={!allocationPercent} className="w-full">Cut Supply</Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Declare Creator Allocation (placed above configure) */}
       {collectionInfo && (
         <Card>
@@ -486,17 +561,16 @@ const VestingConfigurationComponent = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Cliff Period (days)</label>
+              <label className="text-sm font-medium">Cliff End Date & Time</label>
               <input
-                type="number"
-                placeholder="7"
-                value={cliffDays}
-                onChange={(e) => setCliffDays(parseInt(e.target.value) || 7)}
+                type="datetime-local"
+                value={cliffDateTime}
+                onChange={(e) => setCliffDateTime(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                min="7"
+                min={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
               />
               <p className="text-xs text-muted-foreground">
-                Minimum 7 days. No tokens can be minted before cliff ends.
+                Select the date and time when the cliff period ends. Must be at least 7 days from now.
               </p>
             </div>
 
@@ -508,7 +582,6 @@ const VestingConfigurationComponent = () => {
                 value={numberOfUnlocks}
                 onChange={(e) => setNumberOfUnlocks(parseInt(e.target.value) || 2)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                min="2"
               />
               <p className="text-xs text-muted-foreground">
                 {collectionInfo.creatorAllocation < 500 && 'Minimum 2 unlocks for allocation < 500'}
@@ -526,7 +599,6 @@ const VestingConfigurationComponent = () => {
                 value={unlockIntervalDays}
                 onChange={(e) => setUnlockIntervalDays(parseInt(e.target.value) || 7)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                min="7"
               />
               <p className="text-xs text-muted-foreground">
                 Minimum 7 days between each unlock period.
@@ -540,11 +612,13 @@ const VestingConfigurationComponent = () => {
                 Preview
               </h4>
               <div className="text-sm space-y-1">
-                <p>• Cliff ends in <strong>{cliffDays} days</strong></p>
+                <p>• Cliff ends on <strong>{cliffDateTime ? new Date(cliffDateTime).toLocaleString() : 'Not set'}</strong></p>
                 <p>• <strong>{numberOfUnlocks}</strong> unlock periods</p>
                 <p>• <strong>{Math.ceil(parseInt(collectionInfo.creatorAllocation) / numberOfUnlocks)}</strong> tokens per unlock</p>
                 <p>• New unlock every <strong>{unlockIntervalDays} days</strong></p>
-                <p>• Full allocation available in <strong>{cliffDays + (numberOfUnlocks - 1) * unlockIntervalDays} days</strong></p>
+                {cliffDateTime && (
+                  <p>• Full allocation available in <strong>{Math.ceil((new Date(cliffDateTime).getTime() - Date.now()) / (1000 * 60 * 60 * 24) + (numberOfUnlocks - 1) * unlockIntervalDays)} days</strong></p>
+                )}
               </div>
             </div>
 
