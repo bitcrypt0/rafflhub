@@ -7,6 +7,7 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { SOCIAL_TASK_CONSTANTS } from '../constants/socialTasks';
+import { contractABIs } from '../contracts/contractABIs';
 
 // Maximum number of social media tasks allowed
 const MAX_SOCIAL_TASKS = SOCIAL_TASK_CONSTANTS.MAX_TASKS;
@@ -25,36 +26,65 @@ const SocialMediaTaskSection = ({
   const { contracts } = useContract();
   const [socialFee, setSocialFee] = useState(null);
   const [loadingFee, setLoadingFee] = useState(true);
+  const [isTaskAssignmentPaused, setIsTaskAssignmentPaused] = useState(false);
+  const [loadingPauseStatus, setLoadingPauseStatus] = useState(true);
 
-  // Fetch social engagement fee on mount
+  // Fetch social engagement fee and task assignment pause status on mount
   useEffect(() => {
-    const fetchSocialFee = async () => {
+    const fetchSocialData = async () => {
       if (!contracts?.protocolManager) {
         setLoadingFee(false);
+        setLoadingPauseStatus(false);
         return;
       }
       
       try {
+        console.log('🔍 Debug: contracts object:', contracts);
+        console.log('🔍 Debug: socialEngagementManager exists:', !!contracts?.socialEngagementManager);
+        
+        // Fetch social engagement fee
         const fee = await contracts.protocolManager.socialEngagementFee();
         setSocialFee(fee);
+        
+        // Fetch task assignment pause status
+        if (contracts?.socialEngagementManager) {
+          console.log('🔍 Debug: Calling isTaskAssignmentPaused()...');
+          const paused = await contracts.socialEngagementManager.isTaskAssignmentPaused();
+          console.log('🔍 Debug: isTaskAssignmentPaused returned:', paused);
+          setIsTaskAssignmentPaused(paused);
+        } else {
+          console.warn('⚠️ socialEngagementManager contract not available');
+          setIsTaskAssignmentPaused(false);
+        }
       } catch (error) {
-        console.error('Error fetching social engagement fee:', error);
+        console.error('❌ Error fetching social engagement data:', error);
         setSocialFee(null);
+        setIsTaskAssignmentPaused(false);
       } finally {
         setLoadingFee(false);
+        setLoadingPauseStatus(false);
       }
     };
 
-    fetchSocialFee();
+    fetchSocialData();
   }, [contracts]);
   
   // Use either separate state or formData.socialEngagementEnabled
   const isEnabled = useFormDataEnabled ? formData.socialEngagementEnabled : socialEngagementEnabled;
+  const isDisabled = isTaskAssignmentPaused || loadingPauseStatus;
   const handleToggleChange = useFormDataEnabled
-    ? (value) => handleChange('socialEngagementEnabled', value)
-    : (onSocialEngagementChange || setSocialEngagementEnabled || (() => {
-        console.warn('No toggle change handler provided to SocialMediaTaskSection');
-      }));
+    ? (value) => {
+        if (!isDisabled) {
+          handleChange('socialEngagementEnabled', value);
+        }
+      }
+    : (value) => {
+        if (!isDisabled) {
+          (onSocialEngagementChange || setSocialEngagementEnabled || (() => {
+            console.warn('No toggle change handler provided to SocialMediaTaskSection');
+          }))(value);
+        }
+      };
 
   // Initialize tasks if not present
   const tasks = formData.socialTasks || [];
@@ -177,27 +207,41 @@ const SocialMediaTaskSection = ({
     <>
       {/* Social Media Task Toggle */}
       {isMobile ? (
-        <div className="p-4 bg-card/50 rounded-xl border border-border/50 mb-4 shadow-sm">
+        <div className={`p-4 bg-card/50 rounded-xl border border-border/50 mb-4 shadow-sm ${
+          isDisabled ? 'opacity-60' : ''
+        }`}>
           <div
-            className="flex items-center justify-between gap-4 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted/10 active:bg-muted/20 rounded-lg p-1 -m-1"
-            onClick={() => handleToggleChange(!isEnabled)}
+            className={`flex items-center justify-between gap-4 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg p-1 -m-1 ${
+              isDisabled 
+                ? 'cursor-not-allowed' 
+                : 'cursor-pointer hover:bg-muted/10 active:bg-muted/20'
+            }`}
+            onClick={() => !isDisabled && handleToggleChange(!isEnabled)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 handleToggleChange(!isEnabled);
               }
             }}
-            tabIndex={0}
-            role="button"
+            tabIndex={isDisabled ? -1 : 0}
+            role={isDisabled ? undefined : 'button'}
             aria-label={`${isEnabled ? 'Disable' : 'Enable'} social media tasks`}
           >
             <div className="flex-1">
-              <label className="font-medium block cursor-pointer text-base mb-1">
+              <label className={`font-medium block text-base mb-1 ${
+                isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+              }`}>
                 Enable Social Media Tasks
-                {!loadingFee && socialFee && (
-                  <span className="ml-2 text-base font-medium">
-                    (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                {isTaskAssignmentPaused ? (
+                  <span className="ml-2 text-base font-medium text-muted-foreground">
+                    (Task assignments paused)
                   </span>
+                ) : (
+                  !loadingFee && socialFee && (
+                    <span className="ml-2 text-base font-medium">
+                      (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                    </span>
+                  )
                 )}
               </label>
               <p className="text-xs text-muted-foreground">
@@ -206,9 +250,11 @@ const SocialMediaTaskSection = ({
             </div>
             <CheckCircle
               className={`h-6 w-6 transition-colors duration-200 ${
-                isEnabled
-                  ? 'text-green-600'
-                  : 'text-muted-foreground/40'
+                isDisabled
+                  ? 'text-muted-foreground/20'
+                  : isEnabled
+                    ? 'text-green-600'
+                    : 'text-muted-foreground/40'
               }`}
             />
           </div>
@@ -219,27 +265,40 @@ const SocialMediaTaskSection = ({
             <Switch
               checked={isEnabled}
               onCheckedChange={handleToggleChange}
+              disabled={isDisabled}
               size="default"
             />
             <div
-              className="flex-1 cursor-pointer select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:text-foreground/80 active:text-foreground"
-              onClick={() => handleToggleChange(!isEnabled)}
+              className={`flex-1 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                isDisabled 
+                  ? 'cursor-not-allowed' 
+                  : 'cursor-pointer hover:text-foreground/80 active:text-foreground'
+              }`}
+              onClick={() => !isDisabled && handleToggleChange(!isEnabled)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
                   e.preventDefault();
                   handleToggleChange(!isEnabled);
                 }
               }}
-              tabIndex={0}
-              role="button"
+              tabIndex={isDisabled ? -1 : 0}
+              role={isDisabled ? undefined : 'button'}
               aria-label={`${isEnabled ? 'Disable' : 'Enable'} social media tasks`}
             >
-              <label className="font-medium block cursor-pointer text-sm">
+              <label className={`font-medium block text-sm ${
+                isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+              }`}>
                 Enable Social Media Tasks
-                {!loadingFee && socialFee && (
-                  <span className="ml-2 text-sm font-medium">
-                    (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                {isTaskAssignmentPaused ? (
+                  <span className="ml-2 text-sm font-medium text-muted-foreground">
+                    (Task assignments paused)
                   </span>
+                ) : (
+                  !loadingFee && socialFee && (
+                    <span className="ml-2 text-sm font-medium">
+                      (Costs {ethers.utils.formatEther(socialFee)} {getCurrencySymbol()})
+                    </span>
+                  )
                 )}
               </label>
             </div>

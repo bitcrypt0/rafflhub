@@ -82,6 +82,14 @@ export const ContractProvider = ({ children }) => {
         );
       }
 
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.socialEngagementManager) {
+        newContracts.socialEngagementManager = new ethers.Contract(
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.socialEngagementManager,
+          contractABIs.socialEngagementManager,
+          signer
+        );
+      }
+
       setContracts(newContracts);
     } catch (error) {
       console.error('Error initializing contracts:', error);

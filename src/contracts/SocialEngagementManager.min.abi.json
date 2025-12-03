@@ -75,14 +75,7 @@
   },
   {
     "inputs": [],
-    "name": "pauseTaskAssignment",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unpauseTaskAssignment",
+    "name": "toggleTaskAssignments",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
