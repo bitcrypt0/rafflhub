@@ -67,9 +67,8 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const [loading, setLoading] = useState(false);
   const [userSlots, setUserSlots] = useState(0);
   const [winningChance, setWinningChance] = useState(null);
-  const [activating, setActivating] = useState(false);
 
-  const [endingRaffle, setEndingRaffle] = useState(false);
+  const [closingPool, setClosingPool] = useState(false);
   const [requestingRandomness, setRequestingRandomness] = useState(false);
 
   useEffect(() => {
@@ -135,7 +134,25 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   };
 
   const canPurchaseTickets = () => {
+    // Allow purchases when pool is Active OR Live (startTime passed, pending state)
+    const now = Math.floor(Date.now() / 1000);
+    const isLive = raffle.state?.toLowerCase() === 'pending' && 
+                   raffle.startTime && 
+                   now >= raffle.startTime;
+    
+    return raffle.state?.toLowerCase() === 'active' || isLive;
+  };
+
+  const isRaffleActive = () => {
     return raffle.state?.toLowerCase() === 'active';
+  };
+
+  const isRaffleLive = () => {
+    const now = Math.floor(Date.now() / 1000);
+    return raffle.state?.toLowerCase() === 'pending' && 
+           raffle.startTime && 
+           now >= raffle.startTime && 
+           (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
   };
 
   const isRaffleEnded = () => {
@@ -145,22 +162,82 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
            timeRemaining === 'Ended';
   };
 
-  const handleActivateRaffle = async () => {
-    setActivating(true);
+  const canClosePool = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const raffleEndTime = raffle.startTime + raffle.duration;
+    const participantsCount = raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0;
+    
+    // Debug logging
+    console.log('canClosePool debug:', {
+      now,
+      raffleEndTime,
+      timePassed: now >= raffleEndTime,
+      participantsCount,
+      winnersCount: raffle.winnersCount,
+      sufficientParticipants: participantsCount <= raffle.winnersCount,
+      state: raffle.state?.toLowerCase(),
+      validState: (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending')
+    });
+    
+    return now >= raffleEndTime && 
+           participantsCount <= raffle.winnersCount &&
+           (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending');
+  };
+
+  const canRequestRandomness = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const raffleEndTime = raffle.startTime + raffle.duration;
+    const participantsCount = raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0;
+    
+    // Debug logging
+    console.log('canRequestRandomness debug:', {
+      now,
+      raffleEndTime,
+      timePassed: now >= raffleEndTime,
+      participantsCount,
+      winnersCount: raffle.winnersCount,
+      winnersSelected: raffle.winnersSelected,
+      sufficientParticipants: participantsCount > raffle.winnersCount,
+      moreWinnersNeeded: raffle.winnersSelected < raffle.winnersCount,
+      state: raffle.state?.toLowerCase(),
+      stateNum: raffle.stateNum
+    });
+    
+    // For Ended pools (stateNum === 2), the state itself confirms time has passed
+    if (raffle.stateNum === 2) {
+      return participantsCount > raffle.winnersCount;
+    } 
+    // For Drawing pools (stateNum === 3), show button if more winners are needed (multi-batch selection)
+    else if (raffle.stateNum === 3) {
+      return raffle.winnersSelected < raffle.winnersCount;
+    }
+    // For Active pools that have passed endTime with sufficient participants
+    else if (raffle.state?.toLowerCase() === 'active' && now >= raffleEndTime) {
+      return participantsCount > raffle.winnersCount;
+    }
+    
+    return false;
+  };
+
+
+  const handleClosePool = async () => {
+    setClosingPool(true);
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      
       // Preflight simulate to surface revert reason
       try {
-        await poolContract.callStatic.activate();
+        await poolContract.callStatic.closePool();
       } catch (simErr) {
-        notifyError(simErr, { action: 'activatePool', phase: 'preflight' });
+        notifyError(simErr, { action: 'closePool', phase: 'preflight' });
         throw simErr;
       }
-      const result = await executeTransaction(poolContract.activate);
+      
+      const result = await executeTransaction(poolContract.closePool);
       if (result.success) {
-        toast.success('Pool activated successfully!');
-        // Trigger state refresh instead of page reload
+        toast.success('Pool closed successfully!');
+        // Trigger state refresh
         if (onStateChange) {
           onStateChange();
         }
@@ -168,11 +245,11 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
         throw new Error(result.error);
       }
     } catch (err) {
-      const errorDetails = formatErrorForDisplay(err, 'activate raffle');
-      logContractError(err, 'Activate Raffle');
-      notifyError(err, { action: 'activatePool' });
+      const errorDetails = formatErrorForDisplay(err, 'close pool');
+      logContractError(err, 'Close Pool');
+      notifyError(err, { action: 'closePool' });
     } finally {
-      setActivating(false);
+      setClosingPool(false);
     }
   };
 
@@ -204,29 +281,6 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       notifyError(error, { action: 'requestRandomness' });
     } finally {
       setRequestingRandomness(false);
-    }
-  };
-
-  const handleEndRaffle = async () => {
-    setEndingRaffle(true);
-    try {
-      const poolContract = getContractInstance(raffle.address, 'pool');
-      if (!poolContract) throw new Error('Failed to get pool contract');
-      const result = await executeTransaction(poolContract.endPool);
-      if (result.success) {
-        toast.success('Pool ended successfully!');
-        // Trigger state refresh instead of page reload
-        if (onStateChange) {
-          onStateChange();
-        }
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (err) {
-      const errorDetails = formatErrorForDisplay(err, 'end raffle');
-      logContractError(err, 'End Raffle');
-    } finally {
-      setEndingRaffle(false);
     }
   };
 
@@ -357,23 +411,17 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
         ) : (
           <div className="mt-auto">
             {/* Removed non-active desktop placeholder; rely on min-height */}
-            {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
+            {canClosePool() ? (
               <Button
-                onClick={handleActivateRaffle}
-                disabled={activating}
+                onClick={handleClosePool}
+                disabled={closingPool}
                 variant="primary"
                 size="lg"
                 className="w-full"
               >
-                {activating ? 'Activating...' : 'Activate Pool'}
+                {closingPool ? 'Closing...' : 'Close Pool'}
               </Button>
-            ) : raffle.state?.toLowerCase() === 'pending' && !canActivate ? (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground text-sm">
-                  Pool will be available for activation at the scheduled start time.
-                </p>
-              </div>
-            ) : (raffle.stateNum === 2 || (raffle.stateNum === 3 && raffle.winnersSelected < raffle.winnersCount)) && (address?.toLowerCase() === raffle.creator.toLowerCase() || userSlots > 0) ? (
+            ) : canRequestRandomness() && (address?.toLowerCase() === raffle.creator.toLowerCase() || userSlots > 0) ? (
               <>
                 <Button
                   onClick={handleRequestRandomness}
@@ -400,15 +448,15 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </Button>
-            ) : isRaffleEnded() ? (
+            ) : canClosePool() && (address?.toLowerCase() === raffle.creator.toLowerCase()) ? (
               <Button
-                onClick={handleEndRaffle}
-                disabled={endingRaffle}
+                onClick={handleClosePool}
+                disabled={closingPool}
                 variant="primary"
                 size="lg"
                 className="w-full"
               >
-                {endingRaffle ? 'Ending...' : 'End Pool'}
+                {closingPool ? 'Closing...' : 'Close Pool'}
               </Button>
             ) : maxPurchasable <= 0 ? (
               <Button
@@ -3057,6 +3105,13 @@ const RaffleDetailPage = () => {
   const getStatusBadge = () => {
     if (!raffle) return null;
 
+    // Check for Live state (startTime passed but no purchases yet)
+    const now = Math.floor(Date.now() / 1000);
+    const isLive = raffle.state?.toLowerCase() === 'pending' && 
+                   raffle.startTime && 
+                   now >= raffle.startTime && 
+                   (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
+
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
       if (stateNum === 6) { // AllPrizesClaimed state (was 7, now 6)
@@ -3065,9 +3120,10 @@ const RaffleDetailPage = () => {
       return POOL_STATE_LABELS[stateNum] || 'Unknown';
     };
 
-    const label = getDynamicLabel(raffle.stateNum);
+    const label = isLive ? 'Live' : getDynamicLabel(raffle.stateNum);
     const colorMap = {
       'Pending': 'bg-yellow-100 text-yellow-800',
+      'Live': 'bg-blue-100 text-blue-800',
       'Active': 'bg-green-100 text-green-800',
       'Ended': 'bg-red-100 text-red-800',
       'Drawing': 'bg-purple-100 text-purple-800',

@@ -500,7 +500,7 @@
   },
   {
     "inputs": [],
-    "name": "endPool",
+    "name": "closePool",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

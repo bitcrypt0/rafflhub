@@ -354,6 +354,13 @@ const RaffleCard = ({ raffle }) => {
   }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
 
   const getStatusBadge = () => {
+    // Check for Live state (startTime passed but no purchases yet)
+    const now = Math.floor(Date.now() / 1000);
+    const isLive = raffle.state?.toLowerCase() === 'pending' && 
+                   raffle.startTime && 
+                   now >= raffle.startTime && 
+                   (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
+
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
       const dynamicLabel = getDynamicPrizeLabel(stateNum, winnerCount);
@@ -363,7 +370,7 @@ const RaffleCard = ({ raffle }) => {
       return POOL_STATE_LABELS[stateNum] || 'Unknown';
     };
 
-    const label = getDynamicLabel(raffle.stateNum);
+    const label = isLive ? 'Live' : getDynamicLabel(raffle.stateNum);
     const colorMap = {
       'Pending': 'bg-yellow-100 text-yellow-800',
       'Active': 'bg-green-100 text-green-800',
