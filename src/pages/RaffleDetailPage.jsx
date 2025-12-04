@@ -3157,22 +3157,43 @@ const RaffleDetailPage = () => {
       }
 
       try {
-        let contract = null;
-        let name = null;
+        let tokenName = null;
 
         if (raffle.holderTokenStandard === 0) {
-          // ERC721
-          contract = getContractInstance(raffle.holderTokenAddress, 'erc721Prize');
+          // ERC721 - use the same pattern as ERC20PrizeAmount but for name()
+          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+          const erc721Abi = ["function name() view returns (string)", "function symbol() view returns (string)"];
+          const contract = new ethers.Contract(raffle.holderTokenAddress, erc721Abi, provider);
+          
+          // Try to get symbol first, fallback to name
+          try {
+            tokenName = await contract.symbol();
+          } catch {
+            try {
+              tokenName = await contract.name();
+            } catch {
+              tokenName = null;
+            }
+          }
         } else if (raffle.holderTokenStandard === 2) {
-          // ERC20
-          contract = getContractInstance(raffle.holderTokenAddress, 'erc20');
+          // ERC20 - use the exact same pattern as ERC20PrizeAmount
+          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+          const erc20Abi = ["function symbol() view returns (string)", "function name() view returns (string)"];
+          const contract = new ethers.Contract(raffle.holderTokenAddress, erc20Abi, provider);
+          
+          // Try to get symbol first, fallback to name
+          try {
+            tokenName = await contract.symbol();
+          } catch {
+            try {
+              tokenName = await contract.name();
+            } catch {
+              tokenName = null;
+            }
+          }
         }
 
-        if (contract && typeof contract.name === 'function') {
-          name = await contract.name();
-        }
-
-        setGatingTokenName(name);
+        setGatingTokenName(tokenName);
       } catch (error) {
         console.warn('Failed to fetch gating token name:', error);
         setGatingTokenName(null);
@@ -3180,7 +3201,7 @@ const RaffleDetailPage = () => {
     };
 
     fetchGatingTokenName();
-  }, [raffle, getContractInstance]);
+  }, [raffle]);
 
   // Memoize format functions to prevent recreation
   const formatTime = useCallback((seconds) => {
