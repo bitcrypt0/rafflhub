@@ -32,6 +32,11 @@
   },
   {
     "inputs": [],
+    "name": "ExceedsWinnersCount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "IncorrectPayment",
     "type": "error"
   },
@@ -42,7 +47,37 @@
   },
   {
     "inputs": [],
+    "name": "InvalidPoolState",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPrizeAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPrizeCollection",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidState",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MintingNotSupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoPrizesToClaim",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotAWinner",
     "type": "error"
   },
   {
@@ -57,12 +92,22 @@
   },
   {
     "inputs": [],
+    "name": "PrizeTransferFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ProtocolAdminNotAllowed",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "SocialEngagementNotConfigured",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnauthorizedCaller",
     "type": "error"
   },
   {
@@ -78,51 +123,6 @@
   {
     "inputs": [],
     "name": "ZeroSlotFee",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotAWinner",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoPrizesToClaim",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPrizeAmount",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "PrizeTransferFailed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPrizeCollection",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPoolState",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UnauthorizedCaller",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ExceedsWinnersCount",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "MintingNotSupported",
     "type": "error"
   },
   {
@@ -374,6 +374,37 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "batchNumber",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "participantCount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "shuffleStartIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "batchSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "SelectionStarted",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -396,6 +427,38 @@
   {
     "inputs": [],
     "name": "amountPerWinner",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "batchCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "batchRandomSeeds",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1312,6 +1375,11 @@
         "internalType": "bytes",
         "name": "_signature",
         "type": "bytes"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
       }
     ],
     "name": "purchaseSlots",
@@ -1430,7 +1498,7 @@
   },
   {
     "inputs": [],
-    "name": "requestRandomWords",
+    "name": "requestRandomness",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

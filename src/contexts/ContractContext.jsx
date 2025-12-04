@@ -127,7 +127,7 @@ export const ContractProvider = ({ children }) => {
   // Supports transaction options (e.g., { value: ethers.BigNumber })
   const executeTransaction = async (contractMethod, params, txOptions = {}) => {
     try {
-      // Handle functions with no parameters (e.g., activate(), requestRandomWords())
+      // Handle functions with no parameters (e.g., activate(), requestRandomness())
       let tx;
       if (params === undefined) {
         // No params - only pass txOptions if it has properties

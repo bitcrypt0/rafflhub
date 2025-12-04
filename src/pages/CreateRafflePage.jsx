@@ -74,8 +74,9 @@ const WhitelistRaffleForm = () => {
       // Token-gated logic
       const holderTokenAddress = tokenGatedEnabled && formData.holderTokenAddress ? formData.holderTokenAddress : ethers.constants.AddressZero;
       const holderTokenStandard = tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
+      // ERC721/ERC1155 token counts should be simple integers, not decimals
       const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance 
-        ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) 
+        ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) 
         : ethers.BigNumber.from(0);
       const holderTokenId = tokenGatedEnabled && formData.holderTokenId ? parseInt(formData.holderTokenId) : 0;
 
@@ -554,8 +555,9 @@ const NewERC721DropForm = () => {
       
       try {
         if (formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '') {
-          minHolderTokenBalance = ethers.utils.parseUnits(formData.minHolderTokenBalance, 18);
-          holderTokenBalance = ethers.utils.parseUnits(formData.minHolderTokenBalance, 18);
+          // ERC721/ERC1155 token counts should be simple integers, not decimals
+          minHolderTokenBalance = ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance));
+          holderTokenBalance = ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance));
           console.log('minHolderTokenBalance parsed successfully:', minHolderTokenBalance.toString());
         }
       } catch (error) {
@@ -739,7 +741,7 @@ const NewERC721DropForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -967,7 +969,8 @@ function ExistingERC721DropForm() {
       // Token-gated logic
       const holderTokenAddress = tokenGatedEnabled && formData.holderTokenAddress ? formData.holderTokenAddress : ethers.constants.AddressZero;
       const holderTokenStandard = tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
-      const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0;
+      // ERC721/ERC1155 token counts should be simple integers, not decimals
+      const minHolderTokenBalance = tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0);
       const holderTokenId = tokenGatedEnabled && formData.holderTokenId ? parseInt(formData.holderTokenId) : 0;
       const params = {
         name: formData.name,
@@ -1002,7 +1005,7 @@ function ExistingERC721DropForm() {
         holderTokenAddress,
         holderTokenStandard,
         minHolderTokenBalance,
-        holderTokenBalance: tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : 0,
+        holderTokenBalance: tokenGatedEnabled && formData.minHolderTokenBalance ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId,
         
         // Social media params
@@ -1188,7 +1191,7 @@ function ExistingERC721DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1331,8 +1334,8 @@ function ExistingERC1155DropForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? (formData.holderTokenAddress || ethers.constants.AddressZero) : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.utils.parseUnits(String(formData.minHolderTokenBalance), 18) : 0,
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.utils.parseUnits(String(formData.minHolderTokenBalance), 18) : 0,
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') && formData.holderTokenId !== '' ? parseInt(formData.holderTokenId) : 0,
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
@@ -1541,7 +1544,7 @@ function ExistingERC1155DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1870,8 +1873,8 @@ function LuckySaleERC721Form() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
         
         // Social media params
@@ -2067,7 +2070,7 @@ function LuckySaleERC721Form() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2225,8 +2228,8 @@ function LuckySaleERC1155Form() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
         
         // Social media params
@@ -2436,7 +2439,7 @@ function LuckySaleERC1155Form() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2574,8 +2577,8 @@ function ETHGiveawayForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
         
         // Social media params
@@ -2748,7 +2751,7 @@ function ETHGiveawayForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2928,8 +2931,8 @@ function ERC20GiveawayForm() {
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
         
         // Social media params
@@ -3107,7 +3110,7 @@ function ERC20GiveawayForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3354,8 +3357,8 @@ function NewERC1155DropForm() {
         // 2. Add token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.utils.parseUnits(formData.minHolderTokenBalance, 18) : ethers.BigNumber.from(0),
+        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
+        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenId: formData.tokenGatedEnabled && formData.holderTokenId && formData.holderTokenId.trim() !== '' ? parseInt(formData.holderTokenId) : 0,
         
         // Social media params
@@ -3514,7 +3517,7 @@ function NewERC1155DropForm() {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 1% of your Slot Limit
+                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>

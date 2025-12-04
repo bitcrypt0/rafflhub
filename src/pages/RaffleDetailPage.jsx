@@ -59,14 +59,242 @@ function safeSlotFeeToBigNumber(slotFee) {
   }
 }
 
+// Utility function to check if ERC721 token selector should be shown
+const shouldShowTokenSelector = (raffle) => {
+  console.log('Token Selector Debug:', {
+    holderTokenAddress: raffle.holderTokenAddress,
+    holderTokenStandard: raffle.holderTokenStandard,
+    holderTokenStandardType: typeof raffle.holderTokenStandard,
+    holderTokenStandardNumber: raffle.holderTokenStandard !== undefined && raffle.holderTokenStandard !== null ? (raffle.holderTokenStandard.toNumber ? raffle.holderTokenStandard.toNumber() : Number(raffle.holderTokenStandard)) : 'N/A',
+    zeroAddress: ethers.constants.AddressZero,
+    addressMatches: raffle.holderTokenAddress === ethers.constants.AddressZero,
+    standardMatches: raffle.holderTokenStandard === 0, // ERC721 = 0 in contract
+    standardMatchesGTE: raffle.holderTokenStandard !== undefined && raffle.holderTokenStandard !== null && (raffle.holderTokenStandard.toNumber ? raffle.holderTokenStandard.toNumber() === 0 : Number(raffle.holderTokenStandard) === 0),
+    tokenGatingEnabled: raffle.holderTokenStandard === 0, // ERC721 = 0
+  });
+  
+  // Check if holder token address is set and not zero address
+  if (!raffle.holderTokenAddress || raffle.holderTokenAddress === ethers.constants.AddressZero) {
+    return false;
+  }
+  
+  // Check if holder token standard is defined
+  if (raffle.holderTokenStandard === undefined || raffle.holderTokenStandard === null) {
+    return false;
+  }
+  
+  const standard = raffle.holderTokenStandard.toNumber ? raffle.holderTokenStandard.toNumber() : Number(raffle.holderTokenStandard);
+  return standard === 0; // ERC721 = 0 in contract enum
+};
+
+// Utility function to check if any token gating is required (ERC721, ERC1155, ERC20, etc.)
+const hasTokenGating = (raffle) => {
+  return raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero;
+};
+
+// Token Selector Component - Moved outside to prevent recreation
+const TokenSelector = React.memo(({ raffle, selectedTokenIds, setSelectedTokenIds, loadingTokens, tokenError, userTokenIds }) => {
+
+  // Safe conversion for display - handle BigNumber overflow and decimals
+  let requiredTokensNumber = 1;
+  try {
+    const requiredTokens = raffle.minHolderTokenBalance;
+    if (requiredTokens && requiredTokens.toString) {
+      // Check if it's a large decimal number (like 1e18) and format it
+      const tokenStr = requiredTokens.toString();
+      if (tokenStr.length > 10) {
+        // Likely a decimal value, format it to get the actual token count
+        requiredTokensNumber = parseFloat(ethers.utils.formatUnits(requiredTokens, 18));
+      } else if (requiredTokens.toNumber) {
+        requiredTokensNumber = requiredTokens.toNumber();
+      } else {
+        requiredTokensNumber = Number(requiredTokens);
+      }
+    } else if (requiredTokens) {
+      requiredTokensNumber = Number(requiredTokens);
+    }
+  } catch (error) {
+    console.warn('Could not convert minHolderTokenBalance to number, using default 1:', error);
+    requiredTokensNumber = 1;
+  }
+  
+  const isMultiple = requiredTokensNumber > 1;
+  
+  // Manual token input state
+  const [manualTokenInput, setManualTokenInput] = useState('');
+  
+  // Sync manual input when component mounts or tokenError changes
+  useEffect(() => {
+    if (tokenError && selectedTokenIds.length > 0) {
+      setManualTokenInput(selectedTokenIds.join(', '));
+    }
+  }, [tokenError, selectedTokenIds]);
+  
+  if (loadingTokens) {
+    return (
+      <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="text-sm text-gray-600">Loading your tokens...</span>
+        </div>
+      </div>
+    );
+  }
+  
+  if (tokenError) {
+    const isEnumerationError = tokenError.toLowerCase().includes('enumeration');
+    
+    return (
+      <div className="mb-4 p-4 border border-red-200 rounded-lg bg-red-50">
+        <div className="flex items-center space-x-2 mb-3">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          <span className="text-sm text-red-600">{tokenError}</span>
+        </div>
+        
+        {/* Show manual token input only for enumeration errors */}
+        {isEnumerationError && (
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Enter Token ID{requiredTokensNumber > 1 ? 's' : ''} manually:
+            </label>
+            <input
+              type="text"
+              value={manualTokenInput}
+              onChange={(e) => {
+                const newInput = e.target.value;
+                setManualTokenInput(newInput);
+                
+                // Update selectedTokenIds immediately for real-time validation
+                const tokenIds = newInput
+                  .split(',')
+                  .map(id => id.trim())
+                  .filter(id => id && !isNaN(id))
+                  .map(id => id.toString());
+                console.log('Manual token input updated (real-time):', tokenIds);
+                setSelectedTokenIds(tokenIds);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault(); // Prevent form submission
+                }
+              }}
+              placeholder={requiredTokensNumber > 1 ? `Enter ${requiredTokensNumber} token IDs, separated by commas` : 'Enter token ID'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter the token ID{requiredTokensNumber > 1 ? 's' : ''} you own from this collection. The Purchase button will enable automatically when valid token IDs are entered.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Handle three distinct states: zero tokens, insufficient tokens, sufficient tokens
+  if (userTokenIds.length === 0) {
+    return (
+      <div className="mb-4 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <span className="text-sm text-yellow-600">
+            You do not own any tokens from the required collection
+          </span>
+        </div>
+      </div>
+    );
+  }
+  
+  if (userTokenIds.length < requiredTokensNumber) {
+    return (
+      <div className="mb-4 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <span className="text-sm text-yellow-600">
+            Your token balance of the required collection is insufficient
+          </span>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+      <div className="mb-3">
+        <h4 className="text-sm font-medium text-gray-900">
+          Select {requiredTokensNumber} token{requiredTokensNumber > 1 ? 's' : ''} to participate
+        </h4>
+        <p className="text-xs text-gray-500 mt-1">
+          {isMultiple 
+            ? `Choose ${requiredTokensNumber} tokens from your collection`
+            : 'Choose one token from your collection'
+          }
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        {userTokenIds.map((tokenId) => {
+          const isSelected = selectedTokenIds.includes(tokenId);
+          const canSelect = !isMultiple || selectedTokenIds.length < requiredTokensNumber || isSelected;
+          
+          return (
+            <button
+              key={tokenId}
+              onClick={() => {
+                if (isMultiple) {
+                  if (isSelected) {
+                    setSelectedTokenIds(selectedTokenIds.filter(id => id !== tokenId));
+                  } else if (selectedTokenIds.length < requiredTokensNumber) {
+                    setSelectedTokenIds([...selectedTokenIds, tokenId]);
+                  }
+                } else {
+                  setSelectedTokenIds([tokenId]);
+                }
+              }}
+              disabled={!canSelect}
+              className={`
+                p-3 border rounded-lg text-center transition-all
+                ${isSelected 
+                  ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                  : canSelect
+                    ? 'border-gray-300 hover:border-gray-400 bg-white text-gray-700'
+                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                }
+              `}
+            >
+              <div className="text-xs font-mono">#{tokenId}</div>
+              {isSelected && (
+                <div className="text-xs mt-1">✓ Selected</div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      
+      {isMultiple && (
+        <div className="mt-3 text-xs text-gray-600">
+          Selected: {selectedTokenIds.length} / {requiredTokensNumber} tokens
+        </div>
+      )}
+    </div>
+  );
+});
+
+TokenSelector.displayName = 'TokenSelector';
+
 const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isCollabPool, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const { formatSlotFee, getCurrencySymbol } = useNativeCurrency();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [userSlots, setUserSlots] = useState(0);
   const [winningChance, setWinningChance] = useState(null);
+  
+  // ERC721 Token ID Selection State
+  const [selectedTokenIds, setSelectedTokenIds] = useState([]);
+  const [userTokenIds, setUserTokenIds] = useState([]);
+  const [loadingTokens, setLoadingTokens] = useState(false);
+  const [tokenError, setTokenError] = useState('');
 
   const [closingPool, setClosingPool] = useState(false);
   const [requestingRandomness, setRequestingRandomness] = useState(false);
@@ -74,6 +302,149 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   useEffect(() => {
     fetchUserSlots();
   }, [raffle.address, address]);
+
+  // Fetch user's ERC721 tokens when needed
+  useEffect(() => {
+    if (shouldShowTokenSelector(raffle) && address && raffle.holderTokenAddress) {
+      fetchUserTokens();
+    }
+  }, [raffle.address, address, raffle.holderTokenAddress, raffle.holderTokenStandard]);
+
+  // Fetch user's ERC721 token IDs
+  const fetchUserTokens = async () => {
+    if (!address || !raffle.holderTokenAddress || !shouldShowTokenSelector(raffle)) {
+      setUserTokenIds([]);
+      return;
+    }
+
+    setLoadingTokens(true);
+    setTokenError(null);
+    
+    try {
+      const erc721Contract = new ethers.Contract(
+        raffle.holderTokenAddress,
+        ['function balanceOf(address) view returns (uint256)', 'function tokenOfOwnerByIndex(address, uint256) view returns (uint256)'],
+        provider
+      );
+
+      const balance = await erc721Contract.balanceOf(address);
+      
+      if (balance.toNumber() === 0) {
+        setUserTokenIds([]);
+        setTokenError('You do not own any tokens from the required collection');
+        return;
+      }
+
+      // Try to fetch token IDs using ERC721Enumerable
+      const tokenIds = [];
+      try {
+        for (let i = 0; i < balance.toNumber(); i++) {
+          const tokenId = await erc721Contract.tokenOfOwnerByIndex(address, i);
+          tokenIds.push(tokenId.toString());
+        }
+        setUserTokenIds(tokenIds);
+      } catch (enumError) {
+        // Contract doesn't support ERC721Enumerable
+        setTokenError('Token collection does not support token enumeration. Please contact the raffle creator.');
+        setUserTokenIds([]);
+      }
+    } catch (error) {
+      console.error('Error fetching user tokens:', error);
+      setTokenError('Failed to fetch your tokens. Please try again.');
+      setUserTokenIds([]);
+    } finally {
+      setLoadingTokens(false);
+    }
+  };
+
+  // Handle token selection for single token requirement
+  const handleSingleTokenSelection = (tokenId) => {
+    setSelectedTokenIds([tokenId]);
+  };
+
+  // Handle token selection for multiple token requirement
+  const handleMultipleTokenSelection = (tokenId) => {
+    const maxTokens = raffle.minHolderTokenBalance;
+    const maxTokensNumber = maxTokens ? (maxTokens.toNumber ? maxTokens.toNumber() : Number(maxTokens)) : 1;
+    
+    if (selectedTokenIds.includes(tokenId)) {
+      // Remove token if already selected
+      setSelectedTokenIds(selectedTokenIds.filter(id => id !== tokenId));
+    } else if (selectedTokenIds.length < maxTokensNumber) {
+      // Add token if under limit
+      setSelectedTokenIds([...selectedTokenIds, tokenId]);
+    }
+  };
+
+  // Validate token selection
+  const isTokenSelectionValid = () => {
+    console.log('Token Selection Validation Debug:', {
+      shouldShowSelector: shouldShowTokenSelector(raffle),
+      selectedTokenIds,
+      selectedTokenIdsLength: selectedTokenIds.length,
+      requiredTokens: raffle.minHolderTokenBalance,
+      requiredTokensType: typeof raffle.minHolderTokenBalance
+    });
+    
+    if (!shouldShowTokenSelector(raffle)) return true;
+    
+    const requiredTokens = raffle.minHolderTokenBalance;
+    if (!requiredTokens) return false;
+    
+    // Convert requiredTokens to number for comparison
+    let requiredTokensNumber = 1;
+    try {
+      if (requiredTokens.toString) {
+        const tokenStr = requiredTokens.toString();
+        if (tokenStr.length > 10) {
+          // Likely a decimal value, format it to get the actual token count
+          requiredTokensNumber = parseFloat(ethers.utils.formatUnits(requiredTokens, 18));
+        } else if (requiredTokens.toNumber) {
+          requiredTokensNumber = requiredTokens.toNumber();
+        } else {
+          requiredTokensNumber = Number(requiredTokens);
+        }
+      } else {
+        requiredTokensNumber = Number(requiredTokens);
+      }
+    } catch (error) {
+      console.warn('Error converting requiredTokens:', error);
+      requiredTokensNumber = 1;
+    }
+    
+    console.log('Validation Result:', {
+      requiredTokensNumber,
+      selectedLength: selectedTokenIds.length,
+      isValid: selectedTokenIds.length >= requiredTokensNumber
+    });
+    
+    return selectedTokenIds.length >= requiredTokensNumber;
+  };
+  
+  // Get the actual required token count for contract comparison
+  const getRequiredTokenCount = () => {
+    const requiredTokens = raffle.minHolderTokenBalance;
+    if (!requiredTokens) return 1;
+    
+    try {
+      if (requiredTokens.toString) {
+        const tokenStr = requiredTokens.toString();
+        if (tokenStr.length > 10) {
+          // Contract expects simple counts, but frontend stored as decimal
+          return parseFloat(ethers.utils.formatUnits(requiredTokens, 18));
+        } else if (requiredTokens.toNumber) {
+          return requiredTokens.toNumber();
+        } else {
+          return Number(requiredTokens);
+        }
+      } else {
+        return Number(requiredTokens);
+      }
+    } catch (error) {
+      console.warn('Error converting requiredTokens:', error);
+      return 1;
+    }
+  };
 
 
 
@@ -116,17 +487,36 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   };
 
 
-  const handlePurchase = async () => {
-    if (!connected) {
-      toast.error('Please connect your wallet first');
+  const handlePurchase = async (quantity, selectedTokenIds) => {
+    if (!connected || !address) {
+      toast.error('Please connect your wallet');
       return;
     }
+
+    // Validate token selection for ERC721 pools
+    console.log('Early Purchase Debug:', {
+      selectedTokenIds,
+      selectedTokenIdsLength: selectedTokenIds.length,
+      minHolderTokenBalance: raffle.minHolderTokenBalance?.toString(),
+      minHolderTokenBalanceType: typeof raffle.minHolderTokenBalance,
+      minHolderTokenBalanceFormatted: raffle.minHolderTokenBalance ? ethers.utils.formatUnits(raffle.minHolderTokenBalance, 18) : 'N/A',
+      holderTokenAddress: raffle.holderTokenAddress,
+      holderTokenStandard: raffle.holderTokenStandard
+    });
+    
+    if (!isTokenSelectionValid()) {
+      const requiredTokens = raffle.minHolderTokenBalance;
+      const requiredTokensNumber = requiredTokens ? (requiredTokens.toNumber ? requiredTokens.toNumber() : Number(requiredTokens)) : 1;
+      toast.error(`Please select ${requiredTokensNumber} token${requiredTokensNumber > 1 ? 's' : ''} to participate`);
+      return;
+    }
+    
     setLoading(true);
     try {
-      await onPurchase(quantity);
+      await onPurchase(quantity, selectedTokenIds);
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'purchase tickets');
-      logContractError(error, 'Purchase Tickets', { quantity });
+      logContractError(error, 'Purchase Tickets', { quantity, selectedTokenIds });
       notifyError(error, { action: 'purchaseSlots' });
     } finally {
       setLoading(false);
@@ -174,13 +564,13 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       timePassed: now >= raffleEndTime,
       participantsCount,
       winnersCount: raffle.winnersCount,
-      sufficientParticipants: participantsCount <= raffle.winnersCount,
+      sufficientParticipants: participantsCount < raffle.winnersCount,
       state: raffle.state?.toLowerCase(),
       validState: (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending')
     });
     
     return now >= raffleEndTime && 
-           participantsCount <= raffle.winnersCount &&
+           participantsCount < raffle.winnersCount &&
            (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending');
   };
 
@@ -197,7 +587,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       participantsCount,
       winnersCount: raffle.winnersCount,
       winnersSelected: raffle.winnersSelected,
-      sufficientParticipants: participantsCount > raffle.winnersCount,
+      sufficientParticipants: participantsCount >= raffle.winnersCount,
       moreWinnersNeeded: raffle.winnersSelected < raffle.winnersCount,
       state: raffle.state?.toLowerCase(),
       stateNum: raffle.stateNum
@@ -205,7 +595,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     
     // For Ended pools (stateNum === 2), the state itself confirms time has passed
     if (raffle.stateNum === 2) {
-      return participantsCount > raffle.winnersCount;
+      return participantsCount >= raffle.winnersCount;
     } 
     // For Drawing pools (stateNum === 3), show button if more winners are needed (multi-batch selection)
     else if (raffle.stateNum === 3) {
@@ -213,7 +603,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     }
     // For Active pools that have passed endTime with sufficient participants
     else if (raffle.state?.toLowerCase() === 'active' && now >= raffleEndTime) {
-      return participantsCount > raffle.winnersCount;
+      return participantsCount >= raffle.winnersCount;
     }
     
     return false;
@@ -260,12 +650,12 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       if (!poolContract) throw new Error('Failed to get pool contract');
       // Preflight simulate to surface revert reason
       try {
-        await poolContract.callStatic.requestRandomWords();
+        await poolContract.callStatic.requestRandomness();
       } catch (simErr) {
         notifyError(simErr, { action: 'requestRandomness', phase: 'preflight' });
         throw simErr;
       }
-      const result = await executeTransaction(poolContract.requestRandomWords);
+      const result = await executeTransaction(poolContract.requestRandomness);
       if (result.success) {
         toast.success('Randomness requested successfully!');
         // Trigger state refresh instead of page reload
@@ -313,9 +703,16 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
 
   return (
     <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
-      <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center gap-2">
-        <Ticket className="h-5 w-5" />
-        Purchase Slots
+      <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Ticket className="h-5 w-5" />
+          Purchase Slots
+        </div>
+        {hasTokenGating(raffle) && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            Token-Gated
+          </span>
+        )}
       </h3>
 
         {/* Reserve flexible space so the action area can stick to bottom even when content above grows */}
@@ -523,9 +920,22 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   </div>
                 </>
               ) : null}
+              
+              {/* ERC721 Token Selector */}
+              {shouldShowTokenSelector(raffle) && (
+                <TokenSelector 
+                  raffle={raffle} 
+                  selectedTokenIds={selectedTokenIds} 
+                  setSelectedTokenIds={setSelectedTokenIds} 
+                  loadingTokens={loadingTokens} 
+                  tokenError={tokenError} 
+                  userTokenIds={userTokenIds} 
+                />
+              )}
+              
               <Button
-                onClick={handlePurchase}
-                disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement)}
+                onClick={() => handlePurchase(quantity, selectedTokenIds)}
+                disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement) || !isTokenSelectionValid()}
                 variant="primary"
                 size="lg"
                 className="w-full shadow-sm"
@@ -2169,6 +2579,7 @@ const RaffleDetailPage = () => {
   const [withdrawingPrize, setWithdrawingPrize] = useState(false);
   const [updatingVrfStatus, setUpdatingVrfStatus] = useState(false);
   const [raffleCollectionName, setRaffleCollectionName] = useState(null);
+  const [gatingTokenName, setGatingTokenName] = useState(null);
   const [deletingRaffle, setDeletingRaffle] = useState(false);
   const [is1155Approved, setIs1155Approved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(false);
@@ -2467,12 +2878,16 @@ const RaffleDetailPage = () => {
                 console.error('Error fetching socialTaskDescription:', error);
               }
               return '';
-            }, name: 'socialTaskDescription', required: false, fallback: '' }
+            }, name: 'socialTaskDescription', required: false, fallback: '' },
+          // Token gating queries
+          { method: createSafeMethod(poolContract, 'holderTokenAddress', ethers.constants.AddressZero), name: 'holderTokenAddress', required: false, fallback: ethers.constants.AddressZero },
+          { method: createSafeMethod(poolContract, 'holderTokenStandard', 0), name: 'holderTokenStandard', required: false, fallback: 0 },
+          { method: createSafeMethod(poolContract, 'minHolderTokenBalance', 0), name: 'minHolderTokenBalance', required: false, fallback: 0 }
         ];
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2557,7 +2972,11 @@ const RaffleDetailPage = () => {
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
           // Social engagement fields
           socialEngagementRequired: !!socialEngagementRequired,
-          socialTaskDescription: socialTaskDescription || ''
+          socialTaskDescription: socialTaskDescription || '',
+          // Token gating fields
+          holderTokenAddress,
+          holderTokenStandard: holderTokenStandard ? (holderTokenStandard.toNumber ? holderTokenStandard.toNumber() : Number(holderTokenStandard)) : 0,
+          minHolderTokenBalance
         };
 
 	        // Determine if this raffle is still a VRF consumer via ProtocolManager (more reliable than checking subscription id)
@@ -2721,6 +3140,46 @@ const RaffleDetailPage = () => {
     };
 
     fetchRaffleCollectionName();
+  }, [raffle, getContractInstance]);
+
+  // Fetch gating token name for token-gated raffles
+  useEffect(() => {
+    const fetchGatingTokenName = async () => {
+      if (!raffle || !raffle.holderTokenAddress || raffle.holderTokenAddress === ethers.constants.AddressZero) {
+        setGatingTokenName(null);
+        return;
+      }
+
+      // Don't fetch for ERC1155 as requested - display contract address
+      if (raffle.holderTokenStandard === 1) {
+        setGatingTokenName(null);
+        return;
+      }
+
+      try {
+        let contract = null;
+        let name = null;
+
+        if (raffle.holderTokenStandard === 0) {
+          // ERC721
+          contract = getContractInstance(raffle.holderTokenAddress, 'erc721Prize');
+        } else if (raffle.holderTokenStandard === 2) {
+          // ERC20
+          contract = getContractInstance(raffle.holderTokenAddress, 'erc20');
+        }
+
+        if (contract && typeof contract.name === 'function') {
+          name = await contract.name();
+        }
+
+        setGatingTokenName(name);
+      } catch (error) {
+        console.warn('Failed to fetch gating token name:', error);
+        setGatingTokenName(null);
+      }
+    };
+
+    fetchGatingTokenName();
   }, [raffle, getContractInstance]);
 
   // Memoize format functions to prevent recreation
@@ -2994,7 +3453,19 @@ const RaffleDetailPage = () => {
     }
   };
 
-  const handlePurchaseTickets = async (quantity) => {
+  const handlePurchaseTickets = async (quantity, selectedTokenIds = []) => {
+    console.log('🎯 handlePurchaseTickets START:', {
+      quantity,
+      selectedTokenIds,
+      selectedTokenIdsType: typeof selectedTokenIds,
+      selectedTokenIdsLength: selectedTokenIds?.length,
+      minHolderTokenBalance: raffle.minHolderTokenBalance?.toString(),
+      minHolderTokenBalanceFormatted: raffle.minHolderTokenBalance ? ethers.utils.formatUnits(raffle.minHolderTokenBalance, 18) : 'N/A',
+      holderTokenAddress: raffle.holderTokenAddress,
+      holderTokenStandard: raffle.holderTokenStandard,
+      userAddress: address
+    });
+    
     if (!connected || !raffle) {
       throw new Error('Wallet not connected or raffle not loaded');
     }
@@ -3051,8 +3522,48 @@ const RaffleDetailPage = () => {
     }
     // For pools without social engagement requirements, signatureToUse remains '0x'
 
-    // Call purchaseSlots with nonce, deadline, and signature
-    const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, { value: totalCost });
+    // Call purchaseSlots with nonce, deadline, signature, and selected token IDs
+    console.log('Purchase Debug:', {
+      quantity,
+      nonce,
+      deadline,
+      signatureLength: signatureToUse.length,
+      selectedTokenIds,
+      selectedTokenIdsLength: selectedTokenIds.length,
+      selectedTokenIdsTypes: selectedTokenIds.map(id => typeof id),
+      convertedTokenIds: selectedTokenIds.map(id => id.toString()),
+      numericTokenIds: selectedTokenIds.map(id => Number(id)),
+      totalCost: totalCost.toString(),
+      holderTokenStandard: raffle.holderTokenStandard,
+      holderTokenAddress: raffle.holderTokenAddress,
+      minHolderTokenBalance: raffle.minHolderTokenBalance?.toString(),
+      userAddress: address,
+      // Detailed validation info
+      validationChecks: {
+        hasTokenIds: selectedTokenIds.length > 0,
+        tokenIdsValid: selectedTokenIds.every(id => !isNaN(Number(id))),
+        holderAddressValid: raffle.holderTokenAddress !== ethers.constants.AddressZero,
+        userAddressValid: !!address
+      }
+    });
+    
+    // Convert token IDs to numbers for contract (contract expects uint256[])
+    const numericTokenIds = selectedTokenIds.map(id => {
+      const tokenId = Number(id);
+      if (isNaN(tokenId) || tokenId < 0) {
+        throw new Error(`Invalid token ID: ${id}`);
+      }
+      return tokenId;
+    });
+    
+    console.log('Final Contract Call Args:', {
+      numericTokenIds,
+      numericTokenIdsLength: numericTokenIds.length,
+      expectedMinBalance: raffle.minHolderTokenBalance?.toString(),
+      contractAddress: raffle.address
+    });
+    
+    const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, numericTokenIds, { value: totalCost });
     const receipt = await tx.wait();
     
     toast.success(`Successfully purchased ${quantity} slot${quantity > 1 ? 's' : ''}!`);
@@ -3834,6 +4345,60 @@ const RaffleDetailPage = () => {
                 <span className="text-muted-foreground">Total Participants:</span>
                 <span>{Number(raffle.uniqueParticipants || 0).toLocaleString()}</span>
               </div>
+              {raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero && raffle.holderTokenStandard !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Gating Requirement:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-foreground">
+                      {(() => {
+                        // Format minimum holder balance based on token standard
+                        let requiredBalance = 1;
+                        try {
+                          const balance = raffle.minHolderTokenBalance;
+                          if (balance) {
+                            if (balance.toString) {
+                              const balanceStr = balance.toString();
+                              if (balanceStr.length > 10) {
+                                // Likely a decimal value (ERC20), format it
+                                requiredBalance = parseFloat(ethers.utils.formatUnits(balance, 18));
+                              } else {
+                                // Small number, likely whole number (ERC721/ERC1155)
+                                requiredBalance = balance.toNumber ? balance.toNumber() : Number(balance);
+                              }
+                            } else {
+                              requiredBalance = Number(balance);
+                            }
+                          }
+                        } catch (error) {
+                          console.warn('Could not format minHolderTokenBalance:', error);
+                          requiredBalance = 1;
+                        }
+                        
+                        // Get token name for display
+                        let tokenName = '';
+                        if (raffle.holderTokenStandard === 1) {
+                          // ERC1155 - display contract address as requested
+                          tokenName = `${raffle.holderTokenAddress.slice(0, 8)}...${raffle.holderTokenAddress.slice(-6)}`;
+                        } else {
+                          // ERC721 or ERC20 - display name if available, fallback to address
+                          tokenName = gatingTokenName || `${raffle.holderTokenAddress.slice(0, 8)}...${raffle.holderTokenAddress.slice(-6)}`;
+                        }
+                        
+                        return `${requiredBalance} ${tokenName}`;
+                      })()}
+                    </span>
+                    <a
+                      href={getExplorerLink(raffle.holderTokenAddress, raffle.chainId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                      title={raffle.holderTokenAddress}
+                    >
+                      <Info className="h-3.5 w-3.5 opacity-70" />
+                    </a>
+                  </div>
+                </div>
+              )}
                   {raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0) && (
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Prize Amount:</span>
