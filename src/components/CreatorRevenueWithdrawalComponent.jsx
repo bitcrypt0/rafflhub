@@ -155,12 +155,42 @@ const CreatorRevenueWithdrawalComponent = () => {
 
       const isOwner = owner !== 'Unknown' && owner.toLowerCase() === address.toLowerCase();
 
+      // Fetch vesting information if available
+      let vestingConfigured = false;
+      let unlockedAmount = '0';
+      let availableAmount = '0';
+
+      try {
+        // Check if vesting is configured
+        if (detectedType === 'erc721') {
+          vestingConfigured = await contract.vestingConfigured();
+          if (vestingConfigured) {
+            unlockedAmount = (await contract.getUnlockedAmount()).toString();
+            availableAmount = (await contract.getAvailableCreatorMint()).toString();
+          }
+        } else if (detectedType === 'erc1155') {
+          // For ERC1155, we need a tokenId - use default 1 for initial fetch
+          // User will need to specify tokenId for accurate vesting info
+          vestingConfigured = await contract.vestingConfigured(1);
+          if (vestingConfigured) {
+            unlockedAmount = (await contract.getUnlockedAmount(1)).toString();
+            availableAmount = (await contract.getAvailableCreatorMint(1)).toString();
+          }
+        }
+      } catch (e) {
+        // Vesting functions might not be available or failed
+        console.log('Vesting info not available:', e.message);
+      }
+
       setCollectionInfo({
         name,
         symbol,
         owner,
         type: detectedType,
-        isOwner
+        isOwner,
+        vestingConfigured,
+        unlockedAmount,
+        availableAmount
       });
 
       if (detectedType === 'erc1155') {
@@ -609,6 +639,26 @@ const CreatorRevenueWithdrawalComponent = () => {
                   </div>
                 </div>
 
+                {/* Vesting Information */}
+                {collectionInfo.vestingConfigured && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="text-sm font-medium mb-2 text-primary">Vesting Information</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-medium">Unlocked Amount:</span> {collectionInfo.unlockedAmount}
+                      </div>
+                      <div>
+                        <span className="font-medium">Available Amount:</span> {collectionInfo.availableAmount}
+                      </div>
+                    </div>
+                    {collectionInfo.type === 'erc1155' && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Note: Vesting info shown for Token ID 1. Specify exact Token ID for accurate amounts.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {!collectionInfo.isOwner && (
                   <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive" />
@@ -668,8 +718,7 @@ const CreatorRevenueWithdrawalComponent = () => {
                   size="lg"
                   className="w-full flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <Zap className="h-4 w-4" />
-                  {mintLoading ? 'Minting...' : `Mint ${collectionInfo.type.toUpperCase()} Token(s)`}
+                  {mintLoading ? 'Minting...' : 'Mint'}
                 </Button>
               </div>
             )}

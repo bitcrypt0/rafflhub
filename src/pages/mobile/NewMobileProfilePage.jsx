@@ -146,7 +146,9 @@ const NewMobileProfilePage = () => {
         quantity: '',
         tokenId: '' // Only for ERC1155
       },
-      mintLoading: false
+      mintLoading: false,
+      collectionInfo: null,
+      loadingCollectionInfo: false
     }
   });
 
@@ -2071,6 +2073,154 @@ const NewMobileProfilePage = () => {
       updateRevenueState({
         mintData: { ...state.mintData, [field]: value }
       });
+
+      // Trigger collection fetching when address changes (with debouncing)
+      if (field === 'collectionAddress') {
+        // Clear any existing timeout
+        if (window.collectionFetchTimeout) {
+          clearTimeout(window.collectionFetchTimeout);
+        }
+        
+        // Debounce the collection fetch to prevent race conditions during typing
+        window.collectionFetchTimeout = setTimeout(() => {
+          loadCollectionInfoForMint(value);
+        }, 500);
+      }
+    };
+
+    // Load collection info for mobile version
+    const loadCollectionInfoForMint = async (collectionAddress) => {
+      if (!collectionAddress || !connected) {
+        updateRevenueState({ collectionInfo: null });
+        return;
+      }
+
+      updateRevenueState({ loadingCollectionInfo: true });
+      try {
+        // Auto-detect collection type by trying both ERC721 and ERC1155
+        let contract = null;
+        let detectedType = null;
+
+        // Try ERC721 first (most common)
+        try {
+          const erc721Contract = getContractInstance(collectionAddress, 'erc721Prize');
+          if (erc721Contract) {
+            const supportsERC721 = await erc721Contract.supportsInterface('0x80ac58cd');
+            if (supportsERC721) {
+              contract = erc721Contract;
+              detectedType = 'erc721';
+            }
+          }
+        } catch (e) {
+          // Try ERC1155 if ERC721 fails
+        }
+
+        if (!contract && detectedType !== 'erc721') {
+          try {
+            const erc1155Contract = getContractInstance(collectionAddress, 'erc1155Prize');
+            if (erc1155Contract) {
+              const supportsERC1155 = await erc1155Contract.supportsInterface('0xd9b67a26');
+              if (supportsERC1155) {
+                contract = erc1155Contract;
+                detectedType = 'erc1155';
+              }
+            }
+          } catch (e) {
+            // ERC1155 also failed
+          }
+        }
+
+        if (!contract || !detectedType) {
+          throw new Error('Invalid collection address or unsupported contract type');
+        }
+
+        // Update the collection type in state (preserve collectionAddress)
+        updateRevenueState({
+          mintData: { 
+            ...state.mintData, 
+            collectionType: detectedType,
+            collectionAddress: collectionAddress // Explicitly preserve the address
+          }
+        });
+
+        // Get collection info
+        let name = 'Unknown Collection';
+        let symbol = 'Unknown';
+        let owner = 'Unknown';
+
+        try {
+          if (typeof contract.name === 'function') {
+            name = await contract.name();
+          }
+        } catch (e) {
+          // name() not available or failed
+        }
+
+        try {
+          if (typeof contract.symbol === 'function') {
+            symbol = await contract.symbol();
+          }
+        } catch (e) {
+          // symbol() not available or failed
+        }
+
+        try {
+          if (typeof contract.owner === 'function') {
+            owner = await contract.owner();
+          }
+        } catch (e) {
+          // owner() not available or failed
+        }
+
+        const isOwner = owner !== 'Unknown' && owner.toLowerCase() === address.toLowerCase();
+
+        // Fetch vesting information if available
+        let vestingConfigured = false;
+        let unlockedAmount = '0';
+        let availableAmount = '0';
+
+        try {
+          // Check if vesting is configured
+          if (detectedType === 'erc721') {
+            vestingConfigured = await contract.vestingConfigured();
+            if (vestingConfigured) {
+              unlockedAmount = (await contract.getUnlockedAmount()).toString();
+              availableAmount = (await contract.getAvailableCreatorMint()).toString();
+            }
+          } else if (detectedType === 'erc1155') {
+            // For ERC1155, we need a tokenId - use default 1 for initial fetch
+            vestingConfigured = await contract.vestingConfigured(1);
+            if (vestingConfigured) {
+              unlockedAmount = (await contract.getUnlockedAmount(1)).toString();
+              availableAmount = (await contract.getAvailableCreatorMint(1)).toString();
+            }
+          }
+        } catch (e) {
+          // Vesting functions might not be available or failed
+          console.log('Vesting info not available:', e.message);
+        }
+
+        updateRevenueState({
+          collectionInfo: {
+            name,
+            symbol,
+            owner,
+            type: detectedType,
+            isOwner,
+            vestingConfigured,
+            unlockedAmount,
+            availableAmount
+          }
+        });
+
+        toast.success(`Collection loaded: ${name} (${detectedType.toUpperCase()})`);
+      } catch (error) {
+        console.error('Error loading collection info:', error);
+        toast.error('Failed to load collection information: ' + error.message);
+        updateRevenueState({ collectionInfo: null });
+      } finally {
+        updateRevenueState({ loadingCollectionInfo: false });
+      }
     };
 
     const handleCreatorMint = async () => {
@@ -2314,6 +2464,59 @@ const NewMobileProfilePage = () => {
                 />
               </div>
 
+              {/* Collection Info Display */}
+              {state.collectionInfo && (
+                <div className="p-3 bg-muted/50 rounded-lg border">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {state.collectionInfo.type === 'erc721' && (
+                      <>
+                        <div>
+                          <span className="font-medium">Name:</span> {state.collectionInfo.name}
+                        </div>
+                        <div>
+                          <span className="font-medium">Symbol:</span> {state.collectionInfo.symbol}
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <span className="font-medium">Type:</span> {state.collectionInfo.type.toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Owner:</span> {state.collectionInfo.isOwner ? 'You' : 'Other'}
+                    </div>
+                  </div>
+
+                  {/* Vesting Information */}
+                  {state.collectionInfo.vestingConfigured && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-sm font-medium mb-2 text-primary">Vesting Information</div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="font-medium">Unlocked Amount:</span> {state.collectionInfo.unlockedAmount}
+                        </div>
+                        <div>
+                          <span className="font-medium">Available Amount:</span> {state.collectionInfo.availableAmount}
+                        </div>
+                      </div>
+                      {state.collectionInfo.type === 'erc1155' && (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Note: Vesting info shown for Token ID 1. Specify exact Token ID for accurate amounts.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!state.collectionInfo.isOwner && (
+                    <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm text-destructive">
+                        You are not the owner of this collection and cannot mint tokens.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Recipient Address */}
               <div>
                 <label className="block text-sm font-medium mb-1">Recipient Address</label>
@@ -2356,8 +2559,7 @@ const NewMobileProfilePage = () => {
             size="md"
             className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
           >
-            <Plus className="h-4 w-4" />
-            {state.mintLoading ? 'Minting...' : `Mint ${state.mintData.quantity || '1'} Token(s)`}
+            {state.mintLoading ? 'Minting...' : 'Mint'}
           </Button>
 
               {!connected && (
