@@ -1797,7 +1797,7 @@ function LuckySaleERC721Form() {
     holderTokenAddress: '',
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
-    holderTokenId: '',
+    holderTokenId: '0', // FIXED: Initialize with '0' instead of empty string
     // Social media fields
     socialEngagementRequired: false,
     socialTaskDescription: '',
@@ -1875,7 +1875,7 @@ function LuckySaleERC721Form() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? (formData.holderTokenId !== '' && formData.holderTokenId !== undefined ? parseInt(formData.holderTokenId) : 0) : 0,
         
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
@@ -1911,7 +1911,7 @@ function LuckySaleERC721Form() {
           holderTokenAddress: '',
           holderTokenStandard: '0',
           minHolderTokenBalance: '',
-          holderTokenId: '',
+          holderTokenId: '0', // FIXED: Reset to '0' instead of empty string
         });
     } catch (error) {
       console.error('Error creating raffle:', error);
@@ -2152,7 +2152,7 @@ function LuckySaleERC1155Form() {
     holderTokenAddress: '',
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
-    holderTokenId: '',
+    holderTokenId: '0', // FIXED: Initialize with '0' instead of empty string
     // Social media fields
     socialEngagementRequired: false,
     socialTaskDescription: '',
@@ -2230,7 +2230,7 @@ function LuckySaleERC1155Form() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? (formData.holderTokenId !== '' && formData.holderTokenId !== undefined ? parseInt(formData.holderTokenId) : 0) : 0,
         
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
@@ -2267,7 +2267,7 @@ function LuckySaleERC1155Form() {
           holderTokenAddress: '',
           holderTokenStandard: '0',
           minHolderTokenBalance: '',
-          holderTokenId: '',
+          holderTokenId: '0', // FIXED: Reset to '0' instead of empty string
         });
     } catch (error) {
       console.error('Error creating raffle:', error);
@@ -2519,7 +2519,7 @@ function ETHGiveawayForm() {
     holderTokenAddress: '',
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
-    holderTokenId: '',
+    holderTokenId: '0', // FIXED: Initialize with '0' instead of empty string
     // Social media fields
     socialEngagementRequired: false,
     socialTaskDescription: '',
@@ -2579,7 +2579,7 @@ function ETHGiveawayForm() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? (formData.holderTokenId !== '' && formData.holderTokenId !== undefined ? parseInt(formData.holderTokenId) : 0) : 0,
         
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
@@ -2620,7 +2620,15 @@ function ETHGiveawayForm() {
           duration: '',
           slotLimit: '',
           winnersCount: '',
-          maxTicketsPerParticipant: ''
+          maxTicketsPerParticipant: '',
+          // Token-gated fields - ADDED missing reset fields
+          tokenGatedEnabled: false,
+          holderTokenAddress: '',
+          holderTokenStandard: '0',
+          minHolderTokenBalance: '',
+          holderTokenId: '0', // FIXED: Reset to '0' instead of empty string
+          socialTaskDescription: '',
+          socialTasks: []
         });
       } else {
         throw new Error(result.error);
@@ -2820,7 +2828,7 @@ function ERC20GiveawayForm() {
     holderTokenAddress: '',
     holderTokenStandard: '0',
     minHolderTokenBalance: '',
-    holderTokenId: '',
+    holderTokenId: '0', // FIXED: Initialize with '0' instead of empty string
     // Social media fields
     socialEngagementRequired: false,
     socialTaskDescription: '',
@@ -2933,7 +2941,7 @@ function ERC20GiveawayForm() {
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
         minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
         holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? parseInt(formData.holderTokenId) : 0,
+        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? (formData.holderTokenId !== '' && formData.holderTokenId !== undefined ? parseInt(formData.holderTokenId) : 0) : 0,
         
         // Social media params
         socialEngagementRequired: socialEngagementEnabled,
@@ -2964,7 +2972,15 @@ function ERC20GiveawayForm() {
           duration: '',
           slotLimit: '',
           winnersCount: '',
-          maxSlotsPerParticipant: ''
+          maxSlotsPerParticipant: '',
+          // Token-gated fields - ADDED missing reset fields
+          tokenGatedEnabled: false,
+          holderTokenAddress: '',
+          holderTokenStandard: '0',
+          minHolderTokenBalance: '',
+          holderTokenId: '0', // FIXED: Reset to '0' instead of empty string
+          socialTaskDescription: '',
+          socialTasks: []
         });
     } catch (error) {
       console.error('Error creating raffle:', error);
