@@ -364,7 +364,7 @@ export default function Homepage() {
               <Zap className="h-8 w-8 text-primary" />
             </div>
             <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Trustless Prize Distribution</h3>
-            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Smart contracts handle prize distribution without need for manual intervention</p>
+            <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Smart contracts securely manage prizes without need for intervention from creators</p>
           </div>
         </div>
       </Section>
@@ -412,8 +412,8 @@ export default function Homepage() {
               <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
                 <span className="text-2xl font-bold text-primary-foreground">3</span>
               </div>
-              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Prize Distribution</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Prize availability guaranteed. Winners can always claim prizes from raffle contracts.</p>
+              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Prize Claims & Refunds</h3>
+              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Prize availability guaranteed. Participants claim prizes and slot fee refunds from raffle contracts.</p>
               <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
                 <Award className="h-4 w-4" />
                 <span>Instant Claims</span>

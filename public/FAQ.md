@@ -1,7 +1,7 @@
 ## FAQ
 
 **Q: What makes Dropr different from other raffle systems?**
-A: Dropr combines provably fair randomness (Chainlink VRF), automated execution (Chainlink Automation), multi- winner support, multi-prize support (NFTs, ERC20, ETH), and gas-efficient deployment (minimal proxies) in a single, comprehensive solution.
+A: Dropr combines provably fair randomness (Chainlink VRF), automated execution (Chainlink Automation), multi- winner support, multi-prize support (NFTs, ERC20 tokens & Native coins), and gas-efficient deployment (minimal proxies) in a single, comprehensive solution.
 
 **Q: How is randomness ensured for fairness?**
 A: Dropr uses Chainlink VRF 2.5, which provides cryptographically secure, verifiable randomness that cannot be manipulated by any party.
@@ -16,7 +16,7 @@ A: If the raffle had enough participants for the required number of winners to b
 A: Yes, NFTs from external collections can be used as prizes in raffles but only after such collections have been whitelisted.
 
 **Q: How are prizes distributed to winners?**
-A: Prizes are transfered to winners when the `claimPrize()` function is called. The process is secure and requires no manual intervention from raffle creators. 
+A: Prizes are transfered to winners when they call the `claimPrize()` function. Raffle creators can also call `mintToWinner()` to distribute mintable NFT prizes to winners. 
 
 **Q: Can raffles be deleted by raffle creators?**
 A: Only NFT-prized raffles can be deleted. Also, deletion is only possible when such raffles are in the `Pending` and `Active` states. Participants can claim 100% refunds of purchased slots from deleted raffles.
