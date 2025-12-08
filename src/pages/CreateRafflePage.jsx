@@ -1058,9 +1058,9 @@ function ExistingERC721DropForm() {
   useEffect(() => {
     if (formData.collection && !checkingInternal721 && internalStatus721 !== null) {
       if (internalStatus721) {
-        toast.success("This collection is approved");
+        // Success - no toast message shown
       } else {
-        toast.error("This collection is not approved");
+        toast.error("Collection not allowed");
       }
     }
   }, [formData.collection, checkingInternal721, internalStatus721]);
@@ -1389,9 +1389,9 @@ function ExistingERC1155DropForm() {
   useEffect(() => {
     if (formData.collectionAddress && !checkingInternal1155 && internalStatus1155 !== null) {
       if (internalStatus1155) {
-        toast.success("This collection is approved");
+        // Success - no toast message shown
       } else {
-        toast.error("This collection is not approved");
+        toast.error("Collection not allowed");
       }
     }
   }, [formData.collectionAddress, checkingInternal1155, internalStatus1155]);
@@ -1921,19 +1921,7 @@ function LuckySaleERC721Form() {
     }
   };
 
-  // Helper for whitelist status check
-  const { status: whitelistStatusLucky721, checking: checkingWhitelistLucky721 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
-
-  // Show toast when status changes
-  useEffect(() => {
-    if (formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 !== null) {
-      if (whitelistStatusLucky721) {
-        toast.success("This collection is approved");
-      } else {
-        toast.error("This collection is not approved");
-      }
-    }
-  }, [formData.collectionAddress, checkingWhitelistLucky721, whitelistStatusLucky721]);
+  // Helper for whitelist status check - REMOVED
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
@@ -1960,16 +1948,10 @@ function LuckySaleERC721Form() {
                 type="text"
                 value={formData.collectionAddress || ''}
                 onChange={e => handleChange('collectionAddress', e.target.value)}
-                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required
               />
-              {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === true && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
-              )}
-              {formData.collectionAddress && !checkingWhitelistLucky721 && whitelistStatusLucky721 === false && (
-                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
-              )}
             </div>
           </div>
           <div>
@@ -2277,19 +2259,19 @@ function LuckySaleERC1155Form() {
     }
   };
 
-  // Helper for whitelist status check
-  const { status: whitelistStatusLucky1155, checking: checkingWhitelistLucky1155 } = useCollectionWhitelistStatus(formData.collectionAddress, contracts);
+  // Helper for internal collection status check only
+  const { status: internalStatusLucky1155, checking: checkingInternalLucky1155 } = useCollectionInternalStatus(formData.collectionAddress, contracts);
 
   // Show toast when status changes
   useEffect(() => {
-    if (formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 !== null) {
-      if (whitelistStatusLucky1155) {
-        toast.success("This collection is approved");
+    if (formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 !== null) {
+      if (internalStatusLucky1155) {
+        // Success - no toast message shown
       } else {
-        toast.error("This collection is not approved");
+        toast.error("Collection not allowed");
       }
     }
-  }, [formData.collectionAddress, checkingWhitelistLucky1155, whitelistStatusLucky1155]);
+  }, [formData.collectionAddress, checkingInternalLucky1155, internalStatusLucky1155]);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
@@ -2300,7 +2282,7 @@ function LuckySaleERC1155Form() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -2320,10 +2302,10 @@ function LuckySaleERC1155Form() {
                 placeholder="0x..."
                 required
               />
-              {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === true && (
+              {formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 === true && (
                 <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
               )}
-              {formData.collectionAddress && !checkingWhitelistLucky1155 && whitelistStatusLucky1155 === false && (
+              {formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 === false && (
                 <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
               )}
             </div>
@@ -2650,7 +2632,7 @@ function ETHGiveawayForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -2839,40 +2821,7 @@ function ERC20GiveawayForm() {
     discordLink: '',
     telegramLink: '',
   });
-  const [whitelistStatus, setWhitelistStatus] = useState(null); // null | true | false
-  const [checkingWhitelist, setCheckingWhitelist] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function checkWhitelist(addr) {
-      if (!contracts?.protocolManager || !addr || addr.length !== 42) {
-        setWhitelistStatus(null);
-        return;
-      }
-      setCheckingWhitelist(true);
-      try {
-        const isWhitelisted = await contracts.protocolManager.isERC20PrizeWhitelisted(addr);
-        if (!cancelled) setWhitelistStatus(isWhitelisted);
-      } catch {
-        if (!cancelled) setWhitelistStatus(false);
-      } finally {
-        if (!cancelled) setCheckingWhitelist(false);
-      }
-    }
-    checkWhitelist(formData.tokenAddress);
-    return () => { cancelled = true; };
-  }, [formData.tokenAddress, contracts]);
-
-  // Show toast when whitelist status changes
-  useEffect(() => {
-    if (formData.tokenAddress && !checkingWhitelist && whitelistStatus !== null) {
-      if (whitelistStatus) {
-        toast.success("This token is approved");
-      } else {
-        toast.error("This token is not approved");
-      }
-    }
-  }, [formData.tokenAddress, checkingWhitelist, whitelistStatus]);
+  // ERC20 validation logic - REMOVED
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2901,7 +2850,7 @@ function ERC20GiveawayForm() {
         return;
       }
       if (!approvalResult.alreadyApproved) {
-        toast.success('ERC20 approval successful!');
+        toast.success('Token approval granted');
         await new Promise(res => setTimeout(res, 2000));
       }
       // Step 2: Create raffle
@@ -2999,7 +2948,7 @@ function ERC20GiveawayForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -3009,22 +2958,16 @@ function ERC20GiveawayForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">ERC20 Token Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Token Address</label>
             <div className="relative">
               <input
                 type="text"
                 value={formData.tokenAddress || ''}
                 onChange={e => handleChange('tokenAddress', e.target.value)}
-                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
                 placeholder="0x..."
                 required
               />
-              {formData.tokenAddress && !checkingWhitelist && whitelistStatus === true && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
-              )}
-              {formData.tokenAddress && !checkingWhitelist && whitelistStatus === false && (
-                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
-              )}
             </div>
           </div>
           <div>
@@ -3210,6 +3153,16 @@ async function checkTokenApproval(signer, tokenAddress, prizeType, spender, amou
       return false;
     } else if (prizeType === 'erc721') {
       contract = new ethers.Contract(tokenAddress, contractABIs.erc721Prize, signer);
+      // Check if collection is approved for all first (maximum approval)
+      try {
+        const isApprovedForAll = await contract.isApprovedForAll(userAddress, spender);
+        if (isApprovedForAll) {
+          return true;
+        }
+      } catch (error) {
+        // isApprovedForAll not supported, continue to individual check
+      }
+      // Fallback to individual token approval check
       const approved = await contract.getApproved(tokenId);
       return approved && approved.toLowerCase() === spender.toLowerCase();
     } else if (prizeType === 'erc1155') {
@@ -3233,12 +3186,23 @@ async function approveToken({ signer, tokenAddress, prizeType, spender, amount, 
     let contract, tx;
     if (prizeType === 'erc20') {
       contract = new ethers.Contract(tokenAddress, contractABIs.erc20, signer);
-      const decimals = await contract.decimals();
-      const approvalAmount = ethers.utils.parseUnits(amount, decimals);
+      // Use MaxUint256 for maximum approval limit to avoid repeated approvals
+      const approvalAmount = ethers.constants.MaxUint256;
       tx = await contract.approve(spender, approvalAmount);
     } else if (prizeType === 'erc721') {
       contract = new ethers.Contract(tokenAddress, contractABIs.erc721Prize, signer);
-      tx = await contract.approve(spender, tokenId);
+      // Try setApprovalForAll first for maximum approval limit
+      try {
+        tx = await contract.setApprovalForAll(spender, true);
+      } catch (setApprovalError) {
+        // Check if user rejected the transaction
+        if (setApprovalError.code === 4001) {
+          throw setApprovalError; // User rejected, don't attempt fallback
+        }
+        // Fallback to individual token approval if setApprovalForAll fails
+        console.log('setApprovalForAll failed, falling back to individual approval:', setApprovalError.message);
+        tx = await contract.approve(spender, tokenId);
+      }
     } else if (prizeType === 'erc1155') {
       contract = new ethers.Contract(tokenAddress, contractABIs.erc1155Prize, signer);
       tx = await contract.setApprovalForAll(spender, true);
@@ -3437,7 +3401,7 @@ function NewERC1155DropForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Raffle Name</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
             <input
               type="text"
               value={formData.name || ''}
@@ -3773,6 +3737,34 @@ function useCollectionWhitelistStatus(address, contracts) {
       if (!cancelled) setStatus(isWhite);
     } catch (error) {
       console.warn('[useCollectionWhitelistStatus] Failed to check collection approval:', error.message);
+      if (!cancelled) setStatus(false);
+    } finally {
+      if (!cancelled) setChecking(false);
+    }
+    }
+    check(address);
+    return () => { cancelled = true; };
+  }, [address, contracts]);
+  return { status, checking };
+}
+
+// Helper for internal collection status check only
+function useCollectionInternalStatus(address, contracts) {
+  const [status, setStatus] = useState(null); // null | true | false
+  const [checking, setChecking] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    async function check(addr) {
+      if (!contracts?.protocolManager || !addr || addr.length !== 42) {
+      setStatus(null);
+      return;
+    }
+    setChecking(true);
+    try {
+      const isInternal = await contracts.protocolManager.isInternalCollection(addr);
+      if (!cancelled) setStatus(isInternal);
+    } catch (error) {
+      console.warn('[useCollectionInternalStatus] Failed to check internal collection:', error.message);
       if (!cancelled) setStatus(false);
     } finally {
       if (!cancelled) setChecking(false);

@@ -466,7 +466,7 @@ const RaffleCard = ({ raffle }) => {
     <div className="landing-raffle-card bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
       <div className="flex items-center justify-between mb-4 min-w-0">
         <h3 
-          className="font-display text-[length:var(--text-lg)] font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-[#614E41] transition-colors duration-200" 
+          className="font-display text-[length:var(--text-lg)] font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-brand-500 transition-colors duration-200" 
           onClick={handleViewRaffle}
         >
           {raffle.name}

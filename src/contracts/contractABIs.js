@@ -1,12 +1,12 @@
-import ProtocolManagerABI from './ProtocolManager.min.abi.json';
-import PoolDeployerABI from './PoolDeployer.min.abi.json';
-import RevenueManagerABI from './RevenueManager.min.abi.json';
-import NFTFactoryABI from './NFTFactory.min.abi.json';
-import ERC721PrizeABI from './ERC721Prize.min.abi.json';
-import ERC1155PrizeABI from './ERC1155Prize.min.abi.json';
-import PoolABI from './Pool.min.abi.json';
-import SocialEngagementManagerABI from './SocialEngagementManager.min.abi.json';
-import KOLApprovalABI from './KOLApproval.json';
+import ProtocolManagerJSON from './ProtocolManager.json';
+import PoolDeployerJSON from './PoolDeployer.json';
+import RevenueManagerJSON from './RevenueManager.json';
+import NFTFactoryJSON from './NFTFactory.json';
+import ERC721PrizeJSON from './ERC721Prize.json';
+import ERC1155PrizeJSON from './ERC1155Prize.json';
+import PoolJSON from './Pool.json';
+import SocialEngagementManagerJSON from './SocialEngagementManager.json';
+import KOLApprovalJSON from './KOLApproval.json';
 
 const ERC20ABI = [
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -15,15 +15,15 @@ const ERC20ABI = [
 ];
 
 export const contractABIs = {
-  protocolManager: ProtocolManagerABI,
-  poolDeployer: PoolDeployerABI,
-  revenueManager: RevenueManagerABI,
-  nftFactory: NFTFactoryABI,
-  erc721Prize: ERC721PrizeABI,
-  erc1155Prize: ERC1155PrizeABI,
-  socialEngagementManager: SocialEngagementManagerABI,
-  kolApproval: KOLApprovalABI,
-  pool: PoolABI,
+  protocolManager: ProtocolManagerJSON.abi,
+  poolDeployer: PoolDeployerJSON.abi,
+  revenueManager: RevenueManagerJSON.abi,
+  nftFactory: NFTFactoryJSON.abi,
+  erc721Prize: ERC721PrizeJSON.abi,
+  erc1155Prize: ERC1155PrizeJSON.abi,
+  socialEngagementManager: SocialEngagementManagerJSON.abi,
+  kolApproval: KOLApprovalJSON.abi,
+  pool: PoolJSON.abi,
   erc20: ERC20ABI
 };
 

@@ -44,6 +44,14 @@ const CreatorRevenueWithdrawalComponent = () => {
 
   const handleMintChange = (field, value) => {
     setMintData(prev => ({ ...prev, [field]: value }));
+    
+    // If this is a tokenId change for ERC1155, fetch token-specific vesting info
+    if (field === 'tokenId' && collectionInfo && collectionInfo.type === 'erc1155') {
+      const tokenId = parseInt(value);
+      if (!isNaN(tokenId) && tokenId >= 0) {
+        fetchTokenIdVestingInfo(tokenId);
+      }
+    }
   };
 
   // Auto-detect collection type and load collection info for minting
@@ -183,6 +191,7 @@ const CreatorRevenueWithdrawalComponent = () => {
       }
 
       setCollectionInfo({
+        address: mintData.collectionAddress,
         name,
         symbol,
         owner,
@@ -204,6 +213,65 @@ const CreatorRevenueWithdrawalComponent = () => {
       setCollectionInfo(null);
     } finally {
       setLoadingCollectionInfo(false);
+    }
+  };
+
+  // Fetch ERC1155 vesting details for specific token ID
+  const fetchTokenIdVestingInfo = async (tokenId) => {
+    if (!collectionInfo || collectionInfo.type !== 'erc1155' || !collectionInfo.isOwner) {
+      return;
+    }
+
+    try {
+      const contract = getContractInstance(collectionInfo.address, 'erc1155Prize');
+      if (!contract) {
+        throw new Error('Failed to create contract instance');
+      }
+
+      let vestingConfigured = false;
+      let unlockedAmount = '0';
+      let availableAmount = '0';
+
+      // First check if token ID exists by calling maxSupply(tokenId)
+      // This will fail if the token ID doesn't exist
+      try {
+        await contract.maxSupply(tokenId);
+      } catch (maxSupplyError) {
+        // Token ID doesn't exist
+        console.log('Token ID does not exist:', tokenId);
+        setCollectionInfo(prev => ({
+          ...prev,
+          vestingConfigured: false,
+          unlockedAmount: '0',
+          availableAmount: '0'
+        }));
+        return;
+      }
+
+      // Check if vesting is configured for this specific token ID
+      vestingConfigured = await contract.vestingConfigured(tokenId);
+      if (vestingConfigured) {
+        unlockedAmount = (await contract.getUnlockedAmount(tokenId)).toString();
+        availableAmount = (await contract.getAvailableCreatorMint(tokenId)).toString();
+      }
+
+      // Update collection info with token-specific vesting data
+      setCollectionInfo(prev => ({
+        ...prev,
+        vestingConfigured,
+        unlockedAmount,
+        availableAmount
+      }));
+
+    } catch (e) {
+      console.log('Vesting info not available for token ID:', tokenId, e.message);
+      // Reset vesting info on error
+      setCollectionInfo(prev => ({
+        ...prev,
+        vestingConfigured: false,
+        unlockedAmount: '0',
+        availableAmount: '0'
+      }));
     }
   };
 
@@ -653,7 +721,7 @@ const CreatorRevenueWithdrawalComponent = () => {
                     </div>
                     {collectionInfo.type === 'erc1155' && (
                       <div className="mt-1 text-xs text-muted-foreground">
-                        Note: Vesting info shown for Token ID 1. Specify exact Token ID for accurate amounts.
+                        Vesting info shown for Token ID {mintData.tokenId || '1'}. Enter a specific Token ID to see accurate vesting amounts.
                       </div>
                     )}
                   </div>
@@ -673,6 +741,21 @@ const CreatorRevenueWithdrawalComponent = () => {
             {/* Mint Form */}
             {collectionInfo && collectionInfo.isOwner && (
               <div className="space-y-4">
+                {/* Token ID for ERC1155 - moved to first position */}
+                {collectionInfo.type === 'erc1155' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Token ID</label>
+                    <input
+                      type="number"
+                      value={mintData.tokenId}
+                      onChange={(e) => handleMintChange('tokenId', e.target.value)}
+                      placeholder="1"
+                      min="0"
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                    />
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Recipient Address</label>
@@ -694,21 +777,6 @@ const CreatorRevenueWithdrawalComponent = () => {
                     />
                   </div>
                 </div>
-
-                {/* Token ID for ERC1155 */}
-                {collectionInfo.type === 'erc1155' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Token ID</label>
-                    <input
-                      type="number"
-                      value={mintData.tokenId}
-                      onChange={(e) => handleMintChange('tokenId', e.target.value)}
-                      placeholder="1"
-                      min="0"
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    />
-                  </div>
-                )}
 
                 {/* Mint Button */}
                 <Button

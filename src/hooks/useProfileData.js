@@ -7,7 +7,7 @@ import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import { handleError } from '../utils/errorHandling';
 import { APP_CONFIG } from '../constants';
 
-// Pool state mapping function
+// Pool state mapping function - matches IPool.sol enum (states 0-7 only)
 function mapPoolState(stateNum) {
   switch (stateNum) {
     case 0: return 'pending';
@@ -18,7 +18,6 @@ function mapPoolState(stateNum) {
     case 5: return 'deleted';
     case 6: return 'allPrizesClaimed';
     case 7: return 'unengaged';
-    case 8: return 'unengaged';
     default: return 'unknown';
   }
 }
@@ -67,6 +66,7 @@ export const useProfileData = () => {
   }, []);
 
   // Map raffle state numbers (BN | string | number) to readable strings (lowercase keys used in UI)
+  // Matches IPool.sol enum (states 0-7 only)
   const mapRaffleState = useCallback((stateNum) => {
     const n = (stateNum && typeof stateNum === 'object' && typeof stateNum.toNumber === 'function')
       ? stateNum.toNumber()
@@ -80,7 +80,6 @@ export const useProfileData = () => {
       case 5: return 'deleted';
       case 6: return 'allPrizesClaimed';
       case 7: return 'unengaged';
-      case 8: return 'unengaged';
       default: return 'unknown';
     }
   }, []);

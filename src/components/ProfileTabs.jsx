@@ -23,17 +23,16 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Use the same state labels as RaffleCard component
+// State labels matching IPool.sol enum (states 0-7 only)
 const RAFFLE_STATE_LABELS = [
-  'Pending',
-  'Active',
-  'Ended',
-  'Drawing',
-  'Completed',
-  'Deleted',
-  'Activation Failed',
-  'Prizes Claimed',
-  'Unengaged'
+  'Pending',           // 0
+  'Active',            // 1
+  'Ended',             // 2
+  'Drawing',           // 3
+  'Completed',         // 4
+  'Deleted',           // 5
+  'All Prizes Claimed', // 6
+  'Unengaged'          // 7
 ];
 
 // Date/time formatting helper to robustly handle Date objects, ms and seconds
@@ -95,7 +94,7 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <h3 
-            className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-[#614E41] transition-colors duration-200"
+            className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-brand-500 transition-colors duration-200"
             onClick={() => onRaffleClick(raffle.address)}
           >
             {raffle.name}
