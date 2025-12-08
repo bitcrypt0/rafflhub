@@ -15,15 +15,15 @@ const buttonVariants = cva(
         secondary:
           "border-2 border-brand-500 text-brand-500 bg-transparent shadow-sm hover:bg-brand-500/10 focus-visible:ring-brand/15",
         tertiary:
-          "text-brand-500 bg-transparent hover:bg-brand-500/10",
+          "text-[color:var(--brand-tertiary)] bg-transparent hover:bg-brand-500/10",
         // Backward compatibility aliases
         default:
           "bg-brand-500 text-white shadow-sm hover:bg-brand-600 focus-visible:ring-brand/20",
         outline:
           "border-2 border-brand-500 text-brand-500 bg-transparent shadow-sm hover:bg-brand-500/10",
         ghost:
-          "text-brand-500 hover:bg-brand-500/10",
-        link: "text-brand-500 underline-offset-4 hover:underline",
+          "text-[color:var(--brand-tertiary)] hover:bg-brand-500/10",
+        link: "text-[color:var(--brand-tertiary)] underline-offset-4 hover:underline",
         // Semantic variants retained
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 focus-visible:ring-destructive/20",

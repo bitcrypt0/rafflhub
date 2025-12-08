@@ -94,7 +94,7 @@ const ProfileRaffleCard = ({ raffle, onRaffleClick, formatRevenueAmount, getCurr
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <h3 
-            className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-brand-500 transition-colors duration-200"
+            className="font-semibold text-sm mb-1 truncate cursor-pointer hover:text-[#614E41] transition-colors duration-200"
             onClick={() => onRaffleClick(raffle.address)}
           >
             {raffle.name}

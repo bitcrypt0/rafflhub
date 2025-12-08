@@ -174,12 +174,20 @@
   --warning-foreground: 0 0% 100%;
   
   /* Theme-Aware Brand Colors for Buttons */
-  --brand-500: #614E41; /* Deep brown - primary buttons */
-  --brand-600: #4A3A2F; /* Darker brown - hover state */
-  --brand-400: #B6834F; /* Medium brown - accent buttons */
-  --brand-300: #D4A96E; /* Light brown - special actions */
-  --brand-200: #EAD4B8; /* Very light brown - secondary backgrounds */
-  --brand-100: #F5E9DC; /* Cream - requested color */
+  --brand-50: #FDF8F3;
+  --brand-100: #F7EDE1;
+  --brand-200: #EAD4B8;
+  --brand-300: #D4A96E;
+  --brand-400: #B6834F;
+  --brand-500: #614E41;  /* Original brand color - perfect for light theme */
+  --brand-600: #4A3A2F;
+  --brand-700: #3A2C23;
+  --brand-800: #2A1F18;
+  --brand-900: #1A1410;
+  --brand-950: #0F0A08;
+  
+  /* Theme-Aware Tertiary Button Text Colors */
+  --brand-tertiary: #614E41;  /* Standard brand color for light theme */
 }
 
 /* Dark Theme Color Overrides */
@@ -229,69 +237,21 @@
   --warning: 38 92% 60%;
   --warning-foreground: 25 20% 8%;
   
-  /* Theme-Aware Brand Colors for Buttons */
-  --brand-500: #B6834F; /* Medium brown - lighter for dark theme */
-  --brand-600: #D4A96E; /* Light brown - hover state */
-  --brand-400: #EAD4B8; /* Very light brown - accent buttons */
-  --brand-300: #F5E9DC; /* Cream - special actions */
-  --brand-200: #FDF8F3; /* Very light cream - secondary backgrounds */
-  --brand-100: #FFFFFF; /* White - highest contrast */
-}
-
-/* Dim Blue Theme Color Overrides */
-:root.dim-blue {
-  /* Background Colors */
-  --background: 220 20% 8%;
-  --foreground: 220 15% 90%;
+  /* Theme-Aware Brand Colors for Buttons - Using official brand colors */
+  --brand-50: #F5E9DC;  /* Secondary brand color */
+  --brand-100: #F0E4D8;
+  --brand-200: #E5D4C4;
+  --brand-300: #D4C4B0;
+  --brand-400: #C3B49C;
+  --brand-500: #614E41;  /* Primary brand color - consistent across all themes */
+  --brand-600: #4A3A2F;
+  --brand-700: #3A2C23;
+  --brand-800: #2A1F18;
+  --brand-900: #1A1410;
+  --brand-950: #0F0A08;
   
-  /* Card Colors */
-  --card: 220 20% 12%;
-  --card-foreground: 220 15% 90%;
-  
-  /* Popover Colors */
-  --popover: 220 20% 12%;
-  --popover-foreground: 220 15% 90%;
-  
-  /* Primary Colors */
-  --primary: 220 35% 65%;
-  --primary-foreground: 220 20% 8%;
-  
-  /* Secondary Colors */
-  --secondary: 220 15% 15%;
-  --secondary-foreground: 220 15% 90%;
-  
-  /* Muted Colors */
-  --muted: 220 15% 15%;
-  --muted-foreground: 220 10% 50%;
-  
-  /* Accent Colors */
-  --accent: 220 25% 20%;
-  --accent-foreground: 220 15% 90%;
-  
-  /* Destructive Colors */
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 220 15% 90%;
-  
-  /* Border Colors */
-  --border: 220 15% 18%;
-  --input: 220 15% 18%;
-  --ring: 220 35% 65%;
-  
-  /* Success Colors */
-  --success: 142 76% 50%;
-  --success-foreground: 220 20% 8%;
-  
-  /* Warning Colors */
-  --warning: 38 92% 60%;
-  --warning-foreground: 220 20% 8%;
-  
-  /* Theme-Aware Brand Colors for Buttons */
-  --brand-500: #8B7355; /* Muted brown - complementary to blue theme */
-  --brand-600: #A0896D; /* Lighter brown - hover state */
-  --brand-400: #D4A96E; /* Warm brown - accent buttons */
-  --brand-300: #EAD4B8; /* Light brown - special actions */
-  --brand-200: #F7EDE1; /* Very light brown - secondary backgrounds */
-  --brand-100: #FDF8F3; /* Cream - highest contrast */
+  /* Theme-Aware Tertiary Button Text Colors - Lighter for Dark Theme */
+  --brand-tertiary: #E5D4C4;  /* Lighter brand color for better contrast in dark theme */
 }
 
 /* Utility Classes for Enhanced Colors */

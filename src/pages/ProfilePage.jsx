@@ -232,14 +232,14 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
               const path = slug ? `/${slug}/raffle/${raffle.address}` : `/raffle/${raffle.address}`;
               navigate(path);
             }}
-          className="flex-1 bg-brand-500 text-white px-3 py-2 rounded-md hover:bg-brand-600 transition-colors text-sm"
+          className="flex-1 bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           View
         </Button>
         <Button
           onClick={() => onViewRevenue(raffle)}
           disabled={!raffle.totalRevenue || parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) <= 0}
-          className="px-3 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title={raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 ? "View revenue details" : "No revenue available"}
         >
           Revenue
@@ -247,7 +247,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         <Button
           onClick={() => onDelete(raffle)}
           disabled={!canDelete()}
-          className="px-3 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-2 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           title={canDelete() ? (raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle") : "Cannot delete: Raffle is not in pending or active state"}
         >
           Delete
@@ -269,7 +269,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
             }
           }}
           disabled={!raffle.isCreator}
-          className="bg-brand-500 text-white px-6 py-3 rounded-full hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+          className="bg-[#614E41] text-white px-6 py-3 rounded-full hover:bg-[#4a3a30] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
           title={raffle.isCreator ? "Mint NFT to winner" : "Only raffle creator can mint to winner"}
         >
           Mint to Winner
@@ -343,7 +343,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
               const path = slug ? `/${slug}/raffle/${ticket.raffleAddress}` : `/raffle/${ticket.raffleAddress}`;
               navigate(path);
             }}
-          className="w-full bg-brand-500 text-white px-3 py-2 rounded-md hover:bg-brand-600 transition-colors text-sm"
+          className="w-full bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
           Visit Raffle Page
         </Button>
@@ -351,7 +351,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         <Button
           onClick={() => onClaimPrize(ticket)}
           disabled={!canClaimPrize()}
-          className="bg-brand-500 text-white px-3 py-2 rounded-md hover:bg-brand-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title={canClaimPrize() ? "Claim your prize" : "Prize not available for claiming"}
         >
           Claim Prize
@@ -360,7 +360,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         {canClaimRefund() && (
           <button
             onClick={() => onClaimRefund(ticket)}
-            className="bg-brand-500 text-white px-3 py-2 rounded-md hover:bg-brand-600 transition-colors text-sm"
+            className="bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
           >
             Claim Refund
           </button>

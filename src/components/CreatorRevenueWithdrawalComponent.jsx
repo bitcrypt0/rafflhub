@@ -315,14 +315,14 @@ const CreatorRevenueWithdrawalComponent = () => {
       let result;
       if (mintData.collectionType === 'erc721') {
         // ERC721: creatorMint(address to, uint256 quantity)
-        result = await executeTransaction(contract.creatorMint, mintData.recipient, quantity);
+        result = await executeTransaction(() => contract.creatorMint(mintData.recipient, quantity));
       } else {
         // ERC1155: creatorMint(address to, uint256 id, uint256 quantity)
         const tokenId = parseInt(mintData.tokenId);
         if (isNaN(tokenId)) {
           throw new Error('Invalid token ID');
         }
-        result = await executeTransaction(contract.creatorMint, mintData.recipient, tokenId, quantity);
+        result = await executeTransaction(() => contract.creatorMint(mintData.recipient, tokenId, quantity));
       }
 
       if (result.success) {

@@ -1854,7 +1854,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
 
   return (
     <div className={`detail-beige-card text-foreground bg-card border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
-      isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-brand-500'
+      isCurrentUser ? 'border-yellow-400 winner-card-highlight' : 'border-[#614E41]'
     }`}>
       <div className="px-2 py-3 sm:px-3">
         <div className="flex items-center justify-between mb-3">
@@ -4122,7 +4122,7 @@ const RaffleDetailPage = () => {
                       placeholder="Enter winner address"
                       value={mintWinnerAddress}
                       onChange={e => setMintWinnerAddress(e.target.value)}
-                      className="px-3 py-2.5 border-2 border-brand-500 rounded-md bg-background w-72 font-mono focus:outline-none focus:ring-0"
+                      className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-72 font-mono focus:outline-none focus:ring-0"
                       disabled={mintingToWinner}
                     />
                     <Button

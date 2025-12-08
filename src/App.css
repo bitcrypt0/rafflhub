@@ -163,6 +163,22 @@ html.dim-blue {
   --sidebar-accent-foreground: 210 40% 94%;
   --sidebar-border: 215 20% 30%;
   --sidebar-ring: 0 0% 98%;
+  
+  /* Theme-Aware Brand Colors for Buttons - Using actual brand colors */
+  --brand-50: #F5E9DC;  /* Secondary brand color */
+  --brand-100: #F0E4D8;
+  --brand-200: #E5D4C4;
+  --brand-300: #D4C4B0;
+  --brand-400: #C3B49C;
+  --brand-500: #614E41;  /* Primary brand color - consistent across all themes */
+  --brand-600: #4A3A2F;
+  --brand-700: #3A2C23;
+  --brand-800: #2A1F18;
+  --brand-900: #1A1410;
+  --brand-950: #0F0A08;
+  
+  /* Theme-Aware Tertiary Button Text Colors - Lighter for Dim-Blue Theme */
+  --brand-tertiary: #D4C4B0;  /* Lighter brand color for better contrast in dim-blue theme */
 }
 
 .animate-spin {
