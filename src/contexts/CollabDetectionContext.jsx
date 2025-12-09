@@ -58,25 +58,17 @@ export const CollabDetectionProvider = ({ children }) => {
   const getEnhancedRaffleType = useCallback((raffle) => {
     const collabStatus = collabResults[raffle.address];
 
-    // If we have async collab detection result, use it
-    if (collabStatus === 'nft_collab' || collabStatus === 'whitelist_collab') {
-      return collabStatus;
+    // NFT Collab takes precedence (always applies)
+    if (collabStatus === 'nft_collab' || raffle.isCollabPool) {
+      return 'nft_collab';
     }
 
-    // If still loading or no result, fall back to synchronous detection
-    if (collabStatus === undefined && loadingStates[raffle.address]) {
-      // Prioritize NFT Collab if isCollabPool
-      if (raffle.isCollabPool) {
-        return 'nft_collab';
-      }
+    // Only return 'whitelist_collab' for NON-PRIZED pools
+    if (collabStatus === 'whitelist_collab' && !raffle.isPrized) {
+      return 'whitelist_collab';
     }
 
-    // If definitely not collab or no async result available, prefer immediate isCollabPool
-    if (collabStatus === 'not_collab' || collabStatus === undefined) {
-      if (raffle.isCollabPool) return 'nft_collab';
-      return raffle.isPrized ? 'prized' : 'non_prized';
-    }
-
+    // Default logic for other cases
     return raffle.isPrized ? 'prized' : 'non_prized';
   }, [collabResults, loadingStates]);
 

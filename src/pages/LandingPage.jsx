@@ -429,10 +429,9 @@ const RaffleCard = ({ raffle }) => {
     // Use async-determined collab status from context (fallback)
     const collabStatus = getCollabStatus(raffle.address);
     if (collabStatus === 'nft_collab') return 'NFT Collab';
-    if (collabStatus === 'whitelist_collab') return 'Whitelist Collab';
     if (collabStatus === undefined) return 'Checking...'; // Still determining collab status
 
-    // Continue with other prize types
+    // Continue with other prize types - check these BEFORE whitelist collab
     if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
       return `${getCurrencySymbol()} Giveaway`;
     }
@@ -444,6 +443,11 @@ const RaffleCard = ({ raffle }) => {
     const enhancedNFTType = getEnhancedNFTType();
     if (enhancedNFTType) {
       return enhancedNFTType;
+    }
+
+    // Only show 'Whitelist Collab' for NON-PRIZED pools with holderTokenAddress
+    if (collabStatus === 'whitelist_collab' && !raffle.isPrized) {
+      return 'Whitelist Collab';
     }
 
     return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';

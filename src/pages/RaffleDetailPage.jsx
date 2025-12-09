@@ -1880,30 +1880,9 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
             className="winner-card-expand flex-shrink-0"
             title={isExpanded ? "Hide details" : "View details"}
           >
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${isCurrentUser ? 'text-yellow-400' : 'text-primary'}`} />
           </Button>
         </div>
-
-        {/* Only show prize information and claim status for prized raffles */}
-        {raffle.isPrized && (
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-3 text-sm">
-            <div className="space-y-0.5">
-              <span className="text-muted-foreground text-xs uppercase tracking-wide">Prize</span>
-              <div className="font-medium">{getPrizeInfo()}</div>
-            </div>
-            <div className="space-y-0.5 sm:text-right">
-              <span className="text-muted-foreground text-xs tracking-wide block">Status</span>
-              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${claimStatus.bgColor} ${claimStatus.color}`}>
-                {claimStatus.icon === 'green-dot' ? (
-                  <div className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400"></div>
-                ) : (
-                  <span>{claimStatus.icon}</span>
-                )}
-                <span>{claimStatus.text}</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {isExpanded && (
           <div className="mt-3 pt-3 border-t border-border">
@@ -1915,7 +1894,30 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Participation Details</div>
+                  <div className="text-sm font-medium text-muted-foreground mb-2">Participation Details, Prize & Claim Status</div>
+                  
+                  {/* Prize and Claim Status - moved from always visible */}
+                  {raffle.isPrized && (
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-3 text-sm p-3 bg-muted/30 rounded-lg">
+                      <div className="space-y-0.5">
+                        <span className="text-muted-foreground text-xs uppercase tracking-wide">Prize</span>
+                        <div className="font-medium">{getPrizeInfo()}</div>
+                      </div>
+                      <div className="space-y-0.5 sm:text-right">
+                        <span className="text-muted-foreground text-xs tracking-wide block">Status</span>
+                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${claimStatus.bgColor} ${claimStatus.color}`}>
+                          {claimStatus.icon === 'green-dot' ? (
+                            <div className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400"></div>
+                          ) : (
+                            <span>{claimStatus.icon}</span>
+                          )}
+                          <span>{claimStatus.text}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Participation Details */}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Slots Purchased</span>
