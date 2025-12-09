@@ -489,7 +489,7 @@ const HeaderModern = () => {
                 <Logo size="md" />
                 <Badge variant="secondary" className="hidden xl:inline-flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
-                  New
+                  Fun
                 </Badge>
               </div>
             ) : connected ? (
