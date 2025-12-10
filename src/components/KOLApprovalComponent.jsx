@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { toast } from './ui/sonner';
 import { extractRevertReason } from '../utils/errorHandling';
 import { notifyError } from '../utils/notificationService';
@@ -14,11 +14,8 @@ import { Badge } from './ui/badge';
 import {
   AlertCircle,
   CheckCircle,
-  UserCheck,
   Loader2,
-  Info,
-  Search,
-  Users
+  Info
 } from 'lucide-react';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 
@@ -348,16 +345,13 @@ const KOLApprovalComponent = () => {
   if (!connected) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+        <CardContent className="space-y-4 p-4">
+          <div className="text-base font-medium flex items-center gap-2 mb-1">
             KOL Approval Management
-          </CardTitle>
-          <CardDescription>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Please connect your wallet to manage KOL approvals for collections.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -371,21 +365,17 @@ const KOLApprovalComponent = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
+      <CardContent className="space-y-6 p-4">
+        <div className="text-base font-medium flex items-center gap-2 mb-1">
           KOL Approval Management
-        </CardTitle>
-        <CardDescription>
+        </div>
+        <p className="text-sm text-muted-foreground">
           Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        </p>
         {/* Collection Lookup */}
         <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
-          <div className="flex items-center gap-2 mb-2">
-            <Search className="h-4 w-4" />
-            <h3 className="text-sm font-medium">Collection Lookup</h3>
+          <div className="text-base font-medium flex items-center gap-2 mb-1">
+            Collection Lookup
           </div>
           
           <div className="space-y-2">
@@ -425,9 +415,8 @@ const KOLApprovalComponent = () => {
         {/* KOL Approval Form */}
         {fetchedCollection && (
           <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2 mb-2">
-              <UserCheck className="h-4 w-4" />
-              <h3 className="text-sm font-medium">KOL Approval</h3>
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
+              KOL Approval
             </div>
 
             <div className="space-y-4">
@@ -526,9 +515,7 @@ const KOLApprovalComponent = () => {
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <UserCheck className="h-4 w-4 mr-2" />
-                )}
+                ) : null}
                 Approve KOL
               </Button>
 
@@ -544,9 +531,7 @@ const KOLApprovalComponent = () => {
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                )}
+                ) : null}
                 Revoke KOL
               </Button>
             </div>

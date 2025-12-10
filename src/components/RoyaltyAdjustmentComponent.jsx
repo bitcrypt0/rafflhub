@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { Settings, Search, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
@@ -419,7 +419,6 @@ const RoyaltyAdjustmentComponent = () => {
               className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
               title={!connected ? "Please connect your wallet" : !collectionInfo ? "Please load collection info first" : !collectionInfo.isOwner ? "Only collection owner can update royalties" : !collectionData.royaltyPercentage || !collectionData.royaltyRecipient ? "Please fill in all required fields" : "Update royalty settings"}
             >
-              <Settings className="h-4 w-4" />
               {loading ? 'Updating...' : 'Update Royalty Settings'}
             </Button>
           </div>

@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { contractABIs } from '../contracts/contractABIs';
 import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { toast } from './ui/sonner';
 import { extractRevertReason } from '../utils/errorHandling';
 import { notifyError } from '../utils/notificationService';
@@ -16,9 +16,6 @@ import { Badge } from './ui/badge';
 import {
   AlertCircle,
   CheckCircle,
-  Shield,
-  ShieldOff,
-  User,
   Loader2,
   Info
 } from 'lucide-react';
@@ -288,16 +285,13 @@ const RoyaltyEnforcementExemptionComponent = () => {
   if (!connected) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+        <CardContent className="space-y-4 p-4">
+          <div className="text-base font-medium flex items-center gap-2 mb-1">
             Royalty Enforcement Management
-          </CardTitle>
-          <CardDescription>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Please connect your wallet to manage royalty enforcement and exemptions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -311,16 +305,13 @@ const RoyaltyEnforcementExemptionComponent = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
+      <CardContent className="space-y-6 p-4">
+        <div className="text-base font-medium flex items-center gap-2 mb-1">
           Royalty Enforcement Management
-        </CardTitle>
-        <CardDescription>
+        </div>
+        <p className="text-sm text-muted-foreground">
           Manage royalty enforcement and exemptions for collections
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        </p>
         {/* Wallet not connected warning */}
         {!connected && (
           <Alert variant="destructive">
@@ -367,7 +358,6 @@ const RoyaltyEnforcementExemptionComponent = () => {
                     </>
                   ) : (
                     <>
-                      <ShieldOff className="h-3 w-3 mr-1" />
                       Royalty Enforcement Disabled
                     </>
                   )}
@@ -394,11 +384,7 @@ const RoyaltyEnforcementExemptionComponent = () => {
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : royaltyEnforcementEnabled ? (
-                    <ShieldOff className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Shield className="h-4 w-4 mr-2" />
-                  )}
+                  ) : null}
                   {royaltyEnforcementEnabled ? 'Disable Enforcement' : 'Enable Enforcement'}
                 </Button>
               </div>
@@ -479,9 +465,7 @@ const RoyaltyEnforcementExemptionComponent = () => {
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Shield className="h-4 w-4 mr-2" />
-                  )}
+                  ) : null}
                   Grant Exemption
                 </Button>
 
@@ -494,9 +478,7 @@ const RoyaltyEnforcementExemptionComponent = () => {
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ShieldOff className="h-4 w-4 mr-2" />
-                  )}
+                  ) : null}
                   Revoke Exemption
                 </Button>
               </div>

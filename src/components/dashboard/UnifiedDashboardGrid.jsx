@@ -5,7 +5,7 @@
  * Replaces the complex mobile/desktop dual rendering system.
  */
 
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { cn } from '../../lib/utils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import DashboardCard from './DashboardCard';
@@ -22,13 +22,6 @@ const UnifiedDashboardGrid = ({
   ...props 
 }) => {
   const { isMobile, isTablet, isDesktop } = useMobileBreakpoints();
-
-  // Single state management for all platforms - use ref to persist across re-renders
-  const [expandedCard, setExpandedCard] = useState(null);
-  const expandedCardRef = useRef(expandedCard);
-
-  // Update ref when state changes
-  expandedCardRef.current = expandedCard;
 
   // Dashboard components configuration
   const dashboardComponents = [
@@ -77,13 +70,6 @@ const UnifiedDashboardGrid = ({
     }
   ];
 
-  // Handle card expansion - stable state management
-  const handleCardToggle = (cardId) => {
-    // Always allow toggling the clicked card, regardless of platform
-    // This prevents auto-closing when mobile state changes
-    setExpandedCard(expandedCard === cardId ? null : cardId);
-  };
-
   // Determine grid layout based on screen size
   const getGridCols = () => {
     if (isMobile) return 1;
@@ -130,18 +116,10 @@ const UnifiedDashboardGrid = ({
             key={component.id}
             title={component.title}
             description={component.description}
-
             component={component.component}
-            // Always use external state management to prevent auto-close
-            isExpanded={expandedCard === component.id}
-            onToggle={() => handleCardToggle(component.id)}
             className={cn(
               // Responsive card styling
-              isMobile && [
-                "w-full",
-                // Add extra margin when expanded on mobile
-                expandedCard === component.id && "mb-2"
-              ],
+              isMobile && "w-full",
               // Desktop/tablet styling
               !isMobile && "h-fit"
             )}
@@ -155,8 +133,8 @@ const UnifiedDashboardGrid = ({
       {isMobile && (
         <div className="mt-6 p-3 bg-muted/50 rounded-lg border border-border/50">
           <p className="text-xs text-muted-foreground text-center">
-            Tap any card above to expand and access its functionality. 
-            Only one card can be open at a time on mobile.
+            Tap any card above to open it in a modal. 
+            All dashboard components are accessible via modal dialogs.
           </p>
         </div>
       )}

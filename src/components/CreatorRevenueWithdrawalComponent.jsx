@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, RefreshCw, AlertCircle, CheckCircle, Zap } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -640,17 +640,16 @@ const CreatorRevenueWithdrawalComponent = () => {
 
         {/* Withdrawal Button */}
         <div className="space-y-4">
-          <Button
-            onClick={handleWithdrawRevenue}
-            disabled={loading || !connected || !canWithdraw}
-            variant="primary"
-            size="md"
-            className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
-            title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
-          >
-            <DollarSign className="h-4 w-4" />
-            {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
-          </Button>
+            <Button
+              onClick={handleWithdrawRevenue}
+              disabled={loading || !connected || !canWithdraw}
+              variant="primary"
+              size="md"
+              className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
+              title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
+            >
+              {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
+            </Button>
 
           {!canWithdraw && raffleData.isRevenueRecipient && raffleData.address && (
             <p className="text-sm text-muted-foreground text-center">

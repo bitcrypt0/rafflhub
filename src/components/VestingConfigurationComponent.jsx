@@ -38,6 +38,8 @@ const VestingConfigurationComponent = () => {
   const [poolAddress, setPoolAddress] = useState('');
   const [poolAllocation, setPoolAllocation] = useState(null);
   const [fetchingPool, setFetchingPool] = useState(false);
+  const [showReductionWarning, setShowReductionWarning] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // Auto-fetch pool allocation when pool address changes
   useEffect(() => {
@@ -60,6 +62,7 @@ const VestingConfigurationComponent = () => {
       setCollectionInfo(null);
       setVestingInfo(null);
       setIsERC721(null);
+      setIsOwner(false);
       return;
     }
 
@@ -83,10 +86,11 @@ const VestingConfigurationComponent = () => {
       // Get owner
       const owner = await contract.owner();
       
-      if (owner.toLowerCase() !== address.toLowerCase()) {
-        toast.error('You are not the owner of this collection');
-        setLoading(false);
-        return;
+      // Check if current user is owner
+      if (address && owner.toLowerCase() === address.toLowerCase()) {
+        setIsOwner(true);
+      } else {
+        setIsOwner(false);
       }
 
       setIsERC721(isERC721Contract);
@@ -369,6 +373,7 @@ const VestingConfigurationComponent = () => {
       }
       toast.success('Creator allocation reduced successfully');
       setReductionPercent('');
+      setShowReductionWarning(false);
       await fetchCollectionDetails(collectionAddress);
     } catch (error) {
       console.error('Error reducing creator allocation:', error);
@@ -379,6 +384,7 @@ const VestingConfigurationComponent = () => {
       } else {
         toast.error('Failed to reduce creator allocation: ' + error.message);
       }
+    } finally {
       setReducing(false);
     }
   };
@@ -403,31 +409,6 @@ const VestingConfigurationComponent = () => {
     
     setRestoring(true);
     try {
-      // Check if the current user is the owner
-      let owner;
-      try {
-        if (typeof fetchedCollection.owner === 'function') {
-          owner = await fetchedCollection.owner();
-        } else {
-          toast.error('Contract does not support owner functionality');
-          setRestoring(false);
-          return;
-        }
-      } catch (e) {
-        toast.error('Failed to get contract owner');
-        setRestoring(false);
-        return;
-      }
-
-      const signer = provider.getSigner();
-      const currentAddress = await signer.getAddress();
-
-      if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
-        toast.error('Only the contract owner can restore minter allocation');
-        setRestoring(false);
-        return;
-      }
-
       // Call restoreMinterAllocation with pool address parameter
       if (isERC721) {
         await fetchedCollection.callStatic.restoreMinterAllocation(sanitizedPoolAddress);
@@ -561,16 +542,14 @@ const VestingConfigurationComponent = () => {
     <div className="space-y-6">
       {/* Collection Fetch Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardContent className="space-y-4 p-4">
+          <div className="text-base font-medium flex items-center gap-2 mb-1">
             <Lock className="h-5 w-5" />
             Supply, Creator Allocation & Vesting Management
-          </CardTitle>
-          <CardDescription>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Enter your collection address to view and configure supply, creator allocation and vesting
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
           <div className="space-y-2">
             <label className="text-sm font-medium">Collection Address</label>
             <input
@@ -606,13 +585,11 @@ const VestingConfigurationComponent = () => {
       {/* Collection Info Display */}
       {collectionInfo && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardContent className="space-y-3 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
               <AlertCircle className="h-5 w-5" />
               Collection Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Type:</span>
@@ -660,13 +637,11 @@ const VestingConfigurationComponent = () => {
       {/* Vesting Info Display (if configured) */}
       {vestingInfo && (
         <Card className="border-green-500/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-600">
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 text-green-600 mb-1">
               <CheckCircle2 className="h-5 w-5" />
-              Vesting Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+              Vesting Schedule {!isERC721 && collectionInfo.tokenId && `(Token ID: ${collectionInfo.tokenId})`}
+            </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Cliff Ends:</span>
@@ -733,8 +708,8 @@ const VestingConfigurationComponent = () => {
                 </p>
               )}
             </div>
-            <Button onClick={cutSupply} disabled={!allocationPercent || cutting} className="w-full">
-              {cutting ? 'Cutting...' : 'Cut Supply'}
+            <Button onClick={cutSupply} disabled={!allocationPercent || cutting || !isOwner} className="w-full">
+              {cutting ? 'Cutting...' : isOwner ? 'Cut Supply' : 'Connect as Owner to Cut'}
             </Button>
           </CardContent>
         </Card>
@@ -761,7 +736,7 @@ const VestingConfigurationComponent = () => {
                   placeholder="0x..."
                   value={poolAddress}
                   onChange={(e) => setPoolAddress(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={restoring}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -828,7 +803,7 @@ const VestingConfigurationComponent = () => {
                 )}
               </div>
             </div>
-            <Button onClick={restoreMinterAllocation} disabled={!poolAddress || restoring} className="w-full">
+            <Button onClick={restoreMinterAllocation} disabled={!poolAddress || restoring || !isOwner} className="w-full">
               {restoring ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -837,7 +812,7 @@ const VestingConfigurationComponent = () => {
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Restore Pool Allocation
+                  {isOwner ? 'Restore Pool Allocation' : 'Connect as Owner to Restore'}
                 </>
               )}
             </Button>
@@ -869,8 +844,8 @@ const VestingConfigurationComponent = () => {
               <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
               <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%)</p>
             </div>
-            <Button onClick={declareAllocation} disabled={!allocationPercent || declaring} className="w-full">
-              {declaring ? 'Declaring...' : 'Declare Allocation'}
+            <Button onClick={declareAllocation} disabled={!allocationPercent || declaring || !isOwner} className="w-full">
+              {declaring ? 'Declaring...' : isOwner ? 'Declare Allocation' : 'Connect as Owner to Declare'}
             </Button>
           </CardContent>
         </Card>
@@ -901,7 +876,7 @@ const VestingConfigurationComponent = () => {
               <div className="col-span-2">
                 <span className="text-muted-foreground">Remaining Locked:</span>
                 <p className="font-semibold">
-                  {Math.max(0, Number(collectionInfo.creatorAllocation) - Number(collectionInfo.creatorClaimedCount))} tokens
+                  {Math.max(0, Number(collectionInfo.creatorAllocation) - Number(collectionInfo.creatorClaimedCount) - Number(collectionInfo.unlockedAmount || 0))} tokens
                 </p>
               </div>
             </div>
@@ -911,23 +886,76 @@ const VestingConfigurationComponent = () => {
                 type="number" 
                 placeholder="25" 
                 value={reductionPercent} 
-                onChange={(e) => setReductionPercent(e.target.value)} 
+                onChange={(e) => {
+                  setReductionPercent(e.target.value);
+                  if (!e.target.value) {
+                    setShowReductionWarning(false);
+                  }
+                }} 
                 className="w-full px-3 py-2 border border-border rounded-md bg-background" 
                 min="1" 
                 max="100"
               />
               <p className="text-xs text-muted-foreground">
-                Enter percentage to reduce from remaining locked allocation (e.g., 25 = 25%).
+                Enter percentage to reduce from your total allocation (e.g., 10 = 10%).
               </p>
               {reductionPercent && Number(reductionPercent) > 0 && Number(reductionPercent) <= 100 && (
                 <p className="text-xs text-red-600">
-                  Will reduce: {Math.floor((Number(collectionInfo.creatorAllocation) - Number(collectionInfo.creatorClaimedCount)) * Number(reductionPercent) / 100)} tokens
+                  Will reduce your total allocation by: {Math.floor(Number(collectionInfo.creatorAllocation) * Number(reductionPercent) / 100)} tokens
                 </p>
               )}
+              {Number(collectionInfo.unlockedAmount || 0) > 0 && (
+                <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md">
+                  <p className="text-xs text-orange-700 dark:text-orange-300">
+                    ⚠️ <strong>Warning:</strong> You have {collectionInfo.unlockedAmount} unlocked tokens. 
+                    Reducing your allocation will also reduce your unlocked tokens that are available to claim.
+                  </p>
+                </div>
+              )}
             </div>
-            <Button onClick={reduceAllocation} disabled={!reductionPercent || reducing} className="w-full">
-              {reducing ? 'Reducing...' : 'Reduce Allocation'}
-            </Button>
+            {!showReductionWarning ? (
+              <Button 
+                onClick={() => setShowReductionWarning(true)} 
+                disabled={!reductionPercent || reducing || !isOwner} 
+                className="w-full"
+              >
+                {reducing ? 'Reducing...' : isOwner ? 'Reduce Allocation' : 'Connect as Owner to Reduce'}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+                    ⚠️ Confirmation Required
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    You are about to reduce your creator allocation by {reductionPercent}%. 
+                    This will reduce both your locked and unlocked tokens, and cannot be undone.
+                  </p>
+                  {Number(collectionInfo.unlockedAmount || 0) > 0 && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      Your unlocked tokens will be reduced from {collectionInfo.unlockedAmount} to {Math.max(0, Number(collectionInfo.unlockedAmount) - Math.floor(Number(collectionInfo.creatorAllocation) * Number(reductionPercent) / 100))}.
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={reduceAllocation} 
+                    disabled={reducing} 
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                  >
+                    {reducing ? 'Confirming...' : 'Confirm Reduction'}
+                  </Button>
+                  <Button 
+                    onClick={() => setShowReductionWarning(false)} 
+                    disabled={reducing}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

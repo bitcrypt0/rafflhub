@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { Plus, AlertCircle, Search } from 'lucide-react';
+import { AlertCircle, Search } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';

@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 
@@ -21,26 +21,15 @@ const DashboardCard = ({
   className = '',
   // Allow overriding desktop modal width/classes per card
   dialogContentClassName,
-  // External state management props to prevent auto-close
+  // External state management props (no longer needed but kept for compatibility)
   isExpanded: externalIsExpanded,
   onToggle: externalOnToggle,
   ...props
 }) => {
-  // Use external state if provided, otherwise use internal state
-  const [internalIsExpanded, setInternalIsExpanded] = useState(defaultExpanded);
-  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const { isMobile, isTablet, isDesktop } = useMobileBreakpoints();
 
-  // Modal state for desktop
+  // Modal state for all platforms
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleToggle = () => {
-    if (externalOnToggle) {
-      externalOnToggle();
-    } else {
-      setInternalIsExpanded(!internalIsExpanded);
-    }
-  };
 
   const handleModalOpen = () => {
     setIsModalOpen(true);
@@ -58,12 +47,6 @@ const DashboardCard = ({
         // Responsive sizing
         isMobile && "w-full",
         isTablet && "w-full",
-        // Expanded state styling
-        isExpanded && [
-          "ring-2 ring-primary/20",
-          "shadow-lg",
-          isMobile && "mb-4" // Extra margin on mobile when expanded
-        ],
         className
       )}>
       <CardHeader className={cn(
@@ -75,26 +58,6 @@ const DashboardCard = ({
           isMobile ? "text-base" : "text-lg" // Responsive text size
         )}>
           <span className="flex-1">{title}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggle}
-            className={cn(
-              "ml-auto p-1 h-auto",
-              isMobile && "p-2" // Larger touch target on mobile
-            )}
-            aria-label={isExpanded ? `Collapse ${title}` : `Expand ${title}`}
-          >
-            {isExpanded ? (
-              <ChevronUp className={cn(
-                isMobile ? "h-5 w-5" : "h-4 w-4"
-              )} />
-            ) : (
-              <ChevronDown className={cn(
-                isMobile ? "h-5 w-5" : "h-4 w-4"
-              )} />
-            )}
-          </Button>
         </CardTitle>
         <CardDescription className={cn(
           "text-muted-foreground",
@@ -141,56 +104,37 @@ const DashboardCard = ({
           </Dialog>
         )}
 
-        {/* Mobile/Tablet: Expandable content */}
+        {/* Mobile/Tablet: Modal trigger button (no accordion) */}
         {!isDesktop && (
-          <>
-            <Button
-              onClick={handleToggle}
-              variant="primary"
-              size={isMobile ? "lg" : "md"}
-              className={cn(
-                "w-full",
-                "transition-all duration-200",
-                "shadow-sm hover:shadow-md",
-                isExpanded && "mb-4"
-              )}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className={cn(
-                    "mr-2",
-                    isMobile ? "h-5 w-5" : "h-4 w-4"
-                  )} />
-                  Close {title}
-                </>
-              ) : (
-                <>
-                  <ChevronDown className={cn(
-                    "mr-2",
-                    isMobile ? "h-5 w-5" : "h-4 w-4"
-                  )} />
-                  Open {title}
-                </>
-              )}
-            </Button>
-
-            {/* Expandable component content */}
-            {isExpanded && (
-              <div className={cn(
-                "transition-all duration-300 ease-in-out",
-                // Platform-specific container styling
-                isMobile ? "mobile-component-container" : "desktop-component-container"
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={handleModalOpen}
+                variant="primary"
+                size={isMobile ? "lg" : "md"}
+                className={cn(
+                  "w-full",
+                  "transition-all duration-200",
+                  "shadow-sm hover:shadow-md h-10 text-sm"
+                )}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open {title}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className={cn(
+                // Default modal width; per-card overrides can adjust this
+                "max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden",
+                dialogContentClassName
               )}>
-                <div className={cn(
-                  "border border-border rounded-lg p-4 bg-muted/30",
-                  // Responsive padding
-                  isMobile && "p-3"
-                )}>
-                  {Component && <Component />}
-                </div>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {Component && <Component />}
               </div>
-            )}
-          </>
+            </DialogContent>
+          </Dialog>
         )}
       </CardContent>
     </Card>
