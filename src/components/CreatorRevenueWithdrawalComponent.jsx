@@ -173,7 +173,7 @@ const CreatorRevenueWithdrawalComponent = () => {
         if (detectedType === 'erc721') {
           vestingConfigured = await contract.vestingConfigured();
           if (vestingConfigured) {
-            unlockedAmount = (await contract.getUnlockedAmount()).toString();
+            unlockedAmount = (await contract.getUnlockedCreatorAllocation()).toString();
             availableAmount = (await contract.getAvailableCreatorMint()).toString();
           }
         } else if (detectedType === 'erc1155') {
@@ -181,7 +181,7 @@ const CreatorRevenueWithdrawalComponent = () => {
           // User will need to specify tokenId for accurate vesting info
           vestingConfigured = await contract.vestingConfigured(1);
           if (vestingConfigured) {
-            unlockedAmount = (await contract.getUnlockedAmount(1)).toString();
+            unlockedAmount = (await contract.getUnlockedCreatorAllocation(1)).toString();
             availableAmount = (await contract.getAvailableCreatorMint(1)).toString();
           }
         }
@@ -251,7 +251,7 @@ const CreatorRevenueWithdrawalComponent = () => {
       // Check if vesting is configured for this specific token ID
       vestingConfigured = await contract.vestingConfigured(tokenId);
       if (vestingConfigured) {
-        unlockedAmount = (await contract.getUnlockedAmount(tokenId)).toString();
+        unlockedAmount = (await contract.getUnlockedCreatorAllocation(tokenId)).toString();
         availableAmount = (await contract.getAvailableCreatorMint(tokenId)).toString();
       }
 

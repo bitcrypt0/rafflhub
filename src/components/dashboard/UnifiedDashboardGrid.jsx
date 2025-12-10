@@ -11,7 +11,7 @@ import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import DashboardCard from './DashboardCard';
 import RoyaltyAdjustmentComponent from '../RoyaltyAdjustmentComponent';
 import CreateNewTokenIDComponent from '../CreateNewTokenIDComponent';
-import MinterApprovalComponent from '../MinterApprovalComponent';
+import RoyaltyEnforcementExemptionComponent from '../RoyaltyEnforcementExemptionComponent';
 import CreatorRevenueWithdrawalComponent from '../CreatorRevenueWithdrawalComponent';
 import KOLApprovalComponent from '../KOLApprovalComponent';
 import VestingConfigurationComponent from '../VestingConfigurationComponent';
@@ -49,9 +49,9 @@ const UnifiedDashboardGrid = ({
     },
     {
       id: 'minter',
-      title: 'Minter Approval & Royalty Enforcement Exemption',
-      description: 'Manage minter approvals and royalty enforcement exemptions for collections',
-      component: MinterApprovalComponent,
+      title: 'Royalty Enforcement Management',
+      description: 'Manage royalty enforcement and exemptions for collections',
+      component: RoyaltyEnforcementExemptionComponent,
       priority: 3
     },
     {

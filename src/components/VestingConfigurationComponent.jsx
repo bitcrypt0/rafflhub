@@ -5,7 +5,7 @@ import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Clock, Lock, Unlock, Calendar, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, Lock, Unlock, Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { notifyError } from '../utils/notificationService';
 
 const VestingConfigurationComponent = () => {
@@ -30,8 +30,27 @@ const VestingConfigurationComponent = () => {
   const [configuring, setConfiguring] = useState(false);
   const [declaring, setDeclaring] = useState(false);
   const [cutting, setCutting] = useState(false);
+  const [reducing, setReducing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [allocationPercent, setAllocationPercent] = useState('');
   const [allocationTokenId, setAllocationTokenId] = useState('');
+  const [reductionPercent, setReductionPercent] = useState('');
+  const [poolAddress, setPoolAddress] = useState('');
+  const [poolAllocation, setPoolAllocation] = useState(null);
+  const [fetchingPool, setFetchingPool] = useState(false);
+
+  // Auto-fetch pool allocation when pool address changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (poolAddress && ethers.utils.isAddress(poolAddress.trim())) {
+        fetchPoolAllocation(poolAddress);
+      } else {
+        setPoolAllocation(null);
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timer);
+  }, [poolAddress, fetchedCollection, collectionInfo, isERC721]);
 
   // Fetch collection details
   const fetchCollectionDetails = async (addressToFetch) => {
@@ -75,13 +94,15 @@ const VestingConfigurationComponent = () => {
 
       // Get collection info
       if (isERC721Contract) {
-        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
+        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount, availableSupply, creatorAllocationDeclared] = await Promise.all([
           contract.maxSupply(),
           contract.creatorAllocation(),
           contract.creationTime(),
           contract.vestingConfigured(),
           contract.creatorClaimedCount(),
-          contract.getUnlockedAmount()
+          contract.getUnlockedCreatorAllocation(),
+          contract.availableSupply(),
+          contract.creatorAllocationDeclared()
         ]);
 
         const info = {
@@ -91,6 +112,8 @@ const VestingConfigurationComponent = () => {
           vestingConfigured,
           creatorClaimedCount: creatorClaimedCount.toString(),
           unlockedAmount: unlockedAmount.toString(),
+          availableSupply: availableSupply.toString(),
+          creatorAllocationDeclared,
           isERC721: true
         };
 
@@ -101,7 +124,7 @@ const VestingConfigurationComponent = () => {
           const [config, availableToMint, unlockedAmount] = await Promise.all([
             contract.vestingConfig(),
             contract.getAvailableCreatorMint(),
-            contract.getUnlockedAmount()
+            contract.getUnlockedCreatorAllocation()
           ]);
 
           setVestingInfo({
@@ -115,13 +138,15 @@ const VestingConfigurationComponent = () => {
         }
       } else {
         // ERC1155
-        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount] = await Promise.all([
+        const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount, availableSupply, creatorAllocationDeclared] = await Promise.all([
           contract.maxSupply(tokenId),
           contract.creatorAllocation(tokenId),
           contract.tokenCreationTime(tokenId),
           contract.vestingConfigured(tokenId),
           contract.creatorClaimedCount(tokenId),
-          contract.getUnlockedAmount(tokenId)
+          contract.getUnlockedCreatorAllocation(tokenId),
+          contract.availableSupply(tokenId),
+          contract.creatorAllocationDeclared(tokenId)
         ]);
 
         const info = {
@@ -131,6 +156,8 @@ const VestingConfigurationComponent = () => {
           vestingConfigured,
           creatorClaimedCount: creatorClaimedCount.toString(),
           unlockedAmount: unlockedAmount.toString(),
+          availableSupply: availableSupply.toString(),
+          creatorAllocationDeclared,
           isERC721: false,
           tokenId
         };
@@ -142,7 +169,7 @@ const VestingConfigurationComponent = () => {
           const [config, availableToMint, unlockedAmount] = await Promise.all([
             contract.vestingConfig(tokenId),
             contract.getAvailableCreatorMint(tokenId),
-            contract.getUnlockedAmount(tokenId)
+            contract.getUnlockedCreatorAllocation(tokenId)
           ]);
 
           setVestingInfo({
@@ -305,6 +332,178 @@ const VestingConfigurationComponent = () => {
     }
   };
 
+  // Reduce creator allocation function
+  const reduceAllocation = async () => {
+    if (!fetchedCollection || !collectionInfo) {
+      toast.error('Please enter a valid collection address');
+      return;
+    }
+    setReducing(true);
+    try {
+      const pct = Number(reductionPercent);
+      if (!isFinite(pct) || pct <= 0 || pct > 100) {
+        toast.error('Enter a valid percentage between 0 and 100');
+        setReducing(false);
+        return;
+      }
+      
+      // Check if there's remaining allocation to reduce
+      const totalAllocation = Number(collectionInfo.creatorAllocation);
+      const claimedAllocation = Number(collectionInfo.creatorClaimedCount);
+      const remainingAllocation = totalAllocation - claimedAllocation;
+      
+      if (remainingAllocation <= 0) {
+        toast.error('No remaining creator allocation to reduce');
+        setReducing(false);
+        return;
+      }
+      
+      const percentage = ethers.BigNumber.from(pct);
+      if (isERC721) {
+        await fetchedCollection.callStatic.reduceCreatorAllocation(percentage);
+        await executeTransaction(() => fetchedCollection.reduceCreatorAllocation(percentage));
+      } else {
+        const tid = collectionInfo.tokenId || tokenId;
+        await fetchedCollection.callStatic.reduceCreatorAllocation(tid, percentage);
+        await executeTransaction(() => fetchedCollection.reduceCreatorAllocation(tid, percentage));
+      }
+      toast.success('Creator allocation reduced successfully');
+      setReductionPercent('');
+      await fetchCollectionDetails(collectionAddress);
+    } catch (error) {
+      console.error('Error reducing creator allocation:', error);
+      if (error.message.includes('No remaining creator allocation')) {
+        toast.error('No remaining creator allocation to reduce');
+      } else if (error.message.includes('Creator allocation must be declared')) {
+        toast.error('Creator allocation must be declared first');
+      } else {
+        toast.error('Failed to reduce creator allocation: ' + error.message);
+      }
+      setReducing(false);
+    }
+  };
+
+  // Restore minter allocation function
+  const restoreMinterAllocation = async () => {
+    if (!fetchedCollection || !collectionInfo) {
+      toast.error('Please enter a valid collection address');
+      return;
+    }
+    
+    // Validate pool address
+    const sanitizedPoolAddress = poolAddress.trim();
+    if (!sanitizedPoolAddress) {
+      toast.error('Please enter a pool address');
+      return;
+    }
+    if (!ethers.utils.isAddress(sanitizedPoolAddress)) {
+      toast.error('Please enter a valid pool address');
+      return;
+    }
+    
+    setRestoring(true);
+    try {
+      // Check if the current user is the owner
+      let owner;
+      try {
+        if (typeof fetchedCollection.owner === 'function') {
+          owner = await fetchedCollection.owner();
+        } else {
+          toast.error('Contract does not support owner functionality');
+          setRestoring(false);
+          return;
+        }
+      } catch (e) {
+        toast.error('Failed to get contract owner');
+        setRestoring(false);
+        return;
+      }
+
+      const signer = provider.getSigner();
+      const currentAddress = await signer.getAddress();
+
+      if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
+        toast.error('Only the contract owner can restore minter allocation');
+        setRestoring(false);
+        return;
+      }
+
+      // Call restoreMinterAllocation with pool address parameter
+      if (isERC721) {
+        await fetchedCollection.callStatic.restoreMinterAllocation(sanitizedPoolAddress);
+        await executeTransaction(() => fetchedCollection.restoreMinterAllocation(sanitizedPoolAddress));
+      } else {
+        const tid = collectionInfo.tokenId || tokenId;
+        await fetchedCollection.callStatic.restoreMinterAllocation(sanitizedPoolAddress);
+        await executeTransaction(() => fetchedCollection.restoreMinterAllocation(sanitizedPoolAddress));
+      }
+
+      toast.success('Minter allocation restored successfully!');
+      setPoolAddress(''); // Clear input after success
+      
+      // Refresh collection info to show updated state
+      await fetchCollectionDetails(fetchedCollection._address);
+    } catch (error) {
+      console.error('Error in restoreMinterAllocation:', error);
+      if (error.message.includes('Pool is not a minter')) {
+        toast.error('The specified pool is not a minter for this collection');
+      } else if (error.message.includes('Pool is not in failed state')) {
+        toast.error('Pool must be in deleted or unengaged state to restore allocation');
+      } else if (error.message.includes('Only owner')) {
+        toast.error('Only the contract owner can restore minter allocation');
+      } else {
+        toast.error('Failed to restore minter allocation: ' + error.message);
+      }
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  // Fetch pool allocation data for live calculation
+  const fetchPoolAllocation = async (poolAddressToFetch) => {
+    if (!poolAddressToFetch || !ethers.utils.isAddress(poolAddressToFetch) || !fetchedCollection || !collectionInfo) {
+      setPoolAllocation(null);
+      return;
+    }
+
+    const sanitizedPoolAddress = poolAddressToFetch.trim();
+    setFetchingPool(true);
+    
+    try {
+      // Fetch pool's allocated supply from the collection contract
+      let allocation;
+      if (isERC721) {
+        allocation = await fetchedCollection.allocatedSupply(sanitizedPoolAddress);
+      } else {
+        // For ERC1155, we also need to get the tokenId for this pool
+        const tokenId = await fetchedCollection.poolTokenId(sanitizedPoolAddress);
+        allocation = await fetchedCollection.allocatedSupply(sanitizedPoolAddress);
+      }
+
+      // Convert to number for display
+      const allocationAmount = Number(allocation.toString());
+      
+      // Use the same available supply as shown in Collection Information
+      const currentAvailableSupply = Number(collectionInfo.availableSupply || 0);
+      
+      // Calculate new available supply after restoration
+      const newAvailableSupply = currentAvailableSupply + allocationAmount;
+
+      setPoolAllocation({
+        amount: allocationAmount,
+        currentAvailableSupply: currentAvailableSupply,
+        newAvailableSupply: newAvailableSupply,
+        isValid: allocationAmount > 0
+      });
+    } catch (error) {
+      console.error('Error fetching pool allocation:', error);
+      setPoolAllocation(null);
+      // Don't show error to user for live calculation - just don't show the calculation
+    } finally {
+      setFetchingPool(false);
+    }
+  };
+
   // Cut supply function
   const cutSupply = async () => {
     if (!fetchedCollection || !collectionInfo) {
@@ -435,6 +634,10 @@ const VestingConfigurationComponent = () => {
                 <span className="text-muted-foreground">Unlocked Amount:</span>
                 <p className="font-semibold">{collectionInfo.unlockedAmount} tokens</p>
               </div>
+              <div>
+                <span className="text-muted-foreground">Available Supply:</span>
+                <p className="font-semibold">{collectionInfo.availableSupply} tokens</p>
+              </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground">Creation Time:</span>
                 <p className="font-semibold">{formatDate(collectionInfo.creationTime)}</p>
@@ -518,6 +721,17 @@ const VestingConfigurationComponent = () => {
               <label className="text-sm font-medium">Cut Percentage (%)</label>
               <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
               <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%). This will reduce both maxSupply and creatorAllocation proportionally.</p>
+              {allocationPercent && Number(allocationPercent) > 0 && Number(allocationPercent) <= 100 && (
+                <p className="text-xs text-red-600">
+                  Will remove: {Math.floor(Number(collectionInfo.maxSupply) * Number(allocationPercent) / 100)} tokens from max supply
+                  {collectionInfo.creatorAllocationDeclared && (
+                    <>
+                      <br />
+                      Will remove: {Math.floor(Number(collectionInfo.creatorAllocation) * Number(allocationPercent) / 100)} tokens from creator allocation
+                    </>
+                  )}
+                </p>
+              )}
             </div>
             <Button onClick={cutSupply} disabled={!allocationPercent || cutting} className="w-full">
               {cutting ? 'Cutting...' : 'Cut Supply'}
@@ -526,8 +740,113 @@ const VestingConfigurationComponent = () => {
         </Card>
       )}
 
-      {/* Declare Creator Allocation (placed above configure) */}
+      {/* Restore Deleted/Unengaged Pool's Allocation Section */}
       {collectionInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Restore Deleted/Unengaged Pool's Allocation
+            </CardTitle>
+            <CardDescription>
+              Restore supply allocated to failed pools (deleted or unengaged) back to the collection
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Pool Address</label>
+                <input
+                  type="text"
+                  placeholder="0x..."
+                  value={poolAddress}
+                  onChange={(e) => setPoolAddress(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  disabled={restoring}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the address of the deleted or unengaged pool to restore its allocation
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  This function restores minter allocation that was locked by pools that failed to activate properly 
+                  (deleted or unengaged state). The restored supply becomes available for future pool creation.
+                </p>
+                <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-3 rounded-md">
+                  <div>
+                    <span className="text-muted-foreground">Current Available Supply:</span>
+                    <p className="font-semibold">
+                      {collectionInfo.availableSupply !== undefined 
+                        ? `${collectionInfo.availableSupply} tokens`
+                        : 'Loading...'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Collection Type:</span>
+                    <p className="font-semibold">{isERC721 ? 'ERC721' : 'ERC1155'}</p>
+                  </div>
+                </div>
+
+                {/* Live Calculation Display */}
+                {fetchingPool && (
+                  <div className="text-sm text-muted-foreground animate-pulse">
+                    Fetching pool allocation data...
+                  </div>
+                )}
+
+                {poolAllocation && poolAllocation.isValid && (
+                  <div className="space-y-2 text-sm bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                    <div className="font-medium text-blue-700 dark:text-blue-400">
+                      Live Calculation Preview
+                    </div>
+                    <div className="space-y-1">
+                      <p>
+                        <span className="text-muted-foreground">Pool allocation to restore:</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 ml-2">
+                          {poolAllocation.amount} tokens
+                        </span>
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">New available supply after restoration:</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400 ml-2">
+                          {poolAllocation.newAvailableSupply} tokens
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        (+{poolAllocation.amount} tokens will be added to available supply)
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {poolAllocation && !poolAllocation.isValid && (
+                  <div className="text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-3">
+                    This pool has no allocated supply to restore (0 tokens allocated)
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button onClick={restoreMinterAllocation} disabled={!poolAddress || restoring} className="w-full">
+              {restoring ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Restoring...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Restore Pool Allocation
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Declare Creator Allocation (placed above configure) */}
+      {collectionInfo && !collectionInfo.creatorAllocationDeclared && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -552,6 +871,62 @@ const VestingConfigurationComponent = () => {
             </div>
             <Button onClick={declareAllocation} disabled={!allocationPercent || declaring} className="w-full">
               {declaring ? 'Declaring...' : 'Declare Allocation'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reduce Creator Allocation */}
+      {collectionInfo && collectionInfo.creatorAllocationDeclared && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5" />
+              Reduce Creator Allocation
+            </CardTitle>
+            <CardDescription>
+              Reduce your remaining locked creator allocation by a percentage
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-3 rounded-md">
+              <div>
+                <span className="text-muted-foreground">Total Allocation:</span>
+                <p className="font-semibold">{collectionInfo.creatorAllocation} tokens</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Already Claimed:</span>
+                <p className="font-semibold">{collectionInfo.creatorClaimedCount} tokens</p>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Remaining Locked:</span>
+                <p className="font-semibold">
+                  {Math.max(0, Number(collectionInfo.creatorAllocation) - Number(collectionInfo.creatorClaimedCount))} tokens
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reduction Percentage</label>
+              <input 
+                type="number" 
+                placeholder="25" 
+                value={reductionPercent} 
+                onChange={(e) => setReductionPercent(e.target.value)} 
+                className="w-full px-3 py-2 border border-border rounded-md bg-background" 
+                min="1" 
+                max="100"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter percentage to reduce from remaining locked allocation (e.g., 25 = 25%).
+              </p>
+              {reductionPercent && Number(reductionPercent) > 0 && Number(reductionPercent) <= 100 && (
+                <p className="text-xs text-red-600">
+                  Will reduce: {Math.floor((Number(collectionInfo.creatorAllocation) - Number(collectionInfo.creatorClaimedCount)) * Number(reductionPercent) / 100)} tokens
+                </p>
+              )}
+            </div>
+            <Button onClick={reduceAllocation} disabled={!reductionPercent || reducing} className="w-full">
+              {reducing ? 'Reducing...' : 'Reduce Allocation'}
             </Button>
           </CardContent>
         </Card>
@@ -645,28 +1020,28 @@ const VestingConfigurationComponent = () => {
       
 
       {/* Help Section */}
-      <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2 text-blue-700 dark:text-blue-400">
-            <AlertCircle className="h-4 w-4" />
-            About Vesting
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-          <p>
-            Vesting prevents creators from immediately minting and selling their entire 20% allocation, protecting holders from rug pulls.
-          </p>
-          <p>
-            <strong>Cliff Period:</strong> No tokens can be minted until the cliff period ends.
-          </p>
-          <p>
-            <strong>Unlocks:</strong> After the cliff, tokens become available in batches at regular intervals.
-          </p>
-          <p>
-            <strong>Important:</strong> Vesting can only be configured once and cannot be changed later.
-          </p>
-        </CardContent>
-      </Card>
+      {!collectionInfo && (
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="text-xs text-blue-700 dark:text-blue-300 space-y-1 p-4">
+            <div className="text-base font-medium flex items-center gap-2 text-blue-700 dark:text-blue-400 mb-1">
+              <AlertCircle className="h-4 w-4" />
+              About Vesting
+            </div>
+            <p>
+              Vesting prevents creators from immediately minting and selling their entire 20% allocation, protecting holders from rug pulls.
+            </p>
+            <p>
+              <strong>Cliff Period:</strong> No tokens can be minted until the cliff period ends.
+            </p>
+            <p>
+              <strong>Unlocks:</strong> After the cliff, tokens become available in batches at regular intervals.
+            </p>
+            <p>
+              <strong>Important:</strong> Vesting can only be configured once and cannot be changed later.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
