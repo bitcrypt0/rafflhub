@@ -98,6 +98,26 @@ const VestingConfigurationComponent = () => {
 
       // Get collection info
       if (isERC721Contract) {
+        // Fetch name and symbol first
+        let name = 'Unknown';
+        let symbol = 'Unknown';
+        
+        try {
+          if (typeof contract.name === 'function') {
+            name = await contract.name();
+          }
+        } catch (e) {
+          // name() not available or failed
+        }
+        
+        try {
+          if (typeof contract.symbol === 'function') {
+            symbol = await contract.symbol();
+          }
+        } catch (e) {
+          // symbol() not available or failed
+        }
+
         const [maxSupply, creatorAllocation, creationTime, vestingConfigured, creatorClaimedCount, unlockedAmount, availableSupply, creatorAllocationDeclared] = await Promise.all([
           contract.maxSupply(),
           contract.creatorAllocation(),
@@ -110,6 +130,8 @@ const VestingConfigurationComponent = () => {
         ]);
 
         const info = {
+          name,
+          symbol,
           maxSupply: maxSupply.toString(),
           creatorAllocation: creatorAllocation.toString(),
           creationTime: creationTime.toString(),
@@ -592,8 +614,12 @@ const VestingConfigurationComponent = () => {
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Type:</span>
-                <p className="font-semibold">{collectionInfo.isERC721 ? 'ERC721' : `ERC1155 (Token ${collectionInfo.tokenId})`}</p>
+                <span className="text-muted-foreground">Name:</span>
+                <p className="font-semibold">{collectionInfo.name}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Symbol:</span>
+                <p className="font-semibold">{collectionInfo.symbol}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Max Supply:</span>
@@ -676,16 +702,14 @@ const VestingConfigurationComponent = () => {
       {/* Cut Supply Section */}
       {collectionInfo && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
               <TrendingUp className="h-5 w-5" />
               Cut Supply
-            </CardTitle>
-            <CardDescription>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               Reduce the maximum supply and proportionally reduce creator allocation
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
             {!isERC721 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Token ID (ERC1155 only)</label>
@@ -718,16 +742,14 @@ const VestingConfigurationComponent = () => {
       {/* Restore Deleted/Unengaged Pool's Allocation Section */}
       {collectionInfo && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
               <RefreshCw className="h-5 w-5" />
               Restore Deleted/Unengaged Pool's Allocation
-            </CardTitle>
-            <CardDescription>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               Restore supply allocated to failed pools (deleted or unengaged) back to the collection
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Pool Address</label>
@@ -745,11 +767,7 @@ const VestingConfigurationComponent = () => {
               </div>
               
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  This function restores minter allocation that was locked by pools that failed to activate properly 
-                  (deleted or unengaged state). The restored supply becomes available for future pool creation.
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-3 rounded-md">
+                <div className="text-sm bg-muted/50 p-3 rounded-md">
                   <div>
                     <span className="text-muted-foreground">Current Available Supply:</span>
                     <p className="font-semibold">
@@ -757,10 +775,6 @@ const VestingConfigurationComponent = () => {
                         ? `${collectionInfo.availableSupply} tokens`
                         : 'Loading...'}
                     </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Collection Type:</span>
-                    <p className="font-semibold">{isERC721 ? 'ERC721' : 'ERC1155'}</p>
                   </div>
                 </div>
 
@@ -854,16 +868,14 @@ const VestingConfigurationComponent = () => {
       {/* Reduce Creator Allocation */}
       {collectionInfo && collectionInfo.creatorAllocationDeclared && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
               <TrendingDown className="h-5 w-5" />
               Reduce Creator Allocation
-            </CardTitle>
-            <CardDescription>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               Reduce your remaining locked creator allocation by a percentage
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
             <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-3 rounded-md">
               <div>
                 <span className="text-muted-foreground">Total Allocation:</span>

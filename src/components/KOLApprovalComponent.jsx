@@ -38,6 +38,26 @@ const KOLApprovalComponent = () => {
   const [kolDetailsLoading, setKolDetailsLoading] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
+  // Auto-clear collection info when address is deleted
+  useEffect(() => {
+    if (!collectionAddress || collectionAddress.trim() === '') {
+      setFetchedCollection('');
+      setCollectionName('');
+      setCollectionSymbol('');
+      setCollectionType(null);
+      setIsOwner(false);
+      setError('');
+      setSuccess('');
+    }
+  }, [collectionAddress]);
+
+  // Auto-clear KOL details when address is deleted
+  useEffect(() => {
+    if (!kolAddress || kolAddress.trim() === '') {
+      setKolDetails(null);
+    }
+  }, [kolAddress]);
+
   // Fetch collection details by address
   const fetchCollection = async () => {
     setError('');
@@ -77,7 +97,6 @@ const KOLApprovalComponent = () => {
         setCollectionSymbol(symbol);
         setCollectionType('erc721');
         setFetchedCollection(collectionAddress);
-        setSuccess(`ERC721 Collection found: ${name} (${symbol})`);
         
         // Check if current user is the owner
         try {
@@ -372,12 +391,8 @@ const KOLApprovalComponent = () => {
         <p className="text-sm text-muted-foreground">
           Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees
         </p>
-        {/* Collection Lookup */}
+        {/* Collection Address Input */}
         <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
-          <div className="text-base font-medium flex items-center gap-2 mb-1">
-            Collection Lookup
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="collection">Collection Address</Label>
             <ResponsiveAddressInput
@@ -400,9 +415,6 @@ const KOLApprovalComponent = () => {
                 </div>
                 <div>
                   <span className="font-medium">Symbol:</span> {collectionSymbol}
-                </div>
-                <div>
-                  <span className="font-medium">Type:</span> {collectionType?.toUpperCase()}
                 </div>
                 <div>
                   <span className="font-medium">Owner:</span> {isOwner ? 'You' : 'Other'}

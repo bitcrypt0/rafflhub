@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, DollarSign, Gift } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -10,6 +10,7 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { LoadingSpinner } from './ui/loading';
 import { notifyError } from '../utils/notificationService';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 const CreatorRevenueWithdrawalComponent = () => {
   const { connected, address } = useWallet();
@@ -18,6 +19,7 @@ const CreatorRevenueWithdrawalComponent = () => {
   const [loading, setLoading] = useState(false);
   const [raffleData, setRaffleData] = useState({
     address: '',
+    name: '',
     revenueAmount: '0',
     isOwner: false,
     raffleState: 'unknown'
@@ -364,12 +366,14 @@ const CreatorRevenueWithdrawalComponent = () => {
         creator,
         revenueRecipient,
         totalRevenue,
-        state
+        state,
+        name
       ] = await Promise.all([
         contract.creator(),
         contract.revenueRecipient(),
         contract.totalCreatorRevenue(),
-        contract.state()
+        contract.state(),
+        contract.name().catch(() => `Pool ${raffleAddress.slice(0, 8)}...`)
       ]);
 
       const isCreator = creator.toLowerCase() === address.toLowerCase();
@@ -391,6 +395,7 @@ const CreatorRevenueWithdrawalComponent = () => {
 
       setRaffleData({
         address: raffleAddress,
+        name: name,
         revenueAmount: ethers.utils.formatEther(totalRevenue),
         isCreator,
         isRevenueRecipient,
@@ -483,6 +488,26 @@ const CreatorRevenueWithdrawalComponent = () => {
     }
   }, [connected]);
 
+  // Auto-clear raffle info when address is deleted
+  useEffect(() => {
+    if (!raffleData.address || raffleData.address.trim() === '') {
+      setRaffleData({
+        address: '',
+        name: '',
+        revenueAmount: '0',
+        isOwner: false,
+        raffleState: 'unknown'
+      });
+    }
+  }, [raffleData.address]);
+
+  // Auto-clear mint info when collection address is deleted
+  useEffect(() => {
+    if (!mintData.collectionAddress || mintData.collectionAddress.trim() === '') {
+      setCollectionInfo(null);
+    }
+  }, [mintData.collectionAddress]);
+
   // Auto-fetch raffle info when a valid address is entered
   useEffect(() => {
     const addr = raffleData.address;
@@ -536,127 +561,136 @@ const CreatorRevenueWithdrawalComponent = () => {
                      ['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState);
 
   return (
-    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
-        {/* Raffle Lookup Section */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Raffle Contract Address</label>
-            <ResponsiveAddressInput
-              value={raffleData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="0x..."
-              rightElement={loadingInfo && <LoadingSpinner size="sm" />}
-            />
-          </div>
-        </div>
-
-        {/* Raffle Info Display */}
-        {raffleData.address && raffleData.raffleState !== 'unknown' && (
-          <div className="p-4 bg-muted rounded-lg">
-            <h4 className="font-semibold mb-3">Raffle Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Address:</span>
-                <div className="font-mono break-all">{raffleData.address}</div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">State:</span>
-                <div className={`font-semibold ${getStateColor(raffleData.raffleState)}`}>
-                  {raffleData.raffleState}
-                </div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Creator Revenue:</span>
-                <div className="font-semibold">
-                  {formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}
-                </div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Your Role:</span>
-                <div className="flex items-center gap-2">
-                  {raffleData.isBothCreatorAndRecipient && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      <CheckCircle className="h-3 w-3" />
-                      Creator
-                    </span>
-                  )}
-                  {raffleData.isRevenueRecipient && !raffleData.isBothCreatorAndRecipient && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                      <CheckCircle className="h-3 w-3" />
-                      Revenue Recipient
-                    </span>
-                  )}
-                  {raffleData.isOwner && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      <CheckCircle className="h-3 w-3" />
-                      Owner
-                    </span>
-                  )}
-                  {!raffleData.isCreator && !raffleData.isRevenueRecipient && !raffleData.isOwner && (
-                    <span className="text-muted-foreground text-xs">No special role</span>
-                  )}
-                </div>
-              </div>
+    <div className="space-y-6">
+        {/* Withdrawal Button */}
+        <Card>
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
+              Withdraw Revenue
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Withdraw available revenue from completed raffles
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Pool Contract Address</label>
+              <ResponsiveAddressInput
+                value={raffleData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                placeholder="0x..."
+                rightElement={loadingInfo && <LoadingSpinner size="sm" />}
+              />
             </div>
             
-            {/* Status Messages */}
-            {!raffleData.isRevenueRecipient && (
-              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <span className="text-sm text-destructive">
-                  You are not the revenue recipient of this raffle
-                </span>
+            {/* Pool Information Display - Nested within Withdraw Revenue */}
+            {raffleData.address && raffleData.raffleState !== 'unknown' && (
+              <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                <div className="text-base font-medium flex items-center gap-2 mb-1">
+                  <AlertCircle className="h-5 w-5" />
+                  Pool Information
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Name:</span>
+                    <div className="font-semibold">{raffleData.name}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">State:</span>
+                    <div className={`font-semibold ${getStateColor(raffleData.raffleState)}`}>
+                      {raffleData.raffleState}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Creator Revenue:</span>
+                    <div className="font-semibold">
+                      {formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Your Role:</span>
+                    <div className="flex items-center gap-2">
+                      {raffleData.isBothCreatorAndRecipient && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                          <CheckCircle className="h-3 w-3" />
+                          Creator
+                        </span>
+                      )}
+                      {raffleData.isRevenueRecipient && !raffleData.isBothCreatorAndRecipient && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                          <CheckCircle className="h-3 w-3" />
+                          Revenue Recipient
+                        </span>
+                      )}
+                      {raffleData.isOwner && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                          <CheckCircle className="h-3 w-3" />
+                          Owner
+                        </span>
+                      )}
+                      {!raffleData.isCreator && !raffleData.isRevenueRecipient && !raffleData.isOwner && (
+                        <span className="text-muted-foreground text-xs">No special role</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Status Messages */}
+                {!raffleData.isRevenueRecipient && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
+                      You are not the revenue recipient of this raffle
+                    </span>
+                  </div>
+                )}
+
+                {raffleData.isRevenueRecipient && !hasRevenue && (
+                  <div className="p-3 bg-yellow-50/80 dark:bg-yellow-900/20 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-800">
+                      No revenue available for withdrawal
+                    </span>
+                  </div>
+                )}
+
+                {raffleData.isRevenueRecipient && !['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState) && (
+                  <div className="p-3 bg-blue-50/80 dark:bg-blue-900/20 backdrop-blur-sm border border-blue-200/50 dark:border-blue-700/50 rounded-lg flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm text-blue-800">
+                      Revenue can only be withdrawn from completed raffles.
+                    </span>
+                  </div>
+                )}
+
+                {canWithdraw && (
+                  <div className="p-3 bg-green-50/80 dark:bg-green-900/20 backdrop-blur-sm border border-green-200/50 dark:border-green-700/50 rounded-lg flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-800">
+                      Revenue is available for withdrawal!
+                    </span>
+                  </div>
+                )}
+                
+                {/* Withdraw Button - Now inside Pool Information */}
+                <Button
+                  onClick={handleWithdrawRevenue}
+                  disabled={loading || !connected || !canWithdraw}
+                  variant="primary"
+                  size="md"
+                  className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
+                  title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
+                >
+                  {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
+                </Button>
+
+                {!canWithdraw && raffleData.isRevenueRecipient && raffleData.address && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Withdrawal is not available at this time. Check the raffle state and revenue amount.
+                  </p>
+                )}
               </div>
             )}
-
-            {raffleData.isRevenueRecipient && !hasRevenue && (
-              <div className="mt-3 p-3 bg-yellow-50/80 dark:bg-yellow-900/20 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-lg flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm text-yellow-800">
-                  No revenue available for withdrawal
-                </span>
-              </div>
-            )}
-
-            {raffleData.isRevenueRecipient && !['Completed', 'AllPrizesClaimed', 'Ended'].includes(raffleData.raffleState) && (
-              <div className="mt-3 p-3 bg-blue-50/80 dark:bg-blue-900/20 backdrop-blur-sm border border-blue-200/50 dark:border-blue-700/50 rounded-lg flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <span className="text-sm text-blue-800">
-                  Revenue can only be withdrawn from completed raffles.
-                </span>
-              </div>
-            )}
-
-            {canWithdraw && (
-              <div className="mt-3 p-3 bg-green-50/80 dark:bg-green-900/20 backdrop-blur-sm border border-green-200/50 dark:border-green-700/50 rounded-lg flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-800">
-                  Revenue is available for withdrawal!
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Withdrawal Button */}
-        <div className="space-y-4">
-            <Button
-              onClick={handleWithdrawRevenue}
-              disabled={loading || !connected || !canWithdraw}
-              variant="primary"
-              size="md"
-              className="w-full h-10 flex items-center justify-center gap-2 shadow-sm text-sm"
-              title={!connected ? "Please connect your wallet" : !raffleData.address ? "Please load raffle info first" : raffleData.raffleState === 'unknown' ? "Raffle state unknown" : !raffleData.isRevenueRecipient ? "Only revenue recipient can withdraw revenue" : !canWithdraw ? "Withdrawal not available - check raffle state and revenue amount" : `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}`}
-            >
-              {loading ? 'Withdrawing...' : raffleData.address && (raffleData.totalRevenue || raffleData.revenueAmount) ? `Withdraw ${formatRevenueAmount(raffleData.totalRevenue || raffleData.revenueAmount)}` : 'Withdraw Revenue'}
-            </Button>
-
-          {!canWithdraw && raffleData.isRevenueRecipient && raffleData.address && (
-            <p className="text-sm text-muted-foreground text-center">
-              Withdrawal is not available at this time. Check the raffle state and revenue amount.
-            </p>
-          )}
-        </div>
+          </CardContent>
+      </Card>
 
         {!connected && (
           <div className="text-center p-4 bg-muted rounded-lg">
@@ -667,10 +701,14 @@ const CreatorRevenueWithdrawalComponent = () => {
         )}
 
         {/* Creator Mint Section */}
-        <div className="space-y-4 border-t border-border pt-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">Creator Mint</h3>
-          </div>
+        <Card>
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
+              Creator Mint
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Mint your allocated supply from your collection
+            </p>
 
           {/* Collection Address Input */}
           <div className="space-y-4">
@@ -688,18 +726,11 @@ const CreatorRevenueWithdrawalComponent = () => {
             {collectionInfo && (
               <div className="p-3 bg-muted/50 rounded-lg border">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {collectionInfo.type === 'erc721' && (
-                    <>
-                      <div>
-                        <span className="font-medium">Name:</span> {collectionInfo.name}
-                      </div>
-                      <div>
-                        <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
-                      </div>
-                    </>
-                  )}
                   <div>
-                    <span className="font-medium">Type:</span> {collectionInfo.type.toUpperCase()}
+                    <span className="font-medium">Name:</span> {collectionInfo.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
                   </div>
                   <div>
                     <span className="font-medium">Owner:</span> {collectionInfo.isOwner ? 'You' : 'Other'}
@@ -790,7 +821,8 @@ const CreatorRevenueWithdrawalComponent = () => {
               </div>
             )}
           </div>
-        </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

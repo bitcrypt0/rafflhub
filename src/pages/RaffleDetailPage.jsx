@@ -276,7 +276,7 @@ const TokenSelector = React.memo(({ raffle, selectedTokenIds, setSelectedTokenId
 
 TokenSelector.displayName = 'TokenSelector';
 
-const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner, isEscrowedPrize, isCollabPool, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
+const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, isEscrowedPrize, isCollabPool, isPrized, isMobile, onStateChange, socialEngagementRequired, hasCompletedSocialEngagement }) => {
   const { connected, address, provider } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const { formatSlotFee, getCurrencySymbol } = useNativeCurrency();
@@ -2642,56 +2642,8 @@ const RaffleDetailPage = () => {
   }, [chainSlug, connected, provider]);
 
 
-  const [showMintInput, setShowMintInput] = useState(false);
-  const [mintWinnerAddress, setMintWinnerAddress] = useState("");
-  const [mintingToWinner, setMintingToWinner] = useState(false);
-  const mintWinnerRef = useRef(null);
-
-  // Click-away logic for Mint to Winner UI
-  useEffect(() => {
-    if (!showMintInput) return;
-    function handleClickOutside(event) {
-      if (mintWinnerRef.current && !mintWinnerRef.current.contains(event.target)) {
-        setShowMintInput(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMintInput]);
-  const handleMintToWinner = async () => {
-    setMintingToWinner(true);
-    try {
-      const poolContract = getContractInstance(raffle.address, 'pool');
-      if (!poolContract) throw new Error('Failed to get pool contract');
-      if (!mintWinnerAddress || mintWinnerAddress.length !== 42) throw new Error('Please enter a valid address');
-      // Preflight to surface revert reason
-      try {
-        await poolContract.callStatic.mintToWinner(mintWinnerAddress);
-      } catch (simErr) {
-        notifyError(simErr, { action: 'mintToWinner', phase: 'preflight' });
-        throw simErr;
-      }
-      const result = await executeTransaction(() => poolContract.mintToWinner(mintWinnerAddress));
-      if (result.success) {
-        toast.success('mintToWinner() executed successfully!');
-        window.location.reload();
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (err) {
-      const errorDetails = logContractError(err, 'mint prize to winner', {
-        raffleAddress: raffle.address,
-        winnerAddress: mintWinnerAddress,
-        prizeType: raffle.standard
-      });
-      notifyError(err, { action: 'mintToWinner' });
-    } finally {
-      setMintingToWinner(false);
-    }
-  };
-
+  
+    
   // Memoize stable values to prevent unnecessary re-renders
   const stableConnected = useMemo(() => connected, [connected]);
   const stableAddress = useMemo(() => address, [address]);
@@ -4098,56 +4050,7 @@ const RaffleDetailPage = () => {
                   {deletingRaffle ? 'Deleting...' : 'Delete Pool'}
                 </Button>
             )}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              ((raffle.isPrized || isMintableERC721) || (!raffle.isPrized && isCollabPool)) &&
-              raffle.prizeCollection &&
-              raffle.prizeCollection !== ethers.constants.AddressZero &&
-              (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') &&
-              (!raffle.nativePrizeAmount || raffle.nativePrizeAmount.isZero?.() || raffle.nativePrizeAmount === '0') &&
-              !isEscrowedPrize &&
-              raffle.stateNum === 4 && (
-              <div className="flex flex-col sm:flex-row gap-2 items-center">
-                {!showMintInput ? (
-                  <Button
-                    onClick={() => setShowMintInput(true)}
-                    variant="primary"
-                    size="lg"
-                    className="flex items-center justify-center gap-2"
-                  >
-                    Mint to Winner
-                  </Button>
-                ) : (
-                  <div ref={mintWinnerRef} className="flex flex-col sm:flex-row gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Enter winner address"
-                      value={mintWinnerAddress}
-                      onChange={e => setMintWinnerAddress(e.target.value)}
-                      className="px-3 py-2.5 border-2 border-[#614E41] rounded-md bg-background w-72 font-mono focus:outline-none focus:ring-0"
-                      disabled={mintingToWinner}
-                    />
-                    <Button
-                      onClick={handleMintToWinner}
-                      disabled={mintingToWinner || !mintWinnerAddress || mintWinnerAddress.length !== 42}
-                      variant="primary"
-                      size="md"
-                    >
-                      {mintingToWinner ? 'Minting...' : 'Submit'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setShowMintInput(false)}
-                      disabled={mintingToWinner}
-                      className="sm:ml-2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-            {connected &&
+                        {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&
               isEscrowedPrize &&
               raffle.stateNum === 7 && (
@@ -4278,12 +4181,6 @@ const RaffleDetailPage = () => {
             handleClaimRefund={handleClaimRefund}
             refundableAmount={refundableAmount}
             isMintableERC721={isMintableERC721}
-            showMintInput={showMintInput}
-            setShowMintInput={setShowMintInput}
-            mintWinnerAddress={mintWinnerAddress}
-            setMintWinnerAddress={setMintWinnerAddress}
-            mintingToWinner={mintingToWinner}
-            handleMintToWinner={handleMintToWinner}
             isEscrowedPrize={isEscrowedPrize}
             isCollabPool={isCollabPool}
             isPrized={raffle.isPrized}

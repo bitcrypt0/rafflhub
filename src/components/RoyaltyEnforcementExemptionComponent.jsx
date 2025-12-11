@@ -42,6 +42,21 @@ const RoyaltyEnforcementExemptionComponent = () => {
     return trimmed.startsWith('0X') ? '0x' + trimmed.slice(2) : trimmed;
   };
 
+  // Auto-clear collection info when address is deleted
+  useEffect(() => {
+    if (!collectionAddress || collectionAddress.trim() === '') {
+      setFetchedCollection('');
+      setCollectionName('');
+      setCollectionSymbol('');
+      setCollectionType(null);
+      setRoyaltyEnforcementEnabled(false);
+      setIsExempt(false);
+      setExemptAddress('');
+      setError('');
+      setSuccess('');
+    }
+  }, [collectionAddress]);
+
   // Fetch collection details by address
   const fetchCollection = async () => {
     setError('');

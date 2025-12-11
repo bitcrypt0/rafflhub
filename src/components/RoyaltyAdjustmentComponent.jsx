@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Settings } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
@@ -8,6 +8,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 import { LoadingSpinner } from './ui/loading';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -29,7 +30,15 @@ const RoyaltyAdjustmentComponent = () => {
     setCollectionData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Auto-fetch collection info when a valid 0x address is entered
+  // Auto-clear collection info when address is deleted
+  useEffect(() => {
+    if (!collectionData.address || collectionData.address.trim() === '') {
+      setCollectionInfo(null);
+      setIsRevealed(null);
+    }
+  }, [collectionData.address]);
+
+  // Auto-fetch collection info when a valid address is entered
   useEffect(() => {
     const addr = collectionData.address;
     if (!addr || !connected) return;
@@ -283,7 +292,14 @@ const RoyaltyAdjustmentComponent = () => {
   };
 
   return (
-    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
+    <Card>
+      <CardContent className="space-y-6 p-4">
+        <div className="text-base font-medium flex items-center gap-2 mb-1">
+          Royalty & Reveal Management
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Manage royalties and collection reveals for your NFT collections
+        </p>
         {/* Collection Lookup Section */}
         <div className="space-y-4">
           <div>
@@ -305,49 +321,26 @@ const RoyaltyAdjustmentComponent = () => {
 
         {/* Collection Info Display */}
         {collectionInfo && (
-          <div className="p-4 bg-muted rounded-lg">
-            <h4 className="font-semibold mb-3">Collection Information</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {collectionInfo.type === 'erc721' && (
-                <>
-                  <div>
-                    <span className="font-medium">Name:</span> {collectionInfo.name}
-                  </div>
-                  <div>
-                    <span className="font-medium">Symbol:</span> {collectionInfo.symbol}
-                  </div>
-                </>
-              )}
-              <div>
-                <span className="font-medium">Type:</span> {collectionInfo.type.toUpperCase()}
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              <div className="text-base font-medium flex items-center gap-2 mb-1">
+                Collection Information
               </div>
-              <div>
-                <span className="font-medium">Owner:</span> {collectionInfo.isOwner ? 'You' : 'Other'}
-              </div>
-              <div>
-                <span className="font-medium">Current Royalty:</span> {(parseInt(collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%
-              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Name:</span> {collectionInfo.name}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Symbol:</span> {collectionInfo.symbol}
+                </div>
+                <div>
+                  <span className="font-medium">Owner:</span> {collectionInfo.isOwner ? 'You' : 'Other'}
+                </div>
+                <div>
+                  <span className="font-medium">Current Royalty:</span> {(parseInt(collectionInfo.currentRoyaltyPercentage) / 100).toFixed(2)}%
+                </div>
               <div>
                 <span className="font-medium">Revealed:</span> {isRevealed === null ? 'Unknown' : isRevealed ? 'Yes' : 'No'}
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-border">
-              <div className="text-sm">
-                <div className="mb-1">
-                  <span className="font-medium">Address:</span>
-                </div>
-                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
-                  {collectionInfo.address}
-                </div>
-              </div>
-              <div className="text-sm mt-2">
-                <div className="mb-1">
-                  <span className="font-medium">Royalty Recipient:</span>
-                </div>
-                <div className="font-mono text-xs break-all bg-background p-2 rounded border">
-                  {collectionInfo.currentRoyaltyRecipient}
-                </div>
               </div>
             </div>
 
@@ -378,18 +371,37 @@ const RoyaltyAdjustmentComponent = () => {
                 </span>
               </div>
             )}
-          </div>
+          </CardContent>
+        </Card>
         )}
 
         {/* Royalty Update Form */}
         {collectionInfo && collectionInfo.isOwner && (
-          <div className="space-y-4">
-            <h4 className="font-semibold">Update Royalty Settings</h4>
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              <div className="text-base font-medium flex items-center gap-2 mb-1">
+                Update Royalty Settings
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure royalty percentage and recipient for this collection
+              </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  New Royalty Percentage (%)
+            {/* Current Royalty Recipient Display */}
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <div className="text-sm">
+                <div className="mb-2">
+                  <span className="font-medium">Current Royalty Recipient:</span>
+                </div>
+                <div className="font-mono text-sm break-all">
+                  {collectionInfo.currentRoyaltyRecipient}
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 items-start">
+              <div className="h-full">
+                <label className="block text-xs font-medium mb-1">
+                  New Royalty (%)
                 </label>
                 <ResponsiveNumberInput
                   min="0"
@@ -399,9 +411,9 @@ const RoyaltyAdjustmentComponent = () => {
                   placeholder="2.5"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  New Royalty Recipient
+              <div className="h-full">
+                <label className="block text-xs font-medium mb-1">
+                  New Recipient
                 </label>
                 <ResponsiveAddressInput
                   value={collectionData.royaltyRecipient}
@@ -421,7 +433,8 @@ const RoyaltyAdjustmentComponent = () => {
             >
               {loading ? 'Updating...' : 'Update Royalty Settings'}
             </Button>
-          </div>
+          </CardContent>
+        </Card>
         )}
 
         {!connected && (
@@ -431,7 +444,8 @@ const RoyaltyAdjustmentComponent = () => {
             </p>
           </div>
         )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

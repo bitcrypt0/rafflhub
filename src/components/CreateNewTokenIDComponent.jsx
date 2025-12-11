@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { AlertCircle, Search } from 'lucide-react';
+import { AlertCircle, Plus, Link } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { toast } from './ui/sonner';
-import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from './ui/responsive-input';
 import { LoadingSpinner } from './ui/loading';
 import { notifyError } from '../utils/notificationService';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 
 const CreateNewTokenIDComponent = () => {
   const { connected, address } = useWallet();
@@ -31,6 +32,13 @@ const CreateNewTokenIDComponent = () => {
   });
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
+
+  // Auto-clear collection info when address is deleted
+  useEffect(() => {
+    if (!collectionData.address || collectionData.address.trim() === '') {
+      setCollectionInfo(null);
+    }
+  }, [collectionData.address]);
 
   // Auto-fetch collection info on valid address input
   useEffect(() => {
@@ -279,7 +287,14 @@ const CreateNewTokenIDComponent = () => {
   };
 
   return (
-    <div className="space-y-6">{/* Simplified container - card wrapper handled by DashboardCard */}
+    <Card>
+      <CardContent className="space-y-6 p-4">
+        <div className="text-base font-medium flex items-center gap-2 mb-1">
+          Token ID & URI Management
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Create new token IDs for ERC1155 collections and configure token URIs
+        </p>
         {/* Collection Lookup Section */}
         <div className="space-y-4">
           <div>
@@ -322,8 +337,14 @@ const CreateNewTokenIDComponent = () => {
 
         {/* Token Creation Section */}
         {collectionInfo && collectionInfo.isOwner && !collectionInfo.isBlocked && (
-          <div className="space-y-4">
-            <h4 className="text-sm text-muted-foreground">Create New Token ID</h4>
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              <div className="text-base font-medium flex items-center gap-2 mb-1">
+                Create New Token ID
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create a new token ID for your ERC1155 collection with specified supply
+              </p>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -363,13 +384,20 @@ const CreateNewTokenIDComponent = () => {
             >
               {loading ? 'Creating...' : 'Create New Token ID'}
             </Button>
-          </div>
+          </CardContent>
+        </Card>
         )}
 
         {/* Set Token URI Section */}
         {collectionInfo && collectionInfo.isOwner && !collectionInfo.isBlocked && (
-          <div className="space-y-4 border-t border-border pt-6">
-            <h4 className="text-sm text-muted-foreground">Set Token URI</h4>
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              <div className="text-base font-medium flex items-center gap-2 mb-1">
+                Set Token URI
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Set the metadata URI for a specific token ID in your collection
+              </p>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -411,9 +439,11 @@ const CreateNewTokenIDComponent = () => {
             >
               {loading ? 'Setting...' : 'Set Token URI'}
             </Button>
-          </div>
+          </CardContent>
+        </Card>
         )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
