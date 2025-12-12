@@ -282,7 +282,7 @@ const WhitelistRaffleForm = () => {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Participants can only purchase one entry in Whitelist pools
+                  Each participant can only purchase one slot in Whitelist pools
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3689,8 +3689,8 @@ function useRaffleLimits(contracts, isPrized) {
           setLimits({
             minSlot: slotLimits.minPrized?.toString(),
           maxSlot: slotLimits.max?.toString(),
-            minDuration: durationLimits.min?.toString(),
-            maxDuration: durationLimits.max?.toString(),
+            minDuration: durationLimits[0]?.toString(),
+            maxDuration: durationLimits[1]?.toString(),
             maxTicketsPerParticipant: maxSlots.max?.toString(),
           });
         } else {
@@ -3702,8 +3702,8 @@ function useRaffleLimits(contracts, isPrized) {
           setLimits({
             minSlot: slotLimits.minNonPrized?.toString(),
           maxSlot: slotLimits.max?.toString(),
-            minDuration: durationLimits.min?.toString(),
-            maxDuration: durationLimits.max?.toString(),
+            minDuration: durationLimits[0]?.toString(),
+            maxDuration: durationLimits[1]?.toString(),
             maxTicketsPerParticipant: maxSlots.max?.toString(),
           });
         }
