@@ -521,11 +521,13 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const canPurchaseTickets = () => {
     // Allow purchases when pool is Active OR Live (startTime passed, pending state)
     const now = Math.floor(Date.now() / 1000);
+    const raffleEndTime = raffle.startTime + raffle.duration;
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
-                   now >= raffle.startTime;
+                   now >= raffle.startTime && 
+                   now < raffleEndTime;
     
-    return raffle.state?.toLowerCase() === 'active' || isLive;
+    return (raffle.state?.toLowerCase() === 'active' && now < raffleEndTime) || isLive;
   };
 
   const isRaffleActive = () => {
@@ -804,15 +806,24 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
           <div className="mt-auto">
             {/* Removed non-active desktop placeholder; rely on min-height */}
             {canClosePool() ? (
-              <Button
-                onClick={handleClosePool}
-                disabled={closingPool}
-                variant="primary"
-                size="lg"
-                className="w-full"
-              >
-                {closingPool ? 'Closing...' : 'Close Pool'}
-              </Button>
+              <>
+                <Button
+                  onClick={handleClosePool}
+                  disabled={closingPool}
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  {closingPool ? 'Closing...' : 'Close Pool'}
+                </Button>
+                {connected &&
+                  address?.toLowerCase() === raffle.creator.toLowerCase() &&
+                  isEscrowedPrize && (
+                    <p className="text-muted-foreground mt-4 text-center text-sm">
+                      Closing this pool will automatically transfer the escrowed prize to your wallet
+                    </p>
+                  )}
+              </>
             ) : canRequestRandomness() && (address?.toLowerCase() === raffle.creator.toLowerCase() || userSlots > 0) ? (
               <>
                 <Button
@@ -2573,8 +2584,7 @@ const RaffleDetailPage = () => {
   const [error, setError] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isEscrowedPrize, setIsEscrowedPrize] = useState(false);
-  const [withdrawingPrize, setWithdrawingPrize] = useState(false);
-  const [updatingVrfStatus, setUpdatingVrfStatus] = useState(false);
+    const [updatingVrfStatus, setUpdatingVrfStatus] = useState(false);
   const [raffleCollectionName, setRaffleCollectionName] = useState(null);
   const [gatingTokenName, setGatingTokenName] = useState(null);
   const [deletingRaffle, setDeletingRaffle] = useState(false);
@@ -3623,29 +3633,7 @@ const RaffleDetailPage = () => {
     );
   };
 
-  async function handleWithdrawPrize() {
-    setWithdrawingPrize(true);
-    try {
-      const contract = getContractInstance(raffleAddress, 'pool');
-      // Preflight simulate to capture revert reason even if RPC hides it during gas estimation
-      try {
-        await contract.callStatic.withdrawEscrowedPrize();
-      } catch (simErr) {
-        notifyError(simErr, { action: 'withdrawPrize', phase: 'preflight' });
-        throw simErr;
-      }
-      const tx = await contract.withdrawEscrowedPrize();
-      await tx.wait();
-      toast.success('Prize withdrawn successfully!');
-    } catch (e) {
-      const errorDetails = formatErrorForDisplay(e, 'withdraw prize');
-      logContractError(e, 'Withdraw Prize');
-      notifyError(e, { action: 'withdrawPrize' });
-    } finally {
-      setWithdrawingPrize(false);
-    }
-  }
-
+  
 
 
   const now = Math.floor(Date.now() / 1000);
@@ -4050,21 +4038,7 @@ const RaffleDetailPage = () => {
                   {deletingRaffle ? 'Deleting...' : 'Delete Pool'}
                 </Button>
             )}
-                        {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.stateNum === 7 && (
-                <Button
-                  onClick={handleWithdrawPrize}
-                  variant="primary"
-                  size="md"
-                  className="sm:ml-2"
-                  disabled={withdrawingPrize}
-                >
-                  {withdrawingPrize ? 'Withdrawing...' : 'Withdraw Prize'}
-                </Button>
-              )}
-
+                        
               {/* Update VRF Status - visible to all users, in terminal states */}
               {([4,5,6,7,8].includes(raffle.stateNum) && raffle?.isVrfConsumer === true) && (
                 <Button
