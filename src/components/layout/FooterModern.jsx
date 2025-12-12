@@ -214,7 +214,7 @@ const FooterModern = () => {
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  The premier Web3 on-chain raffle platform for teams, creators, and communities. Create, participate, and win amazing prizes.
+                  The go-to Web3 platform that solves the digital asset distribution problem for teams, creators, KOLs and their communities.
                 </p>
                 
                 {/* Social links */}
