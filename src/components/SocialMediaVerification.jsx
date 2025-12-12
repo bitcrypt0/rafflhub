@@ -474,7 +474,7 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
               {isAuthenticated ? (
                 <>
                   <Shield className="h-3 w-3 text-green-600" />
-                  <span className="text-xs text-green-700">
+                  <span className="text-xs text-foreground">
                     {authenticatedAccounts[task.platform.toLowerCase()]?.platform_username === 'pending' 
                       ? 'Connecting...' 
                       : 'Authenticated'
@@ -484,7 +484,7 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
               ) : (
                 <>
                   <Lock className="h-3 w-3 text-orange-600" />
-                  <span className="text-xs text-orange-700">Auth Required</span>
+                  <span className="text-xs text-foreground">Auth Required</span>
                 </>
               )}
             </div>
@@ -624,7 +624,7 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
         <div className="mt-2 flex items-start gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs">
           <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-red-700 dark:text-red-300">{taskStatus.error}</p>
+                <p className="text-sm text-foreground">{taskStatus.error}</p>
             <button 
               onClick={() => onRetry(task.id)}
               className="text-red-600 dark:text-red-400 underline hover:no-underline mt-1"
@@ -1110,15 +1110,15 @@ const SocialMediaVerification = ({
   // Don't render if user has already completed verification
   if (hasCompletedSocialEngagement) {
     return (
-      <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+      <Card className="detail-beige-card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-6 w-6 text-green-600" />
             <div>
-              <h3 className="font-semibold text-green-800 dark:text-green-200">
+              <h3 className="font-semibold text-foreground">
                 Social Media Tasks Completed
               </h3>
-              <p className="text-sm text-green-600 dark:text-green-300">
+              <p className="text-sm text-muted-foreground">
                 You have successfully completed all required social media tasks for this raffle.
               </p>
             </div>
@@ -1129,7 +1129,7 @@ const SocialMediaVerification = ({
   }
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border border-border">
+    <Card className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border">
       <CardHeader className="pb-0">
         <CardTitle 
           className="flex items-center justify-between cursor-pointer"
@@ -1146,24 +1146,22 @@ const SocialMediaVerification = ({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-3 space-y-4">
-        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-          <p className="text-sm text-orange-800 dark:text-orange-200">
-            Complete the following social media tasks to participate in this raffle:
-          </p>
-        </div>
+      <CardContent className={isExpanded ? "pt-3 space-y-4" : "pt-1"}>
 
         {isExpanded && (
           <>
+            <p className="text-sm text-foreground">
+              Complete the following social media tasks to participate in this raffle:
+            </p>
             {/* Connected Accounts Summary */}
             {Object.keys(authenticatedAccounts).length > 0 && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Connected Accounts:</h4>
+              <div className="border border-border rounded-lg p-3">
+                <h4 className="text-sm font-medium text-foreground mb-2">Connected Accounts:</h4>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(authenticatedAccounts).map(([platform, account]) => (
                     <div key={platform} className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full px-3 py-1 text-xs">
                       <Shield className="h-3 w-3 text-green-600" />
-                      <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      <span className="text-muted-foreground">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
                       <span className="text-muted-foreground">@{account.platform_username}</span>
                       <Button
                         variant="ghost"
@@ -1231,10 +1229,6 @@ const SocialMediaVerification = ({
                     <p className="text-xs text-muted-foreground">
                       Progress: {completedTasks.size} of {socialTasks.length} tasks completed
                     </p>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-full">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs font-medium text-green-700 dark:text-green-300">Live</span>
-                    </div>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
                     <div 

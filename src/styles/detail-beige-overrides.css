@@ -10,7 +10,7 @@ html.dim-blue .detail-beige-card {
   --foreground: 240 10% 3.9%;      /* ensure main text is dark */
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
+  --border: 30 20% 75%;
   --accent: 240 4.8% 95.9%;
   background-color: #F5E9DC !important;
 }
