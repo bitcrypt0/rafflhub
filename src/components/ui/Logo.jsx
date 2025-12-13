@@ -14,7 +14,7 @@ const Logo = ({
   className = '', 
   size = 'md', 
   showIcon = false, 
-  alt = 'Rafflehub',
+  alt = 'Dropr',
   ...props 
 }) => {
   const { getCurrentTheme } = useTheme();
