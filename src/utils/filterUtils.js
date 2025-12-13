@@ -5,6 +5,18 @@ import { ethers } from 'ethers';
  */
 
 /**
+ * Check if raffle has expired based on duration
+ * @param {Object} raffle - Raffle object
+ * @returns {boolean} - True if raffle has expired
+ */
+export const isRaffleExpired = (raffle) => {
+  if (!raffle.startTime || !raffle.duration) return false;
+  const currentTime = Math.floor(Date.now() / 1000);
+  const endTime = raffle.startTime + raffle.duration;
+  return currentTime >= endTime;
+};
+
+/**
  * Get raffle state from stateNum
  * @param {number} stateNum - Raffle state number
  * @returns {string} - Raffle state string
@@ -127,9 +139,22 @@ export const applyFilters = (raffles, filters) => {
   const filteredRaffles = raffles.filter(raffle => {
     // Filter by raffle state
     if (filters.raffleState && filters.raffleState.length > 0) {
-      const raffleState = getRaffleState(raffle.stateNum);
-      if (!filters.raffleState.includes(raffleState)) {
-        return false;
+      // Special handling for 'ended' filter - use duration expiration
+      if (filters.raffleState.includes('ended')) {
+        const raffleState = getRaffleState(raffle.stateNum);
+        // Include raffle if it's expired (regardless of state) OR if it matches other selected states
+        const isExpired = isRaffleExpired(raffle);
+        const matchesOtherStates = filters.raffleState.filter(s => s !== 'ended').includes(raffleState);
+        
+        if (!isExpired && !matchesOtherStates) {
+          return false;
+        }
+      } else {
+        // Normal state filtering for other states
+        const raffleState = getRaffleState(raffle.stateNum);
+        if (!filters.raffleState.includes(raffleState)) {
+          return false;
+        }
       }
     }
     
@@ -200,6 +225,11 @@ export const countRafflesByFilters = (raffles) => {
     // Count by state
     const state = getRaffleState(raffle.stateNum);
     counts.raffleState[state] = (counts.raffleState[state] || 0) + 1;
+    
+    // Special handling for 'ended' - count expired raffles
+    if (isRaffleExpired(raffle)) {
+      counts.raffleState.ended = (counts.raffleState.ended || 0) + 1;
+    }
 
     // Count by type
     const type = getRaffleType(raffle);

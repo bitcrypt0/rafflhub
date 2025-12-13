@@ -255,13 +255,13 @@ const WhitelistRaffleForm = () => {
           </div>
           
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -715,13 +715,13 @@ const NewERC721DropForm = () => {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1165,13 +1165,13 @@ function ExistingERC721DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -1518,13 +1518,13 @@ function ExistingERC1155DropForm() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2026,7 +2026,7 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2395,13 +2395,13 @@ function LuckySaleERC1155Form() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -2715,13 +2715,13 @@ function ETHGiveawayForm() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3043,13 +3043,13 @@ function ERC20GiveawayForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -3471,13 +3471,13 @@ function NewERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Winners must not exceed 25% of your Slot Limit
+                  Winners must not exceed 30% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
