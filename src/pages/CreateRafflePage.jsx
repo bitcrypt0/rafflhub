@@ -255,7 +255,7 @@ const WhitelistRaffleForm = () => {
           </div>
           
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -715,7 +715,7 @@ const NewERC721DropForm = () => {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1165,7 +1165,7 @@ function ExistingERC721DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -1518,7 +1518,7 @@ function ExistingERC1155DropForm() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2026,7 +2026,7 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2395,7 +2395,7 @@ function LuckySaleERC1155Form() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -2715,7 +2715,7 @@ function ETHGiveawayForm() {
 
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3043,7 +3043,7 @@ function ERC20GiveawayForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -3471,7 +3471,7 @@ function NewERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Count
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Winner Slots
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />

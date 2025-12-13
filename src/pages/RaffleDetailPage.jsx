@@ -704,10 +704,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   return (
     <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
       <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Ticket className="h-5 w-5" />
-          Purchase Slots
-        </div>
+        Purchase Slots
         {hasTokenGating(raffle) && (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             Token-Gated
@@ -2390,8 +2387,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="font-display text-[length:var(--text-lg)] font-semibold flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Winners
+            Winner Slot{raffle.winnersCount !== 1 ? 's' : ''}
             {winnerSelectionTx && (
               <a
                 href={getExplorerLink(winnerSelectionTx)}
@@ -3594,10 +3590,14 @@ const RaffleDetailPage = () => {
   };
 
   const canDelete = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const raffleEndTime = raffle.startTime + raffle.duration;
+    
     return (
       connected &&
            address?.toLowerCase() === raffle?.creator.toLowerCase() &&
       (raffle?.state === 'Pending' || raffle?.state === 'Active') &&
+      now < raffleEndTime && // Only allow deletion before pool ends
       raffle?.usesCustomFee === true // Only pools with custom slot fee can be deleted
     );
   };
@@ -4106,7 +4106,7 @@ const RaffleDetailPage = () => {
           </div>
           <div>
             <p className="font-body text-[length:var(--text-base)] font-medium mb-1">{raffle.winnersCount}</p>
-            <p className="text-xs text-foreground/70 dark:text-foreground/80">Winners</p>
+            <p className="text-xs text-foreground/70 dark:text-foreground/80">Winner Slot{raffle.winnersCount !== 1 ? 's' : ''}</p>
           </div>
           <div>
             <p className={`font-medium mb-1 ${isMobile ? 'text-base' : 'text-lg'}`}>{timeValue}</p>
