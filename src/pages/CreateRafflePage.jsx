@@ -1726,7 +1726,7 @@ const CreateRafflePage = () => {
         {/* Page Header */}
         <div className="text-center mb-8">
           <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-2' : ''}`}>
-            Create an on-chain raffle for your community
+            Create an onchain raffle pool for your community
           </h1>
           <p className="text-muted-foreground text-[length:var(--text-base)] leading-relaxed">
             Click <a href="#" onClick={(e) => { e.preventDefault(); setIsFilterOpen(true); }} className="text-primary hover:text-primary/90 no-underline font-medium transition-colors">here</a> to configure your pool
