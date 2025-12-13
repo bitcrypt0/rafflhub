@@ -527,7 +527,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                    now >= raffle.startTime && 
                    now < raffleEndTime;
     
-    return (raffle.state?.toLowerCase() === 'active' && now < raffleEndTime) || isLive;
+    // Disable purchases for the pool creator
+    const isCreator = address?.toLowerCase() === raffle.creator?.toLowerCase();
+    
+    return !isCreator && ((raffle.state?.toLowerCase() === 'active' && now < raffleEndTime) || isLive);
   };
 
   const isRaffleActive = () => {
@@ -909,10 +912,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <span 
                         className="cursor-pointer hover:text-primary hover:underline transition-colors"
-                        onClick={() => setQuantity(raffle.maxSlotsPerParticipant)}
+                        onClick={() => setQuantity(Math.max(1, raffle.maxSlotsPerParticipant - userSlots))}
                         title="Click to set quantity to maximum"
                       >
-                        Max: {raffle.maxSlotsPerParticipant} slots
+                        Max: {Math.max(0, raffle.maxSlotsPerParticipant - userSlots)} slots remaining
                       </span>
                     </p>
                   </div>
@@ -946,13 +949,19 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 size="lg"
                 className="w-full shadow-sm"
               >
-                <Ticket className="h-4 w-4" />
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}
               </Button>
               {socialEngagementRequired && !hasCompletedSocialEngagement && (
                 <div className="text-center py-2">
                   <p className="text-muted-foreground text-sm">
                     Complete social media verification to enable slot purchase.
+                  </p>
+                </div>
+              )}
+              {address?.toLowerCase() === raffle.creator?.toLowerCase() && (
+                <div className="text-center py-2">
+                  <p className="text-muted-foreground text-sm">
+                    You cannot purchase slots from your own pool.
                   </p>
                 </div>
               )}
