@@ -542,7 +542,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     return raffle.state?.toLowerCase() === 'pending' && 
            raffle.startTime && 
            now >= raffle.startTime && 
-           (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
+           raffle.slotsSold === 0;
   };
 
   const isRaffleEnded = () => {
@@ -555,7 +555,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const canClosePool = () => {
     const now = Math.floor(Date.now() / 1000);
     const raffleEndTime = raffle.startTime + raffle.duration;
-    const participantsCount = raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0;
+    const participantsCount = raffle.slotsSold;
     
     // Debug logging
     console.log('canClosePool debug:', {
@@ -577,7 +577,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const canRequestRandomness = () => {
     const now = Math.floor(Date.now() / 1000);
     const raffleEndTime = raffle.startTime + raffle.duration;
-    const participantsCount = raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0;
+    const participantsCount = raffle.slotsSold;
     
     // Debug logging
     console.log('canRequestRandomness debug:', {
@@ -682,7 +682,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     // Custom fee pools: Only prized pools with refundable flag
     const isGlobalFeePool = !raffle.usesCustomFee;
     const isCustomFeeRefundable = (isPrized === true) || (isCollabPool === true) || raffle.isPrized || raffle.isCollabPool;
-    const refundableState = [4, 5, 6, 8].includes(raffle.stateNum); // Completed, Deleted, AllPrizesClaimed, Unengaged
+    const refundableState = [4, 5, 6, 7].includes(raffle.stateNum); // Completed, Deleted, AllPrizesClaimed, Unengaged (value 7)
     
     return (
       (isGlobalFeePool || isCustomFeeRefundable) &&
@@ -2829,7 +2829,6 @@ const RaffleDetailPage = () => {
               } catch (_) {}
               return ethers.BigNumber.from(0);
             }, name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
-          { method: createSafeMethod(poolContract, 'getUniqueParticipantsCount', ethers.BigNumber.from(0)), name: 'uniqueParticipants', required: false, fallback: ethers.BigNumber.from(0) },
           // Social engagement queries
           { method: createSafeMethod(poolContract, 'socialEngagementRequired', false), name: 'socialEngagementRequired', required: false, fallback: false },
           { method: async () => {
@@ -2851,7 +2850,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, uniqueParticipantsValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2916,7 +2915,6 @@ const RaffleDetailPage = () => {
           startTime: startTime.toNumber(),
           duration: duration.toNumber(),
           actualDuration: actualDurationNumber,
-          uniqueParticipants: (uniqueParticipantsValue?.toNumber ? uniqueParticipantsValue.toNumber() : Number(uniqueParticipantsValue)) || 0,
           slotFee,
           slotLimit: slotLimit.toNumber(),
           slotsSold,
@@ -3610,7 +3608,7 @@ const RaffleDetailPage = () => {
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
                    now >= raffle.startTime && 
-                   (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
+                   raffle.slotsSold === 0;
 
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
@@ -3664,11 +3662,11 @@ const RaffleDetailPage = () => {
   // Check winner status when raffle data changes
   useEffect(() => {
     const checkWinnerStatus = async () => {
-      if (!raffle || !address || ![4,5,6,8].includes(raffle.stateNum)) {
+      // Check for winners in states that have winners: Completed, AllPrizesClaimed, and Drawing (for multi-batch selection)
+      if (!raffle || !address || ![3,4,6].includes(raffle.stateNum)) { // Drawing, Completed, AllPrizesClaimed
         setIsWinner(false);
-        setEligibleForRefund(false);
-        setRefundableAmount(null);
         setWinnerData(null);
+        // Don't reset refund-related states here as they're handled separately
         return;
       }
 
@@ -3706,25 +3704,52 @@ const RaffleDetailPage = () => {
 
         setIsWinner(userIsWinner);
         setWinnerData(userWinnerData);
-
-        // Check refund eligibility for both global fee and custom fee pools
-        try {
-          const refundable = await poolContract.getRefundableAmount(address);
-          setRefundableAmount(refundable);
-          setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
-        } catch (e) {
-          setRefundableAmount(null);
-          setEligibleForRefund(false);
-        }
       } catch (error) {
         setIsWinner(false);
-        setEligibleForRefund(false);
-        setRefundableAmount(null);
         setWinnerData(null);
       }
     };
 
     checkWinnerStatus();
+  }, [raffle, getContractInstance, address]);
+
+  // Check refund eligibility separately from winner status
+  useEffect(() => {
+    const checkRefundEligibility = async () => {
+      if (!raffle || !address || ![4,5,6,7].includes(raffle.stateNum)) { // Completed, Deleted, AllPrizesClaimed, Unengaged
+        setEligibleForRefund(false);
+        setRefundableAmount(null);
+        return;
+      }
+
+      try {
+        const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+        if (!poolContract) return;
+
+        // Check refund eligibility for both global fee and custom fee pools
+        try {
+          const refundable = await poolContract.getRefundableAmount(address);
+          console.log('Debug - Refund info:', {
+            address,
+            stateNum: raffle.stateNum,
+            usesCustomFee: raffle.usesCustomFee,
+            refundableAmount: refundable?.toString(),
+            refundableGt: refundable && refundable.gt && refundable.gt(0)
+          });
+          setRefundableAmount(refundable);
+          setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
+        } catch (e) {
+          console.log('Debug - getRefundableAmount error:', e);
+          setRefundableAmount(null);
+          setEligibleForRefund(false);
+        }
+      } catch (error) {
+        setEligibleForRefund(false);
+        setRefundableAmount(null);
+      }
+    };
+
+    checkRefundEligibility();
   }, [raffle, getContractInstance, address]);
 
   // Handler to update winnersSelected count from WinnersSection
@@ -3804,7 +3829,7 @@ const RaffleDetailPage = () => {
   const shouldShowClaimRefund =
     // Show for global fee pools (any pool with !usesCustomFee) or custom fee refundable pools
     (!raffle?.usesCustomFee || raffle?.isPrized || raffle?.isCollabPool) &&
-    [4,5,6,7].includes(raffle?.stateNum) &&
+    [4,5,6,7].includes(raffle?.stateNum) && // Updated: 7 instead of 8 for Unengaged
     eligibleForRefund &&
     refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
 
@@ -4238,10 +4263,6 @@ const RaffleDetailPage = () => {
                     return formatDuration(displaySeconds);
                   })()}
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Participants:</span>
-                <span>{Number(raffle.uniqueParticipants || 0).toLocaleString()}</span>
               </div>
               {raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero && raffle.holderTokenStandard !== undefined && (
                 <div className="flex justify-between items-center">
