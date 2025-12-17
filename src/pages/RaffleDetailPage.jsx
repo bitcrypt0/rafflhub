@@ -2087,7 +2087,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
   // Event listener for real-time winner updates
   // Stop listening for winner selection events after raffle is completed
-  const isRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (was 7, now 6)
+  const isRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (6)
   const shouldListenForWinners = !!raffle && !isRaffleCompleted;
 
   const { isListening, eventHistory } = useRaffleEventListener(raffle?.address, {
@@ -2777,7 +2777,7 @@ const RaffleDetailPage = () => {
 
   // Event listener for raffle state changes
   // Stop listening for winner selection events after raffle is completed
-  const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (was 7, now 6)
+  const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (6)
   const shouldMainListenForWinners = !!raffle && !isMainRaffleCompleted;
 
   const { isListening: isMainListening, eventHistory: mainEventHistory } = useRaffleEventListener(raffleAddress, {
@@ -3712,7 +3712,7 @@ const RaffleDetailPage = () => {
 
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
-      if (stateNum === 6) { // AllPrizesClaimed state (was 7, now 6)
+      if (stateNum === 6) { // AllPrizesClaimed state (6)
         return winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
       }
       return POOL_STATE_LABELS[stateNum] || 'Unknown';

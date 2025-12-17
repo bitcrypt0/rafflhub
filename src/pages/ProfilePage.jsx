@@ -16,6 +16,8 @@ import { toast } from '../components/ui/sonner';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useProfileData } from '../hooks/useProfileData';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
+import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
+import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import NewMobileProfilePage from './mobile/NewMobileProfilePage';
 
@@ -121,6 +123,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
   const navigate = useNavigate();
   const { executeTransaction, getContractInstance } = useContract();
   const [timeRemaining, setTimeRemaining] = useState('');
+  const { winnerCount } = useWinnerCount(raffle.address);
 
   useEffect(() => {
     let interval;
@@ -172,6 +175,14 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
   }, [raffle]);
 
   const getStatusBadge = () => {
+    // Get dynamic label for Prizes Claimed state based on winner count
+    const getDynamicLabel = (state, stateNum) => {
+      if (state === 'allPrizesClaimed' && typeof winnerCount === 'number') {
+        return winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
+      }
+      return state.charAt(0).toUpperCase() + state.slice(1);
+    };
+    
     // Use the actual contract state instead of time-based logic
     switch (raffle.state) {
       case 'pending':
@@ -189,7 +200,8 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       case 'activationFailed':
         return <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">Activation Failed</span>;
       case 'allPrizesClaimed':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">All Prizes Claimed</span>;
+        const label = winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
+        return <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">{label}</span>;
       case 'unengaged':
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded-full text-xs">Unengaged</span>;
       default:
@@ -295,6 +307,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
 
 const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   const navigate = useNavigate();
+  const { winnerCount } = useWinnerCount(ticket.raffleAddress);
 
   const canClaimPrize = () => {
     return ticket.isWinner && (ticket.raffleState === 'Completed' || ticket.raffleState === 'AllPrizesClaimed') && !ticket.prizeClaimed;
@@ -331,7 +344,10 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
             ticket.raffleState === 'ended' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
             'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
           }`}>
-            {ticket.raffleState.charAt(0).toUpperCase() + ticket.raffleState.slice(1)}
+            {ticket.raffleState === 'allPrizesClaimed' && typeof winnerCount === 'number' 
+              ? (winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed')
+              : ticket.raffleState.charAt(0).toUpperCase() + ticket.raffleState.slice(1)
+            }
           </span>
         </div>
       </div>

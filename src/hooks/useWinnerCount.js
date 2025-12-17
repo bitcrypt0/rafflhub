@@ -13,7 +13,7 @@ export const useWinnerCount = (raffleAddress, raffleState) => {
   useEffect(() => {
     const fetchWinnerCount = async () => {
       // Only fetch for completed or claimed states
-      if (!raffleAddress || (raffleState !== 4 && raffleState !== 7)) {
+      if (!raffleAddress || (raffleState !== 4 && raffleState !== 6)) {
         setWinnerCount(0);
         return;
       }
@@ -47,7 +47,7 @@ export const useWinnerCount = (raffleAddress, raffleState) => {
  * Utility function to get dynamic label for Prizes Claimed state
  */
 export const getDynamicPrizeLabel = (stateNum, winnerCount) => {
-  if (stateNum === 6) { // AllPrizesClaimed state (was 7, now 6 after ActivationFailed removal)
+  if (stateNum === 6) { // AllPrizesClaimed state (6)
     return winnerCount === 1 ? 'Prize Claimed' : 'Prizes Claimed';
   }
   return null; // Not a prizes claimed state
