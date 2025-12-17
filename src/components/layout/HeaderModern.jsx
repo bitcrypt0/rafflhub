@@ -487,10 +487,6 @@ const HeaderModern = () => {
             {isHomepage ? (
               <div className="flex items-center gap-3 cursor-default select-none">
                 <Logo size="md" />
-                <Badge variant="secondary" className="hidden xl:inline-flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  Fun
-                </Badge>
               </div>
             ) : connected ? (
               <Link to="/app" className="flex items-center gap-3 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">

@@ -19,13 +19,13 @@ const Logo = ({
 }) => {
   const { getCurrentTheme } = useTheme();
   
-  // Size presets - reduced for better text proportion
+  // Size presets - increased for better visibility
   const sizeClasses = {
-    'xs': 'h-3 w-auto',     // Extra small
-    'sm': 'h-4 w-auto',     // Small - for mobile
-    'md': 'h-5 w-auto',     // Medium - for desktop
-    'lg': 'h-6 w-auto',     // Large
-    'xl': 'h-8 w-auto'      // Extra large
+    'xs': 'h-4 w-auto',     // Extra small
+    'sm': 'h-6 w-auto',     // Small - for mobile
+    'md': 'h-8 w-auto',     // Medium - for desktop
+    'lg': 'h-10 w-auto',    // Large
+    'xl': 'h-12 w-auto'     // Extra large
   };
   
   // Get the appropriate size class
@@ -39,8 +39,8 @@ const Logo = ({
     
     const currentTheme = getCurrentTheme();
     return currentTheme.id === 'light' 
-      ? "/images/logo/Asset 8.svg" 
-      : "/images/logo/Asset 9.svg";
+      ? "/images/logo/Asset 25.svg" 
+      : "/images/logo/Asset 26.svg";
   };
   
   return (

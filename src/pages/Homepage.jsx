@@ -254,7 +254,6 @@ export default function Homepage() {
     <div className="bg-background text-foreground overflow-x-hidden -mb-8">
       {/* Hero Section */}
       <Section id="hero" className="min-h-[90vh] sm:min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-16 sm:pt-0">
-        <GeometricBackground />
         <div className="relative z-10 w-full py-12 sm:py-20">
           <div className="text-center max-w-6xl mx-auto">
             <h1 className="hero-headline font-display text-[length:var(--text-5xl)] font-bold mb-4 sm:mb-6 text-foreground leading-tight tracking-tighter">
@@ -303,21 +302,21 @@ export default function Homepage() {
             </div>
 
             {/* Trust signals */}
-            <div className="hero-cta flex flex-wrap justify-center items-center gap-6 font-body text-[length:var(--text-sm)] text-muted-foreground">
+            <div className="hero-cta flex flex-wrap justify-center items-center gap-6 font-body text-[length:var(--text-base)] text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
+                <Shield className="h-5 w-5 text-primary" />
                 <span>Chainlink VRF Powered</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
+                <CheckCircle className="h-5 w-5 text-primary" />
                 <span>Fairness Guaranteed</span>
               </div>
               <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-primary" />
+                <Eye className="h-5 w-5 text-primary" />
                 <span>Fully Transparent</span>
               </div>
               <div className="flex items-center gap-2">
-                <LockKeyhole className="h-4 w-4 text-primary" />
+                <LockKeyhole className="h-5 w-5 text-primary" />
                 <span>Trustless</span>
               </div>
             </div>

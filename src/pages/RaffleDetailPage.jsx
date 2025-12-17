@@ -1595,7 +1595,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
 };
 
 // Enhanced Winner Card Component with improved styling
-const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName, isEscrowedPrize }) => {
+const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName, isEscrowedPrize, winnerSelectionTx }) => {
   const isCurrentUser = connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase();
   const { formatPrizeAmount } = useNativeCurrency();
   const [erc20Symbol, setErc20Symbol] = React.useState('TOKEN');
@@ -1942,7 +1942,26 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                     </div>
                     <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Winning Slots</span>
-                      <div className="font-semibold text-base text-green-600">{stats.winningTickets}</div>
+                      <div className="font-semibold text-base text-green-600 flex items-center gap-2">
+                        {stats.winningTickets}
+                        {winnerSelectionTx && (
+                          <a
+                            href={getExplorerLink(winnerSelectionTx, raffle.chainId, true)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center"
+                            title="View winner selection transaction on block explorer"
+                          >
+                            <img
+                              src="/images/etherscan logos/etherscan-logo-circle.svg"
+                              alt="Etherscan"
+                              width="16"
+                              height="16"
+                              className="opacity-80 hover:opacity-100 transition-opacity"
+                            />
+                          </a>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-0.5">
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Losing Slots</span>
@@ -1986,6 +2005,84 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   const [lastWinnersUpdate, setLastWinnersUpdate] = useState(null);
   const [winnersSelectedCount, setWinnersSelectedCount] = useState(raffle?.winnersSelected || 0);
 
+  // Fetch historical winner selection transaction for completed raffles
+  const fetchWinnerSelectionTx = useCallback(async () => {
+    console.log('fetchWinnerSelectionTx called:', { raffle: !!raffle, winnerSelectionTx, stateNum: raffle?.stateNum });
+    if (!raffle || winnerSelectionTx) return;
+    
+    // Only fetch for completed raffles
+    const isCompleted = raffle.stateNum === 4 || raffle.stateNum === 6;
+    console.log('Is raffle completed?', isCompleted);
+    if (!isCompleted) return;
+    
+    try {
+      const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+      console.log('Pool contract:', !!poolContract);
+      if (!poolContract) return;
+      
+      // Try to get transaction from block explorer API instead
+      console.log('Fetching from block explorer...');
+      
+      // Get the latest block number and search backwards
+      const provider = poolContract.provider;
+      const latestBlock = await provider.getBlockNumber();
+      
+      // Search last 10000 blocks for WinnersSelected events (same as pool metadata service)
+      const fromBlock = Math.max(0, latestBlock - 10000);
+      console.log(`Searching blocks ${fromBlock} to ${latestBlock}`);
+      
+      const filter = poolContract.filters.WinnersSelected();
+      const events = await poolContract.queryFilter(filter, fromBlock, latestBlock);
+      console.log('Events found:', events?.length || 0);
+      
+      if (events && events.length > 0) {
+        // Get the most recent event
+        const latestEvent = events[events.length - 1];
+        console.log('Historical WinnersSelected event:', latestEvent);
+        console.log('Transaction hash:', latestEvent.transactionHash);
+        setWinnerSelectionTx(latestEvent.transactionHash);
+      } else {
+        console.log('No WinnersSelected events found in last 10000 blocks');
+        // Fallback: try to get from the transaction that changed state to Completed
+        try {
+          const stateChangeFilter = poolContract.filters.StateChanged(3, 4); // Drawing -> Completed
+          const stateChangeEvents = await poolContract.queryFilter(stateChangeFilter, fromBlock, latestBlock);
+          if (stateChangeEvents && stateChangeEvents.length > 0) {
+            const latestStateChange = stateChangeEvents[stateChangeEvents.length - 1];
+            console.log('Using state change transaction:', latestStateChange.transactionHash);
+            setWinnerSelectionTx(latestStateChange.transactionHash);
+          }
+        } catch (fallbackError) {
+          console.warn('Fallback also failed:', fallbackError);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch historical WinnersSelected event:', error);
+      // Final fallback: use a block explorer API call
+      try {
+        const chainId = raffle.chainId || 84532; // Default to Base Sepolia
+        const explorerUrl = chainId === 84532 
+          ? 'https://api-sepolia.basescan.org/api'
+          : 'https://api.etherscan.io/api';
+        
+        const response = await fetch(
+          `${explorerUrl}?module=logs&action=getLogs&address=${raffle.address}&topic0=0x${ethers.utils.id('WinnersSelected(address[])').slice(2)}&apikey=YourApiKeyToken`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === '1' && data.result.length > 0) {
+            const txHash = data.result[0].transactionHash;
+            console.log('Found transaction via explorer API:', txHash);
+            setWinnerSelectionTx(txHash);
+          }
+        }
+      } catch (apiError) {
+        console.warn('Explorer API fallback failed:', apiError);
+      }
+    }
+  }, [raffle, winnerSelectionTx, getContractInstance]);
+
   // WinnersSection is primarily for display - claim logic is handled by parent component
 
   // Event listener for real-time winner updates
@@ -1995,7 +2092,11 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
   const { isListening, eventHistory } = useRaffleEventListener(raffle?.address, {
     onWinnersSelected: (winners, event) => {
-      setWinnerSelectionTx(event?.transactionHash);
+      console.log('WinnersSelected event:', event);
+      console.log('Event transactionHash:', event?.transactionHash);
+      console.log('Event log:', event?.log);
+      console.log('Event log transactionHash:', event?.log?.transactionHash);
+      setWinnerSelectionTx(event?.transactionHash || event?.log?.transactionHash);
       setLastWinnersUpdate(Date.now());
       // Trigger immediate winners refetch - no delay needed with enhanced event handling
       fetchWinners();
@@ -2141,6 +2242,11 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     fetchWinners();
   }, [fetchWinners, lastWinnersUpdate]);
 
+  // Fetch historical winner selection transaction for completed raffles
+  useEffect(() => {
+    fetchWinnerSelectionTx();
+  }, [fetchWinnerSelectionTx]);
+
   // Sync winnersSelectedCount with raffle prop when it changes
   useEffect(() => {
     if (raffle?.winnersSelected !== undefined) {
@@ -2256,6 +2362,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                         onLoadStats={handleToggleExpand}
                         collectionName={collectionName}
                         isEscrowedPrize={isEscrowedPrize}
+                        winnerSelectionTx={winnerSelectionTx}
                       />
                     ))}
                   </div>
@@ -2297,6 +2404,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                         onLoadStats={handleToggleExpand}
                         collectionName={collectionName}
                         isEscrowedPrize={isEscrowedPrize}
+                        winnerSelectionTx={winnerSelectionTx}
                       />
                     ))}
                   </div>
@@ -2387,19 +2495,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="font-display text-[length:var(--text-lg)] font-semibold flex items-center gap-2">
-            Winner Slot{raffle.winnersCount !== 1 ? 's' : ''}
-            {winnerSelectionTx && (
-              <a
-                href={getExplorerLink(winnerSelectionTx)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline flex items-center gap-1 ml-2"
-                title="View winner selection transaction"
-              >
-                <Trophy className="h-4 w-4" />
-                Transaction
-              </a>
-            )}
+            Winner Slot{raffle.winnersCount !== 1 ? '' : ''}
             {isListening && raffle?.state?.toLowerCase() !== 'pending' && (
               <div className={`w-2 h-2 rounded-full animate-pulse ml-2 ${
                 winners.length > 0
@@ -2525,7 +2621,8 @@ function getRefundability(raffle) {
 }
 
 // Enhanced getExplorerLink: accepts optional chainId, prefers raffle/app context over window.ethereum
-function getExplorerLink(address, chainIdOverride) {
+// Supports both address and transaction hash links
+function getExplorerLink(addressOrTx, chainIdOverride, isTransaction = false) {
   let chainId = 1;
   if (typeof chainIdOverride === 'number') {
     chainId = chainIdOverride;
@@ -2551,7 +2648,8 @@ function getExplorerLink(address, chainIdOverride) {
     11155420: 'https://sepolia-optimism.etherscan.io', // OP Sepolia
   };
   const baseUrl = explorerMap[chainId] || explorerMap[1];
-  return `${baseUrl}/address/${address}`;
+  const path = isTransaction ? 'tx' : 'address';
+  return `${baseUrl}/${path}/${addressOrTx}`;
 }
 
 
@@ -2814,9 +2912,10 @@ const RaffleDetailPage = () => {
           { method: createSafeMethod(poolContract, 'erc20PrizeAmount', ethers.BigNumber.from(0)), name: 'erc20PrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(poolContract, 'nativePrizeAmount', ethers.BigNumber.from(0)), name: 'nativePrizeAmount', required: false, fallback: ethers.BigNumber.from(0) },
           { method: createSafeMethod(poolContract, 'usesCustomFee', false), name: 'usesCustomFee', required: false, fallback: false },
-          { method: () => address ? poolContract.hasClaimedGlobalFeeRefund(address) : false, name: 'hasClaimedGlobalFeeRefund', required: false, fallback: false },
+          { method: () => address ? poolContract.hasClaimedFeeRefund(address) : false, name: 'hasClaimedFeeRefund', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'isRefundable', false), name: 'isRefundable', required: false, fallback: false },
           { method: createSafeMethod(poolContract, 'isCollabPool', false), name: 'isCollabPool', required: false, fallback: false },
+          { method: createSafeMethod(poolContract, 'isEscrowedPrize', true), name: 'isEscrowedPrize', required: false, fallback: true },
           { method: createSafeMethod(poolContract, 'amountPerWinner', ethers.BigNumber.from(1)), name: 'amountPerWinner', required: false, fallback: ethers.BigNumber.from(1) },
           // Conditionally fetch actual duration only when state is in ended/terminal states
           { method: async () => {
@@ -2850,7 +2949,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedGlobalFeeRefund, isRefundableFlag, isCollabPoolFlag, amountPerWinner, actualDurationValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedFeeRefund, isRefundableFlag, isCollabPoolFlag, isEscrowedPrize, amountPerWinner, actualDurationValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -2931,6 +3030,7 @@ const RaffleDetailPage = () => {
           erc20PrizeAmount,
           nativePrizeAmount,
           usesCustomFee,
+          isEscrowedPrize,
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
           // Social engagement fields
           socialEngagementRequired: !!socialEngagementRequired,
@@ -3850,14 +3950,27 @@ const RaffleDetailPage = () => {
     try {
       const poolContract = getContractInstance(raffle.address, 'pool');
       if (!poolContract) throw new Error('Failed to get pool contract');
+      
+      // Determine which function to call based on prize type
+      const isMintablePrize = raffle.isPrized && !raffle.isEscrowedPrize;
+      const functionName = isMintablePrize ? 'mint' : 'claimPrize';
+      
       // Preflight simulate to capture revert reason
       try {
-        await poolContract.callStatic.claimPrize();
+        if (isMintablePrize) {
+          await poolContract.callStatic.mint();
+        } else {
+          await poolContract.callStatic.claimPrize();
+        }
       } catch (simErr) {
-        notifyError(simErr, { action: 'claimPrize', phase: 'preflight' });
+        notifyError(simErr, { action: functionName, phase: 'preflight' });
         throw simErr;
       }
-      const result = await executeTransaction(poolContract.claimPrize);
+      
+      const result = await executeTransaction(
+        isMintablePrize ? poolContract.mint : poolContract.claimPrize
+      );
+      
       if (result.success) {
         let prizeType = 'prize';
         if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
@@ -3867,7 +3980,9 @@ const RaffleDetailPage = () => {
         } else if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
           prizeType = raffle.standard === 0 ? 'ERC721 NFT' : 'ERC1155 NFT';
         }
-        toast.success(`Successfully claimed your ${prizeType}!`);
+        
+        const action = isMintablePrize ? 'minted' : 'claimed';
+        toast.success(`Successfully ${action} your ${prizeType}!`);
         window.location.reload();
       } else {
         throw new Error(result.error);
@@ -3876,9 +3991,10 @@ const RaffleDetailPage = () => {
       const errorDetails = logContractError(error, 'claim prize', {
         raffleAddress: raffle.address,
         userAddress: address,
-        prizeType: raffle.standard
+        prizeType: raffle.standard,
+        isMintable: raffle.isPrized && !raffle.isEscrowedPrize
       });
-      notifyError(error, { action: 'claimPrize' });
+      notifyError(error, { action: raffle.isPrized && !raffle.isEscrowedPrize ? 'mint' : 'claimPrize' });
     } finally {
       setClaimingPrize(false);
     }

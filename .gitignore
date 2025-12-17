@@ -1,7 +1,7 @@
 node_modules/
 abis/
-supabase/
 docs/
+supabase/
 package-lock.json
 abis.code-workspace
 temp_types.ts
