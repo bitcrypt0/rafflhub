@@ -1602,6 +1602,9 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   const [actualAmountPerWinner, setActualAmountPerWinner] = React.useState(null);
   const [collectionSymbol, setCollectionSymbol] = React.useState(null);
   const { getContractInstance } = useContract();
+  
+  // Use the winner's specific batch transaction hash if available, otherwise fallback to the global one
+  const winnerTxHash = winner.batchTxHash || winnerSelectionTx;
 
   // Fetch ERC20 token symbol if needed
   React.useEffect(() => {
@@ -1944,9 +1947,9 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
                       <span className="text-muted-foreground text-xs uppercase tracking-wide">Winning Slots</span>
                       <div className="font-semibold text-base text-green-600 flex items-center gap-2">
                         {stats.winningTickets}
-                        {winnerSelectionTx && (
+                        {winnerTxHash && (
                           <a
-                            href={getExplorerLink(winnerSelectionTx, raffle.chainId, true)}
+                            href={getExplorerLink(winnerTxHash, raffle.chainId, true)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center"
@@ -2001,6 +2004,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   const [expandedWinner, setExpandedWinner] = useState(null);
   const [winnerStats, setWinnerStats] = useState({});
   const [winnerSelectionTx, setWinnerSelectionTx] = useState(null);
+  const [winnerTxMap, setWinnerTxMap] = useState({}); // Maps winner address to their batch transaction hash
   const [collectionName, setCollectionName] = useState(null);
   const [lastWinnersUpdate, setLastWinnersUpdate] = useState(null);
   const [winnersSelectedCount, setWinnersSelectedCount] = useState(raffle?.winnersSelected || 0);
@@ -2036,10 +2040,30 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       console.log('Events found:', events?.length || 0);
       
       if (events && events.length > 0) {
-        // Get the most recent event
+        // Build winner-to-transaction mapping from all events
+        const txMap = {};
+        
+        // Process events in order (oldest first)
+        for (const event of events) {
+          if (event.args && event.args.winners) {
+            // Map each winner address to this transaction hash
+            event.args.winners.forEach(winnerAddress => {
+              const normalizedAddress = winnerAddress.toLowerCase();
+              if (!txMap[normalizedAddress]) {
+                txMap[normalizedAddress] = event.transactionHash;
+              }
+            });
+          }
+        }
+        
+        // Set the mapping
+        setWinnerTxMap(txMap);
+        
+        // Also set the latest transaction for backward compatibility
         const latestEvent = events[events.length - 1];
         console.log('Historical WinnersSelected event:', latestEvent);
         console.log('Transaction hash:', latestEvent.transactionHash);
+        console.log('Winner-to-Tx mapping:', txMap);
         setWinnerSelectionTx(latestEvent.transactionHash);
       } else {
         console.log('No WinnersSelected events found in last 10000 blocks');
@@ -2221,7 +2245,8 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
               address: winnerAddress,
               index: i,
               claimedWins: claimedWins.toNumber ? claimedWins.toNumber() : Number(claimedWins),
-              prizeClaimed: prizeClaimed && (prizeClaimed.toNumber ? prizeClaimed.toNumber() > 0 : Number(prizeClaimed) > 0)
+              prizeClaimed: prizeClaimed && (prizeClaimed.toNumber ? prizeClaimed.toNumber() > 0 : Number(prizeClaimed) > 0),
+              batchTxHash: winnerTxMap[winnerAddress.toLowerCase()] || winnerSelectionTx // Use specific batch tx or fallback to latest
             });
           } catch (error) {
             continue;
@@ -2236,6 +2261,18 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       setLoading(false);
     }
   }, [raffle, getContractInstance]);
+
+  // Update winners with batch transaction hashes when winnerTxMap changes
+  useEffect(() => {
+    if (Object.keys(winnerTxMap).length > 0 && winners.length > 0) {
+      setWinners(prevWinners => 
+        prevWinners.map(winner => ({
+          ...winner,
+          batchTxHash: winnerTxMap[winner.address.toLowerCase()] || winnerSelectionTx
+        }))
+      );
+    }
+  }, [winnerTxMap, winnerSelectionTx, winners.length]);
 
   // Initial fetch and dependency-based refetch
   useEffect(() => {
