@@ -292,15 +292,13 @@ export default function Homepage() {
                   <Play className="mr-2 h-5 w-5" />
                   Watch Demo
                 </Button>
-                <a
-                  href="https://docs.rafflhub.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/docs"
                   className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-full border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
                 >
                   <BookOpen className="mr-2 h-5 w-5" />
                   Read Documentation
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -732,27 +730,25 @@ export default function Homepage() {
             Ready to Build Trust with Your Community?
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 opacity-90 max-w-3xl mx-auto">
-            Deploy Your First Raffle - No Code Required
+            Create Your Distribution Event - No Code Required
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              to="/app"
+              to="/create-raffle"
               target="_blank"
               rel="noopener noreferrer"
               className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
             >
-              Launch Your Raffle Now
+              Launch Your Event Now
             </Link>
-            <a
-              href="https://rafflhub.gitbook.io/rafflhub"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/docs"
               className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-lg sm:text-xl"
             >
               <BookOpen className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
               Read Documentation
-            </a>
+            </Link>
           </div>
           
           <div className="mt-8 flex flex-wrap justify-center items-center gap-6 text-sm opacity-75">
