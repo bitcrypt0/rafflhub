@@ -26,12 +26,14 @@ import {
   Star,
   Shield,
   Cpu,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as Accordion from '@radix-ui/react-accordion';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -159,6 +161,7 @@ export default function Homepage() {
   const heroRef = useRef(null);
   const problemRef = useRef(null);
   const howItWorksRef = useRef(null);
+  const { getCurrentTheme } = useTheme();
 
   // Initialize GSAP animations
   useEffect(() => {
@@ -329,7 +332,7 @@ export default function Homepage() {
         <div className="reveal">
           <SectionTitle 
             title="The End of Opaque Whitelist Allocations, Botted Mints, and Rigged Giveaways"
-            subtitle="Traditional Web3 distribution methods are broken. Dropr fixes them with innovative raffle-based technology."
+            subtitle="Traditional Web3 distribution methods are broken. Dropr introduces new distribution mechanisms built on provably fair technology."
           />
         </div>
         
@@ -362,60 +365,206 @@ export default function Homepage() {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Trustless Prize Distribution</h3>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Trustless Asset Distribution</h3>
             <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Smart contracts securely manage prizes without need for intervention from creators</p>
           </div>
         </div>
       </Section>
 
-      {/* How It Works */}
-      <Section id="how-it-works" className="py-20 bg-card">
+      {/* Why Dropr is a Gamechanger */}
+      <Section id="why-dropr-gamechanger" className="py-20 bg-card">
         <div className="reveal">
           <SectionTitle 
-            title="How It Works"
-            subtitle="Three simple steps to create provably fair raffles that your community can trust"
+            title="Why Dropr is a Gamechanger"
+            subtitle="Revolutionary features that set Dropr apart from traditional NFT launchpads"
           />
         </div>
 
-        <div className="card-grid grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 mt-16">
-          <div className="card-item relative">
-            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                <span className="text-2xl font-bold text-primary-foreground">1</span>
-              </div>
-              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Create Raffle</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Set raffle parameters - participation limits, start time, duration, number of winners, and prizes.</p>
-              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
-                <Target className="h-4 w-4" />
-                <span>Flexible Configuration</span>
-              </div>
+        <div className="reveal mt-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-center p-4 font-display text-[length:var(--text-lg)] font-semibold text-foreground">Narratives</th>
+                    <th className="text-center p-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-2 p-1 ${getCurrentTheme().id === 'light' ? 'bg-background border-2 border-primary' : 'bg-primary'}`}>
+                          <img 
+                            src={getCurrentTheme().id === 'light' ? "/images/logo/Asset 25.svg" : "/images/logo/Asset 26.svg"}
+                            alt="Dropr"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <span className="font-display text-[length:var(--text-base)] font-semibold text-primary">Dropr</span>
+                      </div>
+                    </th>
+                    <th className="text-center p-4">
+                      <div className="flex flex-col items-center opacity-50">
+                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-2">
+                          <span className="text-muted-foreground font-bold text-lg">OS</span>
+                        </div>
+                        <span className="font-display text-[length:var(--text-base)] font-semibold text-muted-foreground">OpenSea</span>
+                      </div>
+                    </th>
+                    <th className="text-center p-4">
+                      <div className="flex flex-col items-center opacity-50">
+                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-2">
+                          <span className="text-muted-foreground font-bold text-lg">ME</span>
+                        </div>
+                        <span className="font-display text-[length:var(--text-base)] font-semibold text-muted-foreground">MagicEden</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Community-centred distribution</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Anti-sybil measures</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Team allocations & vesting</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Ultra flexible drop experience</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Guaranteed healthy post-mint price action</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                        <X className="h-5 w-5 text-muted-foreground" />
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-primary/5 transition-colors">
+                    <td className="p-4 text-center font-body text-[length:var(--text-sm)] text-foreground">
+                      <span>Permissionless</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
-
-          <div className="card-item relative">
-            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                <span className="text-2xl font-bold text-primary-foreground">2</span>
+            
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="card-item bg-background rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-border">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display text-[length:var(--text-lg)] font-bold mb-2 text-foreground">Community First</h3>
+                <p className="font-body text-[length:var(--text-sm)] text-muted-foreground">Fair distribution mechanisms that put your community at the center</p>
               </div>
-              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Chainlink VRF</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Participants request randomness ensuring fair winner selection. Every draw is cryptographically secure and auditable.</p>
-              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
-                <Shuffle className="h-4 w-4" />
-                <span>Provably Fair</span>
+              
+              <div className="card-item bg-background rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-border">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display text-[length:var(--text-lg)] font-bold mb-2 text-foreground">Bot Resistant</h3>
+                <p className="font-body text-[length:var(--text-sm)] text-muted-foreground">Anti-sybil measures ensure genuine participation</p>
               </div>
-            </div>
-          </div>
-
-          <div className="card-item relative">
-            <div className="bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                <span className="text-2xl font-bold text-primary-foreground">3</span>
-              </div>
-              <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-4 text-foreground leading-snug">Prize Claims & Refunds</h3>
-              <p className="font-body text-[length:var(--text-sm)] text-muted-foreground mb-4 leading-relaxed">Prize availability guaranteed. Participants claim prizes and slot fee refunds from raffle contracts.</p>
-              <div className="flex items-center justify-center gap-2 font-body text-[length:var(--text-sm)] text-primary">
-                <Award className="h-4 w-4" />
-                <span>Instant Claims</span>
+              
+              <div className="card-item bg-background rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 border border-border">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display text-[length:var(--text-lg)] font-bold mb-2 text-foreground">Price Stability</h3>
+                <p className="font-body text-[length:var(--text-sm)] text-muted-foreground">Healthy supply distribution guarantees healthy price action post-mint</p>
               </div>
             </div>
           </div>

@@ -15,7 +15,8 @@ import {
   Monitor,
   ChevronDown,
   Sparkles,
-  Trophy
+  Trophy,
+  BookOpen
 } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -222,6 +223,7 @@ const HeaderModern = () => {
   const dropdownItems = [
     { label: 'Create Raffle Pool', href: '/create-raffle', icon: Plus },
     { label: 'Profile', href: '/profile', icon: User },
+    { label: 'Docs', href: '/docs', icon: BookOpen },
   ];
 
   // Header variants
@@ -614,6 +616,10 @@ const HeaderModern = () => {
                   <DropdownMenuItem onClick={() => navigate('/create-raffle')}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Raffle Pool
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/docs')}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Docs
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={disconnect}>
                     <LogOut className="mr-2 h-4 w-4" />

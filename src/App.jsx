@@ -25,6 +25,7 @@ import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
 import AuthCallback from './pages/AuthCallback';
+import DocumentationPage from './pages/DocumentationPage';
 
 
 import './App.css';
@@ -69,6 +70,7 @@ const AppContent = () => {
           {/* Marketing Homepage at root; dapp at /app */}
           <Route path="/" element={<Homepage />} />
           <Route path="/app" element={<LandingPage />} />
+          <Route path="/docs" element={<DocumentationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
