@@ -359,7 +359,7 @@ const RaffleCard = ({ raffle }) => {
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
                    now >= raffle.startTime && 
-                   (raffle.uniqueParticipants?.toNumber?.() || raffle.uniqueParticipants || 0) === 0;
+                   (raffle.totalSlotsPurchased || 0) === 0;
 
     // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {

@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
 import { toast } from '../components/ui/sonner';
 import { notifyError } from '../utils/notificationService';
 import { contractABIs } from '../contracts/contractABIs';
@@ -1052,19 +1053,7 @@ function ExistingERC721DropForm() {
   };
 
   // Helper for internal collection status check
-  const { status: internalStatus721, checking: checkingInternal721 } = useInternalCollectionStatus(formData.collection, contracts);
-
-  // Show toast when status changes
-  useEffect(() => {
-    if (formData.collection && !checkingInternal721 && internalStatus721 !== null) {
-      if (internalStatus721) {
-        // Success - no toast message shown
-      } else {
-        toast.error("Collection not allowed");
-      }
-    }
-  }, [formData.collection, checkingInternal721, internalStatus721]);
-
+  
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
@@ -1085,22 +1074,14 @@ function ExistingERC721DropForm() {
           </div>
           <div>
             <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={formData.collection || ''}
-                onChange={e => handleChange('collection', e.target.value)}
-                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required
-              />
-              {formData.collection && !checkingInternal721 && internalStatus721 === true && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
-              )}
-              {formData.collection && !checkingInternal721 && internalStatus721 === false && (
-                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
-              )}
-            </div>
+            <input
+              type="text"
+              placeholder="0x..."
+              value={formData.collection}
+              onChange={(e) => handleChange('collection', e.target.value)}
+              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background font-mono"
+              required
+            />
           </div>
           <div>
             <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
@@ -1382,20 +1363,7 @@ function ExistingERC1155DropForm() {
     }
   };
 
-  // Helper for internal collection status check
-  const { status: internalStatus1155, checking: checkingInternal1155 } = useInternalCollectionStatus(formData.collectionAddress, contracts);
-
-  // Show toast when status changes
-  useEffect(() => {
-    if (formData.collectionAddress && !checkingInternal1155 && internalStatus1155 !== null) {
-      if (internalStatus1155) {
-        // Success - no toast message shown
-      } else {
-        toast.error("Collection not allowed");
-      }
-    }
-  }, [formData.collectionAddress, checkingInternal1155, internalStatus1155]);
-
+  
   return (
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
@@ -1425,13 +1393,7 @@ function ExistingERC1155DropForm() {
                 placeholder="0x..."
                 required
               />
-              {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === true && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
-              )}
-              {formData.collectionAddress && !checkingInternal1155 && internalStatus1155 === false && (
-                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
-              )}
-            </div>
+                          </div>
           </div>
           <div>
             <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
@@ -1683,7 +1645,8 @@ const CreateRafflePage = () => {
     }
     if (poolType === 'Lucky Sale/NFT Pool') {
       if (nftStandard === 'ERC721') return <LuckySaleERC721Form />;
-      if (nftStandard === 'ERC1155') return <LuckySaleERC1155Form />;
+      // ERC1155 form was removed, so default to ERC721 if ERC1155 is somehow selected
+      if (nftStandard === 'ERC1155') return <LuckySaleERC721Form />;
     }
     if (poolType === 'Native Token Pool') return <ETHGiveawayForm />;
     if (poolType === 'ERC20 Token Pool') return <ERC20GiveawayForm />;
@@ -2110,374 +2073,6 @@ function LuckySaleERC721Form() {
 }
 
 // Add LuckySaleERC1155Form (like ERC1155DropForm but no deploy button)
-function LuckySaleERC1155Form() {
-  const { connected, address, provider } = useWallet();
-  const { contracts } = useContract();
-  const { getCurrencyLabel } = useNativeCurrency();
-  const limits = useRaffleLimits(contracts, true);
-  const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    collectionAddress: '',
-    tokenId: '',
-    unitsPerWinner: '',
-    startTime: '',
-    duration: '',
-    slotLimit: '',
-    winnersCount: '',
-    maxTicketsPerParticipant: '',
-    slotFee: '',
-    // Token-gated fields
-    tokenGatedEnabled: false,
-    holderTokenAddress: '',
-    holderTokenStandard: '0',
-    minHolderTokenBalance: '',
-    holderTokenId: '0', // FIXED: Initialize with '0' instead of empty string
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
-    // Pool metadata fields
-    description: '',
-    twitterLink: '',
-    discordLink: '',
-    telegramLink: '',
-  });
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!connected || !contracts.poolDeployer || !provider) {
-      toast.error('Please connect your wallet and ensure contracts are configured');
-      return;
-    }
-    setLoading(true);
-    try {
-      const signer = provider.getSigner();
-      // Step 1: Approve token
-      const approvalResult = await approveToken({
-        signer,
-        tokenAddress: formData.collectionAddress,
-        prizeType: 'erc1155',
-        spender: contracts.poolDeployer.address
-      });
-      if (!approvalResult.success) {
-        toast.error('Token approval failed: ' + approvalResult.error);
-        setLoading(false);
-        return;
-      }
-      if (!approvalResult.alreadyApproved) {
-        toast.success('ERC1155 approval successful!');
-        await new Promise(res => setTimeout(res, 2000));
-      }
-      // Step 2: Create raffle
-      const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
-      const duration = parseInt(formData.duration) * 60;
-      const slotFee = formData.slotFee ? ethers.utils.parseEther(formData.slotFee) : 0;
-      const unitsPerWinner = formData.unitsPerWinner ? parseInt(formData.unitsPerWinner) : 1;
-      const params = {
-        name: formData.name,
-        startTime,
-        duration,
-        slotLimit: parseInt(formData.slotLimit),
-        winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
-        isPrized: true,
-        customSlotFee: slotFee,
-        erc721Drop: false,
-        prizeCollection: formData.collectionAddress,
-        standard: 1, // ERC1155
-        prizeTokenId: parseInt(formData.tokenId),
-        amountPerWinner: unitsPerWinner,
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: '',
-        creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
-        erc20PrizeToken: ethers.constants.AddressZero,
-        erc20PrizeAmount: 0,
-        nativePrizeAmount: 0,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
-        // Token-gated params
-        holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
-        holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance !== '' && formData.minHolderTokenBalance !== undefined ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && (formData.holderTokenStandard === '0' || formData.holderTokenStandard === '1') ? (formData.holderTokenId !== '' && formData.holderTokenId !== undefined ? parseInt(formData.holderTokenId) : 0) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
-        // Pool metadata params
-        description: formData.description || '',
-        twitterLink: formData.twitterLink || '',
-        discordLink: formData.discordLink || '',
-        telegramLink: formData.telegramLink || '',
-      };
-
-      // Query social engagement fee if enabled
-      let socialFee = ethers.BigNumber.from(0);
-      if (socialEngagementEnabled) {
-        socialFee = await contracts.protocolManager.socialEngagementFee();
-        console.log('Social engagement fee:', ethers.utils.formatEther(socialFee), 'ETH');
-      }
-
-      const tx = await contracts.poolDeployer.connect(signer).createPool(params, { value: socialFee });
-      await tx.wait();
-        toast.success('Your raffle was created successfully!');
-        setFormData({
-          name: '',
-          collectionAddress: '',
-          tokenId: '',
-          unitsPerWinner: '',
-          startTime: '',
-          duration: '',
-          slotLimit: '',
-          winnersCount: '',
-          maxTicketsPerParticipant: '',
-          slotFee: '',
-          tokenGatedEnabled: false,
-          holderTokenAddress: '',
-          holderTokenStandard: '0',
-          minHolderTokenBalance: '',
-          holderTokenId: '0', // FIXED: Reset to '0' instead of empty string
-        });
-    } catch (error) {
-      console.error('Error creating raffle:', error);
-      toast.error(extractRevertReason(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Helper for internal collection status check only
-  const { status: internalStatusLucky1155, checking: checkingInternalLucky1155 } = useCollectionInternalStatus(formData.collectionAddress, contracts);
-
-  // Show toast when status changes
-  useEffect(() => {
-    if (formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 !== null) {
-      if (internalStatusLucky1155) {
-        // Success - no toast message shown
-      } else {
-        toast.error("Collection not allowed");
-      }
-    }
-  }, [formData.collectionAddress, checkingInternalLucky1155, internalStatusLucky1155]);
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Gift className="h-5 w-5" />
-        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Lucky Sale (ERC1155 Escrowed Prize)</h3>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={formData.collectionAddress || ''}
-                onChange={e => handleChange('collectionAddress', e.target.value)}
-                className="w-full px-3 py-2.5 pr-10 text-base border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required
-              />
-              {formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 === true && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600" />
-              )}
-              {formData.collectionAddress && !checkingInternalLucky1155 && internalStatusLucky1155 === false && (
-                <XCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-600" />
-              )}
-            </div>
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.tokenId || ''}
-              onChange={e => handleChange('tokenId', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Units Per Winner</label>
-            <input
-              type="number"
-              min="1"
-              value={formData.unitsPerWinner || ''}
-              onChange={e => handleChange('unitsPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
-            <input
-              type="datetime-local"
-              value={formData.startTime || ''}
-              onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
-              {limits.minDuration && limits.maxDuration && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
-                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.duration || ''}
-              onChange={e => handleChange('duration', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
-              {limits.minSlot && limits.maxSlot && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Slot Limit Allowed: {limits.minSlot}<br/>
-                      Maximum Slot Limit Allowed: {limits.maxSlot}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.slotLimit || ''}
-              onChange={e => handleChange('slotLimit', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Winners must not exceed 30% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.winnersCount || ''}
-              onChange={e => handleChange('winnersCount', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-        </div>
-        <div>
-          <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')} <span className="font-normal text-xs text-muted-foreground">(Enter 0 for NFT giveaway)</span></label>
-          <input
-            type="number"
-            step="any"
-            value={formData.slotFee || ''}
-                  onChange={e => handleChange('slotFee', e.target.value)}
-            className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-            required
-          />
-        </div>
-        <TokenGatedSection
-          formData={formData}
-          handleChange={handleChange}
-          required={true}
-          useFormDataEnabled={true}
-        />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
-        <PoolMetadataFields
-          formData={formData}
-          handleChange={handleChange}
-        />
-        <div className="flex gap-4">
-          <Button
-            type="submit"
-            disabled={loading || !connected}
-            variant="primary"
-            size="lg"
-            className="flex-1 text-base h-12"
-          >
-            {loading ? 'Approving & Creating...' : 'Approve Prize & Create Raffle'}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 // Add ETHGiveawayForm
 function ETHGiveawayForm() {
   const { connected, address, provider } = useWallet();

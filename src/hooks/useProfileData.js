@@ -172,10 +172,27 @@ export const useProfileData = () => {
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
     try {
-      const res = await executeCall(stableContracts.protocolManager.getPoolsByCreator, 'getPoolsByCreator', creator);
-      const list = res.success && Array.isArray(res.result) ? res.result : [];
-      setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
-      return list;
+      // Get all pools and filter by creator
+      const allPoolsRes = await executeCall(stableContracts.protocolManager.getAllPools, 'getAllPools');
+      const allPools = allPoolsRes.success && Array.isArray(allPoolsRes.result) ? allPoolsRes.result : [];
+      
+      // Filter pools by checking poolCreators mapping for each pool
+      const creatorPools = [];
+      for (const poolAddress of allPools) {
+        try {
+          const creatorRes = await executeCall(stableContracts.protocolManager.getPoolCreator, 'getPoolCreator', poolAddress);
+          if (creatorRes.success && creatorRes.result.toLowerCase() === creator.toLowerCase()) {
+            creatorPools.push(poolAddress);
+          }
+        } catch (error) {
+          console.warn(`Failed to get creator for pool ${poolAddress}:`, error);
+        }
+      }
+      
+      if (Array.isArray(creatorPools) && creatorPools.length > 0) {
+        setCachedJson(cacheKey, creatorPools, FIFTEEN_MIN_MS);
+      }
+      return creatorPools;
     } catch {
       return [];
     }

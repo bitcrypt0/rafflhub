@@ -16,7 +16,6 @@ import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
 import VestingConfigurationComponent from '../../components/VestingConfigurationComponent';
-import RoyaltyEnforcementExemptionComponent from '../../components/RoyaltyEnforcementExemptionComponent';
 
 import { SUPPORTED_NETWORKS } from '../../networks';
 
@@ -420,21 +419,7 @@ const NewMobileProfilePage = () => {
             </div>
           </button>
 
-          {/* Royalty Enforcement */}
-          <button
-            onClick={() => setActiveDashboardComponent('minter')}
-            data-dashboard-card
-            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <UserPlus className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium">Royalty Enforcement</div>
-                <div className="text-sm text-muted-foreground">Manage royalty enforcement and exemptions for collections</div>
-              </div>
-            </div>
-          </button>
-
+          
           {/* KOL Approval Management */}
           <button
             onClick={() => setActiveDashboardComponent('kol')}
@@ -493,8 +478,6 @@ const NewMobileProfilePage = () => {
         return renderRoyaltyComponent(handleBack);
       case 'vesting':
         return renderVestingComponent(handleBack);
-      case 'minter':
-        return renderMinterComponent(handleBack);
       case 'kol':
         return renderKOLComponent(handleBack);
       case 'tokenCreator':
@@ -928,21 +911,7 @@ const NewMobileProfilePage = () => {
     );
   };
 
-  // Royalty Enforcement Component - Mobile Wrapper
-  const renderMinterComponent = (handleBack) => {
-    return (
-      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
-        <div className="flex items-center gap-3 mb-4">
-          <Button onClick={handleBack} variant="tertiary" size="md">
-            ← Back
-          </Button>
-          <h2 className="text-xl font-semibold">Royalty Enforcement Management</h2>
-        </div>
-        <RoyaltyEnforcementExemptionComponent />
-      </div>
-    );
-  };
-
+  
   // KOL Approval Management Component - Mobile Implementation
   const renderKOLComponent = (handleBack) => {
     return (

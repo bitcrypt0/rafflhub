@@ -31,29 +31,13 @@ const VestingConfigurationComponent = () => {
   const [declaring, setDeclaring] = useState(false);
   const [cutting, setCutting] = useState(false);
   const [reducing, setReducing] = useState(false);
-  const [restoring, setRestoring] = useState(false);
-  const [allocationPercent, setAllocationPercent] = useState('');
+    const [allocationPercent, setAllocationPercent] = useState('');
   const [allocationTokenId, setAllocationTokenId] = useState('');
   const [reductionPercent, setReductionPercent] = useState('');
-  const [poolAddress, setPoolAddress] = useState('');
-  const [poolAllocation, setPoolAllocation] = useState(null);
-  const [fetchingPool, setFetchingPool] = useState(false);
-  const [showReductionWarning, setShowReductionWarning] = useState(false);
+    const [showReductionWarning, setShowReductionWarning] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
-  // Auto-fetch pool allocation when pool address changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (poolAddress && ethers.utils.isAddress(poolAddress.trim())) {
-        fetchPoolAllocation(poolAddress);
-      } else {
-        setPoolAllocation(null);
-      }
-    }, 500); // Debounce for 500ms
-
-    return () => clearTimeout(timer);
-  }, [poolAddress, fetchedCollection, collectionInfo, isERC721]);
-
+  
   // Fetch collection details
   const fetchCollectionDetails = async (addressToFetch) => {
     if (!addressToFetch || !ethers.utils.isAddress(addressToFetch)) {
@@ -411,102 +395,8 @@ const VestingConfigurationComponent = () => {
     }
   };
 
-  // Restore minter allocation function
-  const restoreMinterAllocation = async () => {
-    if (!fetchedCollection || !collectionInfo) {
-      toast.error('Please enter a valid collection address');
-      return;
-    }
-    
-    // Validate pool address
-    const sanitizedPoolAddress = poolAddress.trim();
-    if (!sanitizedPoolAddress) {
-      toast.error('Please enter a pool address');
-      return;
-    }
-    if (!ethers.utils.isAddress(sanitizedPoolAddress)) {
-      toast.error('Please enter a valid pool address');
-      return;
-    }
-    
-    setRestoring(true);
-    try {
-      // Call restoreMinterAllocation with pool address parameter
-      if (isERC721) {
-        await fetchedCollection.callStatic.restoreMinterAllocation(sanitizedPoolAddress);
-        await executeTransaction(() => fetchedCollection.restoreMinterAllocation(sanitizedPoolAddress));
-      } else {
-        const tid = collectionInfo.tokenId || tokenId;
-        await fetchedCollection.callStatic.restoreMinterAllocation(sanitizedPoolAddress);
-        await executeTransaction(() => fetchedCollection.restoreMinterAllocation(sanitizedPoolAddress));
-      }
-
-      toast.success('Minter allocation restored successfully!');
-      setPoolAddress(''); // Clear input after success
-      
-      // Refresh collection info to show updated state
-      await fetchCollectionDetails(fetchedCollection._address);
-    } catch (error) {
-      console.error('Error in restoreMinterAllocation:', error);
-      if (error.message.includes('Pool is not a minter')) {
-        toast.error('The specified pool is not a minter for this collection');
-      } else if (error.message.includes('Pool is not in failed state')) {
-        toast.error('Pool must be in deleted or unengaged state to restore allocation');
-      } else if (error.message.includes('Only owner')) {
-        toast.error('Only the contract owner can restore minter allocation');
-      } else {
-        toast.error('Failed to restore minter allocation: ' + error.message);
-      }
-    } finally {
-      setRestoring(false);
-    }
-  };
-
-  // Fetch pool allocation data for live calculation
-  const fetchPoolAllocation = async (poolAddressToFetch) => {
-    if (!poolAddressToFetch || !ethers.utils.isAddress(poolAddressToFetch) || !fetchedCollection || !collectionInfo) {
-      setPoolAllocation(null);
-      return;
-    }
-
-    const sanitizedPoolAddress = poolAddressToFetch.trim();
-    setFetchingPool(true);
-    
-    try {
-      // Fetch pool's allocated supply from the collection contract
-      let allocation;
-      if (isERC721) {
-        allocation = await fetchedCollection.allocatedSupply(sanitizedPoolAddress);
-      } else {
-        // For ERC1155, we also need to get the tokenId for this pool
-        const tokenId = await fetchedCollection.poolTokenId(sanitizedPoolAddress);
-        allocation = await fetchedCollection.allocatedSupply(sanitizedPoolAddress);
-      }
-
-      // Convert to number for display
-      const allocationAmount = Number(allocation.toString());
-      
-      // Use the same available supply as shown in Collection Information
-      const currentAvailableSupply = Number(collectionInfo.availableSupply || 0);
-      
-      // Calculate new available supply after restoration
-      const newAvailableSupply = currentAvailableSupply + allocationAmount;
-
-      setPoolAllocation({
-        amount: allocationAmount,
-        currentAvailableSupply: currentAvailableSupply,
-        newAvailableSupply: newAvailableSupply,
-        isValid: allocationAmount > 0
-      });
-    } catch (error) {
-      console.error('Error fetching pool allocation:', error);
-      setPoolAllocation(null);
-      // Don't show error to user for live calculation - just don't show the calculation
-    } finally {
-      setFetchingPool(false);
-    }
-  };
-
+  
+  
   // Cut supply function
   const cutSupply = async () => {
     if (!fetchedCollection || !collectionInfo) {
@@ -739,101 +629,7 @@ const VestingConfigurationComponent = () => {
         </Card>
       )}
 
-      {/* Restore Deleted/Unengaged Pool's Allocation Section */}
-      {collectionInfo && (
-        <Card>
-          <CardContent className="space-y-4 p-4">
-            <div className="text-base font-medium flex items-center gap-2 mb-1">
-              <RefreshCw className="h-5 w-5" />
-              Restore Deleted/Unengaged Pool's Allocation
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Restore supply allocated to failed pools (deleted or unengaged) back to the collection
-            </p>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Pool Address</label>
-                <input
-                  type="text"
-                  placeholder="0x..."
-                  value={poolAddress}
-                  onChange={(e) => setPoolAddress(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  disabled={restoring}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter the address of the deleted or unengaged pool to restore its allocation
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-sm bg-muted/50 p-3 rounded-md">
-                  <div>
-                    <span className="text-muted-foreground">Current Available Supply:</span>
-                    <p className="font-semibold">
-                      {collectionInfo.availableSupply !== undefined 
-                        ? `${collectionInfo.availableSupply} tokens`
-                        : 'Loading...'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Live Calculation Display */}
-                {fetchingPool && (
-                  <div className="text-sm text-muted-foreground animate-pulse">
-                    Fetching pool allocation data...
-                  </div>
-                )}
-
-                {poolAllocation && poolAllocation.isValid && (
-                  <div className="space-y-2 text-sm bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-                    <div className="font-medium text-blue-700 dark:text-blue-400">
-                      Live Calculation Preview
-                    </div>
-                    <div className="space-y-1">
-                      <p>
-                        <span className="text-muted-foreground">Pool allocation to restore:</span>
-                        <span className="font-semibold text-blue-600 dark:text-blue-400 ml-2">
-                          {poolAllocation.amount} tokens
-                        </span>
-                      </p>
-                      <p>
-                        <span className="text-muted-foreground">New available supply after restoration:</span>
-                        <span className="font-semibold text-green-600 dark:text-green-400 ml-2">
-                          {poolAllocation.newAvailableSupply} tokens
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        (+{poolAllocation.amount} tokens will be added to available supply)
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {poolAllocation && !poolAllocation.isValid && (
-                  <div className="text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-md p-3">
-                    This pool has no allocated supply to restore (0 tokens allocated)
-                  </div>
-                )}
-              </div>
-            </div>
-            <Button onClick={restoreMinterAllocation} disabled={!poolAddress || restoring || !isOwner} className="w-full">
-              {restoring ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Restoring...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  {isOwner ? 'Restore Pool Allocation' : 'Connect as Owner to Restore'}
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
+      
       {/* Declare Creator Allocation (placed above configure) */}
       {collectionInfo && !collectionInfo.creatorAllocationDeclared && (
         <Card>

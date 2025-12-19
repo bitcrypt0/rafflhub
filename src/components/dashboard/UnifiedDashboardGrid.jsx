@@ -11,7 +11,6 @@ import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import DashboardCard from './DashboardCard';
 import RoyaltyAdjustmentComponent from '../RoyaltyAdjustmentComponent';
 import CreateNewTokenIDComponent from '../CreateNewTokenIDComponent';
-import RoyaltyEnforcementExemptionComponent from '../RoyaltyEnforcementExemptionComponent';
 import CreatorRevenueWithdrawalComponent from '../CreatorRevenueWithdrawalComponent';
 import KOLApprovalComponent from '../KOLApprovalComponent';
 import VestingConfigurationComponent from '../VestingConfigurationComponent';
@@ -29,7 +28,6 @@ const UnifiedDashboardGrid = ({
       id: 'royalty',
       title: 'Royalty & Reveal',
       description: 'Reveal your collection and manage royalties',
-
       component: RoyaltyAdjustmentComponent,
       priority: 1 // Higher priority components shown first on mobile
     },
@@ -41,32 +39,25 @@ const UnifiedDashboardGrid = ({
       priority: 2
     },
     {
-      id: 'minter',
-      title: 'Royalty Enforcement Management',
-      description: 'Manage royalty enforcement and exemptions for collections',
-      component: RoyaltyEnforcementExemptionComponent,
-      priority: 3
-    },
-    {
       id: 'kol',
       title: 'KOL Approval Management',
       description: 'Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees',
       component: KOLApprovalComponent,
-      priority: 4
+      priority: 3
     },
     {
       id: 'tokenCreator',
       title: 'Create New Token ID & Set Token URI',
       description: 'Add new token IDs to existing ERC1155 collections and set metadata URIs',
       component: CreateNewTokenIDComponent,
-      priority: 5
+      priority: 4
     },
     {
       id: 'revenue',
       title: 'Creator Mint & Revenue Withdrawal',
       description: 'Mint tokens to winners and withdraw revenue from your raffles',
       component: CreatorRevenueWithdrawalComponent,
-      priority: 6
+      priority: 5
     }
   ];
 

@@ -5,8 +5,6 @@ import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import RoyaltyAdjustmentComponent from '../components/RoyaltyAdjustmentComponent';
-
-import RoyaltyEnforcementExemptionComponent from '../components/RoyaltyEnforcementExemptionComponent';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';

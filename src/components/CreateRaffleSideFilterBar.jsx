@@ -82,10 +82,19 @@ const CreateRaffleSideFilterBar = ({
     ];
   }, [getCurrencySymbol]);
 
-  const nftStandardOptions = [
-    { value: 'ERC721', label: 'ERC721' },
-    { value: 'ERC1155', label: 'ERC1155' }
-  ];
+  const nftStandardOptions = useMemo(() => {
+    // For Lucky Sale/NFT Pool, only show ERC721 since ERC1155 form was removed
+    if (raffleType === 'Lucky Sale/NFT Pool') {
+      return [
+        { value: 'ERC721', label: 'ERC721' }
+      ];
+    }
+    // For NFTDrop, show both options
+    return [
+      { value: 'ERC721', label: 'ERC721' },
+      { value: 'ERC1155', label: 'ERC1155' }
+    ];
+  }, [raffleType]);
 
   const erc721SourceOptions = [
     { value: 'New ERC721 Collection', label: 'New ERC721 Collection', description: 'Deploy new collection' },
