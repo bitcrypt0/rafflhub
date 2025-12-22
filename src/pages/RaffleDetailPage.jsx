@@ -3078,75 +3078,67 @@ const RaffleDetailPage = () => {
           minHolderTokenBalance
         };
 
-	        // Determine if this raffle is still a VRF consumer via ProtocolManager (more reliable than checking subscription id)
-
-	        console.log('[VRF Debug] Checking isVRFConsumer', {
-	          chainSlug,
-	          providerChainId: provider?.network?.chainId,
-	          resolvedChainId: resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId,
-	          raffleAddress
-	        });
-
-	        let isVrfConsumer = false;
-	        try {
-	          const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
-	          const managerAddr = currentChainId ? SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.protocolManager : undefined;
+        // Determine if this raffle has an assigned VRF subscription (can be deregistered)
+        console.log('[VRF Debug] Checking poolToSubscriptionId', {
+          chainSlug,
+          providerChainId: provider?.network?.chainId,
+          resolvedChainId: resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId,
+          raffleAddress
+        });
+        
+        let hasVRFSubscription = false;
+        try {
+          const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+          const managerAddr = currentChainId ? SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.protocolManager : undefined;
           if (managerAddr) {
             const managerContract = getContractInstance(managerAddr, 'protocolManager');
+            
+            console.log('[VRF Debug] Built manager contract?', { hasContract: !!managerContract });
+            
+            if (managerContract && managerContract.getPoolSubscription) {
+              const subscriptionId = await managerContract.getPoolSubscription(raffleAddress);
+              hasVRFSubscription = subscriptionId !== '0';
+              raffleData.subscriptionId = subscriptionId; // Store ProtocolManager's subscription ID
+              
+              console.log('[VRF Debug] manager.getPoolSubscription result', { subscriptionId, hasVRFSubscription });
+            }
+            
+            // Fetch pool's stored subscription ID
+            const poolContract = getContractInstance(raffleAddress, 'pool');
+            if (poolContract && poolContract.poolSubscriptionId) {
+              const poolSubscriptionId = await poolContract.poolSubscriptionId();
+              raffleData.poolSubscriptionId = poolSubscriptionId;
+              console.log('[VRF Debug] pool.poolSubscriptionId result', { poolSubscriptionId });
+            }
+          }
+        } catch (_) {}
+        
+console.log('[VRF Debug] Setting raffle.isVrfConsumer based on subscription', { hasVRFSubscription: !!hasVRFSubscription });
+        
+raffleData.isVrfConsumer = !!hasVRFSubscription;
 
-
-            // debug removed
-
-	            console.log('[VRF Debug] Built manager contract?', { hasContract: !!managerContract });
-
-            // debug removed
-
-
-	            if (managerContract && managerContract.isVRFConsumer) {
-	              isVrfConsumer = await managerContract.isVRFConsumer(raffleAddress);
-
-	              console.log('[VRF Debug] manager.isVRFConsumer result', { isVrfConsumer });
-
-	            }
-	          }
-	        } catch (_) {}
-
-	        console.log('[VRF Debug] Setting raffle.isVrfConsumer', { isVrfConsumer: !!isVrfConsumer });
-
-	        raffleData.isVrfConsumer = !!isVrfConsumer;
-
-
-        setRaffle(raffleData);
-
-	        // Fallback: if manager contract exists in context, prefer it directly (no address lookups)
-	        try {
-	          if (!isVrfConsumer && contracts?.protocolManager?.isVRFConsumer) {
-
+setRaffle(raffleData);
         // Fallback: if manager contract exists in context, prefer it directly (no address lookups)
         try {
-          if (!isVrfConsumer && contracts?.protocolManager?.isVRFConsumer) {
-            console.log('[VRF Debug] Using context manager to check isVRFConsumer', { manager: contracts.protocolManager.address, raffleAddress });
-            isVrfConsumer = await contracts.protocolManager.isVRFConsumer(raffleAddress);
-	            console.log('[VRF Debug] Context manager isVRFConsumer result', { isVrfConsumer });
-	            raffleData.isVrfConsumer = !!isVrfConsumer;
-	          }
-	        } catch (err) {
-	          console.warn('[VRF Debug] Context manager isVRFConsumer check failed', err);
-	        }
-
-
-        // Update raffle with final VRF consumer flag
-        setRaffle(raffleData);
-
-	        console.log('[VRF Debug] Final isVrfConsumer for raffle', { raffleAddress, isVrfConsumer: raffleData.isVrfConsumer });
-
-        console.log('[VRF Debug] Final isVrfConsumer for raffle (post-set)', { raffleAddress, isVrfConsumer: raffleData.isVrfConsumer });
-
-
-	            isVrfConsumer = await contracts.protocolManager.isVRFConsumer(raffleAddress);
-	            raffleData.isVrfConsumer = !!isVrfConsumer;
-	          }
-	        } catch (_) {}
+          if (!hasVRFSubscription && contracts?.protocolManager?.getPoolSubscription) {
+            console.log('[VRF Debug] Using context manager to check getPoolSubscription', { manager: contracts.protocolManager.address, raffleAddress });
+            const subscriptionId = await contracts.protocolManager.getPoolSubscription(raffleAddress);
+            hasVRFSubscription = subscriptionId !== '0';
+            raffleData.subscriptionId = subscriptionId; // Store ProtocolManager's subscription ID
+            console.log('[VRF Debug] Context manager getPoolSubscription result', { hasVRFSubscription });
+            raffleData.isVrfConsumer = !!hasVRFSubscription;
+            
+            // Also fetch pool's stored subscription ID in fallback
+            const poolContract = getContractInstance(raffleAddress, 'pool');
+            if (poolContract && poolContract.poolSubscriptionId) {
+              const poolSubscriptionId = await poolContract.poolSubscriptionId();
+              raffleData.poolSubscriptionId = poolSubscriptionId;
+              console.log('[VRF Debug] Fallback pool.poolSubscriptionId result', { poolSubscriptionId });
+            }
+          }
+        } catch (err) {
+          console.warn('[VRF Debug] Context manager poolToSubscriptionId check failed', err);
+        }
 
         setIsRefundable(isRefundableFlag);
         setIsCollabPool(isCollabPoolFlag);
@@ -4227,7 +4219,11 @@ const RaffleDetailPage = () => {
             )}
                         
               {/* Update VRF Status - visible to all users, in terminal states */}
-              {([4,5,6,7,8].includes(raffle.stateNum) && raffle?.isVrfConsumer === true) && (
+              {([4,5,6,7,8].includes(raffle.stateNum) && 
+                raffle?.isVrfConsumer === true && 
+                raffle?.poolSubscriptionId && raffle.poolSubscriptionId.toString() !== '0' &&
+                raffle?.subscriptionId && raffle.subscriptionId.toString() !== '0' &&
+                raffle.poolSubscriptionId.toString() === raffle.subscriptionId.toString()) && (
                 <Button
                   onClick={async () => {
                     try {
