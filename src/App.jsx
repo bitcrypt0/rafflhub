@@ -23,6 +23,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
+import DeployCollectionPage from './pages/DeployCollectionPage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
 import AuthCallback from './pages/AuthCallback';
 import DocumentationPage from './pages/DocumentationPage';
@@ -73,6 +74,7 @@ const AppContent = () => {
           <Route path="/docs" element={<DocumentationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePage />} />
+          <Route path="/deploy-collection" element={<DeployCollectionPage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           {/* OAuth Callback Routes */}

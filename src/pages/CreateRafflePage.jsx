@@ -96,19 +96,10 @@ const WhitelistRaffleForm = () => {
         standard: 0,
         prizeTokenId: 0,
         amountPerWinner: 0,
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         nativePrizeAmount: 0,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
         // Token-gated params
         holderTokenAddress,
         holderTokenStandard,
@@ -334,589 +325,8 @@ const WhitelistRaffleForm = () => {
   );
 };
 
-const NewERC721DropForm = () => {
-  const { connected, address, provider } = useWallet();
-  const { contracts, executeTransaction } = useContract();
-  const { getCurrencyLabel } = useNativeCurrency();
-  const limits = useRaffleLimits(contracts, true);
-  const [loading, setLoading] = useState(false);
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    startTime: '',
-    duration: '',
-    slotLimit: '',
-    winnersCount: '',
-    maxTicketsPerParticipant: '',
-    customSlotFee: '',
-    collectionName: '',
-    collectionSymbol: '',
-    baseURI: '',
-    maxSupply: '',
-    royaltyPercentage: '',
-    // Reveal feature fields
-    revealType: '0', // 0 = Instant, 1 = Manual, 2 = Scheduled
-    unrevealedBaseURI: '',
-    revealTime: '',
-    royaltyRecipient: address || '',
-    // 1. Add tokenGatedEnabled and token-gated fields to form state
-    tokenGatedEnabled: false,
-    holderTokenAddress: '',
-    holderTokenStandard: '0',
-    minHolderTokenBalance: '',
-    holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
-    // Pool metadata fields
-    description: '',
-    twitterLink: '',
-    discordLink: '',
-    telegramLink: '',
-  });
 
-  useEffect(() => {
-    if (address && !formData.royaltyRecipient) {
-      setFormData(prev => ({ ...prev, royaltyRecipient: address }));
-    }
-    // eslint-disable-next-line
-  }, [address]);
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!connected || !contracts.poolDeployer || !provider) {
-      toast.error('Please connect your wallet and ensure contracts are configured');
-      return;
-    }
-    setLoading(true);
-    try {
-      // Debug: Check form data before parsing for NewERC721DropForm
-      console.log('NewERC721DropForm - Form data for debugging:', {
-        customSlotFee: formData.customSlotFee,
-        royaltyPercentage: formData.royaltyPercentage,
-        maxSupply: formData.maxSupply,
-        winnersCount: formData.winnersCount,
-        minHolderTokenBalance: formData.minHolderTokenBalance,
-        holderTokenId: formData.holderTokenId
-      });
-      
-      const signer = provider.getSigner();
-      const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
-      
-      // Safe parsing for duration
-      let duration = 0;
-      try {
-        duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
-        if (isNaN(duration) || duration <= 0) {
-          throw new Error('Invalid duration');
-        }
-        console.log('duration parsed successfully:', duration);
-      } catch (error) {
-        console.error('Error parsing duration:', error, 'Value:', formData.duration);
-        toast.error('Invalid duration. Please enter a valid positive number.');
-        setLoading(false);
-        return;
-      }
-      
-      // Safe parsing with error handling
-      let customSlotFee = 0;
-      try {
-        if (formData.customSlotFee && formData.customSlotFee.trim() !== '') {
-          customSlotFee = ethers.utils.parseEther(formData.customSlotFee);
-          console.log('customSlotFee parsed successfully:', customSlotFee.toString());
-        }
-      } catch (error) {
-        console.error('Error parsing customSlotFee:', error, 'Value:', formData.customSlotFee);
-        toast.error('Invalid slot fee value. Please enter a valid number.');
-        setLoading(false);
-        return;
-      }
-      let revealType = parseInt(formData.revealType);
-      let unrevealedBaseURI = formData.unrevealedBaseURI;
-      let revealTime = 0;
-      if (revealType === 2) {
-        // Scheduled
-        revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
-      }
-      // Preserve unrevealedBaseURI for Manual (1) and Scheduled (2). Only clear for Instant (0)
-      if (revealType === 0) {
-        unrevealedBaseURI = '';
-        revealTime = 0;
-      }
-      // Safe parsing for royaltyPercentage
-      let royaltyPercentage = 0;
-      try {
-        if (formData.royaltyPercentage && formData.royaltyPercentage.trim() !== '') {
-          royaltyPercentage = parseInt(formData.royaltyPercentage) * 100;
-          console.log('royaltyPercentage parsed successfully:', royaltyPercentage);
-        }
-      } catch (error) {
-        console.error('Error parsing royaltyPercentage:', error, 'Value:', formData.royaltyPercentage);
-        toast.error('Invalid royalty percentage. Please enter a valid number.');
-        setLoading(false);
-        return;
-      }
-      
-      // Safe parsing for maxSupply
-      let maxSupply = 0;
-      try {
-        maxSupply = parseInt(formData.maxSupply || formData.winnersCount);
-        console.log('maxSupply parsed successfully:', maxSupply);
-      } catch (error) {
-        console.error('Error parsing maxSupply:', error, 'Values:', { maxSupply: formData.maxSupply, winnersCount: formData.winnersCount });
-        toast.error('Invalid max supply value.');
-        setLoading(false);
-        return;
-      }
-      
-      // Safe parsing for remaining numeric parameters
-      let slotLimit = 0;
-      let winnersCount = 0;
-      let maxSlotsPerParticipant = 0;
-      
-      try {
-        slotLimit = parseInt(formData.slotLimit);
-        if (isNaN(slotLimit) || slotLimit <= 0) {
-          throw new Error('Invalid slot limit');
-        }
-        console.log('slotLimit parsed successfully:', slotLimit);
-      } catch (error) {
-        console.error('Error parsing slotLimit:', error, 'Value:', formData.slotLimit);
-        toast.error('Invalid slot limit. Please enter a valid positive number.');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        winnersCount = parseInt(formData.winnersCount);
-        if (isNaN(winnersCount) || winnersCount <= 0) {
-          throw new Error('Invalid winners count');
-        }
-        console.log('winnersCount parsed successfully:', winnersCount);
-      } catch (error) {
-        console.error('Error parsing winnersCount:', error, 'Value:', formData.winnersCount);
-        toast.error('Invalid winners count. Please enter a valid positive number.');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        maxSlotsPerParticipant = parseInt(formData.maxSlotsPerParticipant);
-        if (isNaN(maxSlotsPerParticipant) || maxSlotsPerParticipant <= 0) {
-          throw new Error('Invalid max slots per participant');
-        }
-        console.log('maxSlotsPerParticipant parsed successfully:', maxSlotsPerParticipant);
-      } catch (error) {
-        console.error('Error parsing maxSlotsPerParticipant:', error, 'Value:', formData.maxSlotsPerParticipant);
-        toast.error('Invalid max slots per participant. Please enter a valid positive number.');
-        setLoading(false);
-        return;
-      }
-      
-      const params = {
-        name: formData.name,
-        startTime,
-        duration,
-        slotLimit: slotLimit,
-        winnersCount: winnersCount,
-        maxSlotsPerParticipant: maxSlotsPerParticipant,
-        isPrized: true,
-        customSlotFee: customSlotFee,
-        erc721Drop: false,
-        erc1155Drop: true,
-        prizeCollection: ethers.constants.AddressZero,
-        standard: 0, // ERC721
-        prizeTokenId: 0,
-        amountPerWinner: 1,
-        collectionName: formData.collectionName,
-        collectionSymbol: formData.collectionSymbol,
-        collectionBaseURI: formData.baseURI,
-        creator: address,
-        royaltyPercentage: royaltyPercentage,
-        royaltyRecipient: formData.royaltyRecipient,
-        maxSupply: maxSupply,
-        erc20PrizeToken: ethers.constants.AddressZero,
-        erc20PrizeAmount: 0,
-        nativePrizeAmount: 0,
-        // Reveal feature
-        revealType: revealType,
-        unrevealedBaseURI: unrevealedBaseURI,
-        revealTime: revealTime
-      };
-      
-      // Safe parsing for token-gated parameters
-      let minHolderTokenBalance = ethers.BigNumber.from(0);
-      let holderTokenBalance = ethers.BigNumber.from(0);
-      let holderTokenId = 0;
-      
-      try {
-        if (formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '') {
-          // ERC721/ERC1155 token counts should be simple integers, not decimals
-          minHolderTokenBalance = ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance));
-          holderTokenBalance = ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance));
-          console.log('minHolderTokenBalance parsed successfully:', minHolderTokenBalance.toString());
-        }
-      } catch (error) {
-        console.error('Error parsing minHolderTokenBalance:', error, 'Value:', formData.minHolderTokenBalance);
-        toast.error('Invalid minimum token balance. Please enter a valid number.');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        if (formData.tokenGatedEnabled && formData.holderTokenId && formData.holderTokenId.trim() !== '') {
-          holderTokenId = parseInt(formData.holderTokenId);
-          console.log('holderTokenId parsed successfully:', holderTokenId);
-        }
-      } catch (error) {
-        console.error('Error parsing holderTokenId:', error, 'Value:', formData.holderTokenId);
-        toast.error('Invalid token ID. Please enter a valid number.');
-        setLoading(false);
-        return;
-      }
-
-      // Add token-gated params to the existing params object
-      params.holderTokenAddress = formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero;
-      params.holderTokenStandard = formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0;
-      params.minHolderTokenBalance = minHolderTokenBalance;
-      params.holderTokenBalance = holderTokenBalance;
-      params.holderTokenId = holderTokenId;
-      params.socialEngagementRequired = socialEngagementEnabled;
-      params.socialTaskDescription = socialEngagementEnabled ? formData.socialTaskDescription : '';
-      // Pool metadata params
-      params.description = formData.description || '';
-      params.twitterLink = formData.twitterLink || '';
-      params.discordLink = formData.discordLink || '';
-      params.telegramLink = formData.telegramLink || '';
-
-      // Query social engagement fee if enabled
-      let socialFee = ethers.BigNumber.from(0);
-      if (socialEngagementEnabled) {
-        socialFee = await contracts.protocolManager.socialEngagementFee();
-        console.log('Social engagement fee:', ethers.utils.formatEther(socialFee), 'ETH');
-      }
-
-      const tx = await contracts.poolDeployer.connect(signer).createPool(params, { value: socialFee });
-      await tx.wait();
-        toast.success('Your raffle was created successfully!');
-        setFormData({
-          name: '',
-          startTime: '',
-          duration: '',
-          slotLimit: '',
-          winnersCount: '',
-          maxSlotsPerParticipant: '',
-          customSlotFee: '',
-          collectionName: '',
-          collectionSymbol: '',
-          baseURI: '',
-          maxSupply: '',
-          royaltyPercentage: '',
-          revealType: '0',
-          unrevealedBaseURI: '',
-          revealTime: '',
-          royaltyRecipient: address || '',
-          tokenGatedEnabled: false,
-          holderTokenAddress: '',
-          holderTokenStandard: '0',
-          minHolderTokenBalance: '',
-          holderTokenId: '',
-        });
-    } catch (error) {
-      console.error('Error creating raffle:', error);
-      notifyError(error, { action: 'createPool' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Gift className="h-5 w-5" />
-        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">New ERC721 Collection Pool</h3>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={(e) => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
-            <input
-              type="datetime-local"
-              value={formData.startTime || ''}
-              onChange={(e) => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
-              {limits.minDuration && limits.maxDuration && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
-                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.duration || ''}
-              onChange={(e) => handleChange('duration', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
-              {limits.minSlot && limits.maxSlot && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Slot Limit Allowed: {limits.minSlot}<br/>
-                      Maximum Slot Limit Allowed: {limits.maxSlot}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.slotLimit || ''}
-              onChange={(e) => handleChange('slotLimit', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Winners must not exceed 30% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.winnersCount || ''}
-              onChange={(e) => handleChange('winnersCount', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                  onChange={(e) => handleChange('maxSlotsPerParticipant', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')}</label>
-            <input
-              type="number"
-              step="0.001"
-              value={formData.customSlotFee || ''}
-                  onChange={(e) => handleChange('customSlotFee', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              placeholder="Leave empty to use protocol default"
-            />
-          </div>
-        </div>
-        {/* Inner card for collection info */}
-        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4 shadow-md">
-          <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Name</label>
-              <input
-                type="text"
-                value={formData.collectionName || ''}
-                onChange={(e) => handleChange('collectionName', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Symbol</label>
-              <input
-                type="text"
-                value={formData.collectionSymbol || ''}
-                onChange={(e) => handleChange('collectionSymbol', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Base URI</label>
-              <input
-                type="url"
-                value={formData.baseURI || ''}
-                onChange={(e) => handleChange('baseURI', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Max Supply</label>
-              <input
-                type="number"
-                value={formData.maxSupply || ''}
-                onChange={(e) => handleChange('maxSupply', e.target.value)}
-                onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Percentage (%)</label>
-              <input
-                type="number"
-                value={formData.royaltyPercentage || ''}
-                onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                min="0"
-                step="0.01"
-                placeholder="e.g. 5 for 5%"
-              />
-              <span className="text-xs text-muted-foreground">Enter as a percentage (e.g. 5 for 5%)</span>
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Recipient</label>
-              <input
-                type="text"
-                value={formData.royaltyRecipient || ''}
-                onChange={e => handleChange('royaltyRecipient', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required
-                pattern="^0x[a-fA-F0-9]{40}$"
-              />
-              <span className="text-xs text-muted-foreground">Must be a valid Ethereum address</span>
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Type</label>
-              <Select
-                value={formData.revealType}
-                onValueChange={value => handleChange('revealType', value)}
-                required
-              >
-                <SelectTrigger className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background">
-                  <SelectValue placeholder="Select Reveal Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Instant Reveal</SelectItem>
-                  <SelectItem value="1">Manual Reveal</SelectItem>
-                  <SelectItem value="2">Scheduled Reveal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-
-            </div>
-            {(formData.revealType === '1' || formData.revealType === '2') && (
-              <div>
-                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Unrevealed Base URI</label>
-                <input
-                  type="url"
-                  value={formData.unrevealedBaseURI || ''}
-                  onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
-                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                  required={formData.revealType === '1' || formData.revealType === '2'}
-                />
-              </div>
-            )}
-            {formData.revealType === '2' && (
-              <div>
-                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Time</label>
-                <input
-                  type="datetime-local"
-                  value={formData.revealTime || ''}
-                  onChange={e => handleChange('revealTime', e.target.value)}
-                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                  required={formData.revealType === '2'}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <TokenGatedSection
-          formData={formData}
-          handleChange={handleChange}
-          required={true}
-          useFormDataEnabled={true}
-        />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
-        <PoolMetadataFields
-          formData={formData}
-          handleChange={handleChange}
-        />
-        <div className="flex gap-4">
-          <Button
-            type="submit"
-            disabled={loading || !connected}
-            variant="primary"
-            size="lg"
-            className="flex-1"
-          >
-            {loading ? 'Creating...' : 'Create Raffle'}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function ExistingERC721DropForm() {
+function ERC721DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const { getCurrencyLabel } = useNativeCurrency();
@@ -988,19 +398,10 @@ function ExistingERC721DropForm() {
         standard: 0, // ERC721
         prizeTokenId: 0,
         amountPerWinner: 1,
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         nativePrizeAmount: 0,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
 
         // Token-gated params
         holderTokenAddress,
@@ -1232,7 +633,7 @@ function ExistingERC721DropForm() {
 }
 
 // --- Existing ERC1155 Collection Drop Form ---
-function ExistingERC1155DropForm() {
+function ERC1155DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts } = useContract();
   const { getCurrencyLabel } = useNativeCurrency();
@@ -1299,19 +700,10 @@ function ExistingERC1155DropForm() {
         standard: 1, // ERC1155
         prizeTokenId: parseInt(formData.tokenId),
         amountPerWinner: parseInt(formData.amountPerWinner),
-        collectionSymbol: '',
-        collectionBaseURI: '',
-        collectionName: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         nativePrizeAmount: 0,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? (formData.holderTokenAddress || ethers.constants.AddressZero) : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -1620,6 +1012,20 @@ const CreateRafflePage = () => {
     fetchAllowExisting();
   }, [poolType, nftStandard, erc721Source, contracts.protocolManager]);
 
+  // Auto-select ERC721 Collection when NFTDrop + ERC721 is selected
+  useEffect(() => {
+    if (poolType === 'NFTDrop' && nftStandard === 'ERC721') {
+      setErc721Source('Existing ERC721 Collection');
+    }
+  }, [poolType, nftStandard]);
+
+  // Auto-select ERC1155 Collection when NFTDrop + ERC1155 is selected
+  useEffect(() => {
+    if (poolType === 'NFTDrop' && nftStandard === 'ERC1155') {
+      setErc1155Source('Existing ERC1155 Collection');
+    }
+  }, [poolType, nftStandard]);
+
   // Reset collection address when switching to New ERC721 Collection
   useEffect(() => {
     if (poolType === 'NFTDrop' && nftStandard === 'ERC721' && erc721Source === 'New ERC721 Collection') {
@@ -1634,12 +1040,10 @@ const CreateRafflePage = () => {
     if (poolType === 'Whitelist/Allowlist') return <WhitelistRaffleForm />;
     if (poolType === 'NFTDrop') {
       if (nftStandard === 'ERC721') {
-        if (erc721Source === 'New ERC721 Collection') return <NewERC721DropForm />;
-        if (erc721Source === 'Existing ERC721 Collection') return <ExistingERC721DropForm collectionAddress={existingCollectionAddress} setCollectionAddress={setExistingCollectionAddress} />;
+        if (erc721Source === 'Existing ERC721 Collection') return <ERC721DropForm collectionAddress={existingCollectionAddress} setCollectionAddress={setExistingCollectionAddress} />;
       }
       if (nftStandard === 'ERC1155') {
-        if (erc1155Source === 'New ERC1155 Collection') return <NewERC1155DropForm />;
-        if (erc1155Source === 'Existing ERC1155 Collection') return <ExistingERC1155DropForm />;
+        if (erc1155Source === 'Existing ERC1155 Collection') return <ERC1155DropForm />;
         // Escrowed ERC1155 can be handled later
       }
     }
@@ -1820,19 +1224,11 @@ function LuckySaleERC721Form() {
         standard: 0, // ERC721
         prizeTokenId: parseInt(formData.tokenId),
         amountPerWinner: 1,
-        collectionName: '',
-        collectionSymbol: '',
         collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
         nativePrizeAmount: 0,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2138,19 +1534,10 @@ function ETHGiveawayForm() {
         standard: 3, // Use 3 for ETH
         prizeTokenId: 0,
         amountPerWinner: 0,
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: ethers.BigNumber.from(0),
         nativePrizeAmount: ethAmount,
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2467,19 +1854,10 @@ function ERC20GiveawayForm() {
         standard: 2, // Use 2 for ERC20
         prizeTokenId: 0,
         amountPerWinner: 0,
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
-        maxSupply: 0,
         erc20PrizeToken: formData.tokenAddress,
         erc20PrizeAmount: tokenAmount,
         nativePrizeAmount: ethers.BigNumber.from(0),
-        revealType: 0,
-        unrevealedBaseURI: '',
-        revealTime: 0,
         // Token-gated params
         holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
         holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
@@ -2820,447 +2198,6 @@ function extractRevertReason(error) {
   return msg;
 }
 
-// --- New ERC1155 Collection Drop Form ---
-function NewERC1155DropForm() {
-  const { connected, address, provider } = useWallet();
-  const { contracts } = useContract();
-  const { getCurrencyLabel } = useNativeCurrency();
-  const limits = useRaffleLimits(contracts, true);
-  const [loading, setLoading] = useState(false);
-  // Add social media state
-  const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    startTime: '',
-    duration: '',
-    slotLimit: '',
-    winnersCount: '',
-    maxTicketsPerParticipant: '',
-    customSlotFee: '',
-    baseURI: '',
-    maxSupply: '',
-    royaltyPercentage: '',
-    prizeTokenId: '1',
-    amountPerWinner: '',
-    // Reveal feature fields
-    revealType: '0', // 0 = Instant, 1 = Manual, 2 = Scheduled
-    unrevealedBaseURI: '',
-    revealTime: '',
-    royaltyRecipient: address || '',
-    // 1. Add tokenGatedEnabled and token-gated fields to form state
-    tokenGatedEnabled: false,
-    holderTokenAddress: '',
-    holderTokenStandard: '0',
-    minHolderTokenBalance: '',
-    holderTokenId: '',
-    // Social media fields
-    socialEngagementRequired: false,
-    socialTaskDescription: '',
-    socialTasks: [],
-    // Pool metadata fields
-    description: '',
-    twitterLink: '',
-    discordLink: '',
-    telegramLink: '',
-  });
-
-  useEffect(() => {
-    if (address && !formData.royaltyRecipient) {
-      setFormData(prev => ({ ...prev, royaltyRecipient: address }));
-    }
-    // eslint-disable-next-line
-  }, [address]);
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!connected || !contracts.poolDeployer || !provider) {
-      toast.error('Please connect your wallet and ensure contracts are configured');
-      return;
-    }
-    setLoading(true);
-    try {
-      const signer = provider.getSigner();
-      const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
-      const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
-      const customSlotFee = formData.customSlotFee && formData.customSlotFee.trim() !== '' ?
-          ethers.utils.parseEther(formData.customSlotFee) : 0;
-      let revealType = parseInt(formData.revealType);
-      let unrevealedBaseURI = formData.unrevealedBaseURI;
-      let revealTime = 0;
-      if (revealType === 2) {
-        // Scheduled
-        revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
-      }
-      // Preserve unrevealedBaseURI for Manual (1) and Scheduled (2). Only clear for Instant (0)
-      if (revealType === 0) {
-        unrevealedBaseURI = '';
-        revealTime = 0;
-      }
-      const params = {
-        name: formData.name,
-        startTime,
-        duration,
-        slotLimit: parseInt(formData.slotLimit),
-        winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
-        isPrized: true,
-        customSlotFee: customSlotFee,
-        erc721Drop: false,
-        erc1155Drop: false,
-        prizeCollection: ethers.constants.AddressZero,
-        standard: 1, // ERC1155
-        prizeTokenId: parseInt(formData.prizeTokenId),
-        amountPerWinner: parseInt(formData.amountPerWinner),
-        collectionName: '',
-        collectionSymbol: '',
-        collectionBaseURI: formData.baseURI,
-        creator: address,
-        royaltyPercentage: formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0, // percent to bps
-        royaltyRecipient: formData.royaltyRecipient,
-        maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
-        erc20PrizeToken: ethers.constants.AddressZero,
-        erc20PrizeAmount: 0,
-        nativePrizeAmount: 0,
-        // Reveal feature
-        revealType: revealType,
-        unrevealedBaseURI: unrevealedBaseURI,
-        revealTime: revealTime,
-        // 2. Add token-gated params
-        holderTokenAddress: formData.tokenGatedEnabled ? formData.holderTokenAddress : ethers.constants.AddressZero,
-        holderTokenStandard: formData.tokenGatedEnabled ? parseInt(formData.holderTokenStandard) : 0,
-        minHolderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenBalance: formData.tokenGatedEnabled && formData.minHolderTokenBalance && formData.minHolderTokenBalance.trim() !== '' ? ethers.BigNumber.from(parseInt(formData.minHolderTokenBalance)) : ethers.BigNumber.from(0),
-        holderTokenId: formData.tokenGatedEnabled && formData.holderTokenId && formData.holderTokenId.trim() !== '' ? parseInt(formData.holderTokenId) : 0,
-        
-        // Social media params
-        socialEngagementRequired: socialEngagementEnabled,
-        socialTaskDescription: socialEngagementEnabled ? formData.socialTaskDescription : '',
-        // Pool metadata params
-        description: formData.description || '',
-        twitterLink: formData.twitterLink || '',
-        discordLink: formData.discordLink || '',
-        telegramLink: formData.telegramLink || '',
-      };
-
-      // Query social engagement fee if enabled
-      let socialFee = ethers.BigNumber.from(0);
-      if (socialEngagementEnabled) {
-        socialFee = await contracts.protocolManager.socialEngagementFee();
-        console.log('Social engagement fee:', ethers.utils.formatEther(socialFee), 'ETH');
-      }
-
-      const tx = await contracts.poolDeployer.connect(signer).createPool(params, { value: socialFee });
-      await tx.wait();
-      toast.success('Your raffle was created successfully!');
-      setFormData({
-        name: '',
-        startTime: '',
-        duration: '',
-        slotLimit: '',
-        winnersCount: '',
-        maxTicketsPerParticipant: '',
-        customSlotFee: '',
-        baseURI: '',
-        maxSupply: '',
-        royaltyPercentage: '',
-        prizeTokenId: '1',
-        amountPerWinner: '',
-        revealType: '0',
-        unrevealedBaseURI: '',
-        revealTime: '',
-        royaltyRecipient: address || '',
-        tokenGatedEnabled: false,
-        holderTokenAddress: '',
-        holderTokenStandard: '0',
-        minHolderTokenBalance: '',
-        holderTokenId: '',
-      });
-    } catch (error) {
-      console.error('Error creating raffle:', error);
-      notifyError(error, { action: 'createPool' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Gift className="h-5 w-5" />
-        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">New ERC1155 Collection Raffle</h3>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Pool Name</label>
-            <input
-              type="text"
-              value={formData.name || ''}
-              onChange={e => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Start Time</label>
-            <input
-              type="datetime-local"
-              value={formData.startTime || ''}
-              onChange={e => handleChange('startTime', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Duration (minutes)
-              {limits.minDuration && limits.maxDuration && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Duration Allowed: {Math.ceil(Number(limits.minDuration)/60)} min<br/>
-                      Maximum Duration Allowed: {Math.floor(Number(limits.maxDuration)/60)} min
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.duration || ''}
-              onChange={e => handleChange('duration', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Slot Limit
-              {limits.minSlot && limits.maxSlot && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div>
-                      Minimum Slot Limit Allowed: {limits.minSlot}<br/>
-                      Maximum Slot Limit Allowed: {limits.maxSlot}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </label>
-            <input
-              type="number"
-              value={formData.slotLimit || ''}
-              onChange={e => handleChange('slotLimit', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Number of Winning Slots
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Winners must not exceed 30% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.winnersCount || ''}
-              onChange={e => handleChange('winnersCount', e.target.value)}
-              onWheel={(e) => (e.target instanceof HTMLElement) && e.target.blur()}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
-                </TooltipTrigger>
-                <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
-                </TooltipContent>
-              </Tooltip>
-            </label>
-            <input
-              type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                  onChange={(e) => handleChange('maxSlotsPerParticipant', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-
-
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">{getCurrencyLabel('ticket')}</label>
-            <input
-              type="number"
-              step="0.001"
-              value={formData.customSlotFee || ''}
-                  onChange={e => handleChange('customSlotFee', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              placeholder="Leave empty to use protocol default"
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Token ID</label>
-            <input
-              type="number"
-              value={formData.prizeTokenId || ''}
-              onChange={e => handleChange('prizeTokenId', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Amount Per Winner</label>
-            <input
-              type="number"
-              value={formData.amountPerWinner || ''}
-              onChange={e => handleChange('amountPerWinner', e.target.value)}
-              className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-        </div>
-        {/* Inner card for collection info */}
-        <div className="bg-muted/20 border border-border rounded-xl p-4 mt-4 shadow-md">
-          <h4 className="font-semibold text-base mb-4">NFT Collection Info</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Base URI</label>
-              <input
-                type="url"
-                value={formData.baseURI || ''}
-                onChange={e => handleChange('baseURI', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Max Supply</label>
-              <input
-                type="number"
-                value={formData.maxSupply || ''}
-                onChange={e => handleChange('maxSupply', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-              />
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Percentage (%)</label>
-              <input
-                type="number"
-                value={formData.royaltyPercentage || ''}
-                onChange={e => handleChange('royaltyPercentage', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                min="0"
-                step="0.01"
-                placeholder="e.g. 5 for 5%"
-              />
-              <span className="text-xs text-muted-foreground">Enter as a percentage (e.g. 5 for 5%)</span>
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Royalty Recipient</label>
-              <input
-                type="text"
-                value={formData.royaltyRecipient || ''}
-                onChange={e => handleChange('royaltyRecipient', e.target.value)}
-                className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background font-mono"
-                placeholder="0x..."
-                required
-                pattern="^0x[a-fA-F0-9]{40}$"
-              />
-              <span className="text-xs text-muted-foreground">Must be a valid Ethereum address</span>
-            </div>
-            <div>
-              <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Type</label>
-              <Select
-                value={formData.revealType}
-                onValueChange={value => handleChange('revealType', value)}
-                required
-              >
-                <SelectTrigger className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background">
-                  <SelectValue placeholder="Select Reveal Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Instant Reveal</SelectItem>
-                  <SelectItem value="1">Manual Reveal</SelectItem>
-                  <SelectItem value="2">Scheduled Reveal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(formData.revealType === '1' || formData.revealType === '2') && (
-              <div>
-                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Unrevealed Base URI</label>
-                <input
-                  type="url"
-                  value={formData.unrevealedBaseURI || ''}
-                  onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
-                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                  required={formData.revealType === '1' || formData.revealType === '2'}
-                />
-              </div>
-            )}
-            {formData.revealType === '2' && (
-              <div>
-                <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Reveal Time</label>
-                <input
-                  type="datetime-local"
-                  value={formData.revealTime || ''}
-                  onChange={e => handleChange('revealTime', e.target.value)}
-                  className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
-                  required={formData.revealType === '2'}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <TokenGatedSection
-          formData={formData}
-          handleChange={handleChange}
-          required={true}
-          useFormDataEnabled={true}
-        />
-        <SocialMediaTaskSection
-          formData={formData}
-          handleChange={handleChange}
-          socialEngagementEnabled={socialEngagementEnabled}
-          setSocialEngagementEnabled={setSocialEngagementEnabled}
-        />
-        <PoolMetadataFields
-          formData={formData}
-          handleChange={handleChange}
-        />
-        <div className="flex gap-4">
-          <Button
-            type="submit"
-            disabled={loading || !connected}
-            variant="primary"
-            size="lg"
-            className="flex-1 text-base h-12"
-          >
-            {loading ? 'Creating...' : 'Create Raffle'}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // Add a utility hook to fetch limits from ProtocolManager
 function useRaffleLimits(contracts, isPrized) {

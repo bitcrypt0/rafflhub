@@ -97,13 +97,11 @@ const CreateRaffleSideFilterBar = ({
   }, [raffleType]);
 
   const erc721SourceOptions = [
-    { value: 'New ERC721 Collection', label: 'New ERC721 Collection', description: 'Deploy new collection' },
-    { value: 'Existing ERC721 Collection', label: 'Existing ERC721 Collection', description: 'Use existing collection' }
+    { value: 'Existing ERC721 Collection', label: 'ERC721 Collection', description: 'Drop Event for ERC721 Collections' }
   ];
 
   const erc1155SourceOptions = [
-    { value: 'New ERC1155 Collection', label: 'New ERC1155 Collection', description: 'Deploy new collection' },
-    { value: 'Existing ERC1155 Collection', label: 'Existing ERC1155 Collection', description: 'Use existing collection' }
+    { value: 'Existing ERC1155 Collection', label: 'ERC1155 Collection', description: 'Drop Event for ERC1155 Collections' }
   ];
 
   // Toggle section expansion
@@ -118,16 +116,16 @@ const CreateRaffleSideFilterBar = ({
   const clearAllFilters = useCallback(() => {
     setRaffleType('Whitelist/Allowlist');
     setNftStandard('ERC721');
-    setErc721Source('New ERC721 Collection');
-    setErc1155Source('New ERC1155 Collection');
+    setErc721Source('Existing ERC721 Collection');
+    setErc1155Source('Existing ERC1155 Collection');
   }, [setRaffleType, setNftStandard, setErc721Source, setErc1155Source]);
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
     return raffleType !== 'Whitelist/Allowlist' ||
            nftStandard !== 'ERC721' ||
-           erc721Source !== 'New ERC721 Collection' ||
-           erc1155Source !== 'New ERC1155 Collection';
+           erc721Source !== 'Existing ERC721 Collection' ||
+           erc1155Source !== 'Existing ERC1155 Collection';
   }, [raffleType, nftStandard, erc721Source, erc1155Source]);
 
   // Conditional visibility logic (maintaining existing behavior)
