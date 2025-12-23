@@ -47,6 +47,11 @@ const DeployCollectionPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [collectionType, setCollectionType] = useState('ERC721');
+  
+  // State for background image
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Form state for ERC721
   const [erc721FormData, setErc721FormData] = useState({
@@ -82,6 +87,264 @@ const DeployCollectionPage = () => {
       setErc1155FormData(prev => ({ ...prev, royaltyRecipient: address }));
     }
   }, [address]);
+
+  // IPFS gateways for decentralized URIs
+  const IPFS_GATEWAYS = [
+    'https://ipfs.io/ipfs/',
+    'https://gateway.pinata.cloud/ipfs/',
+    'https://cloudflare-ipfs.com/ipfs/',
+    'https://dweb.link/ipfs/'
+  ];
+
+  const IPNS_GATEWAYS = IPFS_GATEWAYS.map(g => g.replace('/ipfs/', '/ipns/'));
+
+  const ARWEAVE_GATEWAYS = [
+    'https://arweave.net/'
+  ];
+
+  // Convert decentralized URIs to HTTP URLs
+  const convertDecentralizedToHTTP = (uri) => {
+    if (!uri) return [];
+
+    // IPFS (ipfs://)
+    if (uri.startsWith('ipfs://')) {
+      let hash = uri.replace('ipfs://', '');
+      if (hash.startsWith('ipfs/')) hash = hash.slice('ipfs/'.length);
+      return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
+    }
+
+    // IPNS (ipns://)
+    if (uri.startsWith('ipns://')) {
+      let name = uri.replace('ipns://', '');
+      if (name.startsWith('ipns/')) name = name.slice('ipns/'.length);
+      return IPNS_GATEWAYS.map(gateway => `${gateway}${name}`);
+    }
+
+    // Arweave (ar://)
+    if (uri.startsWith('ar://')) {
+      const id = uri.replace('ar://', '');
+      return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+    }
+
+    // If HTTP(s) to a known IPFS/IPNS/Arweave gateway, normalize and fan out
+    try {
+      const u = new URL(uri);
+      // Fix accidental double ipfs segment in HTTP URLs (e.g., /ipfs/ipfs/<hash>)
+      let pathname = u.pathname.replace(/\/ipfs\/ipfs\//, '/ipfs/');
+      const parts = pathname.split('/').filter(Boolean);
+
+      const ipfsIndex = parts.indexOf('ipfs');
+      if (ipfsIndex !== -1 && parts[ipfsIndex + 1]) {
+        const hashAndRest = parts.slice(ipfsIndex + 1).join('/');
+        return IPFS_GATEWAYS.map(gateway => `${gateway}${hashAndRest}`);
+      }
+
+      const ipnsIndex = parts.indexOf('ipns');
+      if (ipnsIndex !== -1 && parts[ipnsIndex + 1]) {
+        const nameAndRest = parts.slice(ipnsIndex + 1).join('/');
+        return IPNS_GATEWAYS.map(gateway => `${gateway}${nameAndRest}`);
+      }
+
+      // Arweave gateway (e.g., arweave.net/<id>)
+      if (u.hostname.endsWith('arweave.net') || u.hostname === 'arweave.net') {
+        const id = parts.join('/');
+        return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+      }
+    } catch (_) {
+      // not a URL, fall through
+    }
+
+    // Fallback: return as-is
+    return [uri];
+  };
+
+  // Extract image URL from metadata
+  const extractImageURL = (metadata) => {
+    const mediaFields = [
+      'image',
+      'image_url',
+      'imageUrl',
+      'animation_url',
+      'animationUrl',
+      'media',
+      'artwork'
+    ];
+
+    for (const field of mediaFields) {
+      if (metadata[field]) {
+        const raw = metadata[field];
+        if (typeof raw === 'string') {
+          if (raw.startsWith('ipfs://') || raw.startsWith('ar://')) {
+            return convertDecentralizedToHTTP(raw);
+          }
+          return [raw];
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Fetch artwork from URI
+  const fetchArtwork = async (uri) => {
+    if (!uri) return null;
+
+    setImageLoading(true);
+    setImageLoaded(false);
+    
+    try {
+      // First construct metadata URI variants
+      const uriVariants = constructMetadataURIs(uri);
+      
+      // Then convert each variant to HTTP URLs (for IPFS/Arweave)
+      const allUrls = [];
+      for (const variant of uriVariants) {
+        const converted = convertDecentralizedToHTTP(variant);
+        allUrls.push(...converted);
+      }
+      
+      for (const url of allUrls) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Accept': 'application/json, text/plain, */*'
+            }
+          });
+
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            
+            // Try to parse as JSON
+            try {
+              const text = await response.text();
+              const metadata = JSON.parse(text);
+              
+              if (metadata && typeof metadata === 'object') {
+                const imageUrl = extractImageURL(metadata);
+                if (imageUrl && imageUrl.length > 0) {
+                  // Return the first image URL
+                  const finalUrl = imageUrl[0];
+                  
+                  // If it's still a decentralized URI, convert it
+                  if (finalUrl.startsWith('ipfs://') || finalUrl.startsWith('ar://')) {
+                    const converted = convertDecentralizedToHTTP(finalUrl);
+                    if (converted.length > 0) {
+                      setBackgroundImage(converted[0]);
+                      // Don't set loading to false yet - wait for image to load
+                      return converted[0];
+                    }
+                  }
+                  
+                  setBackgroundImage(finalUrl);
+                  // Don't set loading to false yet - wait for image to load
+                  return finalUrl;
+                }
+              }
+            } catch (jsonError) {
+              // If JSON parsing fails, check if it's a direct image
+              if (
+                contentType?.startsWith('image/') ||
+                url.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)
+              ) {
+                setBackgroundImage(url);
+                // Don't set loading to false yet - wait for image to load
+                return url;
+              }
+            }
+          }
+        } catch (error) {
+          continue; // Try next variant
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching artwork:', error);
+    } finally {
+      // Only set loading to false if we didn't find an image
+      if (!backgroundImage) {
+        setImageLoading(false);
+      }
+    }
+
+    return null;
+  };
+
+  // Handle image load completion
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageLoading(false);
+  };
+
+  // Simplified metadata URI construction for DeployCollectionPage
+  const constructMetadataURIs = (baseUri) => {
+    const uriVariants = [];
+    const hadTrailingSlash = /\/$/.test(baseUri);
+    const cleanBaseUri = baseUri.replace(/\/$/, '');
+
+    // Check if the URI already contains a token ID
+    const alreadyContainsTokenId = baseUri.match(/\/(?:[0-9]+)(?:\.json)?$/);
+
+    if (alreadyContainsTokenId) {
+      // Priority 1: Original URI as-is
+      uriVariants.push(baseUri);
+
+      // Priority 2: Add .json if not present
+      if (!baseUri.includes('.json')) {
+        uriVariants.push(`${baseUri}.json`);
+      }
+
+      // Priority 3: Try root (remove token ID)
+      const root = cleanBaseUri.replace(/\/(?:[0-9]+)(?:\.json)?$/, '');
+      if (root && root !== cleanBaseUri) {
+        uriVariants.push(root);
+        uriVariants.push(`${root}/`);
+        // Common root JSON files
+        uriVariants.push(`${root}.json`);
+        uriVariants.push(`${root}/.json`);
+        uriVariants.push(`${root}/index.json`);
+        uriVariants.push(`${root}/metadata.json`);
+      }
+    } else {
+      // No token ID - try base URI variations
+      uriVariants.push(baseUri);
+      if (hadTrailingSlash) {
+        uriVariants.push(cleanBaseUri);
+      }
+      if (!baseUri.includes('.json')) {
+        uriVariants.push(`${baseUri}.json`);
+        uriVariants.push(`${cleanBaseUri}.json`);
+      }
+      // Common root files
+      uriVariants.push(`${baseUri}index.json`);
+      uriVariants.push(`${baseUri}metadata.json`);
+      if (hadTrailingSlash) {
+        uriVariants.push(`${cleanBaseUri}/index.json`);
+        uriVariants.push(`${cleanBaseUri}/metadata.json`);
+      }
+    }
+
+    return [...new Set(uriVariants)]; // Remove duplicates
+  };
+
+  // Handle Drop URI change
+  useEffect(() => {
+    const dropURI = collectionType === 'ERC721' ? erc721FormData.dropURI : erc1155FormData.dropURI;
+    const unrevealedURI = collectionType === 'ERC721' ? erc721FormData.unrevealedBaseURI : erc1155FormData.unrevealedBaseURI;
+    
+    // Prioritize Drop URI if provided
+    if (dropURI && dropURI.trim() !== '') {
+      fetchArtwork(dropURI);
+    } else if (unrevealedURI && unrevealedURI.trim() !== '') {
+      fetchArtwork(unrevealedURI);
+    } else {
+      setBackgroundImage(null);
+    }
+  }, [
+    erc721FormData.dropURI,
+    erc721FormData.unrevealedBaseURI,
+    erc1155FormData.dropURI,
+    erc1155FormData.unrevealedBaseURI,
+    collectionType
+  ]);
 
   const handleErc721Change = (field, value) => {
     setErc721FormData(prev => ({ ...prev, [field]: value }));
@@ -208,8 +471,44 @@ const DeployCollectionPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <div className={`${isMobile ? 'px-4' : 'container mx-auto px-8'} pt-8 pb-4`}>
+    <div className="min-h-screen bg-background pb-6 relative">
+      {/* Background Image Overlay */}
+      {backgroundImage && (
+        <>
+          <img
+            src={backgroundImage}
+            alt="Collection artwork"
+            onLoad={handleImageLoad}
+            onError={() => {
+              setImageLoading(false);
+              setBackgroundImage(null);
+            }}
+            style={{ display: 'none' }}
+          />
+          <div 
+            className="absolute inset-0 top-0 left-0 w-full h-1/2 opacity-40 pointer-events-none"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              filter: 'blur(0.5px) brightness(1.2) contrast(1.1)'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Loading Overlay */}
+      {imageLoading && (
+        <div className="absolute inset-0 top-0 left-0 w-full h-1/2 flex items-center justify-center pointer-events-none z-20">
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm font-medium">Loading artwork...</span>
+          </div>
+        </div>
+      )}
+      
+      <div className={`${isMobile ? 'px-4' : 'container mx-auto px-8'} pt-8 pb-4 relative z-10`}>
         {/* Page Header */}
         <div className="text-center mb-8">
           <h1 className={`text-3xl font-bold mb-4 font-display ${isMobile ? 'text-2xl mb-2' : ''}`}>

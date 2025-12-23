@@ -50,6 +50,22 @@ import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 
 const HeaderModern = () => {
+  // Safely get wallet context with error handling
+  let walletContext;
+  try {
+    walletContext = useWallet();
+  } catch (error) {
+    console.error('Wallet context not available:', error);
+    // Return a minimal header while wallet context loads
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+        <div className="flex items-center justify-between h-16 px-4">
+          <Logo size="sm" />
+        </div>
+      </header>
+    );
+  }
+
   const { 
     connected, 
     address, 
@@ -58,7 +74,7 @@ const HeaderModern = () => {
     connectWallet, 
     provider, 
     chainId 
-  } = useWallet();
+  } = walletContext;
   const { contracts, getContractInstance } = useContract();
   const { theme, cycleTheme, getCurrentTheme } = useTheme();
   const { isMobile, isTablet, isInitialized } = useMobileBreakpoints();

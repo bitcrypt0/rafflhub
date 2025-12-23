@@ -23,6 +23,213 @@ import { useErrorHandler } from '../utils/errorHandling';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip';
 
+// ===== ARTWORK FETCHING UTILITIES =====
+
+// IPFS gateways for decentralized URIs
+const IPFS_GATEWAYS = [
+  'https://ipfs.io/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://cloudflare-ipfs.com/ipfs/',
+  'https://dweb.link/ipfs/'
+];
+
+const IPNS_GATEWAYS = IPFS_GATEWAYS.map(g => g.replace('/ipfs/', '/ipns/'));
+
+const ARWEAVE_GATEWAYS = [
+  'https://arweave.net/'
+];
+
+// Convert decentralized URIs to HTTP URLs
+const convertDecentralizedToHTTP = (uri) => {
+  if (!uri) return [];
+
+  // IPFS (ipfs://)
+  if (uri.startsWith('ipfs://')) {
+    let hash = uri.replace('ipfs://', '');
+    if (hash.startsWith('ipfs/')) hash = hash.slice('ipfs/'.length);
+    return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
+  }
+
+  // IPNS (ipns://)
+  if (uri.startsWith('ipns://')) {
+    let name = uri.replace('ipns://', '');
+    if (name.startsWith('ipns/')) name = name.slice('ipns/'.length);
+    return IPNS_GATEWAYS.map(gateway => `${gateway}${name}`);
+  }
+
+  // Arweave (ar://)
+  if (uri.startsWith('ar://')) {
+    const id = uri.replace('ar://', '');
+    return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+  }
+
+  // If HTTP(s) to a known IPFS/IPNS/Arweave gateway, normalize and fan out
+  try {
+    const u = new URL(uri);
+    let pathname = u.pathname.replace(/\/ipfs\/ipfs\//, '/ipfs/');
+    const parts = pathname.split('/').filter(Boolean);
+
+    const ipfsIndex = parts.indexOf('ipfs');
+    if (ipfsIndex !== -1 && parts[ipfsIndex + 1]) {
+      const hashAndRest = parts.slice(ipfsIndex + 1).join('/');
+      return IPFS_GATEWAYS.map(gateway => `${gateway}${hashAndRest}`);
+    }
+
+    const ipnsIndex = parts.indexOf('ipns');
+    if (ipnsIndex !== -1 && parts[ipnsIndex + 1]) {
+      const nameAndRest = parts.slice(ipnsIndex + 1).join('/');
+      return IPNS_GATEWAYS.map(gateway => `${gateway}${nameAndRest}`);
+    }
+
+    if (u.hostname.endsWith('arweave.net') || u.hostname === 'arweave.net') {
+      const id = parts.join('/');
+      return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+    }
+  } catch (_) {
+    // not a URL, fall through
+  }
+
+  return [uri];
+};
+
+// Extract image URL from metadata
+const extractImageURL = (metadata) => {
+  const mediaFields = [
+    'image',
+    'image_url',
+    'imageUrl',
+    'animation_url',
+    'animationUrl',
+    'media',
+    'artwork'
+  ];
+
+  for (const field of mediaFields) {
+    if (metadata[field]) {
+      const raw = metadata[field];
+      if (typeof raw === 'string') {
+        if (raw.startsWith('ipfs://') || raw.startsWith('ar://')) {
+          return convertDecentralizedToHTTP(raw);
+        }
+        return [raw];
+      }
+    }
+  }
+
+  return null;
+};
+
+// Simplified metadata URI construction
+const constructMetadataURIs = (baseUri) => {
+  const uriVariants = [];
+  const hadTrailingSlash = /\/$/.test(baseUri);
+  const cleanBaseUri = baseUri.replace(/\/$/, '');
+
+  const alreadyContainsTokenId = baseUri.match(/\/(?:[0-9]+)(?:\.json)?$/);
+
+  if (alreadyContainsTokenId) {
+    uriVariants.push(baseUri);
+    if (!baseUri.includes('.json')) {
+      uriVariants.push(`${baseUri}.json`);
+    }
+    const root = cleanBaseUri.replace(/\/(?:[0-9]+)(?:\.json)?$/, '');
+    if (root && root !== cleanBaseUri) {
+      uriVariants.push(root);
+      uriVariants.push(`${root}/`);
+      uriVariants.push(`${root}.json`);
+      uriVariants.push(`${root}/index.json`);
+      uriVariants.push(`${root}/metadata.json`);
+    }
+  } else {
+    uriVariants.push(baseUri);
+    if (hadTrailingSlash) {
+      uriVariants.push(cleanBaseUri);
+    }
+    if (!baseUri.includes('.json')) {
+      uriVariants.push(`${baseUri}.json`);
+      uriVariants.push(`${cleanBaseUri}.json`);
+    }
+    uriVariants.push(`${baseUri}index.json`);
+    uriVariants.push(`${baseUri}metadata.json`);
+    if (hadTrailingSlash) {
+      uriVariants.push(`${cleanBaseUri}/index.json`);
+      uriVariants.push(`${cleanBaseUri}/metadata.json`);
+    }
+  }
+
+  return [...new Set(uriVariants)];
+};
+
+// Fetch artwork from URI
+const fetchArtworkFromURI = async (uri, setBackgroundImage, setImageLoading) => {
+  if (!uri) return null;
+
+  setImageLoading(true);
+  
+  try {
+    const uriVariants = constructMetadataURIs(uri);
+    const allUrls = [];
+    for (const variant of uriVariants) {
+      const converted = convertDecentralizedToHTTP(variant);
+      allUrls.push(...converted);
+    }
+    
+    for (const url of allUrls) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Accept': 'application/json, text/plain, */*'
+          }
+        });
+
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          
+          try {
+            const text = await response.text();
+            const metadata = JSON.parse(text);
+            
+            if (metadata && typeof metadata === 'object') {
+              const imageUrl = extractImageURL(metadata);
+              
+              if (imageUrl && imageUrl.length > 0) {
+                const finalUrl = imageUrl[0];
+                
+                if (finalUrl.startsWith('ipfs://') || finalUrl.startsWith('ar://')) {
+                  const converted = convertDecentralizedToHTTP(finalUrl);
+                  if (converted.length > 0) {
+                    setBackgroundImage(converted[0]);
+                    return converted[0];
+                  }
+                }
+                
+                setBackgroundImage(finalUrl);
+                return finalUrl;
+              }
+            }
+          } catch (jsonError) {
+            if (
+              contentType?.startsWith('image/') ||
+              url.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)
+            ) {
+              setBackgroundImage(url);
+              return url;
+            }
+          }
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching artwork:', error);
+  } finally {
+    setImageLoading(false);
+  }
+
+  return null;
+};
+
 // ===== FORMS START HERE =====
 
 const WhitelistRaffleForm = () => {
@@ -336,6 +543,10 @@ function ERC721DropForm() {
   const [tokenGatedEnabled, setTokenGatedEnabled] = useState(false);
   // Add social media state
   const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
+  // Add background image state
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collection: '',
@@ -363,6 +574,54 @@ function ERC721DropForm() {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Query contract for dropURI and unrevealedBaseURI when collection address changes
+  useEffect(() => {
+    const queryCollectionURIs = async () => {
+      if (!formData.collection || !ethers.utils.isAddress(formData.collection) || !provider) {
+        setBackgroundImage(null);
+        setImageLoading(false);
+        return;
+      }
+
+      try {
+        const contract = new ethers.Contract(
+          formData.collection,
+          contractABIs.erc721Prize,
+          provider
+        );
+
+        let unrevealedBaseURI = null;
+
+        // Try to get unrevealedBaseURI
+        try {
+          unrevealedBaseURI = await contract.unrevealedBaseURI();
+        } catch (error) {
+          // unrevealedBaseURI might not exist
+        }
+
+        // Only use unrevealedBaseURI
+        if (unrevealedBaseURI && unrevealedBaseURI.trim() !== '') {
+          await fetchArtworkFromURI(unrevealedBaseURI, setBackgroundImage, setImageLoading);
+        } else {
+          setBackgroundImage(null);
+          setImageLoading(false);
+        }
+      } catch (error) {
+        console.error('Error querying collection URIs:', error);
+        setBackgroundImage(null);
+        setImageLoading(false);
+      }
+    };
+
+    queryCollectionURIs();
+  }, [formData.collection, provider]);
+
+  // Handle image load completion
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -456,11 +715,48 @@ function ERC721DropForm() {
   // Helper for internal collection status check
   
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Package className="h-5 w-5" />
-        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC721 Prize Pool</h3>
-      </div>
+    <div className="relative">
+      {/* Background Image Overlay */}
+      {backgroundImage && (
+        <>
+          <img
+            src={backgroundImage}
+            alt="Collection artwork"
+            onLoad={handleImageLoad}
+            onError={() => {
+              setImageLoading(false);
+              setBackgroundImage(null);
+            }}
+            style={{ display: 'none' }}
+          />
+          <div 
+            className="fixed inset-0 top-0 left-0 w-full h-1/2 opacity-40 pointer-events-none z-0"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              filter: 'blur(0.5px) brightness(1.2) contrast(1.1)'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Loading Overlay */}
+      {imageLoading && (
+        <div className="fixed inset-0 top-0 left-0 w-full h-1/2 flex items-center justify-center pointer-events-none z-20">
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm font-medium">Loading artwork...</span>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl relative z-10">
+        <div className="flex items-center gap-3 mb-6">
+          <Package className="h-5 w-5" />
+          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC721 Prize Pool</h3>
+        </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -474,7 +770,7 @@ function ERC721DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Address</label>
             <input
               type="text"
               placeholder="0x..."
@@ -629,6 +925,7 @@ function ERC721DropForm() {
         </div>
       </form>
     </div>
+    </div>
   );
 }
 
@@ -641,6 +938,10 @@ function ERC1155DropForm() {
   const [loading, setLoading] = useState(false);
   // Add social media state
   const [socialEngagementEnabled, setSocialEngagementEnabled] = useState(false);
+  // Add background image state
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -671,6 +972,54 @@ function ERC1155DropForm() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Query contract for dropURI and unrevealedURI when collection address changes
+  useEffect(() => {
+    const queryCollectionURIs = async () => {
+      if (!formData.collectionAddress || !ethers.utils.isAddress(formData.collectionAddress) || !provider) {
+        setBackgroundImage(null);
+        setImageLoading(false);
+        return;
+      }
+
+      try {
+        const contract = new ethers.Contract(
+          formData.collectionAddress,
+          contractABIs.erc1155Prize,
+          provider
+        );
+
+        let unrevealedURI = null;
+
+        // Try to get unrevealedURI (note: ERC1155 uses getUnrevealedURI)
+        try {
+          unrevealedURI = await contract.getUnrevealedURI();
+        } catch (error) {
+          // unrevealedURI might not exist
+        }
+
+        // Only use unrevealedURI
+        if (unrevealedURI && unrevealedURI.trim() !== '') {
+          await fetchArtworkFromURI(unrevealedURI, setBackgroundImage, setImageLoading);
+        } else {
+          setBackgroundImage(null);
+          setImageLoading(false);
+        }
+      } catch (error) {
+        console.error('Error querying collection URIs:', error);
+        setBackgroundImage(null);
+        setImageLoading(false);
+      }
+    };
+
+    queryCollectionURIs();
+  }, [formData.collectionAddress, provider]);
+
+  // Handle image load completion
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -757,11 +1106,48 @@ function ERC1155DropForm() {
 
   
   return (
-    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Package className="h-5 w-5" />
-        <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC1155 Collection Pool</h3>
-      </div>
+    <div className="relative">
+      {/* Background Image Overlay */}
+      {backgroundImage && (
+        <>
+          <img
+            src={backgroundImage}
+            alt="Collection artwork"
+            onLoad={handleImageLoad}
+            onError={() => {
+              setImageLoading(false);
+              setBackgroundImage(null);
+            }}
+            style={{ display: 'none' }}
+          />
+          <div 
+            className="fixed inset-0 top-0 left-0 w-full h-1/2 opacity-40 pointer-events-none z-0"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              filter: 'blur(0.5px) brightness(1.2) contrast(1.1)'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Loading Overlay */}
+      {imageLoading && (
+        <div className="fixed inset-0 top-0 left-0 w-full h-1/2 flex items-center justify-center pointer-events-none z-20">
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm font-medium">Loading artwork...</span>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl relative z-10">
+        <div className="flex items-center gap-3 mb-6">
+          <Package className="h-5 w-5" />
+          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC1155 Collection Pool</h3>
+        </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -775,7 +1161,7 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Prize Collection Address</label>
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2">Collection Address</label>
             <div className="relative">
               <input
                 type="text"
@@ -951,6 +1337,7 @@ function ERC1155DropForm() {
           </Button>
         </div>
       </form>
+    </div>
     </div>
   );
 }
