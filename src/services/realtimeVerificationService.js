@@ -28,6 +28,13 @@ class RealtimeVerificationService {
 
     console.log(`[RealTime] Subscribing to verification updates for ${userAddress} on raffle ${raffleId}`);
 
+    // Check if supabase channel is available
+    if (!supabase || typeof supabase.channel !== 'function') {
+      console.warn('[RealTime] Supabase not configured, skipping real-time subscription');
+      // Return a no-op unsubscribe function
+      return () => {};
+    }
+
     // Subscribe to verification_events table
     const eventsChannel = supabase
       .channel(`verification-events-${subscriptionKey}`)

@@ -815,15 +815,13 @@ const SocialMediaVerification = ({
       // Check blockchain completion status
       let isCompleted = false;
       try {
-        // Verify socialEngagementManager exists and has the method
-        if (contracts?.socialEngagementManager && 
-            typeof contracts.socialEngagementManager.hasCompletedSocialEngagement === 'function') {
-          isCompleted = await contracts.socialEngagementManager.hasCompletedSocialEngagement(
-            raffle.address,
-            userAddress
-          );
+        // Get the pool contract instance to check completion status
+        const poolContract = contracts?.getContractInstance?.(raffle.address, 'pool');
+        
+        if (poolContract && typeof poolContract.hasCompletedSocialEngagement === 'function') {
+          isCompleted = await poolContract.hasCompletedSocialEngagement(userAddress);
         } else {
-          console.warn('socialEngagementManager not available or method not found');
+          console.warn('Pool contract not available or hasCompletedSocialEngagement method not found');
         }
       } catch (blockchainError) {
         console.error('Error checking blockchain completion status:', blockchainError);
