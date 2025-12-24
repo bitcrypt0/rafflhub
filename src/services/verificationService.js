@@ -301,14 +301,21 @@ class VerificationService {
 
       const { data, error } = await query;
 
+      // If error indicates Supabase not configured, return empty records without throwing
+      if (error && error.message === 'Supabase not configured') {
+        console.warn('Supabase not configured, returning empty records');
+        return { records: [], error: null };
+      }
+
       if (error) {
-        throw error;
+        console.error('Failed to get verification records:', error);
+        return { records: [], error: error.message || error };
       }
 
       return { records: data || [], error: null };
     } catch (error) {
       console.error('Failed to get verification records:', error);
-      return { records: [], error: error.message };
+      return { records: [], error: error?.message || String(error) };
     }
   }
 

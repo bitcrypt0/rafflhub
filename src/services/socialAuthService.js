@@ -278,6 +278,12 @@ class SocialAuthService {
 
       console.log('Supabase query result:', { data, error });
 
+      // If error indicates Supabase not configured, return empty accounts without throwing
+      if (error && error.message === 'Supabase not configured') {
+        console.warn('Supabase not configured, returning empty accounts');
+        return { accounts: [], error: null };
+      }
+
       if (error) {
         console.error('Supabase query error:', error);
         throw error;
@@ -330,6 +336,12 @@ class SocialAuthService {
         .maybeSingle();
 
       console.log('Authentication check result:', { data, error });
+
+      // If error indicates Supabase not configured, return not authenticated
+      if (error && error.message === 'Supabase not configured') {
+        console.warn('Supabase not configured, returning not authenticated');
+        return { success: true, isAuthenticated: false, account: null };
+      }
 
       if (error && error.code !== 'PGRST116') {
         console.error('Authentication check error:', error);
