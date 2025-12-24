@@ -12,7 +12,34 @@ const isPlaceholderConfig = supabaseUrl === 'https://your-project-id.supabase.co
 export const supabase = !supabaseUrl || !supabaseAnonKey ? 
   // Mock client that won't crash the app
   {
-    from: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            order: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } })
+          }),
+          order: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } })
+        }),
+        order: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } })
+      }),
+      eq: () => ({
+        eq: () => ({
+          order: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } })
+        }),
+        order: () => Promise.resolve({ data: [], error: { message: 'Supabase not configured' } })
+      }),
+      upsert: () => ({
+        select: () => ({
+          single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+        })
+      }),
+      update: () => ({
+        eq: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+      }),
+      delete: () => ({
+        eq: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
+      })
+    }),
     auth: { 
       getSession: () => ({ session: null, error: { message: 'Supabase not configured' } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
