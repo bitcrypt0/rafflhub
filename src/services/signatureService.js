@@ -32,7 +32,7 @@ export const generatePurchaseSignature = async (userAddress, raffleId, slotCount
       ...additionalData
     };
 
-    // Call Supabase Edge Function to generate signature with nonce and deadline
+    // Call Supabase Edge Function to generate signature with deadline
     const { data, error } = await supabase.functions.invoke(EDGE_FUNCTIONS.GENERATE_SIGNATURE, {
       body: signatureData
     });
@@ -48,7 +48,6 @@ export const generatePurchaseSignature = async (userAddress, raffleId, slotCount
       raffleId: signatureData.raffle_id,
       slotCount: signatureData.slot_count,
       signature: data.signature,
-      nonce: data.nonce,
       deadline: data.deadline,
       signatureData: JSON.stringify(signatureData),
       expiresAt: new Date(Date.now() + (15 * 60 * 1000)) // 15 minutes expiry
@@ -57,7 +56,6 @@ export const generatePurchaseSignature = async (userAddress, raffleId, slotCount
     return {
       success: true,
       signature: data.signature,
-      nonce: data.nonce,
       deadline: data.deadline,
       signatureData,
       expiresAt: data.expires_at,
@@ -196,14 +194,6 @@ const storePurchaseSignature = async (signatureRecord) => {
   }
 };
 
-/**
- * Generate a random nonce for signature uniqueness
- * @returns {string} Random nonce
- */
-const generateNonce = () => {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
-};
 
 /**
  * Check if signature is expired

@@ -3593,7 +3593,6 @@ setRaffle(raffleData);
 
     // Check if signature is required for social media verification
     let signature = null;
-    let nonce = 0;
     let deadline = 0;
     
     // Determine signature based on social engagement requirements
@@ -3614,10 +3613,9 @@ setRaffle(raffleData);
         
         if (signatureResult.success) {
           signature = signatureResult.signature;
-          nonce = signatureResult.nonce;
           deadline = signatureResult.deadline;
           signatureToUse = signature;
-          console.log('Signature generated successfully with nonce:', nonce, 'deadline:', deadline);
+          console.log('Signature generated successfully with deadline:', deadline);
         } else {
           throw new Error(signatureResult.error || 'Failed to generate signature');
         }
@@ -3634,10 +3632,9 @@ setRaffle(raffleData);
     }
     // For pools without social engagement requirements, signatureToUse remains '0x'
 
-    // Call purchaseSlots with nonce, deadline, signature, and selected token IDs
+    // Call purchaseSlots with deadline, signature, and selected token IDs
     console.log('Purchase Debug:', {
       quantity,
-      nonce,
       deadline,
       signatureLength: signatureToUse.length,
       selectedTokenIds,
@@ -3675,7 +3672,7 @@ setRaffle(raffleData);
       contractAddress: raffle.address
     });
     
-    const tx = await poolContract.purchaseSlots(quantity, nonce, deadline, signatureToUse, numericTokenIds, { value: totalCost });
+    const tx = await poolContract.purchaseSlots(quantity, deadline, signatureToUse, numericTokenIds, { value: totalCost });
     const receipt = await tx.wait();
     
     toast.success(`Successfully purchased ${quantity} slot${quantity > 1 ? 's' : ''}!`);

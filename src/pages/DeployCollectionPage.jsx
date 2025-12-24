@@ -522,14 +522,20 @@ const DeployCollectionPage = () => {
         {/* Main Content */}
         <div className={`max-w-3xl mx-auto ${isMobile ? 'mt-6' : 'mt-16'}`}>
           <Tabs value={collectionType} onValueChange={setCollectionType} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="ERC721" className="flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                ERC721 Collection
+            <TabsList className={`w-full flex items-center justify-center gap-2 ${isMobile ? 'p-1.5 h-12 mb-6' : 'p-1 h-10 mb-8'} bg-muted/80 border border-border/50 shadow-sm`}>
+              <TabsTrigger 
+                value="ERC721" 
+                className={`flex items-center gap-2 flex-1 data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md transition-all ${isMobile ? 'h-9 text-sm' : 'h-[calc(100%-1px)]'}`}
+              >
+                <Image className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+                <span className="font-medium">{isMobile ? 'ERC721' : 'ERC721 Collection'}</span>
               </TabsTrigger>
-              <TabsTrigger value="ERC1155" className="flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                ERC1155 Collection
+              <TabsTrigger 
+                value="ERC1155" 
+                className={`flex items-center gap-2 flex-1 data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md transition-all ${isMobile ? 'h-9 text-sm' : 'h-[calc(100%-1px)]'}`}
+              >
+                <Star className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+                <span className="font-medium">{isMobile ? 'ERC1155' : 'ERC1155 Collection'}</span>
               </TabsTrigger>
             </TabsList>
 
