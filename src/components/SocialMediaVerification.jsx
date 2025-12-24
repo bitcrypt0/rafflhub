@@ -12,6 +12,7 @@ import socialAuthService from '../services/socialAuthService';
 import verificationService from '../services/verificationService';
 import { realtimeVerificationService } from '../services/realtimeVerificationService';
 import { callEdgeFunction } from '../config/supabase';
+import eventTaskService from '../services/eventTaskService';
 
 // Platform icon mapping
 const PLATFORM_ICONS = {
@@ -645,7 +646,7 @@ const SocialMediaVerification = ({
   hasCompletedSocialEngagement,
   onVerificationComplete 
 }) => {
-  const { connected } = useWallet();
+  const { connected, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [socialTasks, setSocialTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState(new Set());
@@ -658,15 +659,47 @@ const SocialMediaVerification = ({
   const [taskStatuses, setTaskStatuses] = useState({}); // Track verification status per task
   const [retryingTasks, setRetryingTasks] = useState(new Set());
 
-  // Enhanced task parsing from raffle data
+  // Load tasks from events when raffle address is available
   useEffect(() => {
-    if (raffle?.socialTaskDescription) {
+    if (raffle?.address && provider && contracts?.socialEngagementManager) {
+      loadTasksFromEvents();
+    }
+  }, [raffle?.address, provider, contracts?.socialEngagementManager]);
+
+  // Fallback: Try to get tasks from raffle data if event fetching fails
+  useEffect(() => {
+    if (socialTasks.length === 0 && !loading && raffle?.socialTaskDescription) {
+      console.log('Using fallback: parsing tasks from raffle data');
       const parsedTasks = parseTaskDescription(raffle.socialTaskDescription);
       setSocialTasks(parsedTasks);
-    } else {
-      setSocialTasks([]);
     }
-  }, [raffle?.socialTaskDescription]);
+  }, [socialTasks.length, loading, raffle?.socialTaskDescription]);
+
+  // Function to load tasks from events
+  const loadTasksFromEvents = async () => {
+    try {
+      setLoading(true);
+      
+      // If social engagement is not required, don't fetch tasks
+      if (!raffle?.socialEngagementRequired) {
+        setSocialTasks([]);
+        return;
+      }
+      
+      const tasks = await eventTaskService.getSocialTasksFromEvents(
+        raffle.address,
+        provider,
+        contracts.socialEngagementManager.address
+      );
+      
+      setSocialTasks(tasks);
+    } catch (error) {
+      console.error('Failed to load tasks from events:', error);
+      setSocialTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load authenticated accounts and verification records
   useEffect(() => {
@@ -677,10 +710,10 @@ const SocialMediaVerification = ({
 
   // Check user's completion status from both blockchain and Supabase
   useEffect(() => {
-    if (connected && userAddress && contracts?.socialEngagementManager) {
+    if (connected && userAddress && contracts?.socialEngagementManager && contracts?.getContractInstance) {
       checkCompletionStatus();
     }
-  }, [connected, userAddress, contracts?.socialEngagementManager, raffle?.address, verificationRecords]);
+  }, [connected, userAddress, contracts?.socialEngagementManager, contracts?.getContractInstance, raffle?.address, verificationRecords]);
 
   // Set up real-time subscription for verification updates
   useEffect(() => {
@@ -821,7 +854,13 @@ const SocialMediaVerification = ({
         if (poolContract && typeof poolContract.hasCompletedSocialEngagement === 'function') {
           isCompleted = await poolContract.hasCompletedSocialEngagement(userAddress);
         } else {
-          console.warn('Pool contract not available or hasCompletedSocialEngagement method not found');
+          console.warn('Pool contract not available or hasCompletedSocialEngagement method not found', {
+            hasContracts: !!contracts,
+            hasGetContractInstance: !!contracts?.getContractInstance,
+            hasPoolContract: !!poolContract,
+            poolAddress: raffle?.address,
+            hasMethod: poolContract ? typeof poolContract.hasCompletedSocialEngagement === 'function' : false
+          });
         }
       } catch (blockchainError) {
         console.error('Error checking blockchain completion status:', blockchainError);

@@ -2967,17 +2967,7 @@ const RaffleDetailPage = () => {
             }, name: 'actualDuration', required: false, fallback: ethers.BigNumber.from(0) },
           // Social engagement queries
           { method: createSafeMethod(poolContract, 'socialEngagementRequired', false), name: 'socialEngagementRequired', required: false, fallback: false },
-          { method: async () => {
-              try {
-                if (socialEngagementManagerContract) {
-                  const result = await socialEngagementManagerContract.tasks(stableRaffleAddress);
-                  return result || '';
-                }
-              } catch (error) {
-                console.error('Error fetching socialTaskDescription:', error);
-              }
-              return '';
-            }, name: 'socialTaskDescription', required: false, fallback: '' },
+          // socialTaskDescription is now fetched from events in SocialMediaVerification component
           // Token gating queries
           { method: createSafeMethod(poolContract, 'holderTokenAddress', ethers.constants.AddressZero), name: 'holderTokenAddress', required: false, fallback: ethers.constants.AddressZero },
           { method: createSafeMethod(poolContract, 'holderTokenStandard', 0), name: 'holderTokenStandard', required: false, fallback: 0 },
@@ -2986,7 +2976,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedFeeRefund, isRefundableFlag, isCollabPoolFlag, isEscrowedPrize, amountPerWinner, actualDurationValue, socialEngagementRequired, socialTaskDescription, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedFeeRefund, isRefundableFlag, isCollabPoolFlag, isEscrowedPrize, amountPerWinner, actualDurationValue, socialEngagementRequired, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -3071,7 +3061,7 @@ const RaffleDetailPage = () => {
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
           // Social engagement fields
           socialEngagementRequired: !!socialEngagementRequired,
-          socialTaskDescription: socialTaskDescription || '',
+          // socialTaskDescription is now fetched from events in SocialMediaVerification component
           // Token gating fields
           holderTokenAddress,
           holderTokenStandard: holderTokenStandard ? (holderTokenStandard.toNumber ? holderTokenStandard.toNumber() : Number(holderTokenStandard)) : 0,
