@@ -3189,6 +3189,13 @@ setRaffle(raffleData);
         return;
       }
 
+      // Verify the method exists before calling it
+      if (typeof poolContract.hasCompletedSocialEngagement !== 'function') {
+        console.warn('hasCompletedSocialEngagement method not found on pool contract');
+        setHasCompletedSocialEngagement(false);
+        return;
+      }
+
       // Query the Pool contract to check if user has completed social engagement
       const isCompleted = await poolContract.hasCompletedSocialEngagement(address);
       setHasCompletedSocialEngagement(!!isCompleted);

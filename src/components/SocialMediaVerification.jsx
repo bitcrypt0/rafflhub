@@ -810,15 +810,21 @@ const SocialMediaVerification = ({
 
   const checkCompletionStatus = async () => {
     try {
-      if (!contracts?.socialEngagementManager || !raffle?.address || !userAddress) return;
+      if (!raffle?.address || !userAddress) return;
 
       // Check blockchain completion status
       let isCompleted = false;
       try {
-        isCompleted = await contracts.socialEngagementManager.hasCompletedSocialEngagement(
-          raffle.address,
-          userAddress
-        );
+        // Verify socialEngagementManager exists and has the method
+        if (contracts?.socialEngagementManager && 
+            typeof contracts.socialEngagementManager.hasCompletedSocialEngagement === 'function') {
+          isCompleted = await contracts.socialEngagementManager.hasCompletedSocialEngagement(
+            raffle.address,
+            userAddress
+          );
+        } else {
+          console.warn('socialEngagementManager not available or method not found');
+        }
       } catch (blockchainError) {
         console.error('Error checking blockchain completion status:', blockchainError);
         // Continue with Supabase check even if blockchain check fails

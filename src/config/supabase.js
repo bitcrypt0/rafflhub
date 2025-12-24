@@ -46,11 +46,28 @@ export const supabase = !supabaseUrl || !supabaseAnonKey ?
       };
     },
     auth: { 
-      getSession: () => ({ session: null, error: { message: 'Supabase not configured' } }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: { message: 'Supabase not configured' } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
-    functions: { invoke: () => ({ data: null, error: { message: 'Supabase not configured' } }) },
-    realtime: { channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }) }) }
+    functions: { 
+      invoke: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }) 
+    },
+    channel: (channelName) => ({
+      on: () => ({
+        subscribe: () => ({
+          unsubscribe: () => {}
+        })
+      })
+    }),
+    realtime: {
+      channel: (channelName) => ({
+        on: () => ({
+          subscribe: () => ({
+            unsubscribe: () => {}
+          })
+        })
+      })
+    }
   } :
   // Real Supabase client
   createClient(supabaseUrl, supabaseAnonKey, {

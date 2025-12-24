@@ -328,6 +328,9 @@ class VerificationService {
    */
   async checkAllTasksVerified(walletAddress, raffleAddress, requiredTasks) {
     try {
+      // Ensure requiredTasks is an array
+      const tasksToCheck = Array.isArray(requiredTasks) ? requiredTasks : [];
+      
       const { records } = await this.getVerificationRecords(walletAddress, raffleAddress);
       
       // Ensure records is an array
@@ -341,7 +344,7 @@ class VerificationService {
         `${task.platform}_${task.task_type}_${JSON.stringify(task.task_data)}`
       );
 
-      const missingTasks = requiredTasks.filter(task => {
+      const missingTasks = tasksToCheck.filter(task => {
         const taskKey = `${task.platform}_${task.type}_${JSON.stringify(task.data)}`;
         return !verifiedTaskKeys.includes(taskKey);
       });
@@ -356,7 +359,7 @@ class VerificationService {
       return {
         allVerified: false,
         verifiedTasks: [],
-        missingTasks: requiredTasks
+        missingTasks: Array.isArray(requiredTasks) ? requiredTasks : []
       };
     }
   }
