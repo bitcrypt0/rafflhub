@@ -114,6 +114,12 @@ export const verifyPurchaseSignature = async (signature, signatureData) => {
  */
 export const getUserSignatureHistory = async (userAddress, limit = 10) => {
   try {
+    // Check if supabase is properly configured
+    if (!supabase || !supabase.from || typeof supabase.from !== 'function') {
+      console.warn('Supabase not configured, returning empty signature history');
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('purchase_signatures')
       .select('*')
@@ -141,6 +147,12 @@ export const getUserSignatureHistory = async (userAddress, limit = 10) => {
  */
 export const getExistingSignature = async (userAddress, raffleId) => {
   try {
+    // Check if supabase is properly configured
+    if (!supabase || !supabase.from || typeof supabase.from !== 'function') {
+      console.warn('Supabase not configured, returning no existing signature');
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('purchase_signatures')
       .select('*')

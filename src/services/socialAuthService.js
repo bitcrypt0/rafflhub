@@ -265,6 +265,12 @@ class SocialAuthService {
     try {
       console.log('Fetching authenticated accounts for wallet:', walletAddress);
       
+      // Check if supabase is properly configured
+      if (!supabase || !supabase.from || typeof supabase.from !== 'function') {
+        console.warn('Supabase not configured, returning empty accounts');
+        return { accounts: [], error: 'Supabase not configured' };
+      }
+
       const { data, error } = await supabase
         .from(TABLES.USER_SOCIAL_ACCOUNTS)
         .select('*')
@@ -277,8 +283,11 @@ class SocialAuthService {
         throw error;
       }
 
+      // Ensure data is an array
+      const accountsData = Array.isArray(data) ? data : [];
+
       // Filter out expired accounts but allow pending ones (rate limited)
-      const validAccounts = data.filter(account => {
+      const validAccounts = accountsData.filter(account => {
         // Filter out expired accounts
         if (account.token_expires_at && new Date(account.token_expires_at) < new Date()) {
           return false;
@@ -292,7 +301,7 @@ class SocialAuthService {
       console.log('Valid accounts found:', validAccounts.length);
       return { accounts: validAccounts, error: null };
     } catch (error) {
-      console.error('Failed to get authenticated accounts:', error);
+      console.error('Failed to load authenticated accounts:', error);
       return { accounts: [], error: error.message };
     }
   }
@@ -307,6 +316,12 @@ class SocialAuthService {
     try {
       console.log('Checking authentication for platform:', platform, 'wallet:', walletAddress);
       
+      // Check if supabase is properly configured
+      if (!supabase || !supabase.from || typeof supabase.from !== 'function') {
+        console.warn('Supabase not configured, returning not authenticated');
+        return { success: true, isAuthenticated: false, account: null };
+      }
+
       const { data, error } = await supabase
         .from(TABLES.USER_SOCIAL_ACCOUNTS)
         .select('*')
