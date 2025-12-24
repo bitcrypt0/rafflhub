@@ -515,7 +515,7 @@ const DeployCollectionPage = () => {
             Deploy NFT Collection
           </h1>
           <p className="text-muted-foreground text-[length:var(--text-base)] leading-relaxed">
-            Create ERC721 or ERC1155 prize collections for your raffles
+            This is where it all begins. Create the collection for your drop event below.
           </p>
         </div>
 
