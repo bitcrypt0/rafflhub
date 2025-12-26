@@ -755,7 +755,7 @@ function ERC721DropForm() {
       <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl relative z-10">
         <div className="flex items-center gap-3 mb-6">
           <Package className="h-5 w-5" />
-          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC721 Prize Pool</h3>
+          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">ERC721 Drop Event</h3>
         </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1146,7 +1146,7 @@ function ERC1155DropForm() {
       <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl relative z-10">
         <div className="flex items-center gap-3 mb-6">
           <Package className="h-5 w-5" />
-          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">Existing ERC1155 Collection Pool</h3>
+          <h3 className="font-display text-[length:var(--text-xl)] font-semibold">ERC1155 Drop Event</h3>
         </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1673,7 +1673,7 @@ function LuckySaleERC721Form() {
     <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto shadow-xl">
       <div className="flex items-center gap-3 mb-6">
         <Gift className="h-5 w-5" />
-        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Lucky Sale (ERC721 Escrowed Prize)</h3>
+        <h3 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>NFT Lucky Sale Event (Escrowed ERC721)</h3>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
