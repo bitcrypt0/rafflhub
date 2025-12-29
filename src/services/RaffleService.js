@@ -1,6 +1,8 @@
 import { ethers } from 'ethers';
 import { contractABIs } from '../contracts/contractABIs';
 import { SUPPORTED_NETWORKS } from '../networks';
+import { optimizedBatchCall } from '../utils/multicall';
+import { parseContractError } from '../utils/contractErrorHandler';
 
 /**
  * Unified Raffle Service
@@ -156,13 +158,23 @@ class RaffleService {
         ]);
       } catch (error) {
         lastError = error;
-        console.warn(`${context} attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        // Parse custom errors for better logging
+        const customError = this.parseCustomError(error);
+        console.warn(`${context} attempt ${attempt}/${maxRetries} failed:`, customError.message);
 
         // Don't retry on certain errors
         if (error.message.includes('user rejected') ||
             error.message.includes('User denied') ||
             error.code === 4001 ||
-            error.message.includes('Invalid contract address')) {
+            error.message.includes('Invalid contract address') ||
+            customError.type === 'user_rejection') {
+          throw error;
+        }
+
+        // Don't retry on business logic errors (custom errors that indicate invalid operations)
+        if (customError.type === 'business_logic') {
+          console.warn(`Business logic error detected, skipping retries for ${context}:`, customError.message);
           throw error;
         }
 
@@ -236,86 +248,73 @@ class RaffleService {
         return null;
       }
 
-      // Fetch basic raffle data - use sequential calls on mobile for better reliability
-      let name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
-          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isCollabPool, standard, usesCustomFee, isEscrowedPrize;
+      // Define batch calls for related getter methods
+      const coreCalls = [
+        { method: 'name', params: [] },
+        { method: 'creator', params: [] },
+        { method: 'startTime', params: [] },
+        { method: 'duration', params: [] },
+        { method: 'slotFee', params: [] },
+        { method: 'slotLimit', params: [] },
+        { method: 'winnersCount', params: [] },
+        { method: 'maxSlotsPerParticipant', params: [] },
+        { method: 'state', params: [] }
+      ];
 
+      const prizeCalls = [
+        { method: 'isPrized', params: [] },
+        { method: 'prizeCollection', params: [] },
+        { method: 'prizeTokenId', params: [] },
+        { method: 'erc20PrizeToken', params: [] },
+        { method: 'erc20PrizeAmount', params: [] },
+        { method: 'nativePrizeAmount', params: [] },
+        { method: 'standard', params: [] },
+        { method: 'isEscrowedPrize', params: [] }
+      ];
+
+      const configCalls = [
+        { method: 'isCollabPool', params: [] },
+        { method: 'usesCustomFee', params: [] },
+        { method: 'revenueRecipient', params: [] },
+        { method: 'isExternalPrizeCollection', params: [] },
+        { method: 'isRefundable', params: [] }
+      ];
+
+      let coreResults, prizeResults, configResults;
+      const chainId = this.walletContext?.chainId;
+
+      // Use batch calls on desktop, sequential on mobile for better reliability
       if (config.isMobile) {
-        // Sequential calls on mobile for better reliability
-        name = await this.withRetry(() => raffleContract.name(), `name-${raffleAddress}`, config);
-        creator = await this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config);
-        startTime = await this.withRetry(() => raffleContract.startTime(), `startTime-${raffleAddress}`, config);
-        duration = await this.withRetry(() => raffleContract.duration(), `duration-${raffleAddress}`, config);
-        slotFee = await this.withRetry(() => raffleContract.slotFee(), `slotFee-${raffleAddress}`, config);
-        ticketLimit = await this.withRetry(() => raffleContract.slotLimit(), `slotLimit-${raffleAddress}`, config);
-        winnersCount = await this.withRetry(() => raffleContract.winnersCount(), `winnersCount-${raffleAddress}`, config);
-        maxTicketsPerParticipant = await this.withRetry(() => raffleContract.maxSlotsPerParticipant(), `maxSlots-${raffleAddress}`, config);
-        stateNum = await this.withRetry(() => raffleContract.state(), `state-${raffleAddress}`, config);
-
-        // Optional fields with fallbacks
-        isPrizedContract = await raffleContract.isPrized?.().catch(() => false);
-        prizeCollection = await raffleContract.prizeCollection?.().catch(() => ethers.constants.AddressZero);
-        prizeTokenId = await raffleContract.prizeTokenId?.().catch(() => ethers.BigNumber.from(0));
-        erc20PrizeToken = await raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero);
-        erc20PrizeAmount = await raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0));
-        nativePrizeAmount = await raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0));
-        isCollabPool = await raffleContract.isCollabPool?.().catch((err) => {
-          console.warn(`isCollabPool failed for ${raffleAddress}:`, err.message);
-          return false;
-        });
-        standard = await raffleContract.standard?.().catch((error) => {
-          console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
-          return undefined;
-        });
-        usesCustomFee = await raffleContract.usesCustomFee?.().catch((error) => {
-          console.warn(`[RaffleService] usesCustomFee failed for ${raffleAddress}:`, error.message);
-          return false;
-        });
-        isEscrowedPrize = await raffleContract.isEscrowedPrize?.().catch((error) => {
-          console.warn(`[RaffleService] isEscrowedPrize failed for ${raffleAddress}:`, error.message);
-          return false;
-        });
+        // Sequential calls on mobile
+        coreResults = await this.executeSequentialCalls(raffleContract, coreCalls, config);
+        prizeResults = await this.executeSequentialCalls(raffleContract, prizeCalls, config, true);
+        configResults = await this.executeSequentialCalls(raffleContract, configCalls, config, true);
       } else {
-        // Parallel calls on desktop
-        [
-          name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
-          maxTicketsPerParticipant, stateNum, isPrizedContract, prizeCollection, prizeTokenId,
-          erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, isCollabPool, standard, usesCustomFee, isEscrowedPrize
-        ] = await Promise.all([
-          this.withRetry(() => raffleContract.name(), `name-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.creator(), `creator-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.startTime(), `startTime-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.duration(), `duration-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.slotFee(), `slotFee-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.slotLimit(), `slotLimit-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.winnersCount(), `winnersCount-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.maxSlotsPerParticipant(), `maxSlots-${raffleAddress}`, config),
-          this.withRetry(() => raffleContract.state(), `state-${raffleAddress}`, config),
-          raffleContract.isPrized?.().catch(() => false),
-          raffleContract.prizeCollection?.().catch(() => ethers.constants.AddressZero),
-          raffleContract.prizeTokenId?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.erc20PrizeToken?.().catch(() => ethers.constants.AddressZero),
-          raffleContract.erc20PrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.nativePrizeAmount?.().catch(() => ethers.BigNumber.from(0)),
-          raffleContract.isCollabPool?.().catch((error) => {
-            console.warn(`[RaffleService] isCollabPool failed for ${raffleAddress}:`, error.message);
-            return false;
-          }),
-          raffleContract.standard?.().catch((error) => {
-            console.warn(`[RaffleService] standard failed for ${raffleAddress}:`, error.message);
-            return undefined;
-          }),
-          raffleContract.usesCustomFee?.().catch((error) => {
-            console.warn(`[RaffleService] usesCustomFee failed for ${raffleAddress}:`, error.message);
-            return false;
-          }),
-          raffleContract.isEscrowedPrize?.().catch((error) => {
-            console.warn(`[RaffleService] isEscrowedPrize failed for ${raffleAddress}:`, error.message);
-            return false;
-          })
-        ]);
+        // Try batch calls first on desktop
+        coreResults = await optimizedBatchCall(raffleContract, coreCalls, chainId) ||
+                     await this.executeSequentialCalls(raffleContract, coreCalls, config);
+        
+        prizeResults = await optimizedBatchCall(raffleContract, prizeCalls, chainId) ||
+                      await this.executeSequentialCalls(raffleContract, prizeCalls, config, true);
+        
+        configResults = await optimizedBatchCall(raffleContract, configCalls, chainId) ||
+                       await this.executeSequentialCalls(raffleContract, configCalls, config, true);
       }
+
+      // Extract results with fallbacks
+      const [
+        name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
+        maxTicketsPerParticipant, stateNum
+      ] = coreResults;
+
+      const [
+        isPrizedContract, prizeCollection, prizeTokenId, erc20PrizeToken,
+        erc20PrizeAmount, nativePrizeAmount, standard, isEscrowedPrize
+      ] = prizeResults;
+
+      const [
+        isCollabPool, usesCustomFee, revenueRecipient, isExternalPrizeCollection, isRefundable
+      ] = configResults;
 
       // Map state number to string
       let raffleState;
@@ -637,9 +636,173 @@ class RaffleService {
   }
 
   /**
-   * Get performance statistics
+   * Parse custom errors from contract calls
+   * @param {Error} error - The error object
+   * @returns {Object} Parsed error with type and message
    */
-  getPerformanceStats() {
+  parseCustomError(error) {
+    // Use the contractErrorHandler utility to parse custom errors
+    const parsedMessage = parseContractError(error);
+    
+    // Determine error type based on the message
+    if (error.code === 4001 || parsedMessage.toLowerCase().includes('user rejected')) {
+      return { type: 'user_rejection', message: 'Transaction rejected by user' };
+    }
+    
+    // Business logic errors (custom errors from optimized contracts)
+    const businessLogicErrors = [
+      'ExceedsMaxSlots',
+      'ExceedsSlotLimit',
+      'IncorrectPayment',
+      'ContractsCannotPurchase',
+      'CreatorNotAllowed',
+      'InvalidNonPrizedPurchase',
+      'NotAWinner',
+      'NoPrizesToClaim',
+      'UnauthorizedMinter',
+      'ExceedsMaxSupply',
+      'ZeroAddress',
+      'ZeroQuantity',
+      'ZeroSlotFee',
+      'PoolDurationElapsed',
+      'ProtocolAdminNotAllowed',
+      'SocialEngagementNotConfigured',
+      'InvalidState',
+      'OnlyOperator',
+      'InvalidPrizeAmount',
+      'PrizeTransferFailed',
+      'InvalidPrizeCollection',
+      'InvalidPoolState',
+      'UnauthorizedCaller',
+      'ExceedsWinnersCount',
+      'MintingNotSupported',
+      'SupplyNotSet'
+    ];
+    
+    for (const errorName of businessLogicErrors) {
+      if (parsedMessage.includes(errorName)) {
+        return { 
+          type: 'business_logic', 
+          message: parsedMessage,
+          errorName: errorName
+        };
+      }
+    }
+    
+    // Network/provider errors
+    if (error.code === 'NETWORK_ERROR' || 
+        error.message.includes('Network Error') ||
+        error.message.includes('CONNECTION ERROR') ||
+        error.message.includes('timeout')) {
+      return { type: 'network', message: 'Network error occurred' };
+    }
+    
+    // Default to unknown error
+    return { 
+      type: 'unknown', 
+      message: parsedMessage || 'Unknown error occurred' 
+    };
+  }
+
+  /**
+   * Execute sequential calls with error handling and fallbacks
+   * @param {Object} contract - Contract instance
+   * @param {Array} calls - Array of call objects
+   * @param {Object} config - Configuration object
+   * @param {boolean} useFallbacks - Whether to use fallback values for failed calls
+   * @returns {Array} Results array
+   */
+  async executeSequentialCalls(contract, calls, config = {}, useFallbacks = false) {
+    const results = [];
+    
+    for (const { method, params = [] } of calls) {
+      try {
+        // Check if method exists on contract
+        if (typeof contract[method] !== 'function') {
+          console.warn(`Method ${method} does not exist on contract, using fallback`);
+          if (useFallbacks) {
+            // Return appropriate fallback based on method
+            if (method.includes('is') || method === 'isCollabPool' || method === 'usesCustomFee' || 
+                method === 'isExternalPrizeCollection' || 
+                method === 'isRefundable' || method === 'isPrized') {
+              results.push(false);
+            } else if (method === 'isEscrowedPrize') {
+              // Return undefined for missing isEscrowedPrize so frontend can handle it properly
+              results.push(undefined);
+            } else if (method === 'standard') {
+              results.push(undefined);
+            } else if (method === 'revenueRecipient' || method === 'prizeCollection' || 
+                method === 'erc20PrizeToken') {
+              results.push(ethers.constants.AddressZero);
+            } else if (method === 'prizeTokenId' || method === 'erc20PrizeAmount' || 
+                method === 'nativePrizeAmount') {
+              results.push(ethers.BigNumber.from(0));
+            } else {
+              results.push(null);
+            }
+            continue;
+          } else {
+            throw new Error(`Method ${method} does not exist on contract`);
+          }
+        }
+
+        if (useFallbacks) {
+          // Use fallback values for optional methods
+          const result = await contract[method](...params)
+            .catch(error => {
+              const customError = this.parseCustomError(error);
+              console.warn(`${method} failed, using fallback:`, customError.message);
+              // Return appropriate fallback based on method
+              if (method.includes('is') || method === 'isCollabPool' || method === 'usesCustomFee' || 
+                  method === 'isExternalPrizeCollection' || 
+                  method === 'isRefundable' || method === 'isPrized') {
+                return false;
+              } else if (method === 'isEscrowedPrize') {
+                // Return undefined for missing isEscrowedPrize so frontend can handle it properly
+                return undefined;
+              } else if (method === 'standard') {
+                return undefined;
+              } else if (method === 'revenueRecipient' || method === 'prizeCollection' || 
+                  method === 'erc20PrizeToken') {
+                return ethers.constants.AddressZero;
+              } else if (method === 'prizeTokenId' || method === 'erc20PrizeAmount' || 
+                  method === 'nativePrizeAmount') {
+                return ethers.BigNumber.from(0);
+              }
+              throw error;
+            });
+          results.push(result);
+        } else {
+          // Use withRetry for required methods
+          const result = await this.withRetry(
+            () => contract[method](...params),
+            `${method}-${contract.address}`,
+            config
+          );
+          results.push(result);
+        }
+      } catch (error) {
+        const customError = this.parseCustomError(error);
+        console.error(`Failed to execute call ${method}:`, customError);
+        // Log error metrics with custom error type
+        this.logError(customError.message, 'executeSequentialCalls', {
+          method,
+          isMobile: config.isMobile,
+          errorType: customError.type,
+          errorName: customError.errorName
+        });
+        // Add null for failed calls to maintain array alignment
+        results.push(null);
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics() {
     const stats = {
       mobile: { operations: {}, totalOperations: 0, avgDuration: 0 },
       desktop: { operations: {}, totalOperations: 0, avgDuration: 0 }
@@ -714,6 +877,25 @@ class RaffleService {
       performance: this.getPerformanceStats(),
       errors: this.getErrorStats()
     };
+  }
+
+  /**
+   * Log error metrics for debugging
+   * @param {string} message - Error message
+   * @param {string} context - Context where error occurred
+   * @param {Object} metadata - Additional error metadata
+   */
+  logError(message, context, metadata = {}) {
+    const errorKey = `${context}_${message}`;
+    const current = this.errorMetrics.get(errorKey) || { count: 0, lastOccurrence: null };
+    this.errorMetrics.set(errorKey, {
+      count: current.count + 1,
+      lastOccurrence: new Date().toISOString(),
+      message,
+      context,
+      metadata
+    });
+    console.error(`[${context}] ${message}`, metadata);
   }
 }
 

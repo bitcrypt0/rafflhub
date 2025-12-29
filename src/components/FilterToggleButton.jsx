@@ -1,5 +1,4 @@
 import React from 'react';
-import { Filter } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -26,9 +25,8 @@ const FilterToggleButton = ({
         ${className}
       `}
     >
-      <Filter className="h-4 w-4" />
       <span className="font-medium">
-        {hasActiveFilters ? 'Filters Applied' : 'Filter Raffles'}
+        {hasActiveFilters ? 'Filters Applied' : 'Filter Pools'}
       </span>
       {hasActiveFilters && (
         <span className="ml-1 px-2 py-0.5 text-xs bg-primary-foreground/20 rounded-full">

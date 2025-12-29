@@ -9,9 +9,10 @@ import { useCollabDetection } from '../contexts/CollabDetectionContext';
 /**
  * Custom hook for managing raffle filters
  * @param {Array} raffles - Array of raffle objects
+ * @param {string} searchQuery - Search query string
  * @returns {Object} - Filter state and methods
  */
-export const useRaffleFilters = (raffles = []) => {
+export const useRaffleFilters = (raffles = [], searchQuery = '') => {
   const { filterByEnhancedType } = useCollabDetection();
 
   // Filter state
@@ -20,14 +21,30 @@ export const useRaffleFilters = (raffles = []) => {
 
   // Apply filters to raffles using enhanced detection for raffle types
   const filteredRaffles = useMemo(() => {
-    if (areFiltersEmpty(filters)) {
-      return raffles;
-    }
-
-    // Use enhanced filtering for raffle types, standard filtering for others
     let filtered = raffles;
 
-    // Apply enhanced raffle type filtering first
+    // Apply search filter first
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(raffle => {
+        // Search by pool name
+        if (raffle.name && raffle.name.toLowerCase().includes(query)) {
+          return true;
+        }
+        // Search by contract address
+        if (raffle.address && raffle.address.toLowerCase().includes(query)) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    // If no filters and no search, return all raffles
+    if (areFiltersEmpty(filters) && !searchQuery) {
+      return filtered;
+    }
+
+    // Apply enhanced raffle type filtering
     if (filters.raffleType && filters.raffleType.length > 0) {
       filtered = filterByEnhancedType(filtered, filters.raffleType);
     }
@@ -43,12 +60,12 @@ export const useRaffleFilters = (raffles = []) => {
     }
 
     return filtered;
-  }, [raffles, filters, filterByEnhancedType]);
+  }, [raffles, filters, searchQuery, filterByEnhancedType]);
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
-    return !areFiltersEmpty(filters);
-  }, [filters]);
+    return !areFiltersEmpty(filters) || (searchQuery && searchQuery.trim() !== '');
+  }, [filters, searchQuery]);
 
   // Filter methods
   const updateFilters = useCallback((newFilters) => {

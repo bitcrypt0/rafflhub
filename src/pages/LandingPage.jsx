@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy } from 'lucide-react';
+import { Trophy, Search, Filter } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useCollabDetection } from '../contexts/CollabDetectionContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { PageContainer } from '../components/Layout';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
@@ -401,14 +402,16 @@ const RaffleCard = ({ raffle }) => {
     const usesCustomPrice = (directContractValues && directContractValues.usesCustomFee !== null)
          ? directContractValues.usesCustomFee === true
          : raffle.usesCustomFee === true;
-    const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null)
+    
+    // For new contracts, isEscrowedPrize should always be available
+    // Use direct contract values first, then fallback to raffle data
+    const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null && directContractValues.isEscrowedPrize !== undefined)
       ? directContractValues.isEscrowedPrize === true
       : raffle.isEscrowedPrize === true;
 
     // Determine if this is a mintable NFT prize
-    // Based on your clarification: isMintable should only be true for mintable ERC721/ERC1155 prizes
-    // We need to infer this from the available data since there's no direct isMintable flag
-    const isMintable = !isEscrowedPrize; // If not escrowed, then it's mintable
+    // Only consider it mintable if we explicitly know it's not escrowed
+    const isMintable = isEscrowedPrize === false;
 
 
 
@@ -604,6 +607,7 @@ const LandingPage = () => {
   const { isMobile } = useMobileBreakpoints();
   const { formatSlotFee, formatPrizeAmount } = useNativeCurrency();
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Use the new RaffleService hook (full dataset for filtering)
   const {
@@ -632,13 +636,17 @@ const LandingPage = () => {
     clearFilters,
     toggleFilter,
     filteredCount
+  } = useRaffleFilters(raffles, searchQuery);
 
-
-  } = useRaffleFilters(raffles);
+  // Clear all filters including search
+  const handleClearAll = () => {
+    clearFilters();
+    setSearchQuery('');
+  };
   // Reset pagination when data source or filters change
   useEffect(() => {
     setPage(1);
-  }, [isMobile, loading, raffles?.length, filteredRaffles?.length, summaries?.length, hasActiveFilters]);
+  }, [isMobile, loading, raffles?.length, filteredRaffles?.length, summaries?.length, hasActiveFilters, searchQuery]);
 
 
   // Show wallet connection prompt if not connected
@@ -725,8 +733,7 @@ const LandingPage = () => {
   }
 
   return (
-    <>
-
+    <React.Fragment>
 
       {/* Filter Sidebar (overlay when open) */}
       <FilterSidebar
@@ -755,27 +762,41 @@ const LandingPage = () => {
 
           </div>
 
-          {/* Filter toggle button */}
+          {/* Search and Filter Controls */}
+          <div className="mb-6 space-y-4">
+            {/* Search Field with Filter Button */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by pool name or contract address..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 h-11 text-[length:var(--text-base)] w-full"
+                />
+              </div>
+              <FilterToggleButton
+                onClick={toggleFilter}
+                hasActiveFilters={hasActiveFilters}
+              />
+            </div>
 
-
-
-          <div className="mb-6 flex items-center">
-            <FilterToggleButton
-              onClick={toggleFilter}
-              hasActiveFilters={hasActiveFilters}
-            />
-            <div className="ml-auto flex items-center gap-3">
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="font-body text-muted-foreground hover:text-foreground"
-                >
-                  Clear All Filters
-                </Button>
-              )}
-              {/* Desktop top-right pagination (Prev, numbers, Next) aligned with Filter Raffles */}
+            {/* Clear Filters and Pagination */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearAll}
+                    className="font-body text-muted-foreground hover:text-foreground"
+                  >
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
+              {/* Desktop top-right pagination */}
               {!isMobile && (() => {
                 const pageSize = 24;
                 const totalList = filteredRaffles || [];
@@ -882,7 +903,9 @@ const LandingPage = () => {
                   error={usingSummaries ? null : error}
                   RaffleCardComponent={RaffleCard}
                   emptyMessage={
-                    hasActiveFilters
+                    searchQuery && searchQuery.trim()
+                      ? "No raffles found matching your search. Try a different search term."
+                      : hasActiveFilters
                       ? "No raffles match your current filters. Try adjusting your filter criteria."
                       : "There are currently no raffles available on the blockchain. Check back later or create your own!"
                   }
@@ -935,10 +958,9 @@ const LandingPage = () => {
           })()}
         </PageContainer>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 
 export { RaffleCard };
 export default LandingPage;
-

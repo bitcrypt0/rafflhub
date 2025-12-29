@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Search, 
   Wallet, 
   User, 
   Plus, 
@@ -9,7 +8,6 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  X,
   Sun,
   Moon,
   Monitor,
@@ -45,7 +43,6 @@ import {
   SheetTitle,
   SheetTrigger
 } from '../ui/sheet';
-import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 
@@ -81,22 +78,10 @@ const HeaderModern = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Search state
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [allPools, setAllPools] = useState([]);
+  // State
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Refs
-  const searchInputRef = useRef(null);
-  const searchContainerRef = useRef(null);
-  const hasFetchedRaffles = useRef(false);
-
   const isHomepage = location.pathname === '/';
   const isApp = location.pathname === '/app';
 
@@ -109,90 +94,6 @@ const HeaderModern = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch all pools for search
-  useEffect(() => {
-    if (!provider || !chainId || hasFetchedRaffles.current) return;
-
-    const fetchAllPools = async () => {
-      try {
-        const protocolManagerAddress = SUPPORTED_NETWORKS[chainId]?.contractAddresses?.protocolManager;
-        if (!protocolManagerAddress) {
-          setAllPools([]);
-          hasFetchedRaffles.current = true;
-          return;
-        }
-        
-        const protocolManagerContract = new ethers.Contract(
-          protocolManagerAddress, 
-          contractABIs.protocolManager, 
-          provider
-        );
-        const registeredPools = await protocolManagerContract.getAllPools();
-        
-        if (!registeredPools || registeredPools.length === 0) {
-          setAllPools([]);
-          hasFetchedRaffles.current = true;
-          return;
-        }
-
-        const poolPromises = registeredPools.map(async (poolAddress) => {
-          try {
-            const poolContract = new ethers.Contract(poolAddress, contractABIs.pool, provider);
-            const name = await poolContract.name();
-            return { address: poolAddress, name };
-          } catch (error) {
-            return null;
-          }
-        });
-
-        const poolData = await Promise.all(poolPromises);
-        const validPools = poolData.filter(r => r);
-        setAllPools(validPools);
-        hasFetchedRaffles.current = true;
-      } catch (error) {
-        console.error('Error fetching pools:', error);
-        setAllPools([]);
-        hasFetchedRaffles.current = true;
-      }
-    };
-
-    fetchAllPools();
-  }, [provider, chainId]);
-
-  // Debounced search
-  useEffect(() => {
-    if (!searchOpen || !searchTerm?.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setSearchLoading(true);
-    const handler = setTimeout(() => {
-      const term = searchTerm.trim().toLowerCase();
-      const results = allPools.filter(r =>
-        (r.name || '').trim().toLowerCase().includes(term) ||
-        (r.address || '').trim().toLowerCase() === term ||
-        (r.address || '').trim().toLowerCase().includes(term)
-      );
-      setSearchResults(results);
-      setSearchLoading(false);
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [searchTerm, searchOpen, allPools]);
-
-  // Handle search result click
-  const handleSearchResultClick = (raffleAddress) => {
-    const slug = chainId && SUPPORTED_NETWORKS[chainId] 
-      ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') 
-      : (chainId || '');
-    const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
-    navigate(path);
-    setSearchOpen(false);
-    setSearchTerm('');
-    setSearchResults([]);
-  };
-
   // Handle wallet connection
   const handleConnectWallet = async () => {
     try {
@@ -201,36 +102,6 @@ const HeaderModern = () => {
       console.error('Failed to connect wallet:', error);
     }
   };
-
-  // Handle search toggle
-  const handleSearchToggle = () => {
-    setSearchOpen(!searchOpen);
-    if (!searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 100);
-    } else {
-      setSearchTerm('');
-      setSearchResults([]);
-    }
-  };
-
-  // Close search on clickaway
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setSearchOpen(false);
-        setSearchTerm('');
-        setSearchResults([]);
-      }
-    };
-
-    if (searchOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [searchOpen]);
 
   // Navigation items - removed all main navigation items
   const navigationItems = [
@@ -309,20 +180,6 @@ const HeaderModern = () => {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
-            {/* Search */}
-            {!isHomepage && (
-              <motion.div variants={itemVariants}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSearchToggle}
-                  className="relative"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </motion.div>
-            )}
-
             {/* Theme toggle */}
             <motion.div variants={itemVariants}>
               <Button
@@ -429,64 +286,6 @@ const HeaderModern = () => {
             </motion.div>
           </div>
         </div>
-
-        {/* Mobile search overlay */}
-        <AnimatePresence>
-          {searchOpen && (
-            <motion.div
-              ref={searchContainerRef}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-border bg-background"
-            >
-              <div className="p-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    ref={searchInputRef}
-                    placeholder="Search raffles..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-10 focus:ring-0 focus:border-border focus-visible:ring-0 focus-visible:border-border"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchTerm('');
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Search results */}
-                {searchResults.length > 0 && (
-                  <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                    {searchResults.map((result) => (
-                      <Button
-                        key={result.address}
-                        variant="ghost"
-                        className="w-full justify-start h-auto p-3"
-                        onClick={() => handleSearchResultClick(result.address)}
-                      >
-                        <div className="text-left">
-                          <div className="font-medium">{result.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono">
-                            {result.address.slice(0, 10)}...{result.address.slice(-8)}
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.header>
     );
   }
@@ -542,75 +341,6 @@ const HeaderModern = () => {
             variants={itemVariants}
             className="flex items-center gap-3"
           >
-            {/* Search */}
-            {!isHomepage && (
-              <div className="relative" ref={searchContainerRef}>
-                <AnimatePresence>
-                  {searchOpen ? (
-                  <motion.div
-                    initial={{ width: 40, opacity: 0 }}
-                    animate={{ width: 300, opacity: 1 }}
-                    exit={{ width: 40, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="relative"
-                  >
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Search raffles..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-10 bg-background/50 backdrop-blur-sm focus:ring-0 focus:border-border focus-visible:ring-0 focus-visible:border-border rounded-full"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                      onClick={handleSearchToggle}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-
-                    {/* Search results dropdown */}
-                    {searchResults.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-lg max-h-80 overflow-y-auto z-50"
-                      >
-                        {searchResults.map((result) => (
-                          <Button
-                            key={result.address}
-                            variant="ghost"
-                            className="w-full justify-start h-auto p-4 rounded-none border-b border-border last:border-b-0"
-                            onClick={() => handleSearchResultClick(result.address)}
-                          >
-                            <div className="text-left">
-                              <div className="font-medium">{result.name}</div>
-                              <div className="text-xs text-muted-foreground font-mono">
-                                {result.address.slice(0, 10)}...{result.address.slice(-8)}
-                              </div>
-                            </div>
-                          </Button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </motion.div>
-                  ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleSearchToggle}
-                    className="hover:bg-muted/50"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
             {/* Network selector */}
             {!isHomepage && <NetworkSelector />}
 
