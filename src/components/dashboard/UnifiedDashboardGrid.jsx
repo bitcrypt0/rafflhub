@@ -14,6 +14,7 @@ import CreateNewTokenIDComponent from '../CreateNewTokenIDComponent';
 import CreatorRevenueWithdrawalComponent from '../CreatorRevenueWithdrawalComponent';
 import KOLApprovalComponent from '../KOLApprovalComponent';
 import VestingConfigurationComponent from '../VestingConfigurationComponent';
+import FlywheelRewardsComponent from '../FlywheelRewardsComponent';
 
 const UnifiedDashboardGrid = ({ 
   className = '',
@@ -32,32 +33,39 @@ const UnifiedDashboardGrid = ({
       priority: 1 // Higher priority components shown first on mobile
     },
     {
+      id: 'flywheel',
+      title: 'Flywheel Rewards',
+      description: 'Deposit and claim rewards from the RewardsFlywheel contract',
+      component: FlywheelRewardsComponent,
+      priority: 2
+    },
+    {
       id: 'vesting',
       title: 'Supply, Creator Allocation & Vesting Management',
       description: 'Configure vesting schedules for creator token allocations to prevent rug pulls',
       component: VestingConfigurationComponent,
-      priority: 2
+      priority: 3
     },
     {
       id: 'kol',
       title: 'KOL Approval Management',
       description: 'Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees',
       component: KOLApprovalComponent,
-      priority: 3
+      priority: 4
     },
     {
       id: 'tokenCreator',
       title: 'Create New Token ID & Set Token URI',
       description: 'Add new token IDs to existing ERC1155 collections and set metadata URIs',
       component: CreateNewTokenIDComponent,
-      priority: 4
+      priority: 5
     },
     {
       id: 'revenue',
       title: 'Creator Mint & Revenue Withdrawal',
       description: 'Mint tokens to winners and withdraw revenue from your raffles',
       component: CreatorRevenueWithdrawalComponent,
-      priority: 5
+      priority: 6
     }
   ];
 

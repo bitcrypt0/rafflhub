@@ -385,9 +385,6 @@ const KOLApprovalComponent = () => {
   return (
     <Card>
       <CardContent className="space-y-6 p-4">
-        <div className="text-base font-medium flex items-center gap-2 mb-1">
-          KOL Approval Management
-        </div>
         <p className="text-sm text-muted-foreground">
           Approve Key Opinion Leaders (KOLs) for collections with specific pool limits and slot fees
         </p>

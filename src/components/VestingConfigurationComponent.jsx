@@ -455,10 +455,6 @@ const VestingConfigurationComponent = () => {
       {/* Collection Fetch Section */}
       <Card>
         <CardContent className="space-y-4 p-4">
-          <div className="text-base font-medium flex items-center gap-2 mb-1">
-            <Lock className="h-5 w-5" />
-            Supply, Creator Allocation & Vesting Management
-          </div>
           <p className="text-sm text-muted-foreground">
             Enter your collection address to view and configure supply, creator allocation and vesting
           </p>

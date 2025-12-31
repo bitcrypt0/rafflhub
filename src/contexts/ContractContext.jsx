@@ -90,6 +90,14 @@ export const ContractProvider = ({ children }) => {
         );
       }
 
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel) {
+        newContracts.rewardsFlywheel = new ethers.Contract(
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel,
+          contractABIs.rewardsFlywheel,
+          signer
+        );
+      }
+
       setContracts(newContracts);
     } catch (error) {
       console.error('Error initializing contracts:', error);

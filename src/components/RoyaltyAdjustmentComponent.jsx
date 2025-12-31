@@ -294,9 +294,6 @@ const RoyaltyAdjustmentComponent = () => {
   return (
     <Card>
       <CardContent className="space-y-6 p-4">
-        <div className="text-base font-medium flex items-center gap-2 mb-1">
-          Royalty & Reveal Management
-        </div>
         <p className="text-sm text-muted-foreground mb-4">
           Manage royalties and collection reveals for your NFT collections
         </p>

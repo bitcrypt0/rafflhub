@@ -4,7 +4,7 @@ import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock } from 'lucide-react';
+import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
@@ -16,6 +16,7 @@ import { ethers } from 'ethers';
 import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
 import VestingConfigurationComponent from '../../components/VestingConfigurationComponent';
+import FlywheelRewardsComponent from '../../components/FlywheelRewardsComponent';
 
 import { SUPPORTED_NETWORKS } from '../../networks';
 
@@ -94,8 +95,22 @@ const NewMobileProfilePage = () => {
       collectionData: { address: '', type: null, royaltyPercentage: '', royaltyRecipient: '' },
       collectionInfo: null,
       loadingInfo: false,
-      isRevealed: null,
-      revealing: false
+      revealing: false,
+      updating: false,
+      error: '',
+      success: ''
+    },
+    flywheel: {
+      loading: false
+    },
+    vesting: {
+      loading: false,
+      collectionData: { address: '', type: null },
+      collectionInfo: null,
+      loadingInfo: false,
+      updating: false,
+      error: '',
+      success: ''
     },
     minter: {
       loading: false,
@@ -399,7 +414,22 @@ const NewMobileProfilePage = () => {
               <Settings className="h-5 w-5 text-primary" />
               <div>
                 <div className="font-medium">Royalty & Reveal</div>
-                <div className="text-sm text-muted-foreground">Manage royalties and reveal collections</div>
+                <div className="text-sm text-muted-foreground">Manage royalties and reveal collection</div>
+              </div>
+            </div>
+          </button>
+
+          {/* Flywheel Rewards */}
+          <button
+            onClick={() => setActiveDashboardComponent('flywheel')}
+            data-dashboard-card
+            className="w-full bg-card border border-border rounded-lg p-4 text-left hover:bg-card/90 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Gift className="h-5 w-5 text-primary" />
+              <div>
+                <div className="font-medium">Flywheel Rewards</div>
+                <div className="text-sm text-muted-foreground">Deposit and claim rewards</div>
               </div>
             </div>
           </button>
@@ -476,6 +506,8 @@ const NewMobileProfilePage = () => {
     switch (componentType) {
       case 'royalty':
         return renderRoyaltyComponent(handleBack);
+      case 'flywheel':
+        return renderFlywheelComponent(handleBack);
       case 'vesting':
         return renderVestingComponent(handleBack);
       case 'kol':
@@ -907,6 +939,26 @@ const NewMobileProfilePage = () => {
           <h2 className="text-xl font-semibold">Supply, Creator Allocation & Vesting Management</h2>
         </div>
         <VestingConfigurationComponent />
+      </div>
+    );
+  };
+
+  
+  // Flywheel Rewards Component - Mobile Implementation
+  const renderFlywheelComponent = (handleBack) => {
+    return (
+      <div className="p-4 space-y-4 max-w-full overflow-x-hidden dashboard-component">
+        <div className="flex items-center gap-3 mb-4">
+          <Button onClick={handleBack} variant="tertiary" size="md">
+            ← Back
+          </Button>
+          <h3 className="text-lg font-semibold">Flywheel Rewards</h3>
+        </div>
+
+        {/* Flywheel Rewards Component - Mobile Optimized */}
+        <div className="w-full">
+          <FlywheelRewardsComponent />
+        </div>
       </div>
     );
   };

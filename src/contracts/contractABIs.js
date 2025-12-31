@@ -7,6 +7,7 @@ import ERC1155PrizeJSON from './ERC1155Prize.json';
 import PoolJSON from './Pool.json';
 import SocialEngagementManagerJSON from './SocialEngagementManager.json';
 import KOLApprovalJSON from './KOLApproval.json';
+import RewardsFlywheelJSON from './RewardsFlywheel.json';
 
 const ERC20ABI = [
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -23,7 +24,7 @@ export const contractABIs = {
   erc1155Prize: ERC1155PrizeJSON.abi,
   socialEngagementManager: SocialEngagementManagerJSON.abi,
   kolApproval: KOLApprovalJSON.abi,
+  rewardsFlywheel: RewardsFlywheelJSON.abi,
   pool: PoolJSON.abi,
   erc20: ERC20ABI
 };
-
