@@ -75,15 +75,6 @@ const FilteredRaffleGrid = ({
   // Raffle grid
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Results header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">
-          {showCount
-            ? `${(typeof totalCount === 'number' ? totalCount : raffles.length)} ${(typeof totalCount === 'number' ? totalCount : raffles.length) === 1 ? 'Raffle' : 'Raffles'} Found`
-            : 'Raffles Found'}
-        </h2>
-      </div>
-
       {/* Raffle grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {raffles.map((raffle) => (
