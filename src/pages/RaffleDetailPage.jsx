@@ -698,7 +698,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const remainingSlots = raffle.slotLimit - raffle.slotsSold;
   const maxPurchasable = Math.min(
     remainingSlots,
-    raffle.maxSlotsPerParticipant
+    raffle.maxSlotsPerAddress
   );
 
   return (
@@ -747,7 +747,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
             </div>
             <div>
               <span className="text-muted-foreground">Max per user:</span>
-              <p className="font-body text-[length:var(--text-base)] font-medium">{raffle.maxSlotsPerParticipant}</p>
+              <p className="font-body text-[length:var(--text-base)] font-medium">{raffle.maxSlotsPerAddress}</p>
             </div>
             {canClaimRefund() && refundableAmount && refundableAmount.gt && refundableAmount.gt(0) && (
               <div>
@@ -870,7 +870,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </Button>
-            ) : userSlots >= raffle.maxSlotsPerParticipant ? (
+            ) : userSlots >= raffle.maxSlotsPerAddress ? (
               <Button
                 disabled
                 variant="primary"
@@ -889,7 +889,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <Input
                       type="number"
                       min={1}
-                      max={raffle.maxSlotsPerParticipant}
+                      max={raffle.maxSlotsPerAddress}
                       value={quantity}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -900,7 +900,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                           if (isNaN(parsedValue)) {
                             setQuantity(1);
                           } else {
-                            setQuantity(Math.max(1, Math.min(raffle.maxSlotsPerParticipant, parsedValue)));
+                            setQuantity(Math.max(1, Math.min(raffle.maxSlotsPerAddress, parsedValue)));
                           }
                         }
                       }}
@@ -909,10 +909,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <span 
                         className="cursor-pointer hover:text-primary hover:underline transition-colors"
-                        onClick={() => setQuantity(Math.max(1, raffle.maxSlotsPerParticipant - userSlots))}
+                        onClick={() => setQuantity(Math.max(1, raffle.maxSlotsPerAddress - userSlots))}
                         title="Click to set quantity to maximum"
                       >
-                        Max: {Math.max(0, raffle.maxSlotsPerParticipant - userSlots)} slots remaining
+                        Max: {Math.max(0, raffle.maxSlotsPerAddress - userSlots)} slots remaining
                       </span>
                     </p>
                   </div>
@@ -2939,7 +2939,7 @@ const RaffleDetailPage = () => {
           { method: () => poolContract.slotLimit(), name: 'slotLimit', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.winnersCount(), name: 'winnersCount', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.winnersSelected(), name: 'winnersSelected', required: true, fallback: ethers.BigNumber.from(0) },
-          { method: () => poolContract.maxSlotsPerParticipant(), name: 'maxSlotsPerParticipant', required: true, fallback: ethers.BigNumber.from(0) },
+          { method: () => poolContract.maxSlotsPerAddress(), name: 'maxSlotsPerAddress', required: true, fallback: ethers.BigNumber.from(0) },
           { method: () => poolContract.isPrized(), name: 'isPrized', required: true, fallback: false },
           { method: () => poolContract.prizeCollection(), name: 'prizeCollection', required: true, fallback: ethers.constants.AddressZero },
           { method: () => poolContract.prizeTokenId(), name: 'prizeTokenId', required: true, fallback: ethers.BigNumber.from(0) },
@@ -2976,7 +2976,7 @@ const RaffleDetailPage = () => {
 
         // Execute contract calls using browser-optimized batch processing
         const [
-          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedFeeRefund, isRefundableFlag, isCollabPoolFlag, isEscrowedPrize, amountPerWinner, actualDurationValue, socialEngagementRequired, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
+          name, creator, startTime, duration, slotFee, slotLimit, winnersCount, winnersSelected, maxSlotsPerAddress, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, nativePrizeAmount, usesCustomFee, hasClaimedFeeRefund, isRefundableFlag, isCollabPoolFlag, isEscrowedPrize, amountPerWinner, actualDurationValue, socialEngagementRequired, holderTokenAddress, holderTokenStandard, minHolderTokenBalance
         ] = await batchContractCalls(contractCalls, {
           timeout: platformConfig.timeout,
           useSequential: platformConfig.useSequential,
@@ -3002,13 +3002,13 @@ const RaffleDetailPage = () => {
         }
 
         let userSlots = 0;
-        let userSlotsRemaining = maxSlotsPerParticipant.toNumber();
+        let userSlotsRemaining = maxSlotsPerAddress.toNumber();
 
         if (connected && address) {
           try {
             const userSlotCount = await poolContract.slotsPurchased(address);
             userSlots = userSlotCount.toNumber();
-            userSlotsRemaining = Math.max(0, maxSlotsPerParticipant.toNumber() - userSlots);
+            userSlotsRemaining = Math.max(0, maxSlotsPerAddress.toNumber() - userSlots);
           } catch (error) {
 
             let index = 0;
@@ -3023,7 +3023,7 @@ const RaffleDetailPage = () => {
                 break;
               }
             }
-            userSlotsRemaining = Math.max(0, maxSlotsPerParticipant.toNumber() - userSlots);
+            userSlotsRemaining = Math.max(0, maxSlotsPerAddress.toNumber() - userSlots);
           }
         }
 
@@ -3046,7 +3046,7 @@ const RaffleDetailPage = () => {
           slotsSold,
           winnersCount: winnersCount.toNumber(),
           winnersSelected: winnersSelected.toNumber(),
-          maxSlotsPerParticipant: maxSlotsPerParticipant.toNumber(),
+          maxSlotsPerAddress: maxSlotsPerAddress.toNumber(),
           isPrized: isPrizedContract,
           prizeCollection,
           prizeTokenId,

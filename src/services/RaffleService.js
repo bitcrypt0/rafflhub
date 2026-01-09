@@ -257,7 +257,7 @@ class RaffleService {
         { method: 'slotFee', params: [] },
         { method: 'slotLimit', params: [] },
         { method: 'winnersCount', params: [] },
-        { method: 'maxSlotsPerParticipant', params: [] },
+        { method: 'maxSlotsPerAddress', params: [] },
         { method: 'state', params: [] }
       ];
 
@@ -276,7 +276,7 @@ class RaffleService {
         { method: 'isCollabPool', params: [] },
         { method: 'usesCustomFee', params: [] },
         { method: 'revenueRecipient', params: [] },
-        { method: 'isExternalPrizeCollection', params: [] },
+        { method: 'isExternalCollection', params: [] },
         { method: 'isRefundable', params: [] }
       ];
 
@@ -304,7 +304,7 @@ class RaffleService {
       // Extract results with fallbacks
       const [
         name, creator, startTime, duration, slotFee, ticketLimit, winnersCount,
-        maxTicketsPerParticipant, stateNum
+        maxSlotsPerAddress, stateNum
       ] = coreResults;
 
       const [
@@ -313,7 +313,7 @@ class RaffleService {
       ] = prizeResults;
 
       const [
-        isCollabPool, usesCustomFee, revenueRecipient, isExternalPrizeCollection, isRefundable
+        isCollabPool, usesCustomFee, revenueRecipient, isExternalCollection, isRefundable
       ] = configResults;
 
       // Map state number to string
@@ -351,7 +351,7 @@ class RaffleService {
         slotLimit: ticketLimit.toNumber(), // Add slotLimit for compatibility with RaffleCard
         ticketsSold: 0, // Will be fetched separately if needed
         winnersCount: winnersCount.toNumber(),
-        maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
+        maxSlotsPerAddress: maxSlotsPerAddress.toNumber(),
         isPrized: !!isPrizedContract,
         prizeCollection,
         prizeTokenId: prizeTokenId ? (prizeTokenId.toNumber ? prizeTokenId.toNumber() : Number(prizeTokenId)) : 0,
@@ -723,7 +723,7 @@ class RaffleService {
           if (useFallbacks) {
             // Return appropriate fallback based on method
             if (method.includes('is') || method === 'isCollabPool' || method === 'usesCustomFee' || 
-                method === 'isExternalPrizeCollection' || 
+                method === 'isExternalCollection' || 
                 method === 'isRefundable' || method === 'isPrized') {
               results.push(false);
             } else if (method === 'isEscrowedPrize') {
@@ -754,7 +754,7 @@ class RaffleService {
               console.warn(`${method} failed, using fallback:`, customError.message);
               // Return appropriate fallback based on method
               if (method.includes('is') || method === 'isCollabPool' || method === 'usesCustomFee' || 
-                  method === 'isExternalPrizeCollection' || 
+                  method === 'isExternalCollection' || 
                   method === 'isRefundable' || method === 'isPrized') {
                 return false;
               } else if (method === 'isEscrowedPrize') {

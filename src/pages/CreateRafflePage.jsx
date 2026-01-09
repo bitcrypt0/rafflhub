@@ -294,7 +294,7 @@ const WhitelistRaffleForm = () => {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: 1, // Hardcoded to 1 for Whitelist pools
+        maxSlotsPerAddress: 1, // Hardcoded to 1 for Whitelist pools
         isPrized: false,
         customSlotFee: 0,
         erc721Drop: false,
@@ -345,7 +345,7 @@ const WhitelistRaffleForm = () => {
           duration: '',
           slotLimit: '',
           winnersCount: '',
-          maxSlotsPerParticipant: '',
+          maxSlotsPerAddress: '',
           holderTokenAddress: '',
           holderTokenStandard: '0',
           minHolderTokenBalance: '',
@@ -475,7 +475,7 @@ const WhitelistRaffleForm = () => {
           </div>
           
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
@@ -648,7 +648,7 @@ function ERC721DropForm() {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxTicketsPerUser),
+        maxSlotsPerAddress: parseInt(formData.maxTicketsPerUser),
         isPrized: true,
         customSlotFee: customSlotFee,
         erc721Drop: true,
@@ -863,13 +863,13 @@ function ERC721DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
+                  Max Slots Per Address must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -951,7 +951,7 @@ function ERC1155DropForm() {
     duration: '',
     slotLimit: '',
     winnersCount: '',
-    maxSlotsPerParticipant: '',
+    maxSlotsPerAddress: '',
     slotFee: '',
     // Token-gated fields
     tokenGatedEnabled: false,
@@ -1040,7 +1040,7 @@ function ERC1155DropForm() {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
+        maxSlotsPerAddress: parseInt(formData.maxSlotsPerAddress),
         isPrized: true,
         customSlotFee: slotFee,
         erc721Drop: false,
@@ -1088,7 +1088,7 @@ function ERC1155DropForm() {
         duration: '',
         slotLimit: '',
         winnersCount: '',
-        maxSlotsPerParticipant: '',
+        maxSlotsPerAddress: '',
         slotFee: '',
         tokenGatedEnabled: false,
         holderTokenAddress: '',
@@ -1278,20 +1278,20 @@ function ERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
+                  Max Slots Per Address must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
             <input
               type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
+              value={formData.maxSlotsPerAddress || ''}
+                onChange={e => handleChange('maxSlotsPerAddress', e.target.value)}
               className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
@@ -1603,7 +1603,7 @@ function LuckySaleERC721Form() {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
+        maxSlotsPerAddress: parseInt(formData.maxSlotsPerAddress),
         isPrized: true,
         customSlotFee: slotFee,
         erc721Drop: false,
@@ -1792,20 +1792,20 @@ function LuckySaleERC721Form() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
+                  Max Slots Per Address must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
             <input
               type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
+              value={formData.maxSlotsPerAddress || ''}
+                onChange={e => handleChange('maxSlotsPerAddress', e.target.value)}
               className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
@@ -1913,7 +1913,7 @@ function ETHGiveawayForm() {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
+        maxSlotsPerAddress: parseInt(formData.maxSlotsPerAddress),
         isPrized: true,
         customSlotFee: 0,
         erc721Drop: false,
@@ -2104,20 +2104,20 @@ function ETHGiveawayForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
+                  Max Slots Per Address must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
             <input
               type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
+              value={formData.maxSlotsPerAddress || ''}
+                onChange={e => handleChange('maxSlotsPerAddress', e.target.value)}
               className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
@@ -2173,7 +2173,7 @@ function ERC20GiveawayForm() {
     duration: '',
     slotLimit: '',
     winnersCount: '',
-    maxSlotsPerParticipant: '',
+    maxSlotsPerAddress: '',
     // Token-gated fields
     tokenGatedEnabled: false,
     holderTokenAddress: '',
@@ -2233,7 +2233,7 @@ function ERC20GiveawayForm() {
         duration,
         slotLimit: parseInt(formData.slotLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxSlotsPerParticipant: parseInt(formData.maxSlotsPerParticipant),
+        maxSlotsPerAddress: parseInt(formData.maxSlotsPerAddress),
         isPrized: true,
         customSlotFee: ethers.BigNumber.from(0),
         erc721Drop: false,
@@ -2281,7 +2281,7 @@ function ERC20GiveawayForm() {
           duration: '',
           slotLimit: '',
           winnersCount: '',
-          maxSlotsPerParticipant: '',
+          maxSlotsPerAddress: '',
           // Token-gated fields - ADDED missing reset fields
           tokenGatedEnabled: false,
           holderTokenAddress: '',
@@ -2423,20 +2423,20 @@ function ERC20GiveawayForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Participant
+            <label className="block font-body text-[length:var(--text-base)] font-medium mb-2 flex items-center gap-2">Max Slots Per Address
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={6}>
-                  Max Slots Per Participant must not exceed 0.1% of your Slot Limit
+                  Max Slots Per Address must not exceed 0.1% of your Slot Limit
                 </TooltipContent>
               </Tooltip>
             </label>
             <input
               type="number"
-              value={formData.maxSlotsPerParticipant || ''}
-                onChange={e => handleChange('maxSlotsPerParticipant', e.target.value)}
+              value={formData.maxSlotsPerAddress || ''}
+                onChange={e => handleChange('maxSlotsPerAddress', e.target.value)}
               className="w-full px-3 py-2.5 font-body text-[length:var(--text-base)] border border-border rounded-lg bg-background"
               required
             />
@@ -2603,7 +2603,7 @@ function useRaffleLimits(contracts, isPrized) {
           const [slotLimits, durationLimits, maxSlots] = await Promise.all([
             contracts.protocolManager.getAllSlotLimits(),
             contracts.protocolManager.getDurationLimits(),
-            contracts.protocolManager.getMaxSlotsPerParticipant()
+            contracts.protocolManager.getMaxSlotsPerAddress()
           ]);
           setLimits({
             minSlot: slotLimits.minPrized?.toString(),
@@ -2616,7 +2616,7 @@ function useRaffleLimits(contracts, isPrized) {
           const [slotLimits, durationLimits, maxSlots] = await Promise.all([
             contracts.protocolManager.getAllSlotLimits(),
             contracts.protocolManager.getDurationLimits(),
-            contracts.protocolManager.getMaxSlotsPerParticipant()
+            contracts.protocolManager.getMaxSlotsPerAddress()
           ]);
           setLimits({
             minSlot: slotLimits.minNonPrized?.toString(),

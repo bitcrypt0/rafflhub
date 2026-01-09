@@ -2,8 +2,8 @@ import ProtocolManagerJSON from './ProtocolManager.json';
 import PoolDeployerJSON from './PoolDeployer.json';
 import RevenueManagerJSON from './RevenueManager.json';
 import NFTFactoryJSON from './NFTFactory.json';
-import ERC721PrizeJSON from './ERC721Prize.json';
-import ERC1155PrizeJSON from './ERC1155Prize.json';
+import DroprERC721AJSON from './DroprERC721A.json';
+import DroprERC1155JSON from './DroprERC1155.json';
 import PoolJSON from './Pool.json';
 import SocialEngagementManagerJSON from './SocialEngagementManager.json';
 import KOLApprovalJSON from './KOLApproval.json';
@@ -20,8 +20,8 @@ export const contractABIs = {
   poolDeployer: PoolDeployerJSON.abi,
   revenueManager: RevenueManagerJSON.abi,
   nftFactory: NFTFactoryJSON.abi,
-  erc721Prize: ERC721PrizeJSON.abi,
-  erc1155Prize: ERC1155PrizeJSON.abi,
+  erc721Prize: DroprERC721AJSON.abi,
+  erc1155Prize: DroprERC1155JSON.abi,
   socialEngagementManager: SocialEngagementManagerJSON.abi,
   kolApproval: KOLApprovalJSON.abi,
   rewardsFlywheel: RewardsFlywheelJSON.abi,

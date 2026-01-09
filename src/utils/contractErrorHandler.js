@@ -1,7 +1,7 @@
 /**
  * Contract Error Handler Utility
  * Provides user-friendly error messages for custom contract errors
- * from gas-optimized Pool.sol, ERC721Prize.sol, and ERC1155Prize.sol
+ * from gas-optimized Pool.sol, DroprERC721A.sol, and DroprERC1155.sol
  */
 
 // Custom error selector mappings (keccak256 hash of error signature)
@@ -35,7 +35,7 @@ const ERROR_SELECTORS = {
   '0x170554d5': 'ExceedsWinnersCount',
   '0xfd34e505': 'MintingNotSupported',
   
-  // ERC721Prize.sol & ERC1155Prize.sol Errors
+  // DroprERC721A.sol & DroprERC1155.sol Errors
   '0x955c501b': 'UnauthorizedMinter',
   '0xc30436e9': 'ExceedsMaxSupply',
   '0x0fee82b1': 'SupplyNotSet',
@@ -162,7 +162,7 @@ export const parseContractError = (error, context = 'complete transaction') => {
   }
   
   // ============================================
-  // ERC721Prize.sol & ERC1155Prize.sol Errors
+  // DroprERC721A.sol & DroprERC1155.sol Errors
   // ============================================
   
   if (errorMessage.includes('UnauthorizedMinter')) {

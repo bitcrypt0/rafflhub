@@ -158,7 +158,8 @@ export const decodeBatchResults = (contract, calls, returnData, validCalls) => {
           method === 'erc20PrizeToken') {
         results[index] = ethers.constants.AddressZero;
       } else if (method === 'prizeTokenId' || method === 'erc20PrizeAmount' || 
-          method === 'nativePrizeAmount') {
+          method === 'nativePrizeAmount' || method === 'maxSlotsPerAddress' || 
+          method === 'slotLimit' || method === 'winnersCount') {
         results[index] = ethers.BigNumber.from(0);
       }
     }
