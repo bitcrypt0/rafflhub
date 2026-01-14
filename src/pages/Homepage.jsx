@@ -283,15 +283,6 @@ export default function Homepage() {
                 Launch Dapp
               </Link>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button
-                  onClick={() => document.getElementById('video-demo').scrollIntoView({ behavior: 'smooth' })}
-                  variant="secondary"
-                  size="lg"
-                  className="hero-cta"
-                >
-                  <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
-                </Button>
                 <Link
                   to="/docs"
                   className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-full border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
@@ -568,41 +559,6 @@ export default function Homepage() {
           </div>
         </div>
       </Section>
-
-      {/* Video Explainer Section */}
-      <Section id="video-demo" className="py-20 bg-background">
-        <div className="reveal">
-          <SectionTitle 
-            title="Watch Dropr in Action"
-          />
-        </div>
-        
-        <div className="reveal mt-12">
-          <div className="max-w-4xl mx-auto">
-            <div className="relative aspect-[16/9] sm:aspect-video rounded-2xl overflow-hidden shadow-2xl bg-primary/5 border border-border">
-              {/* Placeholder for video embed */}
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                <div className="text-center px-4">
-                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 hover:scale-110 transition-transform cursor-pointer">
-                    <Play className="h-8 w-8 sm:h-12 sm:w-12 text-primary-foreground ml-1" />
-                  </div>
-                  <p className="text-foreground font-semibold font-body text-[length:var(--text-base)]">Video Coming Soon</p>
-                  <p className="text-muted-foreground font-body text-[length:var(--text-sm)] mt-2">Complete walkthrough of the Dropr platform</p>
-                </div>
-              </div>
-              {/* This is where the actual video embed would go */}
-              {/* <iframe 
-                src="https://www.youtube.com/embed/VIDEO_ID" 
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe> */}
-            </div>
-          </div>
-        </div>
-      </Section>
-
-
 
       {/* Use Cases */}
       <Section id="use-cases" className="py-20 bg-background">
