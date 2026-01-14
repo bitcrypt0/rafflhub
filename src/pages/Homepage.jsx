@@ -718,7 +718,7 @@ export default function Homepage() {
             </div>
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
-              <span>Deploy in minutes</span>
+              <span>Deploy in seconds</span>
             </div>
           </div>
         </div>
