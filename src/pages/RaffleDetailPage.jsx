@@ -556,6 +556,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     const now = Math.floor(Date.now() / 1000);
     const raffleEndTime = raffle.startTime + raffle.duration;
     const participantsCount = raffle.slotsSold;
+    const isTokenGated = hasTokenGating(raffle);
+    
+    // For token-gated pools, calculate minimum required participants (50% of winnersCount)
+    const minimumRequired = isTokenGated ? Math.ceil((raffle.winnersCount * 50) / 100) : raffle.winnersCount;
     
     // Debug logging
     console.log('canClosePool debug:', {
@@ -564,13 +568,18 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       timePassed: now >= raffleEndTime,
       participantsCount,
       winnersCount: raffle.winnersCount,
+      isTokenGated,
+      minimumRequired,
       sufficientParticipants: participantsCount < raffle.winnersCount,
+      belowMinimum: participantsCount < minimumRequired,
       state: raffle.state?.toLowerCase(),
       validState: (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending')
     });
     
+    // For token-gated pools, only show Close Pool if participants < 50% threshold
+    // For non-token-gated pools, show Close Pool if participants < winnersCount
     return now >= raffleEndTime && 
-           participantsCount < raffle.winnersCount &&
+           participantsCount < minimumRequired &&
            (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending');
   };
 
@@ -578,6 +587,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     const now = Math.floor(Date.now() / 1000);
     const raffleEndTime = raffle.startTime + raffle.duration;
     const participantsCount = raffle.slotsSold;
+    const isTokenGated = hasTokenGating(raffle);
+    
+    // For token-gated pools, calculate minimum required participants (50% of winnersCount)
+    const minimumRequired = isTokenGated ? Math.ceil((raffle.winnersCount * 50) / 100) : raffle.winnersCount;
     
     // Debug logging
     console.log('canRequestRandomness debug:', {
@@ -587,7 +600,9 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
       participantsCount,
       winnersCount: raffle.winnersCount,
       winnersSelected: raffle.winnersSelected,
-      sufficientParticipants: participantsCount >= raffle.winnersCount,
+      isTokenGated,
+      minimumRequired,
+      sufficientParticipants: participantsCount >= minimumRequired,
       moreWinnersNeeded: raffle.winnersSelected < raffle.winnersCount,
       state: raffle.state?.toLowerCase(),
       stateNum: raffle.stateNum
@@ -595,7 +610,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     
     // For Ended pools (stateNum === 2), the state itself confirms time has passed
     if (raffle.stateNum === 2) {
-      return participantsCount >= raffle.winnersCount;
+      return participantsCount >= minimumRequired;
     } 
     // For Drawing pools (stateNum === 3), show button if more winners are needed (multi-batch selection)
     else if (raffle.stateNum === 3) {
@@ -603,7 +618,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     }
     // For Active pools that have passed endTime with sufficient participants
     else if (raffle.state?.toLowerCase() === 'active' && now >= raffleEndTime) {
-      return participantsCount >= raffle.winnersCount;
+      return participantsCount >= minimumRequired;
     }
     
     return false;
@@ -814,7 +829,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                   size="lg"
                   className="w-full"
                 >
-                  {closingPool ? 'Closing...' : 'Close Pool'}
+                  {closingPool ? 'Closing...' : (!hasTokenGating(raffle) && isEscrowedPrize && address?.toLowerCase() === raffle.creator.toLowerCase() ? 'Withdraw Prize' : 'Close Pool')}
                 </Button>
                 {connected &&
                   address?.toLowerCase() === raffle.creator.toLowerCase() &&
@@ -851,7 +866,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </Button>
-            ) : canClosePool() && (address?.toLowerCase() === raffle.creator.toLowerCase()) ? (
+            ) : canClosePool() ? (
               <Button
                 onClick={handleClosePool}
                 disabled={closingPool}
@@ -859,7 +874,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 size="lg"
                 className="w-full"
               >
-                {closingPool ? 'Closing...' : 'Close Pool'}
+                {closingPool ? 'Closing...' : (!hasTokenGating(raffle) && isEscrowedPrize && address?.toLowerCase() === raffle.creator.toLowerCase() ? 'Withdraw Prize' : 'Close Pool')}
               </Button>
             ) : maxPurchasable <= 0 ? (
               <Button
@@ -4212,43 +4227,6 @@ setRaffle(raffleData);
                 </Button>
             )}
                         
-              {/* Update VRF Status - visible to all users, in terminal states */}
-              {([4,5,6,7,8].includes(raffle.stateNum) && 
-                raffle?.isVrfConsumer === true && 
-                raffle?.poolSubscriptionId && raffle.poolSubscriptionId.toString() !== '0' &&
-                raffle?.subscriptionId && raffle.subscriptionId.toString() !== '0' &&
-                raffle.poolSubscriptionId.toString() === raffle.subscriptionId.toString()) && (
-                <Button
-                  onClick={async () => {
-                    try {
-                      setUpdatingVrfStatus(true);
-                      const contract = getContractInstance(raffle.address, 'pool');
-                      if (!contract) throw new Error('Failed to get raffle contract');
-                      const result = await executeTransaction(contract.removeFromVRFSubscription);
-                      if (result?.success) {
-                        toast.success('VRF status updated successfully');
-                        // Optimistically update local state so the button hides immediately
-                        setRaffle((prev) => prev ? { ...prev, isVrfConsumer: false } : prev);
-                        triggerRefresh?.();
-                      } else if (result?.error) {
-                        throw new Error(result.error);
-                      }
-                    } catch (err) {
-                      const errorDetails = formatErrorForDisplay(err, 'update VRF status');
-                      logContractError(err, 'Update VRF Status');
-                      notifyError(err, { action: 'updateVRFStatus' });
-                    } finally {
-                      setUpdatingVrfStatus(false);
-                    }
-                  }}
-                  disabled={updatingVrfStatus}
-                  variant="primary"
-                  size="md"
-                  className="flex items-center justify-center gap-2"
-                >
-                  {updatingVrfStatus ? 'Updating...' : 'Deregister Consumer'}
-                </Button>
-              )}
 
           </div>
         </div>
