@@ -31,11 +31,17 @@ const VestingConfigurationComponent = () => {
   const [declaring, setDeclaring] = useState(false);
   const [cutting, setCutting] = useState(false);
   const [reducing, setReducing] = useState(false);
-    const [allocationPercent, setAllocationPercent] = useState('');
+  const [cutPercent, setCutPercent] = useState(''); // For Cut Supply
+  const [allocationPercent, setAllocationPercent] = useState(''); // For Declare Creator Allocation
   const [allocationTokenId, setAllocationTokenId] = useState('');
   const [reductionPercent, setReductionPercent] = useState('');
     const [showReductionWarning, setShowReductionWarning] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  
+  // Restore Pool Allocation state
+  const [restorePoolAddress, setRestorePoolAddress] = useState('');
+  const [restoreTokenId, setRestoreTokenId] = useState('');
+  const [restoring, setRestoring] = useState(false);
 
   
   // Fetch collection details
@@ -342,6 +348,52 @@ const VestingConfigurationComponent = () => {
     }
   };
 
+  // Restore pool allocation function
+  const restorePoolAllocation = async () => {
+    if (!fetchedCollection || !collectionInfo) {
+      toast.error('Please enter a valid collection address');
+      return;
+    }
+    
+    if (!restorePoolAddress || !ethers.utils.isAddress(restorePoolAddress)) {
+      toast.error('Please enter a valid pool address');
+      return;
+    }
+    
+    setRestoring(true);
+    try {
+      if (isERC721) {
+        // ERC721: restoreMinterAllocation(address pool)
+        await fetchedCollection.callStatic.restoreMinterAllocation(restorePoolAddress);
+        const result = await executeTransaction(() => 
+          fetchedCollection.restoreMinterAllocation(restorePoolAddress)
+        );
+        if (result.success) {
+          toast.success('Pool allocation restored successfully');
+          await fetchCollectionDetails(collectionAddress);
+          setRestorePoolAddress('');
+        }
+      } else {
+        // ERC1155: restoreMinterAllocation(address pool, uint256 tokenId)
+        const tid = restoreTokenId ? parseInt(restoreTokenId) : tokenId;
+        await fetchedCollection.callStatic.restoreMinterAllocation(restorePoolAddress, tid);
+        const result = await executeTransaction(() => 
+          fetchedCollection.restoreMinterAllocation(restorePoolAddress, tid)
+        );
+        if (result.success) {
+          toast.success('Pool allocation restored successfully');
+          await fetchCollectionDetails(collectionAddress);
+          setRestorePoolAddress('');
+          setRestoreTokenId('');
+        }
+      }
+    } catch (error) {
+      notifyError(error, { action: 'restorePoolAllocation' });
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   // Reduce creator allocation function
   const reduceAllocation = async () => {
     if (!fetchedCollection || !collectionInfo) {
@@ -405,7 +457,7 @@ const VestingConfigurationComponent = () => {
     }
     setCutting(true);
     try {
-      const pct = Number(allocationPercent);
+      const pct = Number(cutPercent);
       if (!isFinite(pct) || pct <= 0 || pct > 100) {
         toast.error('Enter a valid percentage between 0 and 100');
         setCutting(false);
@@ -604,21 +656,21 @@ const VestingConfigurationComponent = () => {
             )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Cut Percentage (%)</label>
-              <input type="number" placeholder="20" value={allocationPercent} onChange={(e) => setAllocationPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
+              <input type="number" placeholder="20" value={cutPercent} onChange={(e) => setCutPercent(e.target.value)} className="w-full px-3 py-2 border border-border rounded-md bg-background" />
               <p className="text-xs text-muted-foreground">Enter percentage as a whole number (e.g., 20 = 20%). This will reduce both maxSupply and creatorAllocation proportionally.</p>
-              {allocationPercent && Number(allocationPercent) > 0 && Number(allocationPercent) <= 100 && (
+              {cutPercent && Number(cutPercent) > 0 && Number(cutPercent) <= 100 && (
                 <p className="text-xs text-red-600">
-                  Will remove: {Math.floor(Number(collectionInfo.maxSupply) * Number(allocationPercent) / 100)} tokens from max supply
+                  Will remove: {Math.floor(Number(collectionInfo.maxSupply) * Number(cutPercent) / 100)} tokens from max supply
                   {collectionInfo.creatorAllocationDeclared && (
                     <>
                       <br />
-                      Will remove: {Math.floor(Number(collectionInfo.creatorAllocation) * Number(allocationPercent) / 100)} tokens from creator allocation
+                      Will remove: {Math.floor(Number(collectionInfo.creatorAllocation) * Number(cutPercent) / 100)} tokens from creator allocation
                     </>
                   )}
                 </p>
               )}
             </div>
-            <Button onClick={cutSupply} disabled={!allocationPercent || cutting || !isOwner} className="w-full">
+            <Button onClick={cutSupply} disabled={!cutPercent || cutting || !isOwner} className="w-full">
               {cutting ? 'Cutting...' : isOwner ? 'Cut Supply' : 'Connect as Owner to Cut'}
             </Button>
           </CardContent>
@@ -629,16 +681,14 @@ const VestingConfigurationComponent = () => {
       {/* Declare Creator Allocation (placed above configure) */}
       {collectionInfo && !collectionInfo.creatorAllocationDeclared && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
               <TrendingUp className="h-5 w-5" />
               Declare Creator Allocation
-            </CardTitle>
-            <CardDescription>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               Declare the creator allocation percentage for this collection
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </p>
             {!isERC721 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Token ID (ERC1155 only)</label>
@@ -652,6 +702,56 @@ const VestingConfigurationComponent = () => {
             </div>
             <Button onClick={declareAllocation} disabled={!allocationPercent || declaring || !isOwner} className="w-full">
               {declaring ? 'Declaring...' : isOwner ? 'Declare Allocation' : 'Connect as Owner to Declare'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Restore Pool Allocation */}
+      {collectionInfo && (
+        <Card>
+          <CardContent className="space-y-4 p-4">
+            <div className="text-base font-medium flex items-center gap-2 mb-1">
+              <RefreshCw className="h-5 w-5" />
+              Restore Pool Allocation
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Restore a pool's unmintable allocation back to the collection's available supply
+            </p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Pool Address</label>
+              <input 
+                type="text" 
+                placeholder="0x..." 
+                value={restorePoolAddress} 
+                onChange={(e) => setRestorePoolAddress(e.target.value)} 
+                className="w-full px-3 py-2 border border-border rounded-md bg-background" 
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the pool address
+              </p>
+            </div>
+            {!isERC721 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Token ID (ERC1155 only)</label>
+                <input 
+                  type="number" 
+                  placeholder="1" 
+                  value={restoreTokenId} 
+                  onChange={(e) => setRestoreTokenId(e.target.value)} 
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use the token ID from above ({tokenId})
+                </p>
+              </div>
+            )}
+            <Button 
+              onClick={restorePoolAllocation} 
+              disabled={!restorePoolAddress || restoring || !isOwner} 
+              className="w-full"
+            >
+              {restoring ? 'Restoring...' : isOwner ? 'Restore Allocation' : 'Connect as Owner to Restore'}
             </Button>
           </CardContent>
         </Card>

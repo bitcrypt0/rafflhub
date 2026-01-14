@@ -4,7 +4,8 @@ import { useContract } from '../../contexts/ContractContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock, Gift } from 'lucide-react';
+import { useCollections } from '../../hooks/useCollections';
+import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock, Gift, Package, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
@@ -44,6 +45,9 @@ const NewMobileProfilePage = () => {
     claimRefund,
     creatorStats
   } = useProfileData();
+
+  // Fetch collections data
+  const { collections, loading: collectionsLoading } = useCollections();
 
 
   // Unified raffle state badge renderer (matches LandingPage/RaffleDetailPage styles)
@@ -2165,26 +2169,34 @@ const NewMobileProfilePage = () => {
     );
   };
 
-  // Purchased Tickets section rendering - matches desktop functionality
-  const renderPurchasedTicketsSection = () => {
-    const handleRaffleClick = (raffleAddress) => {
-      const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : null;
-      const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
-        ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-        : (currentChainId || '');
-      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
-      navigate(path);
-    };
-
-    if (!purchasedTickets || purchasedTickets.length === 0) {
+  // My Collections section rendering
+  const renderMyCollectionsTab = () => {
+    if (collectionsLoading) {
       return (
         <div className="p-6">
           <div className="text-center py-12">
-            <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Slots Purchased Yet</h3>
-            <p className="text-muted-foreground text-sm">
-              You haven't purchased any pool slots yet. Browse active pools to get started!
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground text-sm">Loading collections...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!collections || collections.length === 0) {
+      return (
+        <div className="p-6">
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Collections Yet</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              You haven't created any NFT collections yet. Create a raffle with an NFT prize to get started!
             </p>
+            <button
+              onClick={() => navigate('/create-raffle')}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Create Raffle
+            </button>
           </div>
         </div>
       );
@@ -2193,58 +2205,71 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Purchased Slots</h3>
-          <span className="text-sm text-muted-foreground">{purchasedTickets.length} slots</span>
+          <h3 className="text-lg font-semibold">My Collections</h3>
+          <span className="text-sm text-muted-foreground">{collections.length} collections</span>
         </div>
 
-        {purchasedTickets.map((ticket, index) => (
+        {collections.map((collection, index) => (
           <div
-            key={ticket.id || index}
+            key={`${collection.address}-${index}`}
             className="bg-card border border-border rounded-lg p-4 hover:bg-card/90 transition-colors"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                <Package className="h-5 w-5 text-purple-500" />
+              </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-foreground text-sm mb-1">
-                  {ticket.raffleName || ticket.poolName || ticket.name || `Raffle ${ticket.raffleAddress?.slice(0, 8)}...`}
-                </h4>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-foreground text-sm mb-1">
+                      {collection.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {collection.symbol}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+                    collection.isInternal 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'bg-secondary/10 text-secondary-foreground'
+                  }`}>
+                    {collection.type}
+                  </span>
+                </div>
+
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Slots:</span> {ticket.quantity || ticket.ticketCount || 1}
+                    <span className="font-medium">Total Supply:</span> {collection.totalSupply}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Amount Paid:</span> {(() => {
-                      const amt = ticket.totalSpent ?? ticket.amount;
-                      if (amt === undefined || amt === null || amt === '') {
-                        const qty = ticket.quantity || ticket.ticketCount || 0;
-                        const price = ticket.slotFee; // ether units string
-                        if (price) {
-                          const computed = (parseFloat(price) || 0) * qty;
-                          return formatRevenueAmount(computed.toString());
-                        }
-                        return formatRevenueAmount('0');
-                      }
-                      return formatRevenueAmount(amt);
-                    })()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Purchased:</span> {ticket.purchaseTime ? new Date((ticket.purchaseTime < 1e12 ? ticket.purchaseTime * 1000 : ticket.purchaseTime)).toLocaleString() : 'Unknown'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">State:</span> {renderStateBadge(ticket.state, { stateNum: ticket.stateNum })}
+                  <p className="text-xs text-muted-foreground font-mono">
+                    <span className="font-medium">Address:</span> {collection.address.slice(0, 6)}...{collection.address.slice(-4)}
                   </p>
                 </div>
-              </div>
-            </div>
 
-            <div className="flex gap-2 mt-3">
-              {ticket.state === 'ended' && (
-                <button
-                  onClick={() => claimRefund(ticket.raffleAddress)}
-                  className="text-sm bg-green-500/10 text-green-600 px-3 py-1.5 rounded-md hover:bg-green-500/20 transition-colors"
-                >
-                  Claim Refund
-                </button>
-              )}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(collection.address);
+                      toast.success('Address copied to clipboard');
+                    }}
+                    className="flex-1 text-xs bg-secondary/10 text-secondary-foreground px-3 py-1.5 rounded-md hover:bg-secondary/20 transition-colors"
+                  >
+                    Copy Address
+                  </button>
+                  <button
+                    onClick={() => {
+                      const explorerUrl = SUPPORTED_NETWORKS[chainId]?.blockExplorer;
+                      if (explorerUrl) {
+                        window.open(`${explorerUrl}/address/${collection.address}`, '_blank');
+                      }
+                    }}
+                    className="flex-1 text-xs bg-secondary/10 text-secondary-foreground px-3 py-1.5 rounded-md hover:bg-secondary/20 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Explorer
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -2256,7 +2281,7 @@ const NewMobileProfilePage = () => {
   const renderContent = () => {
     if (activeTab === 'activity') return renderActivitySection();
     if (activeTab === 'created') return renderMyRafflesSection();
-    if (activeTab === 'purchased') return renderPurchasedTicketsSection();
+    if (activeTab === 'purchased') return renderMyCollectionsTab();
     if (activeTab === 'dashboard') return renderDashboardSection();
     return renderActivitySection(); // Default fallback
   };
@@ -2309,7 +2334,7 @@ const NewMobileProfilePage = () => {
                 : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
-            <span className="text-sm font-medium">Slots</span>
+            <span className="text-sm font-medium">Collections</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}

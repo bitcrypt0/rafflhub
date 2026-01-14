@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useWallet } from '../contexts/WalletContext';
+import { useCollections } from '../hooks/useCollections';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import {
@@ -19,7 +20,8 @@ import {
   DollarSign,
   Award,
   Calendar,
-  Eye
+  Eye,
+  Package
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -307,77 +309,113 @@ const ProfileTabs = ({
     </div>
   );
 
-  const PurchasedTicketsTab = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">My Slots</h3>
-        <Badge variant="outline">{purchasedTickets.length} slots</Badge>
-      </div>
+  const MyCollectionsTab = () => {
+    const { collections, loading: collectionsLoading } = useCollections();
 
-      {purchasedTickets.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">You haven't purchased any slots yet</p>
-            <Button
-              onClick={() => navigate('/')}
-              variant="primary"
-              size="md"
-            >
-              Browse Raffles
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {purchasedTickets.map((ticket) => (
-            <Card key={ticket.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {/* Ticket Icon */}
-                  <div className="flex-shrink-0 mt-1">
-                    <Ticket className="h-4 w-4 text-blue-500" />
-                  </div>
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">My Collections</h3>
+          <Badge variant="outline">{collections.length} collections</Badge>
+        </div>
 
-                  {/* Ticket Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-foreground text-sm">
-                          Purchased {ticket.ticketCount} {ticket.raffleName || ticket.name} slot{ticket.ticketCount > 1 ? 's' : ''}
-                        </h4>
-                        <p className="text-muted-foreground text-sm mt-1">
-                          {ticket.totalSpent} {getCurrencySymbol()}
-                        </p>
-                      </div>
-                      <span className="text-sm text-muted-foreground flex-shrink-0">
-                        {formatDateTimeDisplay(ticket.purchaseTime)}
-                      </span>
+        {collectionsLoading ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading collections...</p>
+            </CardContent>
+          </Card>
+        ) : collections.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">You haven't created any collections yet</p>
+              <Button
+                onClick={() => navigate('/create-raffle')}
+                variant="primary"
+                size="md"
+              >
+                Create Raffle with NFT Prize
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {collections.map((collection, index) => (
+              <Card key={`${collection.address}-${index}`} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Collection Icon */}
+                    <div className="flex-shrink-0 mt-1">
+                      <Package className="h-5 w-5 text-purple-500" />
                     </div>
 
-                  </div>
-                </div>
+                    {/* Collection Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm mb-1">
+                            {collection.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {collection.symbol}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={collection.isInternal ? 'default' : 'secondary'}
+                          className="flex-shrink-0"
+                        >
+                          {collection.type}
+                        </Badge>
+                      </div>
 
-                <div className="flex gap-2">
-                  {ticket.canClaimPrize && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => onClaimPrize(ticket)}
-                      className="flex-1"
-                    >
-                      <Award className="h-4 w-4 mr-1" />
-                      Claim Prize
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium">Total Supply:</span> {collection.totalSupply}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          <span className="font-medium">Address:</span> {collection.address.slice(0, 6)}...{collection.address.slice(-4)}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(collection.address);
+                            // You can add a toast notification here if needed
+                          }}
+                          className="flex-1"
+                        >
+                          Copy Address
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const explorerUrl = SUPPORTED_NETWORKS[chainId]?.blockExplorer;
+                            if (explorerUrl) {
+                              window.open(`${explorerUrl}/address/${collection.address}`, '_blank');
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View on Explorer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const CreatorDashboardTab = () => (
     <div className="space-y-6">
@@ -476,7 +514,7 @@ const ProfileTabs = ({
                 : 'border-border bg-background hover:bg-muted text-foreground'
             }`}
           >
-            <span className="text-sm font-medium">My Slots</span>
+            <span className="text-sm font-medium">My Collections</span>
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -499,7 +537,7 @@ const ProfileTabs = ({
             My Raffles
           </TabsTrigger>
           <TabsTrigger value="purchased">
-            My Slots
+            My Collections
           </TabsTrigger>
           <TabsTrigger value="dashboard">
             Dashboard
@@ -516,7 +554,7 @@ const ProfileTabs = ({
       </TabsContent>
 
       <TabsContent value="purchased" className={isMobile ? "mt-4" : "mt-6"}>
-        <PurchasedTicketsTab />
+        <MyCollectionsTab />
       </TabsContent>
 
       <TabsContent value="dashboard" className={isMobile ? "mt-4" : "mt-6"}>
