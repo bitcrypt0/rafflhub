@@ -155,10 +155,10 @@ const FooterModern = () => {
               Stay Updated
             </Badge>
             <h2 className="text-3xl font-bold mb-4 font-display">
-              Get the Latest Raffle Updates
+              Get the Latest Updates
             </h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join our community to receive exclusive raffle announcements, platform updates, and special offers.
+              Join our community to receive exclusive announcements and platform updates.
             </p>
             
             <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
