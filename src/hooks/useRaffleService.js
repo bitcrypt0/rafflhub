@@ -444,7 +444,6 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
   const {
     onWinnersSelected,
     onStateChange,
-    onPrizeClaimed,
     onTicketsPurchased,
     onRpcError, // New callback for RPC error detection
     enablePolling = true,
@@ -600,14 +599,8 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
         listenersRef.current.push({ contract, event: 'WinnersSelected', handler: winnersHandler });
       }
 
-      // PrizeClaimed event
-      if (onPrizeClaimed) {
-        const prizeHandler = createEventHandler('PrizeClaimed', (winner, tokenId, event) => {
-          onPrizeClaimed(winner, tokenId, event);
-        });
-        contract.on('PrizeClaimed', prizeHandler);
-        listenersRef.current.push({ contract, event: 'PrizeClaimed', handler: prizeHandler });
-      }
+      // Note: PrizeClaimed event listener removed - Pool.sol doesn't emit this event
+      // Claim status is tracked via winner.prizeClaimed property from contract state
 
       // SlotsPurchased event
       if (onTicketsPurchased) {
@@ -625,7 +618,7 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
       console.error('Error setting up event listeners:', error);
       setIsListening(false);
     }
-  }, [raffleAddress, connected, onWinnersSelected, onPrizeClaimed, onTicketsPurchased, createEventHandler]);
+  }, [raffleAddress, connected, onWinnersSelected, onTicketsPurchased, createEventHandler]);
 
   // Cleanup event listeners
   const cleanupEventListeners = useCallback(() => {

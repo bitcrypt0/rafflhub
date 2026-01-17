@@ -2160,13 +2160,6 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         }, 6000);
       }
     },
-    onPrizeClaimed: (winner, tokenId, event) => {
-
-      // Refresh winners to update claim status
-      setTimeout(() => {
-        fetchWinners();
-      }, 1000);
-    },
     onRpcError: (error) => {
       // Log RPC errors for debugging but rely on auto-refresh timer instead
       console.warn('WinnersSection RPC error:', error);
@@ -2864,12 +2857,6 @@ const RaffleDetailPage = () => {
       }
 
       // Trigger refresh when state changes (to update other fields)
-      triggerRefresh();
-    },
-    onPrizeClaimed: (winner, tokenId, event) => {
-
-      toast.success(`Prize claimed by ${winner.slice(0, 6)}...${winner.slice(-4)}!`);
-      // Trigger refresh to update claim status
       triggerRefresh();
     },
     onTicketsPurchased: (participant, quantity, event) => {
