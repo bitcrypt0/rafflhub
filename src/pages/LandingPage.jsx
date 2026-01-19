@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Search, Filter } from 'lucide-react';
+import { Trophy, Search, Filter, Shield, CheckCircle, Eye, LockKeyhole, Sparkles, Wallet, Clock, Users, Ticket, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useCollabDetection } from '../contexts/CollabDetectionContext';
@@ -12,7 +12,7 @@ import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleService } from '../hooks/useRaffleService';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
-import { PageLoading, ContentLoading, CardSkeleton } from '../components/ui/loading';
+import { PageLoading, ContentLoading, CardSkeleton, SkeletonCard } from '../components/ui/loading';
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import FilterSidebar from '../components/FilterSidebar';
@@ -21,6 +21,8 @@ import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
 import { useRaffleFilters } from '../hooks/useRaffleFilters';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
+import { Badge, StatusBadge } from '../components/ui/badge';
+import { Progress, EnhancedProgress } from '../components/ui/progress';
 
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 
@@ -354,38 +356,62 @@ const RaffleCard = ({ raffle }) => {
     };
   }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
 
+  // Phase 3: Enhanced status badge using the new StatusBadge component
   const getStatusBadge = () => {
-    // Check for Live state (startTime passed but no purchases yet)
     const now = Math.floor(Date.now() / 1000);
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
                    now >= raffle.startTime && 
                    (raffle.totalSlotsPurchased || 0) === 0;
 
-    // Get dynamic label for Prizes Claimed state based on winner count
     const getDynamicLabel = (stateNum) => {
       const dynamicLabel = getDynamicPrizeLabel(stateNum, winnerCount);
-      if (dynamicLabel) {
-        return dynamicLabel;
-      }
+      if (dynamicLabel) return dynamicLabel;
       return POOL_STATE_LABELS[stateNum] || 'Unknown';
     };
 
     const label = isLive ? 'Live' : getDynamicLabel(raffle.stateNum);
-    const colorMap = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Active': 'bg-green-100 text-green-800',
-      'Ended': 'bg-red-100 text-red-800',
-      'Drawing': 'bg-purple-100 text-purple-800',
-      'Completed': 'bg-blue-100 text-blue-800',
-      'Deleted': 'bg-gray-200 text-gray-800',
-      'Activation Failed': 'bg-red-200 text-red-900',
-      'Prizes Claimed': 'bg-blue-200 text-blue-900',
-      'Prize Claimed': 'bg-blue-200 text-blue-900', // Same styling for singular
-      'Unengaged': 'bg-gray-100 text-gray-800',
-      'Unknown': 'bg-gray-100 text-gray-800'
+    
+    // Map labels to StatusBadge variants
+    const variantMap = {
+      'Pending': 'pending',
+      'Active': 'active',
+      'Live': 'live',
+      'Ended': 'ended',
+      'Drawing': 'drawing',
+      'Completed': 'completed',
+      'Deleted': 'deleted',
+      'Activation Failed': 'ended',
+      'Prizes Claimed': 'completed',
+      'Prize Claimed': 'completed',
+      'Unengaged': 'secondary',
+      'Unknown': 'secondary'
     };
-    return <span className={`px-2 py-1 rounded-full font-body text-[length:var(--text-xs)] font-medium ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+
+    return <Badge variant={variantMap[label] || 'secondary'} size="default">{label}</Badge>;
+  };
+
+  // Phase 3: Get status gradient for top bar
+  const getStatusGradient = () => {
+    const now = Math.floor(Date.now() / 1000);
+    const isLive = raffle.state?.toLowerCase() === 'pending' && 
+                   raffle.startTime && 
+                   now >= raffle.startTime && 
+                   (raffle.totalSlotsPurchased || 0) === 0;
+    
+    if (isLive) return 'bg-gradient-to-r from-green-500 to-green-400';
+    
+    const gradientMap = {
+      0: 'bg-gradient-to-r from-yellow-500 to-yellow-400', // Pending
+      1: 'bg-gradient-to-r from-green-500 to-green-400',   // Active
+      2: 'bg-gradient-to-r from-red-500 to-red-400',       // Ended
+      3: 'bg-gradient-to-r from-purple-500 to-pink-500',   // Drawing
+      4: 'bg-gradient-to-r from-blue-500 to-blue-400',     // Completed
+      5: 'bg-gradient-to-r from-gray-500 to-gray-400',     // Deleted
+      6: 'bg-gradient-to-r from-blue-500 to-blue-400',     // AllPrizesClaimed
+      7: 'bg-gradient-to-r from-gray-400 to-gray-300',     // Unengaged
+    };
+    return gradientMap[raffle.stateNum] || 'bg-gradient-to-r from-gray-400 to-gray-300';
   };
 
   // Enhanced NFT type detection based on correct understanding of contract flags
@@ -470,47 +496,53 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="landing-raffle-card bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl hover:border-border/80 transition-all duration-300 flex flex-col h-full group w-full max-w-full">
-      <div className="flex items-center justify-between mb-4 min-w-0">
-        <h3 
-          className="font-display text-[length:var(--text-lg)] font-semibold truncate flex-1 mr-2 min-w-0 cursor-pointer hover:text-[#614E41] transition-colors duration-200" 
-          onClick={handleViewRaffle}
-        >
-          {raffle.name}
-        </h3>
-        <div className="flex-shrink-0">
-          {getStatusBadge()}
-        </div>
-      </div>
+    <div className="landing-raffle-card group relative bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/30 hover:bg-card/90 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full w-full max-w-full cursor-pointer" onClick={handleViewRaffle}>
+      {/* Phase 3: Status indicator bar at top */}
+      <div className={`h-1 w-full ${getStatusGradient()}`} />
+      
+      {/* Hover overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-      <div className="space-y-2 mb-4 min-w-0">
-        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Creator:</span>
-          <span className="font-mono truncate ml-2">{raffle.creator?.slice(0, 10)}...</span>
-        </div>
-        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Slot Fee:</span>
-          <span className="truncate ml-2">{formatSlotFee(raffle.slotFee || '0')}</span>
-        </div>
-        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Slots Sold:</span>
-          <span className="truncate ml-2">{ticketsSold !== null ? `${ticketsSold} / ${raffle.slotLimit}` : 'Loading...'}</span>
-        </div>
-        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">Winners:</span>
-          <span className="truncate ml-2">{raffle.winnersCount}</span>
-        </div>
-        <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-          <span className="text-muted-foreground flex-shrink-0">{timeLabel}:</span>
-          <span className="truncate ml-2">{timeRemaining}</span>
-        </div>
-        {/* Hide Type until full raffle data is available to avoid misleading placeholder */}
-        {!raffle.isSummary && (
-          <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-            <span className="text-muted-foreground flex-shrink-0">Type:</span>
-            <span className="px-2 py-1 rounded-full font-body text-[length:var(--text-sm)] bg-muted/20 truncate ml-2">{getPrizeType()}</span>
+      <div className="p-4 sm:p-5 flex flex-col flex-1">
+        {/* Header with name and status badge */}
+        <div className="relative flex items-start justify-between mb-4 min-w-0 gap-2">
+          <h3 className="font-display text-[length:var(--text-lg)] font-semibold truncate flex-1 min-w-0 group-hover:text-primary transition-colors duration-200">
+            {raffle.name}
+          </h3>
+          <div className="flex-shrink-0">
+            {getStatusBadge()}
           </div>
-        )}
+        </div>
+
+        {/* Stats grid layout - consistent stacked format */}
+        <div className="relative grid grid-cols-2 gap-3 mb-4">
+          <div className="space-y-0.5">
+            <span className="text-muted-foreground text-[length:var(--text-sm)] block">Slot Fee</span>
+            <span className="font-medium text-[length:var(--text-sm)]">{formatSlotFee(raffle.slotFee || '0')}</span>
+          </div>
+          <div className="space-y-0.5">
+            <span className="text-muted-foreground text-[length:var(--text-sm)] block">Winners</span>
+            <span className="font-medium text-[length:var(--text-sm)]">{raffle.winnersCount}</span>
+          </div>
+        </div>
+
+        {/* Timer section - stacked format */}
+        <div className="relative grid grid-cols-2 gap-3 mb-4">
+          <div className="space-y-0.5">
+            <span className="text-muted-foreground text-[length:var(--text-sm)] block">{timeLabel}</span>
+            <span className="font-medium text-[length:var(--text-sm)]">{timeRemaining}</span>
+          </div>
+          {/* Pool Type - stacked format */}
+          {!raffle.isSummary && (
+            <div className="space-y-0.5">
+              <span className="text-muted-foreground text-[length:var(--text-sm)] block">Pool Type</span>
+              <span className="font-medium text-[length:var(--text-sm)] truncate block">{getPrizeType()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Additional info section - stacked format */}
+        <div className="relative grid grid-cols-2 gap-3 mb-4 min-w-0">
         {(() => {
           const prizeType = getPrizeType();
           const isNFTPrize = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero;
@@ -534,20 +566,16 @@ const RaffleCard = ({ raffle }) => {
                 ? `${collectionName} ${prizeId}` // Fall back to name if no symbol
                 : `${raffle.prizeCollection?.slice(0, 10)}... ${prizeId}`; // Fall back to address
 
-
-
             return (
-              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-                <span className="text-muted-foreground flex-shrink-0">Prize Token ID:</span>
-                <span className={`truncate ml-2 ${collectionSymbol || collectionName ? '' : 'font-mono'}`}>
+              <div className="space-y-0.5">
+                <span className="text-muted-foreground text-[length:var(--text-sm)] block">Prize Token ID</span>
+                <span className={`font-medium text-[length:var(--text-sm)] truncate block ${collectionSymbol || collectionName ? '' : 'font-mono'}`}>
                   {displayValue}
                 </span>
               </div>
             );
           } else if (isMintable) {
             // For mintable NFT prizes: show 'Prize Collection' with collection name or address
-            // Fix: If we have a collection name, it's likely ERC721 (even if standard is undefined)
-            // ERC1155 collections often don't have names, so if we got a name, prefer showing it
             const hasCollectionName = collectionName && collectionName.trim() !== '';
             const isLikelyERC721 = raffle.standard === 0 || (raffle.standard === undefined && hasCollectionName);
             const isDefinitelyERC1155 = raffle.standard === 1;
@@ -558,12 +586,10 @@ const RaffleCard = ({ raffle }) => {
                   ? collectionName // ERC721 or likely ERC721: use name if available
                   : `${raffle.prizeCollection?.slice(0, 10)}...`); // Fallback to address
 
-
-
             return (
-              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-                <span className="text-muted-foreground flex-shrink-0">Prize Collection:</span>
-                <span className={`truncate ml-2 ${hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}`}>
+              <div className="space-y-0.5">
+                <span className="text-muted-foreground text-[length:var(--text-sm)] block">Collection</span>
+                <span className={`font-medium text-[length:var(--text-sm)] truncate block ${hasCollectionName && !isDefinitelyERC1155 ? '' : 'font-mono'}`}>
                   {displayValue}
                 </span>
               </div>
@@ -586,15 +612,35 @@ const RaffleCard = ({ raffle }) => {
           // Show Prize Amount for Token Giveaways and other giveaways
           if (prizeType === 'Token Giveaway' || prizeType.includes('Giveaway')) {
             return (
-              <div className="flex justify-between items-center font-body text-[length:var(--text-sm)] min-w-0">
-                <span className="text-muted-foreground flex-shrink-0">Prize Amount:</span>
-                <span className="truncate ml-2">{getPrizeAmount()}</span>
+              <div className="space-y-0.5">
+                <span className="text-muted-foreground text-[length:var(--text-sm)] block">Prize Amount</span>
+                <span className="font-medium text-[length:var(--text-sm)] truncate block">{getPrizeAmount()}</span>
               </div>
             );
           }
 
           return null;
         })()}
+        </div>
+
+        {/* Progress section - moved to bottom */}
+        <div className="relative mt-auto pt-3 border-t border-border/30 space-y-2">
+          <div className="flex justify-between text-[length:var(--text-sm)]">
+            <span className="text-muted-foreground">Progress (Slots Sold)</span>
+            <span className="font-medium">
+              {ticketsSold !== null ? `${ticketsSold} / ${raffle.slotLimit}` : '...'}
+            </span>
+          </div>
+          {ticketsSold !== null && raffle.slotLimit && (
+            <Progress 
+              value={Math.min(100, (ticketsSold / raffle.slotLimit) * 100)} 
+              size="default"
+              variant="gradient"
+              indicatorVariant="gradient"
+              showShimmer
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -653,21 +699,65 @@ const LandingPage = () => {
   if (!connected) {
     return (
       <PageContainer className="pt-8 pb-4">
-        <div className="text-center mb-8">
+        {/* Enhanced Header */}
+        <div className="text-center mb-12">
           <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
-            Fairness and Transparency, On-Chain
+            Fairness and Transparency,{' '}
+            <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-300 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
+              On-Chain
+            </span>
           </h1>
-          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
+            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public and auditable.
           </p>
+
+          {/* Trust Badges - Homepage hero style */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+            </div>
+          </div>
         </div>
 
-        <div className="text-center py-12">
-          <Trophy className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
-          <h3 className="font-display text-[length:var(--text-3xl)] font-bold mb-4 leading-tight">Connect Your Wallet</h3>
-          <p className="font-body text-[length:var(--text-base)] text-muted-foreground mb-6">
-            Please connect your wallet to view and interact with raffles on the blockchain.
-          </p>
+        {/* Connect Wallet Card */}
+        <div className="max-w-md mx-auto">
+          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-8 text-center shadow-lg">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Wallet className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-3 leading-tight">Connect Your Wallet</h3>
+            <p className="font-body text-[length:var(--text-base)] text-muted-foreground mb-6">
+              Connect your wallet to view and interact with raffles on the blockchain.
+            </p>
+          </div>
         </div>
       </PageContainer>
     );
@@ -698,7 +788,55 @@ const LandingPage = () => {
   const shouldShowLoading = !canUseSummariesForCurrentFilters && loading;
   if (shouldShowLoading) {
     return (
-      <PageContainer>
+      <PageContainer className="pt-8 pb-4">
+        {/* Header - consistent with main view */}
+        <div className="text-center mb-12">
+          <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
+            Fairness and Transparency,{' '}
+            <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-300 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
+              On-Chain
+            </span>
+          </h1>
+          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
+            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public and auditable.
+          </p>
+
+          {/* Trust Badges - Homepage hero style */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+            </div>
+          </div>
+        </div>
+
         <ContentLoading
           message="Loading raffles from blockchain..."
           isMobile={isMobile}
@@ -711,13 +849,52 @@ const LandingPage = () => {
   if (!canUseSummariesForCurrentFilters && error) {
     return (
       <PageContainer className="pt-8 pb-4">
-        <div className="mb-8 text-center">
+        {/* Enhanced Header */}
+        <div className="text-center mb-12">
           <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
-            Fairness and Transparency, On-Chain
+            Fairness and Transparency,{' '}
+            <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-300 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
+              On-Chain
+            </span>
           </h1>
-          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
+            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public and auditable.
           </p>
+
+          {/* Trust Badges - Homepage hero style */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+            </div>
+          </div>
         </div>
 
         <RaffleErrorDisplay
@@ -727,14 +904,11 @@ const LandingPage = () => {
           showCreateButton={true}
         />
       </PageContainer>
-
-
     );
   }
 
   return (
     <React.Fragment>
-
       {/* Filter Sidebar (overlay when open) */}
       <FilterSidebar
         isOpen={isFilterOpen}
@@ -746,34 +920,69 @@ const LandingPage = () => {
       />
 
       {/* Main content - full width */}
-
-
-
       <div className="min-h-screen" style={{ position: 'relative', zIndex: 1 }}>
         <PageContainer className="pt-8 pb-4">
-          {/* Header */}
-          <div className="text-center mb-8">
+          {/* Header Section - consistent style across all states */}
+          <div className="text-center mb-12">
             <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
-              Fairness and Transparency, On-Chain
+              Fairness and Transparency,{' '}
+              <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-300 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
+                On-Chain
+              </span>
             </h1>
-            <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public, auditable, and powered by Chainlink's VRF.
+            <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
+              Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public and auditable.
             </p>
 
+            {/* Trust Badges - Homepage hero style */}
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
+              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <Shield className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+              </div>
+              <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+              </div>
+              <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <Eye className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+              </div>
+              <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+              </div>
+            </div>
           </div>
 
-          {/* Search and Filter Controls */}
-          <div className="mb-6 space-y-4">
+          {/* Phase 3: Enhanced Search and Filter Controls */}
+          <div className="bg-card/40 backdrop-blur-md border border-border/30 rounded-xl p-4 mb-8 shadow-elevation-1">
             {/* Search Field with Filter Button */}
             <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <div className="relative flex-1 group">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                 <Input
                   type="text"
                   placeholder="Search by pool name or contract address..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 h-11 text-[length:var(--text-base)] w-full"
+                  variant="filled"
+                  className="pl-12 pr-4 h-12 text-[length:var(--text-base)] w-full rounded-lg focus:shadow-glow-primary"
                 />
               </div>
               <FilterToggleButton
@@ -783,14 +992,14 @@ const LandingPage = () => {
             </div>
 
             {/* Clear Filters and Pagination */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-3">
               <div className="flex items-center gap-3">
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearAll}
-                    className="font-body text-muted-foreground hover:text-foreground"
+                    className="font-body text-muted-foreground hover:text-foreground text-[length:var(--text-sm)]"
                   >
                     Clear All Filters
                   </Button>
@@ -844,6 +1053,16 @@ const LandingPage = () => {
                   </div>
                 );
               })()}
+            </div>
+          </div>
+
+          {/* Section Title */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-primary rounded-full" />
+              <h2 className="font-display text-[length:var(--text-xl)] font-semibold text-foreground">
+                {hasActiveFilters || searchQuery ? 'Filtered Raffles' : 'All Raffles'}
+              </h2>
             </div>
           </div>
 

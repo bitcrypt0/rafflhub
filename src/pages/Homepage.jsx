@@ -54,7 +54,7 @@ const SectionTitle = ({ eyebrow, title, subtitle, className = '' }) => (
   </div>
 );
 
-// Animated geometric background component
+// Animated geometric background component with enhanced visuals
 const GeometricBackground = () => {
   const containerRef = useRef(null);
 
@@ -64,25 +64,27 @@ const GeometricBackground = () => {
 
     // Create floating geometric shapes
     const shapes = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const shape = document.createElement('div');
+      const isLarge = i < 3;
+      const size = isLarge ? Math.random() * 300 + 200 : Math.random() * 150 + 80;
+
       // Use theme-aware colors with better visibility
-      shape.className = `absolute rounded-full animate-pulse
-        bg-primary/20 dark:bg-primary/30 dim-blue:bg-primary/25
-        border border-primary/30 dark:border-primary/40 dim-blue:border-primary/35
-        shadow-lg dark:shadow-primary/20 dim-blue:shadow-primary/25`;
-      shape.style.width = `${Math.random() * 200 + 100}px`;
+      shape.className = `absolute rounded-full
+        ${isLarge ? 'bg-primary/10 dark:bg-primary/15 dim-blue:bg-primary/12' : 'bg-primary/5 dark:bg-primary/10 dim-blue:bg-primary/8'}
+        blur-3xl`;
+      shape.style.width = `${size}px`;
       shape.style.height = shape.style.width;
       shape.style.left = `${Math.random() * 100}%`;
       shape.style.top = `${Math.random() * 100}%`;
       container.appendChild(shape);
       shapes.push(shape);
 
-      // Animate each shape
+      // Animate each shape with slower, more organic movement
       gsap.to(shape, {
-        x: Math.random() * 100 - 50,
-        y: Math.random() * 100 - 50,
-        duration: Math.random() * 10 + 10,
+        x: Math.random() * 150 - 75,
+        y: Math.random() * 150 - 75,
+        duration: Math.random() * 15 + 20,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut"
@@ -95,6 +97,99 @@ const GeometricBackground = () => {
   }, []);
 
   return <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-none" />;
+};
+
+// Floating card visual element for hero
+const HeroVisual = () => {
+  const visualRef = useRef(null);
+
+  useEffect(() => {
+    const element = visualRef.current;
+    if (!element) return;
+
+    // Subtle floating animation
+    gsap.to(element, {
+      y: -15,
+      duration: 3,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut"
+    });
+  }, []);
+
+  return (
+    <div ref={visualRef} className="relative w-full max-w-lg mx-auto">
+      {/* Main visual card stack */}
+      <div className="relative">
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-3xl blur-2xl transform scale-110" />
+
+        {/* Stacked cards effect */}
+        <div className="absolute -top-4 -left-4 w-full h-full bg-card/50 rounded-2xl border border-border/30 transform rotate-[-6deg]" />
+        <div className="absolute -top-2 -left-2 w-full h-full bg-card/70 rounded-2xl border border-border/50 transform rotate-[-3deg]" />
+
+        {/* Main card */}
+        <div className="relative bg-card rounded-2xl border border-border shadow-2xl p-6 backdrop-blur-sm">
+          {/* Card header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <div className="font-display font-semibold text-foreground text-sm">NFT Drop</div>
+                <div className="text-xs text-muted-foreground">Powered by VRF</div>
+              </div>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              Live
+            </div>
+          </div>
+
+          {/* Progress visualization */}
+          <div className="space-y-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Participants</span>
+              <span className="font-semibold text-foreground">2,847 / 5,000</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full" style={{ width: '57%' }} />
+            </div>
+
+            {/* Mini stats */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <div className="text-lg font-bold text-foreground">500</div>
+                <div className="text-xs text-muted-foreground">Winners</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <div className="text-lg font-bold text-foreground">24h</div>
+                <div className="text-xs text-muted-foreground">Duration</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <div className="text-lg font-bold text-primary">5000</div>
+                <div className="text-xs text-muted-foreground">Slot Limit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating badges */}
+      <div className="absolute -right-4 top-1/4 animate-pulse">
+        <div className="bg-card/90 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-border flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">Verified</span>
+        </div>
+      </div>
+      <div className="absolute -left-4 bottom-1/4 animate-pulse" style={{ animationDelay: '1s' }}>
+        <div className="bg-card/90 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-border flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">Secure</span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Counter animation component
@@ -256,61 +351,121 @@ export default function Homepage() {
   return (
     <div className="bg-background text-foreground overflow-x-hidden -mb-8">
       {/* Hero Section */}
-      <Section id="hero" className="min-h-[90vh] sm:min-h-[100vh] flex items-center justify-center relative bg-gradient-to-br from-background via-card to-muted pt-16 sm:pt-0">
+      <Section id="hero" className="min-h-[90vh] sm:min-h-[100vh] flex items-center justify-center relative overflow-hidden pt-16 sm:pt-0">
+        {/* Animated background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/30" />
+        <GeometricBackground />
+
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }}
+        />
+
         <div className="relative z-10 w-full py-12 sm:py-20">
-          <div className="text-center max-w-6xl mx-auto">
-            <h1 className="hero-headline font-display text-[length:var(--text-5xl)] font-bold mb-4 sm:mb-6 text-foreground leading-tight tracking-tighter">
-              Explore New Strategies to Distribute{' '}
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                NFTs
-              </span>{' '}
-              and{' '}
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Community Rewards
-              </span>
-            </h1>
-            <p className="hero-subtext font-body text-[length:var(--text-lg)] text-muted-foreground mb-6 sm:mb-8 max-w-4xl mx-auto leading-relaxed">
-              Transparent whitelist allocations • Inter-community collaboration • Disincentivize mint bots • Earn community trust
-            </p>
-            
-            <div className="hero-cta flex flex-col items-center gap-6 mb-6 sm:mb-12">
-              <Link
-                to="/app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pulse-btn inline-flex items-center justify-center px-8 py-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold text-[length:var(--text-lg)]"
-              >
-                Launch Dapp
-              </Link>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
+            {/* Left side - Content */}
+            <div className="text-center lg:text-left order-2 lg:order-1">
+              {/* Eyebrow tag */}
+              <div className="hero-headline inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="font-body text-[length:var(--text-sm)] font-medium text-primary">Provably Fair Distribution</span>
+              </div>
+
+              <h1 className="hero-headline font-display text-[length:var(--text-5xl)] font-bold mb-8 text-foreground leading-[1.1] tracking-tighter">
+                Explore New Strategies to Distribute{' '}
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
+                    NFTs
+                  </span>
+                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full" />
+                </span>{' '}
+                and{' '}
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
+                    Community Rewards
+                  </span>
+                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full" />
+                </span>
+              </h1>
+
+              {/* Trust signals as animated inline ticker */}
+              <div className="hero-subtext mb-8">
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-2 gap-y-3">
+                  {/* Chainlink VRF */}
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                      <Shield className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Chainlink VRF Powered</span>
+                  </div>
+
+                  {/* Separator dot */}
+                  <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+
+                  {/* Fairness Guaranteed */}
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                      <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fairness Guaranteed</span>
+                  </div>
+
+                  {/* Separator dot */}
+                  <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+
+                  {/* Fully Transparent */}
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                      <Eye className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Transparent</span>
+                  </div>
+
+                  {/* Separator dot */}
+                  <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
+
+                  {/* Trustless */}
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                      <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link
+                  to="/app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pulse-btn group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/25 font-semibold text-[length:var(--text-lg)]"
+                >
+                  Launch Dapp
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
                 <Link
                   to="/docs"
-                  className="hero-cta inline-flex items-center justify-center px-8 py-4 rounded-full border border-muted-foreground text-muted-foreground hover:border-primary hover:text-primary transition-all duration-300 font-semibold text-[length:var(--text-base)]"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-card border border-border text-foreground hover:border-primary hover:bg-card/80 transition-all duration-300 font-semibold text-[length:var(--text-base)]"
                 >
-                  <BookOpen className="mr-2 h-5 w-5" />
+                  <BookOpen className="h-5 w-5" />
                   Read Documentation
                 </Link>
               </div>
             </div>
 
-            {/* Trust signals */}
-            <div className="hero-cta flex flex-wrap justify-center items-center gap-6 font-body text-[length:var(--text-base)] text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <span>Chainlink VRF Powered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span>Fairness Guaranteed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
-                <span>Fully Transparent</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <LockKeyhole className="h-5 w-5 text-primary" />
-                <span>Trustless</span>
-              </div>
+            {/* Right side - Visual */}
+            <div className="hero-cta order-1 lg:order-2 hidden sm:block">
+              <HeroVisual />
             </div>
           </div>
         </div>
@@ -325,36 +480,37 @@ export default function Homepage() {
           />
         </div>
         
+        {/* Phase 3: Enhanced problem cards with hover animations and staggered reveal */}
         <div className="card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
-          <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="card-item group bg-background rounded-2xl p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border border-border hover:border-primary/30 hover:-translate-y-1">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
               <Shield className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">No More Insider Favoritism</h3>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug group-hover:text-primary transition-colors">No More Insider Favoritism</h3>
             <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Cryptographically secure randomness ensures every participant has an equal chance</p>
           </div>
           
-          <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="card-item group bg-background rounded-2xl p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border border-border hover:border-primary/30 hover:-translate-y-1">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
               <Cpu className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Discourage Bot Attacks</h3>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug group-hover:text-primary transition-colors">Discourage Bot Attacks</h3>
             <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">The Winner selection algorithm largely disincentivizes bot manipulation during NFT Drops</p>
           </div>
           
-          <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="card-item group bg-background rounded-2xl p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border border-border hover:border-primary/30 hover:-translate-y-1">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Build Community Trust</h3>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug group-hover:text-primary transition-colors">Build Community Trust</h3>
             <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Transparent, verifiable processes that communities can audit and trust</p>
           </div>
           
-          <div className="card-item bg-background rounded-2xl p-8 text-center hover:shadow-xl transition-all duration-300 border border-border">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="card-item group bg-background rounded-2xl p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border border-border hover:border-primary/30 hover:-translate-y-1">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
               <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug">Trustless Asset Distribution</h3>
+            <h3 className="font-display text-[length:var(--text-xl)] font-bold mb-3 text-foreground leading-snug group-hover:text-primary transition-colors">Trustless Asset Distribution</h3>
             <p className="font-body text-[length:var(--text-sm)] text-muted-foreground leading-relaxed">Smart contracts securely manage prizes without need for intervention from creators</p>
           </div>
         </div>
@@ -646,21 +802,24 @@ export default function Homepage() {
           />
         </div>
         
+        {/* Phase 3: Enhanced FAQ accordion with improved animations */}
         <div className="reveal max-w-4xl mx-auto mt-12">
           <Accordion.Root type="single" collapsible className="space-y-4">
             {faqItems.map((item, idx) => (
               <Accordion.Item 
                 key={idx} 
                 value={`item-${idx}`} 
-                className="rounded-2xl border border-border bg-card overflow-hidden"
+                className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               >
                 <Accordion.Header>
-                  <Accordion.Trigger className="w-full p-4 sm:p-6 flex items-center justify-between text-left font-semibold hover:bg-primary/5 transition-colors group">
-                    <span className="pr-4 text-base sm:text-lg text-foreground group-hover:text-primary leading-relaxed">{item.q}</span>
-                    <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 data-[state=open]:rotate-180 text-primary" />
+                  <Accordion.Trigger className="w-full p-4 sm:p-6 flex items-center justify-between text-left font-semibold hover:bg-primary/5 transition-all duration-300 group">
+                    <span className="pr-4 text-base sm:text-lg text-foreground group-hover:text-primary leading-relaxed transition-colors">{item.q}</span>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-all duration-300">
+                      <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-300 data-[state=open]:rotate-180 text-primary" />
+                    </div>
                   </Accordion.Trigger>
                 </Accordion.Header>
-                <Accordion.Content className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-border overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
+                <Accordion.Content className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-border/50 overflow-hidden data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -679,10 +838,15 @@ export default function Homepage() {
         </div>
       </Section>
 
-      {/* Final CTA */}
-      <Section id="final-cta" className="py-16 sm:py-20 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-        <div className="reveal text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
+      {/* Phase 3: Enhanced Final CTA with animated gradient */}
+      <Section id="final-cta" className="py-16 sm:py-20 relative overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-500 via-brand-400 to-brand-600 bg-[length:200%_200%] animate-gradient-shift" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.08),transparent_50%)]" />
+        
+        <div className="reveal text-center relative z-10 text-white">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 drop-shadow-lg">
             Ready to Build Trust with Your Community?
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 opacity-90 max-w-3xl mx-auto">
@@ -694,30 +858,37 @@ export default function Homepage() {
               to="/create-raffle"
               target="_blank"
               rel="noopener noreferrer"
-              className="pulse-btn inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-background text-foreground hover:bg-card transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg sm:text-xl"
+              className="group inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-white text-brand-600 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-white/20 font-bold text-lg sm:text-xl hover:-translate-y-0.5"
             >
               Launch Your Event Now
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               to="/docs"
-              className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all duration-300 font-bold text-lg sm:text-xl"
+              className="inline-flex items-center justify-center px-8 sm:px-10 py-4 sm:py-5 rounded-full border-2 border-white/80 text-white hover:bg-white hover:text-brand-600 transition-all duration-300 font-bold text-lg sm:text-xl hover:-translate-y-0.5"
             >
               <BookOpen className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
               Read Documentation
             </Link>
           </div>
           
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-6 text-sm opacity-75">
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4" />
+          <div className="mt-10 flex flex-wrap justify-center items-center gap-8 text-sm">
+            <div className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <Star className="h-4 w-4" />
+              </div>
               <span>Permissionless</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+            <div className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <Shield className="h-4 w-4" />
+              </div>
               <span>Secure</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
+            <div className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <Zap className="h-4 w-4" />
+              </div>
               <span>Deploy in seconds</span>
             </div>
           </div>

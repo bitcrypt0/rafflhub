@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolveChainIdFromSlug } from '../utils/urlNetworks';
-import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send } from 'lucide-react';
+import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send, Coins, Gift, Sparkles } from 'lucide-react';
 import { getPoolMetadata, hasAnyMetadata, formatSocialLink } from '../utils/poolMetadataService';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from '../contexts/WalletContext';
@@ -15,7 +15,9 @@ import { PageContainer } from '../components/Layout';
 import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
 import { notifyError } from '../utils/notificationService';
-import { PageLoading, ContentLoading } from '../components/ui/loading';
+import { PageLoading, ContentLoading, BlockchainLoading, TransactionStatus } from '../components/ui/loading';
+import { Badge } from '../components/ui/badge';
+import { Progress, EnhancedProgress } from '../components/ui/progress';
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
@@ -2160,6 +2162,13 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         }, 6000);
       }
     },
+    onPrizeClaimed: (winner, tokenId, event) => {
+
+      // Refresh winners to update claim status
+      setTimeout(() => {
+        fetchWinners();
+      }, 1000);
+    },
     onRpcError: (error) => {
       // Log RPC errors for debugging but rely on auto-refresh timer instead
       console.warn('WinnersSection RPC error:', error);
@@ -2857,6 +2866,12 @@ const RaffleDetailPage = () => {
       }
 
       // Trigger refresh when state changes (to update other fields)
+      triggerRefresh();
+    },
+    onPrizeClaimed: (winner, tokenId, event) => {
+
+      toast.success(`Prize claimed by ${winner.slice(0, 6)}...${winner.slice(-4)}!`);
+      // Trigger refresh to update claim status
       triggerRefresh();
     },
     onTicketsPurchased: (participant, quantity, event) => {

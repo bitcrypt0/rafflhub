@@ -670,7 +670,7 @@ const FlywheelRewardsComponent = ({ onBack }) => {
               value={poolAddress}
               onChange={(e) => setPoolAddress(e.target.value)}
               disabled={loading}
-              className="w-full text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm focus:ring-0 focus-visible:ring-0 focus:border-border"
             />
           </div>
 
@@ -807,6 +807,7 @@ const FlywheelRewardsComponent = ({ onBack }) => {
                   value={tokenAddress}
                   onChange={(e) => setTokenAddress(e.target.value)}
                   disabled={loading}
+                  className="focus:ring-0 focus-visible:ring-0 focus:border-border"
                 />
               </div>
             )}
@@ -842,6 +843,7 @@ const FlywheelRewardsComponent = ({ onBack }) => {
                   }
                 }}
                 disabled={loading || (!tokenInfo && !poolInfo)}
+                className="focus:ring-0 focus-visible:ring-0 focus:border-border"
               />
               <p className="text-xs text-muted-foreground">
                 {poolInfo ? 'Additional amount to deposit' : 'Amount of tokens to deposit'}
@@ -1011,7 +1013,7 @@ const FlywheelRewardsComponent = ({ onBack }) => {
                     value={creatorRewardToken}
                     onChange={(e) => setCreatorRewardToken(e.target.value)}
                     disabled={loading}
-                    className="w-full px-3 py-2 text-xs sm:text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 text-xs sm:text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-0"
                   >
                     <option value="">-- Select a reward token --</option>
                     {creatorRewardTokens.map((token) => {

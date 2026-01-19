@@ -22,11 +22,11 @@ const Input = React.forwardRef(function Input(
   const [hasValue, setHasValue] = React.useState(false)
 
   const variants = {
-    default: "bg-background border border-input hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/20",
-    filled: "bg-muted border-transparent hover:bg-muted/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20",
-    outlined: "bg-transparent border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20",
-    ghost: "bg-transparent border-transparent hover:bg-muted/50 focus:bg-muted focus:ring-2 focus:ring-primary/20",
-    glass: "glass-light border border-border/50 hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+    default: "bg-background border border-input hover:border-border focus:border-primary focus:ring-0",
+    filled: "bg-muted border-transparent hover:bg-muted/80 focus:bg-background focus:border-primary focus:ring-0",
+    outlined: "bg-transparent border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-0",
+    ghost: "bg-transparent border-transparent hover:bg-muted/50 focus:bg-muted focus:ring-0",
+    glass: "glass-light border border-border/50 hover:border-border focus:border-primary focus:ring-0"
   }
 
   const sizes = {
@@ -60,7 +60,7 @@ const Input = React.forwardRef(function Input(
         leftIcon && "pl-10",
         rightIcon && "pr-10",
         (leftIcon || rightIcon) && "has-[:placeholder-shown]:text-center",
-        error && "border-destructive focus:border-destructive focus:ring-destructive/20",
+        error && "border-destructive focus:border-destructive focus:ring-0",
         className
       )}
       ref={ref}
@@ -150,8 +150,8 @@ const FloatingLabelInput = React.forwardRef(function FloatingLabelInput(
       <motion.input
         type={type}
         className={cn(
-          "peer h-12 w-full rounded-lg border border-input bg-background px-4 pt-6 text-sm transition-all duration-200 placeholder-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 focus:pt-6 focus:pb-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none",
-          error && "border-destructive focus:border-destructive focus:ring-destructive/20",
+          "peer h-12 w-full rounded-lg border border-input bg-background px-4 pt-6 text-sm transition-all duration-200 placeholder-transparent focus:border-primary focus:ring-0 focus:pt-6 focus:pb-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none",
+          error && "border-destructive focus:border-destructive focus:ring-0",
           className
         )}
         placeholder=" "

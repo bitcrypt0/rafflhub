@@ -5,14 +5,14 @@ import { motion } from "framer-motion"
 import { cn } from "../../lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-primary/20",
+          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-destructive/20",
+          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
         outline:
           "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent hover:-translate-y-0.5 active:translate-y-0",
         secondary:
@@ -22,20 +22,20 @@ const buttonVariants = cva(
         link: 
           "text-primary underline-offset-4 hover:underline hover:text-primary/80",
         success:
-          "bg-success text-success-foreground shadow-md hover:bg-success/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-success/20",
+          "bg-success text-success-foreground shadow-md hover:bg-success/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
         warning:
-          "bg-warning text-warning-foreground shadow-md hover:bg-warning/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-warning/20",
+          "bg-warning text-warning-foreground shadow-md hover:bg-warning/90 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
         accent:
           "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90 hover:-translate-y-0.5 active:translate-y-0",
         // Modern gradient variants
         "gradient-brand":
-          "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-lg hover:from-brand-600 hover:to-brand-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-brand/20",
+          "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-lg hover:from-brand-600 hover:to-brand-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
         "gradient-success":
-          "bg-gradient-to-r from-success-500 to-success-600 text-white shadow-lg hover:from-success-600 hover:to-success-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-success/20",
+          "bg-gradient-to-r from-success-500 to-success-600 text-white shadow-lg hover:from-success-600 hover:to-success-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
         "gradient-warning":
-          "bg-gradient-to-r from-warning-500 to-warning-600 text-white shadow-lg hover:from-warning-600 hover:to-warning-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-warning/20",
+          "bg-gradient-to-r from-warning-500 to-warning-600 text-white shadow-lg hover:from-warning-600 hover:to-warning-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
         "gradient-error":
-          "bg-gradient-to-r from-error-500 to-error-600 text-white shadow-lg hover:from-error-600 hover:to-error-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-error/20",
+          "bg-gradient-to-r from-error-500 to-error-600 text-white shadow-lg hover:from-error-600 hover:to-error-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
         // Glass variants
         "glass-light":
           "glass-light border border-border/50 text-foreground shadow-lg hover:glass-medium hover:-translate-y-0.5 active:translate-y-0 hover:border-border/70",

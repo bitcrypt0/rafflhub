@@ -1,8 +1,10 @@
 import React from 'react';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
 import { useWallet } from '../../contexts/WalletContext';
 import { SUPPORTED_NETWORKS } from '../../networks';
 import { toast } from './sonner';
+import { cn } from '../../lib/utils';
 
 // Safely extract a string from any error
 const getErrorMessage = (err) => {
@@ -94,28 +96,77 @@ const NetworkSelector = () => {
     }
   };
 
+  // Phase 4: Get current network info
+  const currentNetwork = chainId ? SUPPORTED_NETWORKS[chainId] : null;
+  const isUnsupported = chainId && availableNetworks.length > 0 && !availableNetworks.some(([id]) => parseInt(id) === chainId);
+
   return (
     <div className="flex items-center gap-2">
       <Select value={chainId ? String(chainId) : ''} onValueChange={handleChange} disabled={pending}>
-        <SelectTrigger className="min-w-[160px] sm:min-w-[180px] header-accent-surface text-foreground rounded-full">
-          <SelectValue placeholder="Select Network" />
+        <SelectTrigger className={cn(
+          "min-w-[160px] sm:min-w-[180px] text-foreground rounded-full transition-all duration-200",
+          pending && "opacity-70",
+          isUnsupported && "border-destructive/50 bg-destructive/5",
+          !isUnsupported && chainId && "border-primary/30"
+        )}>
+          <div className="flex items-center gap-2">
+            {/* Phase 4: Connection status indicator */}
+            {pending ? (
+              <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            ) : chainId ? (
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                isUnsupported ? "bg-destructive" : "bg-green-500 animate-pulse"
+              )} />
+            ) : (
+              <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+            )}
+            <SelectValue placeholder="Select Network" />
+          </div>
         </SelectTrigger>
         <SelectContent className="border-border">
-          {getAvailableNetworks().map(([id, net]) => (
-            <SelectItem key={id} value={id}>
-              {net.name}
-            </SelectItem>
-          ))}
+          {getAvailableNetworks().map(([id, net]) => {
+            const isActive = parseInt(id) === chainId;
+            return (
+              <SelectItem 
+                key={id} 
+                value={id}
+                className={cn(
+                  "transition-colors",
+                  isActive && "bg-primary/10"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {/* Network icon placeholder */}
+                  <div className={cn(
+                    "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold",
+                    isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}>
+                    {net.name.charAt(0)}
+                  </div>
+                  <span>{net.name}</span>
+                  {isActive && (
+                    <CheckCircle className="h-3 w-3 text-primary ml-auto" />
+                  )}
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
-      {/* Show warning if wallet is connected and network doesn't have contracts configured */}
-      {/* Show a hint only when no networks are configured at all */}
+      
+      {/* Phase 4: Enhanced status indicators */}
       {availableNetworks.length === 0 && (
-        <span className="text-xs text-red-500 ml-2">Contracts Not Available</span>
+        <div className="flex items-center gap-1 text-xs text-destructive">
+          <AlertCircle className="h-3 w-3" />
+          <span>No Networks</span>
+        </div>
       )}
-      {/* If networks are configured but the current chain isn't among them, show 'Unsupported Network' */}
-      {chainId && isSupportedNetwork && availableNetworks.length > 0 && !availableNetworks.some(([id]) => parseInt(id) === chainId) && (
-        <span className="text-xs text-red-500 ml-2">Unsupported Network</span>
+      {isUnsupported && (
+        <div className="flex items-center gap-1 text-xs text-destructive">
+          <AlertCircle className="h-3 w-3" />
+          <span>Unsupported</span>
+        </div>
       )}
     </div>
   );

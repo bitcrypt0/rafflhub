@@ -337,10 +337,7 @@ const HeaderModern = () => {
           </motion.div>
 
           {/* Right side actions */}
-          <motion.div 
-            variants={itemVariants}
-            className="flex items-center gap-3"
-          >
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* Network selector */}
             {!isHomepage && <NetworkSelector />}
 
@@ -348,12 +345,12 @@ const HeaderModern = () => {
             {!isHomepage && (connected ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 hover:bg-muted/50">
-                    <Wallet className="h-4 w-4" />
-                    <span className="hidden sm:inline">
+                  <Button variant="ghost" className="gap-2 hover:bg-muted/50 border border-border text-foreground rounded-full focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="hidden sm:inline text-foreground text-sm">
                       {formatAddress(address)}
                     </span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -411,7 +408,7 @@ const HeaderModern = () => {
                 <Bell className="h-4 w-4" />
               </Button>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
     </motion.header>
