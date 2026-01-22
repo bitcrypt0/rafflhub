@@ -141,12 +141,12 @@ html.dim-blue {
   --muted-foreground: 215 18% 72%;
   --accent: 215 24% 26%;
   --accent-foreground: 210 40% 94%;
-  --destructive: 25 20% 32%;
-  --destructive-foreground: 0 0% 98%;
-  --success: 25 20% 32%;
-  --success-foreground: 0 0% 98%;
-  --warning: 25 20% 32%;
-  --warning-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 94%;
+  --success: 142 76% 50%;
+  --success-foreground: 215 30% 14%;
+  --warning: 38 92% 60%;
+  --warning-foreground: 215 30% 14%;
   --border: 215 20% 30%;
   --input: 215 20% 30%;
   --ring: 25 20% 32%;

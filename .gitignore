@@ -10,3 +10,5 @@ generate-error-selectors.js
 setup-supabase.ps1
 .trae/
 extras/
+REDESIGN_PLAN.md
+.claude/

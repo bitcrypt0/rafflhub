@@ -903,7 +903,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-2">Quantity</label>
-                    <Input
+                    <input
                       type="number"
                       min={1}
                       max={raffle.maxSlotsPerAddress}
@@ -921,7 +921,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                           }
                         }
                       }}
-                      className="focus:outline-none focus:ring-0 focus-visible:ring-0"
+                      className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-card text-card-foreground transition-colors focus:ring-primary focus:border-primary"
                     />
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <span 

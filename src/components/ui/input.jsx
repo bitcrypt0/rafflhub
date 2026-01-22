@@ -7,7 +7,7 @@ import { cn } from "../../lib/utils"
  * Phase 2: Enhanced Input variants with focus glow and state styling
  */
 const inputVariants = cva(
-  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex w-full min-w-0 rounded-lg border bg-background px-4 py-3 text-base shadow-xs transition-all duration-200 outline-none focus:outline-none focus:ring-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex w-full min-w-0 rounded-lg border bg-background text-foreground px-4 py-3 text-base shadow-xs transition-all duration-200 outline-none focus:outline-none focus:ring-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
