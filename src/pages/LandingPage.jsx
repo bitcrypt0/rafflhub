@@ -51,6 +51,12 @@ const RaffleCard = ({ raffle }) => {
   const [collectionName, setCollectionName] = useState(null);
   const [collectionSymbol, setCollectionSymbol] = useState(null);
   const [directContractValues, setDirectContractValues] = useState(null);
+  
+  // NFT artwork state
+  const [nftImageUrl, setNftImageUrl] = useState(null);
+  const [nftImageLoading, setNftImageLoading] = useState(false);
+  const [imageCandidates, setImageCandidates] = useState([]);
+  const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
 
   useEffect(() => {
     let interval;
@@ -356,12 +362,235 @@ const RaffleCard = ({ raffle }) => {
     };
   }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
 
+  // NFT artwork fetching for NFT Drop, NFT Giveaway, and Lucky NFT Sale pools
+  useEffect(() => {
+    let isMounted = true;
+    
+    // IPFS gateways for decentralized URIs
+    const IPFS_GATEWAYS = [
+      'https://ipfs.io/ipfs/',
+      'https://gateway.pinata.cloud/ipfs/',
+      'https://cloudflare-ipfs.com/ipfs/',
+      'https://dweb.link/ipfs/'
+    ];
+
+    // Convert IPFS/decentralized URIs to HTTP
+    const convertToHTTP = (uri) => {
+      if (!uri) return [];
+      if (uri.startsWith('ipfs://')) {
+        let hash = uri.replace('ipfs://', '');
+        if (hash.startsWith('ipfs/')) hash = hash.slice('ipfs/'.length);
+        return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
+      }
+      if (uri.startsWith('ar://')) {
+        return [`https://arweave.net/${uri.replace('ar://', '')}`];
+      }
+      return [uri];
+    };
+
+    // Extract image URL from metadata
+    const extractImageURL = (metadata) => {
+      const mediaFields = ['image', 'image_url', 'imageUrl', 'animation_url', 'media', 'artwork'];
+      for (const field of mediaFields) {
+        if (metadata[field]) {
+          const raw = metadata[field];
+          return convertToHTTP(String(raw));
+        }
+      }
+      return null;
+    };
+
+    // Fetch with timeout
+    const fetchWithTimeout = async (url, timeout = 8000) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    };
+
+    // Fetch metadata with fallback
+    const fetchMetadataWithFallback = async (uriVariants) => {
+      for (const uri of uriVariants) {
+        try {
+          const response = await fetchWithTimeout(uri);
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            // Check if it's an image directly
+            if (contentType?.startsWith('image/') || contentType?.startsWith('video/') ||
+                uri.match(/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm)$/i)) {
+              return { imageUrl: [uri] };
+            }
+            // Try to parse as JSON
+            try {
+              const text = await response.text();
+              const metadata = JSON.parse(text);
+              if (metadata && typeof metadata === 'object') {
+                const imageUrl = extractImageURL(metadata);
+                if (imageUrl) return { metadata, imageUrl };
+              }
+            } catch (jsonError) {
+              // Not JSON, might be image
+              if (uri.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+                return { imageUrl: [uri] };
+              }
+            }
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+      return null;
+    };
+
+    async function fetchNFTArtwork() {
+      // Only fetch for NFT prize pools (not collab pools)
+      if (!raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
+        return;
+      }
+      if (raffle.isCollabPool) {
+        return; // Skip collab pools
+      }
+
+      // Determine if escrowed or mintable
+      const isEscrowedPrize = (directContractValues && directContractValues.isEscrowedPrize !== null)
+        ? directContractValues.isEscrowedPrize === true
+        : raffle.isEscrowedPrize === true;
+      const isMintable = !isEscrowedPrize;
+
+      setNftImageLoading(true);
+
+      try {
+        const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+        const contract = getContractInstance(raffle.prizeCollection, contractType);
+        
+        if (!contract) {
+          setNftImageLoading(false);
+          return;
+        }
+
+        let baseUri = null;
+
+        if (raffle.standard === 0) {
+          // ERC721
+          if (isMintable) {
+            // NFT Drop - use unrevealedBaseURI
+            try {
+              baseUri = await contract.unrevealedBaseURI();
+              if (!baseUri || baseUri.trim() === '') {
+                setNftImageLoading(false);
+                return;
+              }
+            } catch (error) {
+              setNftImageLoading(false);
+              return;
+            }
+          } else {
+            // NFT Giveaway or Lucky Sale - use tokenURI
+            try {
+              baseUri = await contract.tokenURI(raffle.prizeTokenId);
+            } catch (error) {
+              setNftImageLoading(false);
+              return;
+            }
+          }
+        } else if (raffle.standard === 1) {
+          // ERC1155
+          if (isMintable) {
+            // Try unrevealedURI first, then tokenURI, then uri()
+            try {
+              baseUri = await contract.unrevealedURI();
+            } catch (e) {}
+            if (!baseUri || baseUri.trim() === '') {
+              try {
+                baseUri = await contract.tokenURI(raffle.prizeTokenId);
+              } catch (e) {}
+            }
+            if (!baseUri || baseUri.trim() === '') {
+              try {
+                baseUri = await contract.uri(raffle.prizeTokenId);
+              } catch (e) {}
+            }
+          } else {
+            // Escrowed - use uri()
+            try {
+              baseUri = await contract.uri(raffle.prizeTokenId);
+            } catch (error) {
+              setNftImageLoading(false);
+              return;
+            }
+          }
+        }
+
+        if (!baseUri || baseUri.trim() === '') {
+          setNftImageLoading(false);
+          return;
+        }
+
+        // Convert to HTTP URLs
+        const httpUrls = convertToHTTP(baseUri);
+        
+        // Also try with .json extension and token ID variants
+        const allUrls = [];
+        for (const url of httpUrls) {
+          allUrls.push(url);
+          if (!url.includes('.json')) {
+            allUrls.push(`${url}.json`);
+          }
+        }
+
+        // Fetch metadata
+        const result = await fetchMetadataWithFallback(allUrls);
+        
+        if (isMounted && result && result.imageUrl) {
+          const imgCandidates = Array.isArray(result.imageUrl) ? result.imageUrl : [result.imageUrl];
+          setImageCandidates(imgCandidates);
+          setImageCandidateIndex(0);
+          setNftImageUrl(imgCandidates[0]);
+        }
+      } catch (error) {
+        // Silent fail
+      }
+
+      if (isMounted) {
+        setNftImageLoading(false);
+      }
+    }
+
+    // Only fetch if we have direct contract values (to know if escrowed)
+    if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && 
+        !raffle.isCollabPool && directContractValues !== null) {
+      fetchNFTArtwork();
+    }
+
+    return () => { isMounted = false; };
+  }, [raffle, getContractInstance, directContractValues]);
+
+  // Handle image load error - try next gateway
+  const handleNftImageError = () => {
+    if (imageCandidateIndex + 1 < imageCandidates.length) {
+      setImageCandidateIndex(imageCandidateIndex + 1);
+      setNftImageUrl(imageCandidates[imageCandidateIndex + 1]);
+    } else {
+      setNftImageUrl(null);
+    }
+  };
+
   // Phase 3: Enhanced status badge using the new StatusBadge component
   const getStatusBadge = () => {
     const now = Math.floor(Date.now() / 1000);
+    const endTime = raffle.startTime + raffle.duration;
+    const hasExpired = now >= endTime;
+    
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
                    now >= raffle.startTime && 
+                   !hasExpired &&
                    (raffle.totalSlotsPurchased || 0) === 0;
 
     const getDynamicLabel = (stateNum) => {
@@ -370,7 +599,8 @@ const RaffleCard = ({ raffle }) => {
       return POOL_STATE_LABELS[stateNum] || 'Unknown';
     };
 
-    const label = isLive ? 'Live' : getDynamicLabel(raffle.stateNum);
+    // If duration has expired but state is still pending/active, show 'Ended'
+    const label = isLive ? 'Live' : (hasExpired && (raffle.stateNum === 0 || raffle.stateNum === 1) ? 'Ended' : getDynamicLabel(raffle.stateNum));
     
     // Map labels to StatusBadge variants
     const variantMap = {
@@ -394,12 +624,21 @@ const RaffleCard = ({ raffle }) => {
   // Phase 3: Get status gradient for top bar
   const getStatusGradient = () => {
     const now = Math.floor(Date.now() / 1000);
+    const endTime = raffle.startTime + raffle.duration;
+    const hasExpired = now >= endTime;
+    
     const isLive = raffle.state?.toLowerCase() === 'pending' && 
                    raffle.startTime && 
                    now >= raffle.startTime && 
+                   !hasExpired &&
                    (raffle.totalSlotsPurchased || 0) === 0;
     
     if (isLive) return 'bg-gradient-to-r from-green-500 to-green-400';
+    
+    // If duration has expired but state is still pending/active, show ended gradient
+    if (hasExpired && (raffle.stateNum === 0 || raffle.stateNum === 1)) {
+      return 'bg-gradient-to-r from-red-500 to-red-400'; // Ended gradient
+    }
     
     const gradientMap = {
       0: 'bg-gradient-to-r from-yellow-500 to-yellow-400', // Pending
@@ -495,6 +734,90 @@ const RaffleCard = ({ raffle }) => {
     navigate(path);
   };
 
+  // Determine if this is an NFT pool that should show artwork
+  const isNFTPool = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && !raffle.isCollabPool;
+  const shouldShowArtworkLayout = isNFTPool && (nftImageUrl || nftImageLoading);
+
+  // NFT Artwork Card Layout - for NFT Drop, NFT Giveaway, Lucky NFT Sale
+  if (shouldShowArtworkLayout) {
+    return (
+      <div className="landing-raffle-card group relative bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/30 hover:bg-card/90 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full w-full max-w-full cursor-pointer" onClick={handleViewRaffle}>
+        {/* Status indicator bar at top */}
+        <div className={`h-1 w-full ${getStatusGradient()}`} />
+        
+        {/* Hover overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+        {/* NFT Artwork Section - reduced height */}
+        <div className="relative w-full h-40 bg-muted/30 overflow-hidden">
+          {nftImageLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : nftImageUrl ? (
+            <>
+              <img
+                src={nftImageUrl}
+                alt={raffle.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onError={handleNftImageError}
+              />
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+              <Trophy className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+          )}
+          
+          {/* Status badge overlay */}
+          <div className="absolute top-2 right-2">
+            {getStatusBadge()}
+          </div>
+        </div>
+
+        {/* Info section below artwork - matching standard card styling */}
+        <div className="p-4 sm:p-5 flex flex-col flex-1">
+          {/* Pool Name - matching standard card font size */}
+          <h3 className="font-display text-[length:var(--text-lg)] font-semibold truncate mb-4 group-hover:text-primary transition-colors duration-200">
+            {raffle.name}
+          </h3>
+
+          {/* Stats row - matching standard card layout */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="space-y-0.5">
+              <span className="text-muted-foreground text-[length:var(--text-sm)] block">Slot Fee</span>
+              <span className="font-medium text-[length:var(--text-sm)]">{formatSlotFee(raffle.slotFee || '0')}</span>
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-muted-foreground text-[length:var(--text-sm)] block">Winners</span>
+              <span className="font-medium text-[length:var(--text-sm)]">{raffle.winnersCount}</span>
+            </div>
+          </div>
+
+          {/* Progress section - matching standard card */}
+          <div className="relative mt-auto pt-3 border-t border-border/30 space-y-2">
+            <div className="flex justify-between text-[length:var(--text-sm)]">
+              <span className="text-muted-foreground">Progress (Slots Sold)</span>
+              <span className="font-medium">
+                {ticketsSold !== null ? `${ticketsSold} / ${raffle.slotLimit}` : '...'}
+              </span>
+            </div>
+            {ticketsSold !== null && raffle.slotLimit && (
+              <Progress 
+                value={Math.min(100, (ticketsSold / raffle.slotLimit) * 100)} 
+                size="default"
+                variant="gradient"
+                indicatorVariant="gradient"
+                showShimmer
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Standard Card Layout - for non-NFT pools
   return (
     <div className="landing-raffle-card group relative bg-card/80 text-foreground backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/30 hover:bg-card/90 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full w-full max-w-full cursor-pointer" onClick={handleViewRaffle}>
       {/* Phase 3: Status indicator bar at top */}
@@ -712,37 +1035,37 @@ const LandingPage = () => {
           </p>
 
           {/* Trust Badges - Homepage hero style */}
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Shield className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Eye className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
             </div>
           </div>
         </div>
@@ -802,37 +1125,37 @@ const LandingPage = () => {
           </p>
 
           {/* Trust Badges - Homepage hero style */}
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Shield className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Eye className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
             </div>
           </div>
         </div>
@@ -862,37 +1185,37 @@ const LandingPage = () => {
           </p>
 
           {/* Trust Badges - Homepage hero style */}
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Shield className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Shield className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <CheckCircle className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Eye className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <Eye className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
               <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                <LockKeyhole className="h-3 w-3 text-primary" />
               </div>
-              <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
             </div>
           </div>
         </div>
@@ -935,37 +1258,37 @@ const LandingPage = () => {
             </p>
 
             {/* Trust Badges - Homepage hero style */}
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
-              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+              <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
                 <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                  <Shield className="h-3.5 w-3.5 text-primary" />
+                <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <Shield className="h-3 w-3 text-primary" />
                 </div>
-                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
+                <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
               </div>
               <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
                 <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                  <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <CheckCircle className="h-3 w-3 text-primary" />
                 </div>
-                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
+                <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
               </div>
               <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
                 <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                  <Eye className="h-3.5 w-3.5 text-primary" />
+                <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <Eye className="h-3 w-3 text-primary" />
                 </div>
-                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
+                <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
               </div>
               <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-              <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
+              <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
                 <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                  <LockKeyhole className="h-3.5 w-3.5 text-primary" />
+                <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                  <LockKeyhole className="h-3 w-3 text-primary" />
                 </div>
-                <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
+                <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
               </div>
             </div>
           </div>
