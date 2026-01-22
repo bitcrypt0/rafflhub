@@ -214,7 +214,7 @@ const FooterModern = () => {
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  The go-to Web3 platform that solves the digital asset distribution problem for teams, creators, KOLs and their communities.
+                  The go-to platform for project teams and KOLs to host fairly launch NFT drops, host social media campaigns, and transparently distribute rewards to Web3 communities.
                 </p>
                 
                 {/* Social links */}

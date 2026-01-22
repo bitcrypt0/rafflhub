@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus, ShoppingCart, Crown, RefreshCw, Activity, CircleDot } from 'lucide-react';
+import { User, Ticket, Trophy, DollarSign, Settings, Trash2, Eye, Clock, Users, Gift, Plus, Minus, ShoppingCart, Crown, RefreshCw, Activity, CircleDot, Copy, ExternalLink, Check } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
@@ -384,6 +384,92 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   );
 };
 
+// Connected Account Card - Professional redesign with identicon, copy, and explorer link
+const ConnectedAccountCard = ({ address, chainId, isMobile }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAddress = async () => {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      toast.success('Address copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy address');
+    }
+  };
+
+  const handleViewOnExplorer = () => {
+    const explorerUrl = SUPPORTED_NETWORKS[chainId]?.blockExplorer;
+    if (explorerUrl && address) {
+      window.open(`${explorerUrl}/address/${address}`, '_blank');
+    }
+  };
+
+  // Generate a simple gradient based on address for visual identity
+  const getAddressGradient = (addr) => {
+    if (!addr) return 'from-primary/20 to-primary/10';
+    const hash = addr.slice(2, 8);
+    const hue1 = parseInt(hash.slice(0, 2), 16) % 360;
+    const hue2 = (hue1 + 40) % 360;
+    return `from-[hsl(${hue1},70%,60%)] to-[hsl(${hue2},70%,50%)]`;
+  };
+
+  const truncatedAddress = address 
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : '';
+
+  return (
+    <div className={`mt-4 relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 ${isMobile ? 'p-4' : 'p-5'}`}>
+      {/* Subtle gradient accent at top */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${getAddressGradient(address)}`} />
+      
+      <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
+        {/* Identicon/Avatar placeholder */}
+        <div className={`relative flex-shrink-0 ${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full bg-gradient-to-br ${getAddressGradient(address)} flex items-center justify-center shadow-inner`}>
+          <User className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} text-white`} />
+          {/* Connection status indicator */}
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card" />
+        </div>
+
+        {/* Address info */}
+        <div className="flex-1 min-w-0">
+          <p className={`font-mono font-medium ${isMobile ? 'text-sm' : 'text-base'}`} title={address}>
+            {truncatedAddress}
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopyAddress}
+            className={`${isMobile ? 'h-8 w-8 p-0' : 'h-9 w-9 p-0'} rounded-lg hover:bg-muted/80 transition-colors`}
+            title="Copy address"
+          >
+            {copied ? (
+              <Check className={`${isMobile ? 'h-4 w-4' : 'h-4.5 w-4.5'} text-green-500`} />
+            ) : (
+              <Copy className={`${isMobile ? 'h-4 w-4' : 'h-4.5 w-4.5'} text-muted-foreground`} />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewOnExplorer}
+            className={`${isMobile ? 'h-8 w-8 p-0' : 'h-9 w-9 p-0'} rounded-lg hover:bg-muted/80 transition-colors`}
+            title="View on explorer"
+          >
+            <ExternalLink className={`${isMobile ? 'h-4 w-4' : 'h-4.5 w-4.5'} text-muted-foreground`} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProfilePage = () => {
   const { isMobile, isInitialized } = useMobileBreakpoints();
 
@@ -687,10 +773,6 @@ const DesktopProfilePage = () => {
               Track activities, manage your raffles, revenue and collections
             </p>
           </div>
-        </div>
-        <div className={`mt-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
-          <p className="text-sm font-medium">Connected Account:</p>
-          <p className={`font-mono ${isMobile ? 'text-xs break-all' : 'text-sm'}`}>{address}</p>
         </div>
       </div>
 

@@ -21,7 +21,15 @@ import {
   Award,
   Calendar,
   Eye,
-  Package
+  Package,
+  Copy,
+  ExternalLink,
+  ShoppingCart,
+  Crown,
+  RefreshCw,
+  Trash2,
+  Clock,
+  Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -231,36 +239,119 @@ const ProfileTabs = ({
     );
   };
 
+  // Activity type color mapping for timeline
+  const getActivityTypeStyles = (type) => {
+    const styles = {
+      ticket_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-l-blue-500', icon: ShoppingCart },
+      raffle_created: { color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-green-500', icon: Plus },
+      raffle_deleted: { color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-l-red-500', icon: Trash2 },
+      prize_won: { color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-l-yellow-500', icon: Crown },
+      prize_claimed: { color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-l-yellow-500', icon: Crown },
+      refund_claimed: { color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-l-orange-500', icon: RefreshCw },
+      revenue_withdrawn: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-l-emerald-500', icon: DollarSign },
+      admin_withdrawn: { color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-l-purple-500', icon: DollarSign },
+    };
+    return styles[type] || { color: 'text-muted-foreground', bg: 'bg-muted/50', border: 'border-l-muted-foreground', icon: Activity };
+  };
+
+  // Format relative time
+  const getRelativeTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return 'Unknown';
+    }
+  };
+
   const ActivityTab = () => (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Recent Activity</h3>
-        <Badge variant="outline">{activities.length} activities</Badge>
+        <div>
+          <h3 className="text-lg font-semibold">Recent Activity</h3>
+          <p className="text-sm text-muted-foreground">Your latest transactions and events</p>
+        </div>
+        <Badge variant="secondary" className="font-medium">
+          {activities.length} {activities.length === 1 ? 'activity' : 'activities'}
+        </Badge>
       </div>
 
       {activities.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No activity yet</p>
+        <Card className="border-dashed">
+          <CardContent className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
+              <Clock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h4 className="font-medium text-foreground mb-1">No activity yet</h4>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Your transaction history will appear here once you start participating in raffles or creating events.
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {activities.slice(0, 10).map((activity, index) => (
-            <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5">
-                  {activity.icon}
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
+          
+          {/* Activity items */}
+          <div className="space-y-3">
+            {activities.slice(0, 15).map((activity, index) => {
+              const styles = getActivityTypeStyles(activity.type);
+              const IconComponent = styles.icon;
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`relative pl-12 pr-4 py-3 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl hover:bg-card/80 hover:shadow-sm hover:border-border/60 transition-all duration-200 border-l-4 ${styles.border}`}
+                >
+                  {/* Timeline dot with icon */}
+                  <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center ring-4 ring-background`}>
+                    <IconComponent className={`h-4 w-4 ${styles.color}`} />
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-foreground leading-tight">
+                        {activity.title}
+                      </p>
+                      {activity.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {activity.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-xs text-muted-foreground" title={activity.timestamp}>
+                        {getRelativeTime(activity.timestamp)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm text-foreground">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{activity.timestamp}</p>
-                </div>
-              </div>
+              );
+            })}
+          </div>
+          
+          {/* Show more indicator if there are more activities */}
+          {activities.length > 15 && (
+            <div className="text-center pt-4">
+              <p className="text-sm text-muted-foreground">
+                + {activities.length - 15} more activities
+              </p>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
@@ -311,105 +402,143 @@ const ProfileTabs = ({
 
   const MyCollectionsTab = () => {
     const { collections, loading: collectionsLoading } = useCollections();
+    const [copiedAddress, setCopiedAddress] = useState(null);
+
+    const handleCopyAddress = async (address) => {
+      try {
+        await navigator.clipboard.writeText(address);
+        setCopiedAddress(address);
+        setTimeout(() => setCopiedAddress(null), 2000);
+      } catch (error) {
+        console.error('Failed to copy:', error);
+      }
+    };
+
+    // Generate gradient based on collection address for visual identity
+    const getCollectionGradient = (addr, type) => {
+      if (type === 'ERC721') return 'from-purple-500 to-pink-500';
+      if (type === 'ERC1155') return 'from-indigo-500 to-purple-500';
+      return 'from-primary to-primary/70';
+    };
+
+    const getTypeBadgeStyles = (type) => {
+      if (type === 'ERC721') return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+      if (type === 'ERC1155') return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+      return 'bg-muted text-muted-foreground';
+    };
 
     return (
       <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">My Collections</h3>
-          <Badge variant="outline">{collections.length} collections</Badge>
+          <div>
+            <h3 className="text-lg font-semibold">My Collections</h3>
+            <p className="text-sm text-muted-foreground">NFT collections you've deployed</p>
+          </div>
+          <Badge variant="secondary" className="font-medium">
+            {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+          </Badge>
         </div>
 
         {collectionsLoading ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading collections...</p>
+          <Card className="border-dashed">
+            <CardContent className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+              </div>
+              <p className="text-muted-foreground">Loading your collections...</p>
             </CardContent>
           </Card>
         ) : collections.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">You haven't created any collections yet</p>
+          <Card className="border-dashed">
+            <CardContent className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h4 className="font-medium text-foreground mb-1">No collections yet</h4>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+                Deploy your first NFT collection to start creating drop events and raffles.
+              </p>
               <Button
-                onClick={() => navigate('/create-raffle')}
+                onClick={() => navigate('/deploy-collection')}
                 variant="primary"
                 size="md"
               >
-                Create Raffle with NFT Prize
+                Deploy Collection
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {collections.map((collection, index) => (
-              <Card key={`${collection.address}-${index}`} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    {/* Collection Icon */}
-                    <div className="flex-shrink-0 mt-1">
-                      <Package className="h-5 w-5 text-purple-500" />
+              <div 
+                key={`${collection.address}-${index}`} 
+                className="group relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg hover:border-border/80 transition-all duration-300"
+              >
+                {/* Gradient accent bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${getCollectionGradient(collection.address, collection.type)}`} />
+                
+                <div className="p-4">
+                  {/* Header with image placeholder and info */}
+                  <div className="flex items-start gap-3 mb-3">
+                    {/* Collection image placeholder */}
+                    <div className={`flex-shrink-0 w-14 h-14 rounded-lg bg-gradient-to-br ${getCollectionGradient(collection.address, collection.type)} flex items-center justify-center shadow-sm`}>
+                      <Package className="h-6 w-6 text-white/90" />
                     </div>
-
-                    {/* Collection Content */}
+                    
+                    {/* Collection info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-foreground text-sm mb-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-foreground text-sm truncate" title={collection.name}>
                             {collection.name}
                           </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {collection.symbol}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                              {collection.symbol}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full border ${getTypeBadgeStyles(collection.type)}`}>
+                          {collection.type}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="flex items-center gap-4 py-2 px-3 bg-muted/30 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Supply</p>
+                      <p className="text-sm font-semibold">{collection.totalSupply || '0'}</p>
+                    </div>
+                    <div className="w-px h-8 bg-border" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground mb-0.5">Address</p>
+                          <p className="text-sm font-mono font-medium truncate" title={collection.address}>
+                            {collection.address.slice(0, 6)}...{collection.address.slice(-4)}
                           </p>
                         </div>
-                        <Badge 
-                          variant={collection.isInternal ? 'default' : 'secondary'}
-                          className="flex-shrink-0"
-                        >
-                          {collection.type}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Total Supply:</span> {collection.totalSupply}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          <span className="font-medium">Address:</span> {collection.address.slice(0, 6)}...{collection.address.slice(-4)}
-                        </p>
-                      </div>
-
-                      <div className="flex gap-2 mt-3">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(collection.address);
-                            // You can add a toast notification here if needed
-                          }}
-                          className="flex-1"
+                          variant="ghost"
+                          onClick={() => handleCopyAddress(collection.address)}
+                          className="h-7 w-7 p-0 flex-shrink-0 hover:bg-muted/80"
+                          title={copiedAddress === collection.address ? "Copied!" : "Copy address"}
                         >
-                          Copy Address
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const explorerUrl = SUPPORTED_NETWORKS[chainId]?.blockExplorer;
-                            if (explorerUrl) {
-                              window.open(`${explorerUrl}/address/${collection.address}`, '_blank');
-                            }
-                          }}
-                          className="flex-1"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View on Explorer
+                          {copiedAddress === collection.address ? (
+                            <Check className="h-3.5 w-3.5 text-green-500" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
                         </Button>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
