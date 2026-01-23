@@ -352,9 +352,8 @@ export default function Homepage() {
     <div className="bg-background text-foreground overflow-x-hidden -mb-8">
       {/* Hero Section */}
       <Section id="hero" className="min-h-[90vh] sm:min-h-[100vh] flex items-center justify-center relative overflow-hidden pt-16 sm:pt-0">
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/30" />
-        <GeometricBackground />
+        {/* Background */}
+        <div className="absolute inset-0 bg-background" />
 
         {/* Grid pattern overlay */}
         <div
@@ -396,8 +395,7 @@ export default function Homepage() {
               <div className="hero-subtext mb-8">
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-2 gap-y-3">
                   {/* Chainlink VRF */}
-                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-transparent border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-default">
                     <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                       <Shield className="h-3.5 w-3.5 text-primary" />
                     </div>
@@ -408,20 +406,18 @@ export default function Homepage() {
                   <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
 
                   {/* Fairness Guaranteed */}
-                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-transparent border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-default">
                     <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                       <CheckCircle className="h-3.5 w-3.5 text-primary" />
                     </div>
-                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fairness Guaranteed</span>
+                    <span className="relative font-body text-[length:var(--text-sm)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Permissionless</span>
                   </div>
 
                   {/* Separator dot */}
                   <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
 
                   {/* Fully Transparent */}
-                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-transparent border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-default">
                     <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                       <Eye className="h-3.5 w-3.5 text-primary" />
                     </div>
@@ -432,8 +428,7 @@ export default function Homepage() {
                   <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
 
                   {/* Trustless */}
-                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-                    <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="group relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-transparent border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-default">
                     <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                       <LockKeyhole className="h-3.5 w-3.5 text-primary" />
                     </div>
