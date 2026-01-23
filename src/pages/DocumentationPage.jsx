@@ -166,7 +166,7 @@ const DocumentationPage = () => {
             
             case 'list':
               return (
-                <ul key={index} className="space-y-2 ml-6 mb-4">
+                <ul key={index} className="space-y-2 ml-4 sm:ml-6 mb-4">
                   {item.items.map((listItem, i) => (
                     <li key={i} className="text-foreground leading-relaxed text-[length:var(--text-base)] flex items-start">
                       <span className="text-primary mr-3 mt-1.5 flex-shrink-0">•</span>
@@ -178,7 +178,7 @@ const DocumentationPage = () => {
             
             case 'ordered-list':
               return (
-                <ol key={index} className="space-y-3 ml-6 mb-4">
+                <ol key={index} className="space-y-3 ml-4 sm:ml-6 mb-4">
                   {item.items.map((listItem, i) => (
                     <li key={i} className="text-foreground leading-relaxed text-[length:var(--text-base)] flex items-start">
                       <span className="text-primary font-semibold mr-3 flex-shrink-0 min-w-[1.5rem]">{i + 1}.</span>
@@ -206,8 +206,8 @@ const DocumentationPage = () => {
             
             case 'code':
               return (
-                <div key={index} className="relative my-6">
-                  <pre className="bg-muted/50 border border-border rounded-lg p-4 overflow-x-auto text-sm">
+                <div key={index} className="relative my-6 -mx-4 sm:mx-0">
+                  <pre className="bg-muted/50 border-y sm:border border-border sm:rounded-lg p-3 sm:p-4 overflow-x-auto text-xs sm:text-sm">
                     <code className={item.language && `language-${item.language}`}>
                       {item.code}
                     </code>
@@ -262,35 +262,39 @@ const DocumentationPage = () => {
       {/* Documentation Content - Starts immediately after hero */}
       <section className="py-0">
         <div className="container mx-auto px-4">
-          <div className="flex gap-8 lg:gap-12">
-            {/* Mobile Menu Toggle - Better positioned */}
-            <div className="lg:hidden w-full mb-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                {sidebarOpen ? 'Hide Navigation' : 'Show Navigation'}
-              </Button>
-            </div>
+          {/* Mobile Menu Toggle - Better positioned */}
+          <div className="lg:hidden w-full mb-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {sidebarOpen ? 'Hide Navigation' : 'Show Navigation'}
+            </Button>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-0 lg:gap-8">
 
             {/* Sidebar Navigation - Fixed positioning */}
             <AnimatePresence>
-              {(sidebarOpen || window.innerWidth >= 1024) && (
+              {(sidebarOpen || typeof window !== 'undefined') && (
                 <motion.aside
-                  initial={{ x: -300, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -300, opacity: 0 }}
+                  initial={false}
+                  animate={{ 
+                    x: 0,
+                    opacity: 1
+                  }}
                   transition={{ duration: 0.3 }}
                   className={cn(
-                    "w-80 lg:w-96 flex-shrink-0",
-                    "lg:block lg:relative lg:top-0",
-                    "fixed left-4 right-4 top-20 bottom-4 z-40 lg:top-0 lg:bottom-auto",
+                    "w-full lg:w-96 flex-shrink-0",
+                    "lg:block lg:relative",
+                    "fixed inset-0 z-50 lg:z-auto lg:inset-auto bg-background lg:bg-transparent",
                     sidebarOpen ? "block" : "hidden lg:block"
                   )}
                 >
-                  <Card className="h-full lg:h-[calc(100vh-10rem)] flex flex-col">
+                  <div className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+                  <Card className="relative z-10 h-full lg:h-[calc(100vh-10rem)] flex flex-col m-4 lg:m-0">
                     <CardHeader className="pb-3 flex-shrink-0">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -310,17 +314,17 @@ const DocumentationPage = () => {
                               {/* Section Header */}
                               <Button
                                 variant="ghost"
-                                className="w-full justify-between p-2 h-auto font-semibold text-sm text-left"
+                                className="w-full justify-between p-2 h-auto font-semibold text-base text-left hover:bg-transparent active:bg-transparent"
                                 onClick={() => toggleSection(section.id)}
                               >
                                 <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                                  {React.createElement(iconMap[section.icon], { className: "h-4 w-4 flex-shrink-0" })}
+                                  {React.createElement(iconMap[section.icon], { className: "h-5 w-5 flex-shrink-0" })}
                                   <span className="whitespace-normal break-words">{section.title}</span>
                                 </div>
                                 {expandedSections.includes(section.id) ? (
-                                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                                  <ChevronDown className="h-5 w-5 flex-shrink-0" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                                  <ChevronRight className="h-5 w-5 flex-shrink-0" />
                                 )}
                               </Button>
                               
@@ -332,7 +336,7 @@ const DocumentationPage = () => {
                                       key={subsection.id}
                                       variant="ghost"
                                       className={cn(
-                                        "w-full justify-start p-2 h-auto text-xs text-left whitespace-normal break-words leading-relaxed",
+                                        "w-full justify-start p-2 h-auto text-sm text-left whitespace-normal break-words leading-relaxed hover:bg-transparent active:bg-transparent",
                                         activeSection === section.id && activeSubsection === subsection.id && 
                                         "bg-primary/10 text-primary font-medium"
                                       )}
@@ -356,7 +360,7 @@ const DocumentationPage = () => {
             </AnimatePresence>
 
             {/* Content Area - Better spacing */}
-            <div className="flex-1 min-w-0 pl-4 lg:pl-6 pb-12">
+            <div className="flex-1 min-w-0 w-full lg:pl-8 pb-12 mt-4 lg:mt-0">
               {currentContent ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -375,19 +379,19 @@ const DocumentationPage = () => {
 
                   {/* Navigation Buttons */}
                   <div className="mt-12 pt-8 border-t border-border">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                       {/* Previous Button */}
-                      <div className="flex-1">
+                      <div className="flex-1 w-full sm:w-auto">
                         {getCurrentNavigationInfo().previous && (
                           <Button
                             variant="outline"
-                            className="w-full justify-start gap-2 h-auto py-3 px-4 text-left"
+                            className="w-full justify-start gap-2 h-auto py-3 px-3 sm:px-4 text-left"
                             onClick={() => navigateTo('prev')}
                           >
-                            <ChevronLeft className="h-5 w-5 flex-shrink-0" />
+                            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                             <div className="flex flex-col items-start min-w-0">
-                              <span className="text-xs text-muted-foreground mb-1">Previous</span>
-                              <span className="font-medium text-sm truncate w-full">
+                              <span className="text-xs text-muted-foreground mb-0.5 sm:mb-1">Previous</span>
+                              <span className="font-medium text-xs sm:text-sm truncate w-full">
                                 {getCurrentNavigationInfo().previous.subsectionTitle}
                               </span>
                             </div>
@@ -396,20 +400,20 @@ const DocumentationPage = () => {
                       </div>
 
                       {/* Next Button */}
-                      <div className="flex-1">
+                      <div className="flex-1 w-full sm:w-auto">
                         {getCurrentNavigationInfo().next && (
                           <Button
                             variant="outline"
-                            className="w-full justify-end gap-2 h-auto py-3 px-4 text-right"
+                            className="w-full justify-end gap-2 h-auto py-3 px-3 sm:px-4 text-right"
                             onClick={() => navigateTo('next')}
                           >
                             <div className="flex flex-col items-end min-w-0">
-                              <span className="text-xs text-muted-foreground mb-1">Next</span>
-                              <span className="font-medium text-sm truncate w-full">
+                              <span className="text-xs text-muted-foreground mb-0.5 sm:mb-1">Next</span>
+                              <span className="font-medium text-xs sm:text-sm truncate w-full">
                                 {getCurrentNavigationInfo().next.subsectionTitle}
                               </span>
                             </div>
-                            <ArrowRight className="h-5 w-5 flex-shrink-0" />
+                            <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                           </Button>
                         )}
                       </div>
