@@ -4,6 +4,7 @@
 @import url('./styles/spacing.css');
 @import url('./styles/animations.css');
 @import url('./styles/beige.css');
+@import url('./styles/nft-pool-layout.css');
 
 
 @tailwind base;

@@ -25,6 +25,7 @@ import { Badge, StatusBadge } from '../components/ui/badge';
 import { Progress, EnhancedProgress } from '../components/ui/progress';
 
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
+import { constructMetadataURIs } from '../utils/nftMetadataUtils';
 
 const POOL_STATE_LABELS = [
   'Pending',
@@ -373,18 +374,55 @@ const RaffleCard = ({ raffle }) => {
       'https://cloudflare-ipfs.com/ipfs/',
       'https://dweb.link/ipfs/'
     ];
+    const IPNS_GATEWAYS = IPFS_GATEWAYS.map(g => g.replace('/ipfs/', '/ipns/'));
+    const ARWEAVE_GATEWAYS = ['https://arweave.net/'];
 
-    // Convert IPFS/decentralized URIs to HTTP
+    // Convert IPFS/decentralized URIs to HTTP (comprehensive version matching PrizeImageCard)
     const convertToHTTP = (uri) => {
       if (!uri) return [];
+
       if (uri.startsWith('ipfs://')) {
         let hash = uri.replace('ipfs://', '');
         if (hash.startsWith('ipfs/')) hash = hash.slice('ipfs/'.length);
         return IPFS_GATEWAYS.map(gateway => `${gateway}${hash}`);
       }
-      if (uri.startsWith('ar://')) {
-        return [`https://arweave.net/${uri.replace('ar://', '')}`];
+
+      if (uri.startsWith('ipns://')) {
+        let name = uri.replace('ipns://', '');
+        if (name.startsWith('ipns/')) name = name.slice('ipns/'.length);
+        return IPNS_GATEWAYS.map(gateway => `${gateway}${name}`);
       }
+
+      if (uri.startsWith('ar://')) {
+        const id = uri.replace('ar://', '');
+        return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+      }
+
+      try {
+        const u = new URL(uri);
+        let pathname = u.pathname.replace(/\/ipfs\/ipfs\//, '/ipfs/');
+        const parts = pathname.split('/').filter(Boolean);
+
+        const ipfsIndex = parts.indexOf('ipfs');
+        if (ipfsIndex !== -1 && parts[ipfsIndex + 1]) {
+          const hashAndRest = parts.slice(ipfsIndex + 1).join('/');
+          return IPFS_GATEWAYS.map(gateway => `${gateway}${hashAndRest}`);
+        }
+
+        const ipnsIndex = parts.indexOf('ipns');
+        if (ipnsIndex !== -1 && parts[ipnsIndex + 1]) {
+          const nameAndRest = parts.slice(ipnsIndex + 1).join('/');
+          return IPNS_GATEWAYS.map(gateway => `${gateway}${nameAndRest}`);
+        }
+
+        if (u.hostname.endsWith('arweave.net') || u.hostname === 'arweave.net') {
+          const id = parts.join('/');
+          return ARWEAVE_GATEWAYS.map(gateway => `${gateway}${id}`);
+        }
+      } catch (_) {
+        // not a URL, fall through
+      }
+
       return [uri];
     };
 
@@ -449,12 +487,9 @@ const RaffleCard = ({ raffle }) => {
     };
 
     async function fetchNFTArtwork() {
-      // Only fetch for NFT prize pools (not collab pools)
+      // Only fetch for NFT prize pools
       if (!raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
         return;
-      }
-      if (raffle.isCollabPool) {
-        return; // Skip collab pools
       }
 
       // Determine if escrowed or mintable
@@ -462,6 +497,13 @@ const RaffleCard = ({ raffle }) => {
         ? directContractValues.isEscrowedPrize === true
         : raffle.isEscrowedPrize === true;
       const isMintable = !isEscrowedPrize;
+
+      // Skip NFT Collab pools (externally prized), but allow NFT Drop pools (mintable)
+      // NFT Collab: isCollabPool=true AND isEscrowedPrize=true (external NFT)
+      // NFT Drop: isCollabPool=true BUT isMintable=true (pool mints NFTs)
+      if (raffle.isCollabPool && isEscrowedPrize) {
+        return;
+      }
 
       setNftImageLoading(true);
 
@@ -532,16 +574,14 @@ const RaffleCard = ({ raffle }) => {
           return;
         }
 
-        // Convert to HTTP URLs
-        const httpUrls = convertToHTTP(baseUri);
+        // Generate comprehensive URI variants using shared utility
+        const uriVariants = constructMetadataURIs(baseUri, raffle.prizeTokenId, raffle.standard);
         
-        // Also try with .json extension and token ID variants
+        // Convert all variants to HTTP URLs
         const allUrls = [];
-        for (const url of httpUrls) {
-          allUrls.push(url);
-          if (!url.includes('.json')) {
-            allUrls.push(`${url}.json`);
-          }
+        for (const variant of uriVariants) {
+          const httpUrls = convertToHTTP(variant);
+          allUrls.push(...httpUrls);
         }
 
         // Fetch metadata
@@ -563,8 +603,10 @@ const RaffleCard = ({ raffle }) => {
     }
 
     // Only fetch if we have direct contract values (to know if escrowed)
+    // Note: We removed the !raffle.isCollabPool check here because NFT Drop pools
+    // can have isCollabPool=true, and we want to fetch their artwork
     if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && 
-        !raffle.isCollabPool && directContractValues !== null) {
+        directContractValues !== null) {
       fetchNFTArtwork();
     }
 
@@ -735,7 +777,8 @@ const RaffleCard = ({ raffle }) => {
   };
 
   // Determine if this is an NFT pool that should show artwork
-  const isNFTPool = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && !raffle.isCollabPool;
+  // Note: NFT Drop pools can have isCollabPool=true, so we check for artwork availability instead
+  const isNFTPool = raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero;
   const shouldShowArtworkLayout = isNFTPool && (nftImageUrl || nftImageLoading);
 
   // NFT Artwork Card Layout - for NFT Drop, NFT Giveaway, Lucky NFT Sale

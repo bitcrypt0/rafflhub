@@ -137,87 +137,172 @@ export const useProfileData = () => {
   const FIFTEEN_MIN_MS = 15 * 60 * 1000;
   const CACHE_VERSION = 'v2';
 
-  const getAllPoolsCached = useCallback(async () => {
+  /**
+   * Get total pool count - O(1) operation
+   * @returns {Promise<number>} Total number of pools
+   */
+  const getPoolCount = useCallback(async () => {
+    if (!stableContracts.protocolManager) return 0;
+    try {
+      const res = await executeCall(
+        stableContracts.protocolManager.getPoolCount,
+        'getPoolCount'
+      );
+      return res.success ? (res.result.toNumber ? res.result.toNumber() : Number(res.result)) : 0;
+    } catch (error) {
+      console.error('Error fetching pool count:', error);
+      return 0;
+    }
+  }, [stableContracts.protocolManager, executeCall]);
+
+  /**
+   * Fetch all pools using pagination to prevent RPC timeouts
+   * @param {Object} options - Configuration options
+   * @param {number} options.maxPools - Maximum pools to fetch (default: 1000)
+   * @param {number} options.pageSize - Pools per page (default: 100, max: 100)
+   * @param {AbortSignal} options.signal - Optional abort signal for cancellation
+   * @returns {Promise<string[]>} Array of pool addresses
+   */
+  const getAllPoolsPaginated = useCallback(async (options = {}) => {
+    const {
+      maxPools = 1000,
+      pageSize = 100,
+      signal = null
+    } = options;
+
     if (!stableContracts.protocolManager) return [];
-    const cacheKey = `raffles:all:${CACHE_VERSION}:${chainId}`;
+
+    const cacheKey = `raffles:all:paginated:${CACHE_VERSION}:${chainId}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
+
     try {
-      const res = await executeCall(stableContracts.protocolManager.getAllPools, 'getAllPools');
-      const list = res.success && Array.isArray(res.result) ? res.result : [];
-      if (Array.isArray(list) && list.length > 0) {
-        setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
+      const allPoolsList = [];
+      let cursor = 0;
+      let hasMore = true;
+
+      while (hasMore && allPoolsList.length < maxPools) {
+        // Support cancellation
+        if (signal?.aborted) {
+          throw new Error('Fetch cancelled');
+        }
+
+        const res = await executeCall(
+          stableContracts.protocolManager.getAllPools,
+          'getAllPools',
+          cursor,
+          pageSize
+        );
+
+        if (!res.success) {
+          console.warn('Failed to fetch pools at cursor', cursor);
+          break;
+        }
+
+        const [pools, newCursor, more] = res.result;
+        allPoolsList.push(...pools);
+        cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
+        hasMore = more;
+
+        // Safety: prevent infinite loops
+        if (pools.length === 0) break;
       }
-      return list;
-    } catch {
+
+      // Cache result for 15 minutes
+      if (allPoolsList.length > 0) {
+        setCachedJson(cacheKey, allPoolsList, FIFTEEN_MIN_MS);
+      }
+
+      return allPoolsList;
+    } catch (error) {
+      if (error.message !== 'Fetch cancelled') {
+        console.error('Error fetching paginated pools:', error);
+      }
       return [];
     }
   }, [stableContracts.protocolManager, chainId, executeCall, getCachedJson, setCachedJson]);
 
   // Safe retry helper: refetch all raffles shortly after contracts become ready
   const getAllPoolsWithRetry = useCallback(async () => {
-    const first = await getAllPoolsCached();
+    const first = await getAllPoolsPaginated();
     if (first && first.length > 0) return first;
     // Only retry if contracts are present (to avoid unnecessary timers)
     if (!stableContracts.protocolManager) return first;
     await new Promise((r) => setTimeout(r, 1200));
-    const second = await getAllPoolsCached();
-      return second;
-    }, [getAllPoolsCached, stableContracts.protocolManager]);
+    const second = await getAllPoolsPaginated();
+    return second;
+  }, [getAllPoolsPaginated, stableContracts.protocolManager]);
 
 
-  const getRafflesByCreatorCached = useCallback(async (creator) => {
+  /**
+   * Fetch pools by creator using pagination to prevent RPC timeouts
+   * @param {string} creator - Creator address
+   * @param {Object} options - Configuration options
+   * @param {number} options.maxPools - Maximum pools to fetch (default: 500)
+   * @param {number} options.pageSize - Pools per page (default: 100, max: 100)
+   * @returns {Promise<string[]>} Array of pool addresses created by the creator
+   */
+  const getPoolsByCreatorPaginated = useCallback(async (creator, options = {}) => {
     if (!stableContracts.protocolManager || !creator) return [];
-    const cacheKey = `raffles:byCreator:${CACHE_VERSION}:${chainId}:${creator.toLowerCase()}`;
+
+    const {
+      maxPools = 500,
+      pageSize = 100
+    } = options;
+
+    const cacheKey = `raffles:byCreator:paginated:${CACHE_VERSION}:${chainId}:${creator.toLowerCase()}`;
     const cached = getCachedJson(cacheKey);
     if (cached) return cached;
+
     try {
-      // Get all pools and filter by creator
-      const allPoolsRes = await executeCall(stableContracts.protocolManager.getAllPools, 'getAllPools');
-      const allPools = allPoolsRes.success && Array.isArray(allPoolsRes.result) ? allPoolsRes.result : [];
-      
-      // Filter pools by checking poolCreators mapping for each pool
       const creatorPools = [];
-      for (const poolAddress of allPools) {
-        try {
-          const creatorRes = await executeCall(stableContracts.protocolManager.getPoolCreator, 'getPoolCreator', poolAddress);
-          if (creatorRes.success && creatorRes.result.toLowerCase() === creator.toLowerCase()) {
-            creatorPools.push(poolAddress);
-          }
-        } catch (error) {
-          console.warn(`Failed to get creator for pool ${poolAddress}:`, error);
+      let cursor = 0;
+      let hasMore = true;
+
+      while (hasMore && creatorPools.length < maxPools) {
+        const res = await executeCall(
+          stableContracts.protocolManager.getPoolsByCreator,
+          'getPoolsByCreator',
+          creator,
+          cursor,
+          pageSize
+        );
+
+        if (!res.success) {
+          console.warn('Failed to fetch creator pools at cursor', cursor);
+          break;
         }
+
+        const [pools, newCursor, more] = res.result;
+        creatorPools.push(...pools);
+        cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
+        hasMore = more;
+
+        // Safety: prevent infinite loops
+        if (pools.length === 0) break;
       }
-      
-      if (Array.isArray(creatorPools) && creatorPools.length > 0) {
+
+      // Cache result for 15 minutes
+      if (creatorPools.length > 0) {
         setCachedJson(cacheKey, creatorPools, FIFTEEN_MIN_MS);
       }
+
       return creatorPools;
-    } catch {
+    } catch (error) {
+      console.error('Error fetching creator pools:', error);
       return [];
     }
   }, [stableContracts.protocolManager, chainId, executeCall, getCachedJson, setCachedJson]);
-  // Retry helper for creator raffles: retry once after a short delay, bypassing cache on retry
+  // Retry helper for creator raffles: retry once after a short delay
   const getRafflesByCreatorWithRetry = useCallback(async (creator) => {
-    const first = await getRafflesByCreatorCached(creator);
+    const first = await getPoolsByCreatorPaginated(creator);
     if (first && first.length > 0) return first;
     if (!stableContracts.protocolManager) return first;
     // Wait briefly to allow contracts/data to become ready
     await new Promise((r) => setTimeout(r, 1200));
-    try {
-      // Bypass cache on retry to avoid persisting/transient empty results
-      const res = await executeCall(stableContracts.protocolManager.getPoolsByCreator, 'getPoolsByCreator', creator);
-      const list = res.success && Array.isArray(res.result) ? res.result : [];
-      // Optionally refresh cache only if non-empty (avoid caching empty)
-      if (Array.isArray(list) && list.length > 0) {
-        const cacheKey = `raffles:byCreator:${CACHE_VERSION}:${chainId}:${creator?.toLowerCase?.()}`;
-        setCachedJson(cacheKey, list, FIFTEEN_MIN_MS);
-      }
-      return list;
-    } catch {
-      return first || [];
-    }
-  }, [getRafflesByCreatorCached, stableContracts.protocolManager, executeCall, setCachedJson, chainId]);
+    const second = await getPoolsByCreatorPaginated(creator);
+    return second;
+  }, [getPoolsByCreatorPaginated, stableContracts.protocolManager]);
 
 
   // Fetch created raffles using ProtocolManager.getRafflesByCreator()
@@ -465,7 +550,7 @@ export const useProfileData = () => {
         fallbackMessage: 'Failed to load purchased slots'
       });
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, executeCall, getContractInstance, mapPoolState, getAllPoolsCached]);
+  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, executeCall, getContractInstance, mapPoolState, getAllPoolsWithRetry]);
   // Compute totals directly across pools: slots, wins, claimable refunds
   const fetchDirectTotals = useCallback(async () => {
     if (!stableConnected || !stableAddress || !provider || !stableContracts.protocolManager) return;
@@ -507,7 +592,7 @@ export const useProfileData = () => {
     } catch (error) {
       handleError(error, { context: { operation: 'fetchDirectTotals', isReadOnly: true }, fallbackMessage: 'Failed to compute profile totals' });
     }
-  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, getAllPoolsCached, getContractInstance, executeCall]);
+  }, [stableConnected, stableAddress, provider, stableContracts.protocolManager, getAllPoolsWithRetry, getContractInstance, executeCall]);
 
   // Load data when wallet connects, reset when disconnects
   useEffect(() => {

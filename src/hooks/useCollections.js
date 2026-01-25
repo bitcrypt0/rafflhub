@@ -97,11 +97,21 @@ export const useCollections = () => {
 
       // Step 2: Fetch external collections (query through user's pools)
       try {
-        // Get all pools from ProtocolManager
+        // Get all pools from ProtocolManager using pagination
         let allPools = [];
         try {
-          allPools = await protocolManager.getAllPools();
-          if (!Array.isArray(allPools)) allPools = [];
+          let cursor = 0;
+          let hasMore = true;
+          const pageSize = 100;
+          const maxPools = 1000;
+
+          while (hasMore && allPools.length < maxPools) {
+            const [pools, newCursor, more] = await protocolManager.getAllPools(cursor, pageSize);
+            allPools.push(...pools);
+            cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
+            hasMore = more;
+            if (pools.length === 0) break;
+          }
         } catch (err) {
           console.error('Error fetching all pools:', err);
         }

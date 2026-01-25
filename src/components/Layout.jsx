@@ -105,8 +105,23 @@ const Header = () => {
           return;
         }
         const protocolManagerContract = new ethers.Contract(protocolManagerAddress, contractABIs.protocolManager, provider);
-        const registeredPools = await protocolManagerContract.getAllPools();
-        if (!registeredPools || registeredPools.length === 0) {
+        
+        // Fetch pools using pagination
+        const registeredPools = [];
+        let cursor = 0;
+        let hasMore = true;
+        const pageSize = 100;
+        const maxPools = 1000;
+
+        while (hasMore && registeredPools.length < maxPools) {
+          const [pools, newCursor, more] = await protocolManagerContract.getAllPools(cursor, pageSize);
+          registeredPools.push(...pools);
+          cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
+          hasMore = more;
+          if (pools.length === 0) break;
+        }
+
+        if (registeredPools.length === 0) {
           setAllPools([]);
           hasFetchedRaffles.current = true;
           return;

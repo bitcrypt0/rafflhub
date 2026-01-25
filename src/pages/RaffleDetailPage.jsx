@@ -36,6 +36,15 @@ import {
   createSafeMethod
 } from '../utils/contractCallUtils';
 import { useErrorHandler } from '../utils/errorHandling';
+// Pool type detection and layout components
+import { isNFTPrizedPool, getPoolType } from '../utils/poolTypeUtils';
+import {
+  PrizeImageCard as PrizeImageCardNew,
+  RaffleDetailsCard,
+  NFTPoolLayout,
+  StandardPoolLayout,
+  PoolActivity
+} from '../components/raffle';
 
 const POOL_STATE_LABELS = [
   'Pending',
@@ -2545,7 +2554,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   };
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px]">
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="font-display text-[length:var(--text-lg)] font-semibold flex items-center gap-2">
@@ -3075,6 +3084,7 @@ const RaffleDetailPage = () => {
           nativePrizeAmount,
           usesCustomFee,
           isEscrowedPrize,
+          isCollabPool: isCollabPoolFlag,
           amountPerWinner: amountPerWinner ? (amountPerWinner.toNumber ? amountPerWinner.toNumber() : Number(amountPerWinner)) : 1,
           // Social engagement fields
           socialEngagementRequired: !!socialEngagementRequired,
@@ -4277,227 +4287,148 @@ setRaffle(raffleData);
         </div>
       </div>
 
-      {/* Social Media Verification Section */}
-      {raffle?.socialEngagementRequired && (
-        <div className="mb-8">
-          <SocialMediaVerification
-            raffle={raffle}
-            userAddress={address}
-            socialEngagementRequired={raffle.socialEngagementRequired}
-            hasCompletedSocialEngagement={hasCompletedSocialEngagement}
-            onVerificationComplete={() => {
-              // Since verification is now handled during purchase, 
-              // we just need to refresh the UI state
-              triggerRefresh();
-            }}
-          />
-        </div>
+      {/* Conditional Layout Rendering based on Pool Type */}
+      {isNFTPrizedPool(raffle) ? (
+        /* NFT Pool Layout - Showcases artwork as hero element */
+        <NFTPoolLayout
+          raffle={raffle}
+          collectionName={raffleCollectionName}
+          isMobile={isMobile}
+          prizeImageCard={
+            <PrizeImageCardNew
+              raffle={raffle}
+              isMintableERC721={isMintableERC721}
+              isEscrowedPrize={isEscrowedPrize}
+              variant="hero"
+              showFrame={true}
+              collectionName={raffleCollectionName}
+            />
+          }
+          ticketPurchaseSection={
+            <TicketPurchaseSection
+              raffle={raffle}
+              onPurchase={handlePurchaseTickets}
+              timeRemaining={timeRemaining}
+              winners={[]}
+              shouldShowClaimPrize={shouldShowClaimPrize}
+              prizeAlreadyClaimed={prizeAlreadyClaimed}
+              claimingPrize={claimingPrize}
+              handleClaimPrize={handleClaimPrize}
+              shouldShowClaimRefund={shouldShowClaimRefund}
+              claimingRefund={claimingRefund}
+              handleClaimRefund={handleClaimRefund}
+              refundableAmount={refundableAmount}
+              isMintableERC721={isMintableERC721}
+              isEscrowedPrize={isEscrowedPrize}
+              isCollabPool={isCollabPool}
+              isPrized={raffle.isPrized}
+              isMobile={isMobile}
+              onStateChange={triggerRefresh}
+              socialEngagementRequired={raffle?.socialEngagementRequired}
+              hasCompletedSocialEngagement={hasCompletedSocialEngagement}
+            />
+          }
+          winnersSection={
+            <WinnersSection
+              raffle={raffle}
+              isMintableERC721={isMintableERC721}
+              isEscrowedPrize={isEscrowedPrize}
+              isMobile={isMobile}
+              onWinnerCountChange={setWinnerCount}
+              onWinnersSelectedChange={handleWinnersSelectedChange}
+            />
+          }
+          poolActivitySection={
+            <PoolActivity
+              raffle={raffle}
+              variant="nft"
+            />
+          }
+          socialVerification={
+            raffle?.socialEngagementRequired ? (
+              <SocialMediaVerification
+                raffle={raffle}
+                userAddress={address}
+                socialEngagementRequired={raffle.socialEngagementRequired}
+                hasCompletedSocialEngagement={hasCompletedSocialEngagement}
+                onVerificationComplete={() => triggerRefresh()}
+              />
+            ) : null
+          }
+        />
+      ) : (
+        /* Standard Pool Layout - For whitelist, native, and ERC20 prize pools */
+        <StandardPoolLayout
+          raffle={raffle}
+          isMobile={isMobile}
+          ticketPurchaseSection={
+            <TicketPurchaseSection
+              raffle={raffle}
+              onPurchase={handlePurchaseTickets}
+              timeRemaining={timeRemaining}
+              winners={[]}
+              shouldShowClaimPrize={shouldShowClaimPrize}
+              prizeAlreadyClaimed={prizeAlreadyClaimed}
+              claimingPrize={claimingPrize}
+              handleClaimPrize={handleClaimPrize}
+              shouldShowClaimRefund={shouldShowClaimRefund}
+              claimingRefund={claimingRefund}
+              handleClaimRefund={handleClaimRefund}
+              refundableAmount={refundableAmount}
+              isMintableERC721={isMintableERC721}
+              isEscrowedPrize={isEscrowedPrize}
+              isCollabPool={isCollabPool}
+              isPrized={raffle.isPrized}
+              isMobile={isMobile}
+              onStateChange={triggerRefresh}
+              socialEngagementRequired={raffle?.socialEngagementRequired}
+              hasCompletedSocialEngagement={hasCompletedSocialEngagement}
+            />
+          }
+          winnersSection={
+            <WinnersSection
+              raffle={raffle}
+              isMintableERC721={isMintableERC721}
+              isEscrowedPrize={isEscrowedPrize}
+              isMobile={isMobile}
+              onWinnerCountChange={setWinnerCount}
+              onWinnersSelectedChange={handleWinnersSelectedChange}
+            />
+          }
+          raffleDetailsCard={
+            <RaffleDetailsCard
+              raffle={raffle}
+              isEscrowedPrize={isEscrowedPrize}
+              raffleCollectionName={raffleCollectionName}
+              gatingTokenName={gatingTokenName}
+              isMobile={isMobile}
+            />
+          }
+          poolActivitySection={
+            <PoolActivity
+              raffle={raffle}
+              variant="standard"
+            />
+          }
+          prizeImageCard={
+            /* Only show PrizeImageCard for standard layout if there's an NFT prize (edge case) */
+            (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) ? (
+              <PrizeImageCard raffle={raffle} isMintableERC721={isMintableERC721} isEscrowedPrize={isEscrowedPrize} />
+            ) : null
+          }
+          socialVerification={
+            raffle?.socialEngagementRequired ? (
+              <SocialMediaVerification
+                raffle={raffle}
+                userAddress={address}
+                socialEngagementRequired={raffle.socialEngagementRequired}
+                hasCompletedSocialEngagement={hasCompletedSocialEngagement}
+                onVerificationComplete={() => triggerRefresh()}
+              />
+            ) : null
+          }
+        />
       )}
-
-      {/* Perfect 2x2 Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Top Row: TicketPurchaseSection and WinnersSection */}
-        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <TicketPurchaseSection
-            raffle={raffle}
-            onPurchase={handlePurchaseTickets}
-            timeRemaining={timeRemaining}
-            winners={[]} // Empty array since winner logic is handled by parent component
-            shouldShowClaimPrize={shouldShowClaimPrize}
-            prizeAlreadyClaimed={prizeAlreadyClaimed}
-            claimingPrize={claimingPrize}
-            handleClaimPrize={handleClaimPrize}
-            shouldShowClaimRefund={shouldShowClaimRefund}
-            claimingRefund={claimingRefund}
-            handleClaimRefund={handleClaimRefund}
-            refundableAmount={refundableAmount}
-            isMintableERC721={isMintableERC721}
-            isEscrowedPrize={isEscrowedPrize}
-            isCollabPool={isCollabPool}
-            isPrized={raffle.isPrized}
-            isMobile={isMobile}
-            onStateChange={triggerRefresh}
-            socialEngagementRequired={raffle?.socialEngagementRequired}
-            hasCompletedSocialEngagement={hasCompletedSocialEngagement}
-          />
-
-          <WinnersSection
-            raffle={raffle}
-            isMintableERC721={isMintableERC721}
-            isEscrowedPrize={isEscrowedPrize}
-            isMobile={isMobile}
-            onWinnerCountChange={setWinnerCount}
-            onWinnersSelectedChange={handleWinnersSelectedChange}
-          />
-        </div>
-
-        {/* Bottom Row: Raffle Details and PrizeImageCard */}
-        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg h-full">
-            <h3 className={`font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>Raffle Details</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Creator:</span>
-                <span
-                  className="font-mono text-foreground"
-                  title={raffle.creator}
-                >
-                  {isMobile ? `${raffle.creator.slice(0, 12)}...` : `${raffle.creator.slice(0, 16)}...`}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Pool Contract:</span>
-                <a
-                  href={getExplorerLink(raffle.address, raffle.chainId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
-                  title={raffle.address}
-                >
-                  {isMobile ? `${raffle.address.slice(0, 12)}...` : `${raffle.address.slice(0, 16)}...`}
-                </a>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Start Time:</span>
-                <span>{new Date(raffle.startTime * 1000).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  Raffle Duration
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex items-center cursor-help" aria-label="Raffle Duration info">
-                        <Info className="h-3.5 w-3.5 opacity-70" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" align="center">
-                      Shows the default duration until the raffle ends, then shows the actual duration taken.
-                    </TooltipContent>
-                  </Tooltip>
-                </span>
-                <span>
-                  {(() => {
-                    const ended = [2,3,4,5,6,7,8].includes(raffle.stateNum);
-                    const actual = raffle?.actualDuration && (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
-                    const original = raffle?.duration;
-                    const displaySeconds = ended && actual && actual > 0
-                      ? (actual > original ? original : actual)
-                      : original;
-                    return formatDuration(displaySeconds);
-                  })()}
-                </span>
-              </div>
-              {raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero && raffle.holderTokenStandard !== undefined && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Gating Requirement:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground">
-                      {(() => {
-                        // Format minimum holder balance based on token standard
-                        let requiredBalance = 1;
-                        try {
-                          const balance = raffle.minHolderTokenBalance;
-                          if (balance) {
-                            if (balance.toString) {
-                              const balanceStr = balance.toString();
-                              if (balanceStr.length > 10) {
-                                // Likely a decimal value (ERC20), format it
-                                requiredBalance = parseFloat(ethers.utils.formatUnits(balance, 18));
-                              } else {
-                                // Small number, likely whole number (ERC721/ERC1155)
-                                requiredBalance = balance.toNumber ? balance.toNumber() : Number(balance);
-                              }
-                            } else {
-                              requiredBalance = Number(balance);
-                            }
-                          }
-                        } catch (error) {
-                          console.warn('Could not format minHolderTokenBalance:', error);
-                          requiredBalance = 1;
-                        }
-                        
-                        // Get token name for display
-                        let tokenName = '';
-                        if (raffle.holderTokenStandard === 1) {
-                          // ERC1155 - display contract address as requested
-                          tokenName = `${raffle.holderTokenAddress.slice(0, 8)}...${raffle.holderTokenAddress.slice(-6)}`;
-                        } else {
-                          // ERC721 or ERC20 - display name if available, fallback to address
-                          tokenName = gatingTokenName || `${raffle.holderTokenAddress.slice(0, 8)}...${raffle.holderTokenAddress.slice(-6)}`;
-                        }
-                        
-                        return `${requiredBalance} ${tokenName}`;
-                      })()}
-                    </span>
-                    <a
-                      href={getExplorerLink(raffle.holderTokenAddress, raffle.chainId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
-                      title={raffle.holderTokenAddress}
-                    >
-                      <Info className="h-3.5 w-3.5 opacity-70" />
-                    </a>
-                  </div>
-                </div>
-              )}
-                  {raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0) && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Prize Amount:</span>
-                      <span>{formatPrizeAmount(raffle.nativePrizeAmount)}</span>
-                    </div>
-                  )}
-                  {raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0) && (
-                    <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
-                  )}
-              {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
-                <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Prize Collection:</span>
-                    <a
-                      href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
-                      title={raffle.prizeCollection}
-                    >
-                      {raffleCollectionName || `${raffle.prizeCollection.slice(0, 10)}...${raffle.prizeCollection.slice(-8)}`}
-                    </a>
-                </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground/80 dark:text-foreground">
-                      {isEscrowedPrize ? 'Prize Type:' : 'Collection Type:'}
-                    </span>
-                    <span className="font-semibold">
-                      {(() => {
-                        if (typeof isEscrowedPrize === 'boolean' && typeof raffle.standard !== 'undefined') {
-                          if (!isEscrowedPrize && raffle.standard === 0) return 'Mintable ERC721';
-                          if (!isEscrowedPrize && raffle.standard === 1) return 'Mintable ERC1155';
-                          if (isEscrowedPrize && raffle.standard === 0) return 'Escrowed ERC721';
-                          if (isEscrowedPrize && raffle.standard === 1) return 'Escrowed ERC1155';
-                        }
-                        return 'Unknown';
-                      })()}
-                    </span>
-                  </div>
-
-                  {/* Prize Token ID for escrowed ERC721 and ERC1155 prizes */}
-                  {isEscrowedPrize && raffle.prizeTokenId !== undefined && raffle.prizeTokenId !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-foreground/80 dark:text-foreground">Prize Token ID:</span>
-                      <span className="font-mono font-semibold">
-                        {raffle.prizeTokenId.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId}
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          <PrizeImageCard raffle={raffle} isMintableERC721={isMintableERC721} isEscrowedPrize={isEscrowedPrize} />
-        </div>
-      </div>
 
     </PageContainer>
   );

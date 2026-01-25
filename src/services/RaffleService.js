@@ -200,9 +200,14 @@ class RaffleService {
   }
 
   /**
-   * Fetch all raffle addresses from ProtocolManager
+   * Fetch all raffle addresses from ProtocolManager using pagination
+   * @param {Object} options - Configuration options
+   * @param {number} options.maxPools - Maximum pools to fetch (default: 1000)
+   * @param {number} options.pageSize - Pools per page (default: 100, max: 100)
+   * @returns {Promise<string[]>} Array of pool addresses (newest first)
    */
-  async getAllRaffleAddresses() {
+  async getAllRaffleAddresses(options = {}) {
+    const { maxPools = 1000, pageSize = 100 } = options;
     const cacheKey = `raffleAddresses_${this.walletContext?.chainId}`;
     const cached = this.cache.get(cacheKey);
 
@@ -220,13 +225,28 @@ class RaffleService {
       throw new Error('CONTRACTS_NOT_AVAILABLE');
     }
 
-    const addresses = await this.withRetry(
-      () => protocolManager.getAllPools(),
-      'getAllPools'
-    );
+    // Fetch all pools using pagination
+    const allAddresses = [];
+    let cursor = 0;
+    let hasMore = true;
+
+    while (hasMore && allAddresses.length < maxPools) {
+      const result = await this.withRetry(
+        () => protocolManager.getAllPools(cursor, pageSize),
+        `getAllPools(cursor=${cursor})`
+      );
+
+      const [pools, newCursor, more] = result;
+      allAddresses.push(...pools);
+      cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
+      hasMore = more;
+
+      // Safety: prevent infinite loops
+      if (pools.length === 0) break;
+    }
 
     // Reverse the order to get newest raffles first (newest deployed contracts have higher indices)
-    const sortedAddresses = (addresses || []).slice().reverse();
+    const sortedAddresses = allAddresses.slice().reverse();
 
     // Cache the result
     this.cache.set(cacheKey, {
