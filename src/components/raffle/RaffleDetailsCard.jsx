@@ -125,8 +125,8 @@ const RaffleDetailsCard = ({
   if (isTabVariant) {
     return (
       <div className={cardClasses}>
-        {/* 2-column grid matching TicketsPurchaseSection layout */}
-        <div className="grid grid-cols-2 gap-4 text-sm px-4 py-3">
+        {/* 2-column grid matching TicketsPurchaseSection layout and padding */}
+        <div className="grid grid-cols-2 gap-4 text-sm p-6">
           {/* Creator */}
           <div>
             <span className="text-muted-foreground">Creator:</span>
