@@ -17,6 +17,12 @@ import { useContract } from '../../contexts/ContractContext';
 import { useCollabDetection } from '../../contexts/CollabDetectionContext';
 import { Image, ImageOff, ExternalLink, Gift, Sparkles } from 'lucide-react';
 import { constructMetadataURIs } from '../../utils/nftMetadataUtils';
+import {
+  isBytes32Hash,
+  isZeroHash,
+  resolveURIOrHash,
+  getStoredCollectionURIs
+} from '../../services/uriRegistryService';
 
 // Gateway configurations for decentralized storage
 const IPFS_GATEWAYS = [
@@ -257,15 +263,43 @@ const PrizeImageCard = ({
 
         if (raffle.standard === 0) {
           if (isMintable) {
+            // Strategy 1: Try to get URI string directly from contract
             try {
               baseUri = await contract.unrevealedBaseURI();
-              if (!baseUri || baseUri.trim() === '') {
-                setSuppressRender(true);
-                setImageUrl(null);
-                setLoading(false);
-                return;
-              }
             } catch (error) {
+              // Method might not exist
+            }
+
+            // Strategy 2: If URI is empty or is a hash, try hash-based resolution
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+              let uriHash = null;
+              try {
+                if (typeof contract.unrevealedURIHash === 'function') {
+                  uriHash = await contract.unrevealedURIHash();
+                }
+              } catch (e) {}
+
+              if (uriHash && !isZeroHash(uriHash)) {
+                const resolvedURI = await resolveURIOrHash(uriHash, {
+                  collectionAddress: raffle.prizeCollection,
+                  uriType: 'unrevealedURI'
+                });
+                if (resolvedURI) {
+                  baseUri = resolvedURI;
+                }
+              }
+            }
+
+            // Strategy 3: Check local storage for stored collection URIs
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
+              if (storedURIs?.unrevealedURI) {
+                baseUri = storedURIs.unrevealedURI;
+              }
+            }
+
+            // If still no valid URI, suppress render
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
               setSuppressRender(true);
               setImageUrl(null);
               setLoading(false);
@@ -290,10 +324,51 @@ const PrizeImageCard = ({
             try { tokenUri = await contract.tokenURI(raffle.prizeTokenId); } catch (error) {}
             try { revealed = await contract.isRevealed(); } catch (error) { revealed = null; }
 
+            // Check if unrevealedUri is a hash and try to resolve it
+            if (unrevealedUri && isBytes32Hash(unrevealedUri)) {
+              const resolvedURI = await resolveURIOrHash(unrevealedUri, {
+                collectionAddress: raffle.prizeCollection,
+                uriType: 'unrevealedURI'
+              });
+              if (resolvedURI) {
+                unrevealedUri = resolvedURI;
+              } else {
+                unrevealedUri = null;
+              }
+            }
+
+            // Try hash-based resolution if unrevealedUri is still empty
+            if (!unrevealedUri || unrevealedUri.trim() === '') {
+              let uriHash = null;
+              try {
+                if (typeof contract.unrevealedURIHash === 'function') {
+                  uriHash = await contract.unrevealedURIHash();
+                }
+              } catch (e) {}
+
+              if (uriHash && !isZeroHash(uriHash)) {
+                const resolvedURI = await resolveURIOrHash(uriHash, {
+                  collectionAddress: raffle.prizeCollection,
+                  uriType: 'unrevealedURI'
+                });
+                if (resolvedURI) {
+                  unrevealedUri = resolvedURI;
+                }
+              }
+            }
+
+            // Check local storage as fallback
+            if (!unrevealedUri || unrevealedUri.trim() === '') {
+              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
+              if (storedURIs?.unrevealedURI) {
+                unrevealedUri = storedURIs.unrevealedURI;
+              }
+            }
+
             if (revealed === false) {
-              if (unrevealedUri && unrevealedUri.trim() !== '') {
+              if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
                 baseUri = unrevealedUri;
-              } else if (tokenUri && tokenUri.trim() !== '') {
+              } else if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
                 baseUri = tokenUri;
               } else {
                 try {
@@ -305,13 +380,13 @@ const PrizeImageCard = ({
                 }
               }
             } else if (revealed === true) {
-              if (tokenUri && tokenUri.trim() !== '') {
+              if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
                 baseUri = tokenUri;
               } else {
                 try {
                   baseUri = await contract.uri(raffle.prizeTokenId);
                 } catch (fallbackError) {
-                  if (unrevealedUri && unrevealedUri.trim() !== '') {
+                  if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
                     baseUri = unrevealedUri;
                   } else {
                     setImageUrl(null);
@@ -321,9 +396,9 @@ const PrizeImageCard = ({
                 }
               }
             } else {
-              if (tokenUri && tokenUri.trim() !== '') {
+              if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
                 baseUri = tokenUri;
-              } else if (unrevealedUri && unrevealedUri.trim() !== '') {
+              } else if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
                 baseUri = unrevealedUri;
               } else {
                 try {

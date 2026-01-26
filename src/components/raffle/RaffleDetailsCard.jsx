@@ -104,7 +104,7 @@ const RaffleDetailsCard = ({
   raffleCollectionName,
   gatingTokenName,
   isMobile = false,
-  variant = 'default', // 'default' | 'compact' | 'sidebar'
+  variant = 'default', // 'default' | 'compact' | 'sidebar' | 'tab'
   className = '',
 }) => {
   const { formatPrizeAmount } = useNativeCurrency();
@@ -112,10 +112,199 @@ const RaffleDetailsCard = ({
   if (!raffle) return null;
 
   const isCompact = variant === 'compact' || variant === 'sidebar';
-  const cardClasses = isCompact
-    ? `bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4 ${className}`
-    : `detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg h-full ${className}`;
+  const isTabVariant = variant === 'tab';
+  
+  // Tab variant: no outer card styling, content flows directly
+  const cardClasses = isTabVariant
+    ? `raffle-details-tab-content h-full ${className}`
+    : isCompact
+      ? `bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4 ${className}`
+      : `detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg h-full ${className}`;
 
+  // Tab variant uses 2-column distributed grid layout matching TicketsPurchaseSection
+  if (isTabVariant) {
+    return (
+      <div className={cardClasses}>
+        {/* 2-column grid matching TicketsPurchaseSection layout */}
+        <div className="grid grid-cols-2 gap-4 text-sm px-4 py-3">
+          {/* Creator */}
+          <div>
+            <span className="text-muted-foreground">Creator:</span>
+            <p className="font-mono font-medium truncate" title={raffle.creator}>
+              {raffle.creator.slice(0, 6)}...{raffle.creator.slice(-4)}
+            </p>
+          </div>
+
+          {/* Pool Contract */}
+          <div>
+            <span className="text-muted-foreground">Pool Contract:</span>
+            <a
+              href={getExplorerLink(raffle.address, raffle.chainId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono font-medium text-blue-600 hover:text-blue-800 truncate block"
+              title={raffle.address}
+            >
+              {raffle.address.slice(0, 6)}...{raffle.address.slice(-4)}
+            </a>
+          </div>
+
+          {/* Start Time */}
+          <div>
+            <span className="text-muted-foreground">Start Time:</span>
+            <p className="font-medium">{new Date(raffle.startTime * 1000).toLocaleString()}</p>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <span className="text-muted-foreground flex items-center gap-1">
+              Duration:
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center cursor-help">
+                    <Info className="h-3.5 w-3.5 opacity-70" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  Shows the default duration until the raffle ends, then shows the actual duration taken.
+                </TooltipContent>
+              </Tooltip>
+            </span>
+            <p className="font-medium">
+              {(() => {
+                const ended = [2, 3, 4, 5, 6, 7, 8].includes(raffle.stateNum);
+                const actual = raffle?.actualDuration &&
+                  (raffle.actualDuration.toNumber ? raffle.actualDuration.toNumber() : Number(raffle.actualDuration));
+                const original = raffle?.duration;
+                const displaySeconds = ended && actual && actual > 0
+                  ? (actual > original ? original : actual)
+                  : original;
+                return formatDuration(displaySeconds);
+              })()}
+            </p>
+          </div>
+
+          {/* Token Gating Requirement */}
+          {raffle.holderTokenAddress &&
+            raffle.holderTokenAddress !== ethers.constants.AddressZero &&
+            raffle.holderTokenStandard !== undefined && (
+              <div>
+                <span className="text-muted-foreground">Gating Requirement:</span>
+                <p className="font-medium flex items-center gap-2">
+                  <span>
+                    {(() => {
+                      let requiredBalance = 1;
+                      try {
+                        const balance = raffle.minHolderTokenBalance;
+                        if (balance) {
+                          if (balance.toString) {
+                            const balanceStr = balance.toString();
+                            if (balanceStr.length > 10) {
+                              requiredBalance = parseFloat(ethers.utils.formatUnits(balance, 18));
+                            } else {
+                              requiredBalance = balance.toNumber ? balance.toNumber() : Number(balance);
+                            }
+                          } else {
+                            requiredBalance = Number(balance);
+                          }
+                        }
+                      } catch (error) {
+                        requiredBalance = 1;
+                      }
+                      let tokenName = '';
+                      if (raffle.holderTokenStandard === 1) {
+                        tokenName = `${raffle.holderTokenAddress.slice(0, 6)}...${raffle.holderTokenAddress.slice(-4)}`;
+                      } else {
+                        tokenName = gatingTokenName ||
+                          `${raffle.holderTokenAddress.slice(0, 6)}...${raffle.holderTokenAddress.slice(-4)}`;
+                      }
+                      return `${requiredBalance} ${tokenName}`;
+                    })()}
+                  </span>
+                  <a
+                    href={getExplorerLink(raffle.holderTokenAddress, raffle.chainId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800"
+                    title={raffle.holderTokenAddress}
+                  >
+                    <Info className="h-3.5 w-3.5 opacity-70" />
+                  </a>
+                </p>
+              </div>
+            )}
+
+          {/* Native Prize Amount */}
+          {raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0) && (
+            <div>
+              <span className="text-muted-foreground">Prize Amount:</span>
+              <p className="font-medium">{formatPrizeAmount(raffle.nativePrizeAmount)}</p>
+            </div>
+          )}
+
+          {/* ERC20 Prize Amount */}
+          {raffle.erc20PrizeToken &&
+            raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
+            raffle.erc20PrizeAmount &&
+            raffle.erc20PrizeAmount.gt &&
+            raffle.erc20PrizeAmount.gt(0) && (
+              <div>
+                <span className="text-muted-foreground">Prize Amount:</span>
+                <div className="font-medium">
+                  <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
+                </div>
+              </div>
+            )}
+
+          {/* Prize Collection (NFT) */}
+          {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
+            <>
+              <div>
+                <span className="text-muted-foreground">Prize Collection:</span>
+                <a
+                  href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-blue-600 underline hover:text-blue-800 truncate block"
+                  title={raffle.prizeCollection}
+                >
+                  {raffleCollectionName ||
+                    `${raffle.prizeCollection.slice(0, 8)}...${raffle.prizeCollection.slice(-6)}`}
+                </a>
+              </div>
+              <div>
+                <span className="text-muted-foreground">
+                  {isEscrowedPrize ? 'Prize Type:' : 'Collection Type:'}
+                </span>
+                <p className="font-medium">
+                  {(() => {
+                    if (typeof isEscrowedPrize === 'boolean' && typeof raffle.standard !== 'undefined') {
+                      if (!isEscrowedPrize && raffle.standard === 0) return 'Mintable ERC721';
+                      if (!isEscrowedPrize && raffle.standard === 1) return 'Mintable ERC1155';
+                      if (isEscrowedPrize && raffle.standard === 0) return 'Escrowed ERC721';
+                      if (isEscrowedPrize && raffle.standard === 1) return 'Escrowed ERC1155';
+                    }
+                    return 'Unknown';
+                  })()}
+                </p>
+              </div>
+              {/* Prize Token ID for escrowed NFTs */}
+              {isEscrowedPrize && raffle.prizeTokenId !== undefined && raffle.prizeTokenId !== null && (
+                <div>
+                  <span className="text-muted-foreground">Prize Token ID:</span>
+                  <p className="font-mono font-medium">
+                    {raffle.prizeTokenId.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Default/compact/sidebar variant - original layout
   return (
     <div className={cardClasses}>
       <h3 className={`font-display font-semibold mb-4 ${isMobile ? 'text-base' : 'text-lg'}`}>

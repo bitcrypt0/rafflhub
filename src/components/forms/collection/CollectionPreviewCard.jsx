@@ -284,7 +284,7 @@ const CollectionPreviewCard = React.forwardRef(({
                 "text-sm font-medium font-mono text-foreground"
               )}>
                 {formData.royaltyRecipient
-                  ? `${formData.royaltyRecipient.slice(0, 6)}...${formData.royaltyRecipient.slice(-4)}`
+                  ? `${String(formData.royaltyRecipient).slice(0, 6)}...${String(formData.royaltyRecipient).slice(-4)}`
                   : (showPlaceholders ? "Connected wallet" : "")}
               </p>
             </motion.div>
@@ -314,7 +314,7 @@ const CollectionPreviewCard = React.forwardRef(({
                 className="flex items-center gap-2 text-xs text-muted-foreground"
               >
                 <LinkIcon className="h-3 w-3" />
-                <span className="truncate font-mono">{formData.baseURI.slice(0, 40)}...</span>
+                <span className="truncate font-mono">{String(formData.baseURI).slice(0, 40)}...</span>
               </motion.div>
             )}
             {formData.dropURI && (
@@ -323,7 +323,7 @@ const CollectionPreviewCard = React.forwardRef(({
                 className="flex items-center gap-2 text-xs text-muted-foreground"
               >
                 <Hash className="h-3 w-3" />
-                <span className="truncate font-mono">{formData.dropURI.slice(0, 40)}...</span>
+                <span className="truncate font-mono">{String(formData.dropURI).slice(0, 40)}...</span>
               </motion.div>
             )}
           </div>

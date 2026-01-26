@@ -9,3 +9,5 @@ export { default as RaffleDetailsCard } from './RaffleDetailsCard';
 export { default as NFTPoolLayout } from './NFTPoolLayout';
 export { default as StandardPoolLayout } from './StandardPoolLayout';
 export { default as PoolActivity } from './PoolActivity';
+export { default as WinnersSection } from './WinnersSection';
+export { default as RaffleInfoTabs } from './RaffleInfoTabs';

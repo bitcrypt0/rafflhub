@@ -362,6 +362,13 @@ const DeployCollectionPage = () => {
 
     setLoading(true);
     try {
+      // Validate royalty recipient address
+      if (!formData.royaltyRecipient || !ethers.utils.isAddress(formData.royaltyRecipient)) {
+        toast.error('Please provide a valid royalty recipient address');
+        setLoading(false);
+        return;
+      }
+
       const signer = provider.getSigner();
       const standard = isERC721 ? 0 : 1;
       
@@ -380,34 +387,50 @@ const DeployCollectionPage = () => {
         revealTime = 0;
       }
 
-      const params = {
+      // Compute keccak256 hashes for URIs (gas optimization)
+      const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const dropURI = formData.dropURI?.trim() || '';
+      const dropURIHash = dropURI && dropURI.length > 0 
+        ? ethers.utils.keccak256(ethers.utils.toUtf8Bytes(dropURI)) 
+        : ZERO_BYTES32;
+      const unrevealedURIHash = unrevealedBaseURI && unrevealedBaseURI.trim().length > 0
+        ? ethers.utils.keccak256(ethers.utils.toUtf8Bytes(unrevealedBaseURI)) 
+        : ZERO_BYTES32;
+
+      // Convert to optimized types
+      const royaltyBps = formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0; // percent to bps (uint96)
+      const maxSupply = parseInt(formData.maxSupply || '0'); // uint64
+      const revealTimeUint48 = revealTime; // uint48
+
+      // Debug logging
+      console.log('Deployment parameters:', {
         standard,
         name: formData.name,
         symbol: formData.symbol,
         baseURI: formData.baseURI,
-        dropURI: formData.dropURI || '',
+        dropURIHash,
         initialOwner: address,
-        royaltyPercentage: formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0, // percent to bps
+        royaltyBps,
         royaltyRecipient: formData.royaltyRecipient,
-        maxSupply: parseInt(formData.maxSupply || '0'),
-        revealType: revealType,
-        unrevealedBaseURI: unrevealedBaseURI,
-        revealTime: revealTime,
-      };
+        maxSupply,
+        revealType,
+        unrevealedURIHash,
+        revealTimeUint48
+      });
 
       const tx = await contracts.nftFactory.connect(signer).deployCollection(
-        standard,
-        formData.name,
-        formData.symbol,
-        formData.baseURI,
-        formData.dropURI || '',
-        address,
-        formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0, // percent to bps
-        formData.royaltyRecipient,
-        parseInt(formData.maxSupply || '0'),
-        revealType,
-        unrevealedBaseURI,
-        revealTime
+        standard,                    // enum PrizeTypes.Standard
+        formData.name,               // string
+        formData.symbol,             // string
+        formData.baseURI,            // string (kept as string for tokenURI)
+        dropURIHash,                 // bytes32 (hash of dropURI)
+        address,                     // address initialOwner
+        royaltyBps,                  // uint96 royaltyBps
+        formData.royaltyRecipient,   // address royaltyRecipient
+        maxSupply,                   // uint64 maxSupply
+        revealType,                  // enum PrizeTypes.RevealType
+        unrevealedURIHash,           // bytes32 (hash of unrevealedURI)
+        revealTimeUint48             // uint48 revealTime
       );
       const receipt = await tx.wait();
       

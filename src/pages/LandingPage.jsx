@@ -26,6 +26,12 @@ import { Progress, EnhancedProgress } from '../components/ui/progress';
 
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import { constructMetadataURIs } from '../utils/nftMetadataUtils';
+import {
+  isBytes32Hash,
+  isZeroHash,
+  resolveURIOrHash,
+  getStoredCollectionURIs
+} from '../services/uriRegistryService';
 
 const POOL_STATE_LABELS = [
   'Pending',
@@ -521,14 +527,44 @@ const RaffleCard = ({ raffle }) => {
         if (raffle.standard === 0) {
           // ERC721
           if (isMintable) {
-            // NFT Drop - use unrevealedBaseURI
+            // NFT Drop - use unrevealedBaseURI with hash-based resolution fallback
+            // Strategy 1: Try to get URI string directly from contract
             try {
               baseUri = await contract.unrevealedBaseURI();
-              if (!baseUri || baseUri.trim() === '') {
-                setNftImageLoading(false);
-                return;
-              }
             } catch (error) {
+              // Method might not exist
+            }
+
+            // Strategy 2: If URI is empty or is a hash, try hash-based resolution
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+              let uriHash = null;
+              try {
+                if (typeof contract.unrevealedURIHash === 'function') {
+                  uriHash = await contract.unrevealedURIHash();
+                }
+              } catch (e) {}
+
+              if (uriHash && !isZeroHash(uriHash)) {
+                const resolvedURI = await resolveURIOrHash(uriHash, {
+                  collectionAddress: raffle.prizeCollection,
+                  uriType: 'unrevealedURI'
+                });
+                if (resolvedURI) {
+                  baseUri = resolvedURI;
+                }
+              }
+            }
+
+            // Strategy 3: Check local storage for stored collection URIs
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
+              if (storedURIs?.unrevealedURI) {
+                baseUri = storedURIs.unrevealedURI;
+              }
+            }
+
+            // If still no valid URI, return
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
               setNftImageLoading(false);
               return;
             }
@@ -544,16 +580,57 @@ const RaffleCard = ({ raffle }) => {
         } else if (raffle.standard === 1) {
           // ERC1155
           if (isMintable) {
-            // Try unrevealedURI first, then tokenURI, then uri()
+            // Try unrevealedURI first with hash-based resolution fallback
             try {
               baseUri = await contract.unrevealedURI();
             } catch (e) {}
+
+            // Check if it's a hash and try to resolve
+            if (baseUri && isBytes32Hash(baseUri)) {
+              const resolvedURI = await resolveURIOrHash(baseUri, {
+                collectionAddress: raffle.prizeCollection,
+                uriType: 'unrevealedURI'
+              });
+              baseUri = resolvedURI || null;
+            }
+
+            // Try hash-based resolution if still empty
             if (!baseUri || baseUri.trim() === '') {
+              let uriHash = null;
+              try {
+                if (typeof contract.unrevealedURIHash === 'function') {
+                  uriHash = await contract.unrevealedURIHash();
+                }
+              } catch (e) {}
+
+              if (uriHash && !isZeroHash(uriHash)) {
+                const resolvedURI = await resolveURIOrHash(uriHash, {
+                  collectionAddress: raffle.prizeCollection,
+                  uriType: 'unrevealedURI'
+                });
+                if (resolvedURI) {
+                  baseUri = resolvedURI;
+                }
+              }
+            }
+
+            // Check local storage as fallback
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
+              if (storedURIs?.unrevealedURI) {
+                baseUri = storedURIs.unrevealedURI;
+              }
+            }
+
+            // Try tokenURI if still no valid URI
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
               try {
                 baseUri = await contract.tokenURI(raffle.prizeTokenId);
               } catch (e) {}
             }
-            if (!baseUri || baseUri.trim() === '') {
+
+            // Try uri() as last resort
+            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
               try {
                 baseUri = await contract.uri(raffle.prizeTokenId);
               } catch (e) {}
@@ -569,7 +646,7 @@ const RaffleCard = ({ raffle }) => {
           }
         }
 
-        if (!baseUri || baseUri.trim() === '') {
+        if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
           setNftImageLoading(false);
           return;
         }

@@ -4,14 +4,13 @@
  * A specialized layout for NFT-prized pools that showcases the NFT artwork
  * as the hero element. Designed for NFT Drop pools and LuckySale/Giveaway pools.
  *
- * Layout Structure:
- * - Hero Section: Sidebar (ticket purchase) | Artwork Showcase
- * - Bottom Grid: Pool Activity | Winners Section
- *
- * Note: RaffleDetails is NOT rendered in this layout (only in StandardPoolLayout)
+ * Layout Structure (Redesigned):
+ * - Hero Section: Ticket Purchase | NFT Artwork Showcase (side by side on desktop)
+ * - Bottom Section: RaffleInfoTabs (Activity, Winners, Details in tabs)
  */
 
 import React from 'react';
+import RaffleInfoTabs from './RaffleInfoTabs';
 
 /**
  * Main NFT Pool Layout Component
@@ -21,6 +20,7 @@ const NFTPoolLayout = ({
   prizeImageCard,
   ticketPurchaseSection,
   winnersSection,
+  raffleDetailsCard,
   poolActivitySection,
   socialVerification,
   collectionName,
@@ -53,24 +53,22 @@ const NFTPoolLayout = ({
           {ticketPurchaseSection}
         </div>
 
-        {/* Pool Activity */}
-        {poolActivitySection && (
-          <div className="pool-activity-section">
-            {poolActivitySection}
-          </div>
-        )}
-
-        {/* Winners Section - Hidden when Unengaged */}
-        {!isUnengaged && (
-          <div className="winners-section">
-            {winnersSection}
-          </div>
-        )}
+        {/* Tabbed Info Section: Activity, Winners, Details */}
+        <RaffleInfoTabs
+          raffle={raffle}
+          winnersSection={winnersSection}
+          raffleDetailsCard={raffleDetailsCard}
+          poolActivitySection={poolActivitySection}
+          isMobile={isMobile}
+          isUnengaged={isUnengaged}
+          defaultTab="activity"
+          variant="nft"
+        />
       </div>
     );
   }
 
-  // Desktop Layout: 2x2 Grid
+  // Desktop Layout: Hero row + Tabs below
   return (
     <div className={`nft-pool-layout ${className}`}>
       {/* Social Verification (if required) - Full width above grid */}
@@ -80,31 +78,32 @@ const NFTPoolLayout = ({
         </div>
       )}
 
-      {/* Main 2x2 Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Top Left: Ticket Purchase Section */}
-        <div className="ticket-purchase-section">
-          {ticketPurchaseSection}
+      {/* Main Content - Vertical Stack */}
+      <div className="space-y-8">
+        {/* Hero Row: Ticket Purchase + NFT Artwork */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Ticket Purchase Section */}
+          <div className="ticket-purchase-section">
+            {ticketPurchaseSection}
+          </div>
+
+          {/* Right: NFT Artwork Showcase */}
+          <div className="flex items-start justify-center">
+            {prizeImageCard}
+          </div>
         </div>
 
-        {/* Top Right: NFT Artwork Showcase */}
-        <div className="flex items-start justify-center">
-          {prizeImageCard}
-        </div>
-
-        {/* Bottom Left: Pool Activity */}
-        {poolActivitySection && (
-          <div className="pool-activity-section">
-            {poolActivitySection}
-          </div>
-        )}
-
-        {/* Bottom Right: Winners Section - Hidden when Unengaged */}
-        {!isUnengaged && (
-          <div className="winners-section">
-            {winnersSection}
-          </div>
-        )}
+        {/* Tabbed Info Section: Activity, Winners, Details */}
+        <RaffleInfoTabs
+          raffle={raffle}
+          winnersSection={winnersSection}
+          raffleDetailsCard={raffleDetailsCard}
+          poolActivitySection={poolActivitySection}
+          isMobile={isMobile}
+          isUnengaged={isUnengaged}
+          defaultTab="activity"
+          variant="nft"
+        />
       </div>
     </div>
   );

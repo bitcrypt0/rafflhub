@@ -54,14 +54,17 @@ const AddressInput = React.forwardRef(({
 
   // Validate Ethereum address
   const validateAddress = React.useCallback((address) => {
-    if (!address || address.trim() === "") {
+    // Convert to string and handle null/undefined
+    const addressStr = address ? String(address) : ""
+    
+    if (!addressStr || addressStr.trim() === "") {
       if (allowEmpty) {
         return { isValid: true, state: null }
       }
       return { isValid: false, state: null }
     }
 
-    const trimmed = address.trim()
+    const trimmed = addressStr.trim()
     const isValid = ethers.utils.isAddress(trimmed)
 
     return {
@@ -82,8 +85,8 @@ const AddressInput = React.forwardRef(({
       onValidationChange?.(isValid, checksummed)
     }
 
-    // Pass the event to parent onChange
-    onChange?.(e)
+    // Pass the value string to parent onChange (not the event object)
+    onChange?.(newValue)
   }, [onChange, validateOnChange, validateAddress, onValidationChange])
 
   // Handle blur for final validation

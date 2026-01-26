@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
 import { contractABIs } from '../../../contracts/contractABIs'
+import {
+  getUnrevealedURI,
+  getDropURI,
+  isBytes32Hash,
+  isZeroHash,
+  resolveURIOrHash,
+  getStoredCollectionURIs
+} from '../../../services/uriRegistryService'
 
 /**
  * Shared hooks for raffle form functionality
@@ -263,6 +271,7 @@ export function useCollectionInternalStatus(address, contracts) {
 
 /**
  * Hook to fetch artwork from collection URI
+ * Supports both direct URI strings and hash-based resolution
  */
 export function useCollectionArtwork(collectionAddress, provider, contractABI = 'erc721Prize') {
   const [backgroundImage, setBackgroundImage] = useState(null)
@@ -286,7 +295,7 @@ export function useCollectionArtwork(collectionAddress, provider, contractABI = 
 
         let unrevealedBaseURI = null
 
-        // Try to get unrevealedBaseURI/unrevealedURI
+        // Strategy 1: Try to get URI string directly from contract
         try {
           if (contractABI === 'erc721Prize') {
             unrevealedBaseURI = await contract.unrevealedBaseURI()
@@ -294,11 +303,41 @@ export function useCollectionArtwork(collectionAddress, provider, contractABI = 
             unrevealedBaseURI = await contract.getUnrevealedURI()
           }
         } catch (error) {
-          // URI might not exist
+          // URI might not exist or method not available
         }
 
-        // Only use unrevealedBaseURI
-        if (unrevealedBaseURI && unrevealedBaseURI.trim() !== '') {
+        // Strategy 2: If URI is empty or is a hash, try hash-based resolution
+        if (!unrevealedBaseURI || unrevealedBaseURI.trim() === '' || isBytes32Hash(unrevealedBaseURI)) {
+          // Try to get the hash from contract
+          let uriHash = null
+          try {
+            if (typeof contract.unrevealedURIHash === 'function') {
+              uriHash = await contract.unrevealedURIHash()
+            }
+          } catch (e) {}
+
+          // If we have a valid hash, try to resolve it
+          if (uriHash && !isZeroHash(uriHash)) {
+            const resolvedURI = await resolveURIOrHash(uriHash, {
+              collectionAddress,
+              uriType: 'unrevealedURI'
+            })
+            if (resolvedURI) {
+              unrevealedBaseURI = resolvedURI
+            }
+          }
+        }
+
+        // Strategy 3: Check local storage for stored collection URIs
+        if (!unrevealedBaseURI || unrevealedBaseURI.trim() === '' || isBytes32Hash(unrevealedBaseURI)) {
+          const storedURIs = getStoredCollectionURIs(collectionAddress)
+          if (storedURIs?.unrevealedURI) {
+            unrevealedBaseURI = storedURIs.unrevealedURI
+          }
+        }
+
+        // Only use unrevealedBaseURI if it's a valid URI string (not a hash)
+        if (unrevealedBaseURI && unrevealedBaseURI.trim() !== '' && !isBytes32Hash(unrevealedBaseURI)) {
           await fetchArtworkFromURI(unrevealedBaseURI, setBackgroundImage, setImageLoading)
         } else {
           setBackgroundImage(null)

@@ -22,6 +22,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useContract } from '../contexts/ContractContext'
 import { toast } from '../components/ui/sonner'
 import { ethers } from 'ethers'
+import { registerURI, storeCollectionURIs } from '../services/uriRegistryService'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -309,7 +310,7 @@ const DeployCollectionPageV2 = () => {
     if (!formData.symbol?.trim()) errors.push('Symbol is required')
     if (!formData.baseURI?.trim()) errors.push('Base URI is required')
     if (collectionType === 'ERC721' && !formData.maxSupply) errors.push('Max supply is required for ERC721')
-    if (!formData.royaltyRecipient?.trim() || !ethers.utils.isAddress(formData.royaltyRecipient)) {
+    if (!formData.royaltyRecipient || !ethers.utils.isAddress(formData.royaltyRecipient)) {
       errors.push('Valid royalty recipient address is required')
     }
     if ((formData.revealType === '1' || formData.revealType === '2') && !formData.unrevealedBaseURI?.trim()) {
@@ -326,6 +327,14 @@ const DeployCollectionPageV2 = () => {
   const summaryData = useMemo(() => {
     const formData = currentFormData
     const revealLabels = { '0': 'Instant', '1': 'Manual', '2': 'Scheduled' }
+    
+    // Format royalty recipient address
+    const formatAddress = (addr) => {
+      if (!addr) return '—'
+      const addrStr = String(addr)
+      if (addrStr.length < 18) return addrStr
+      return `${addrStr.slice(0, 10)}...${addrStr.slice(-8)}`
+    }
 
     return [
       { label: 'Collection Name', value: formData.name || '—', icon: FileText },
@@ -333,7 +342,7 @@ const DeployCollectionPageV2 = () => {
       { label: 'Collection Type', value: collectionType, icon: collectionType === 'ERC721' ? Image : Star },
       { label: 'Max Supply', value: formData.maxSupply === '0' || !formData.maxSupply ? 'Unlimited' : formData.maxSupply, icon: Package },
       { label: 'Royalty', value: formData.royaltyPercentage ? `${formData.royaltyPercentage}%` : '0%', icon: Percent },
-      { label: 'Royalty Recipient', value: formData.royaltyRecipient ? `${formData.royaltyRecipient.slice(0, 10)}...${formData.royaltyRecipient.slice(-8)}` : '—', icon: User },
+      { label: 'Royalty Recipient', value: formatAddress(formData.royaltyRecipient), icon: User },
       { label: 'Base URI', value: formData.baseURI ? `${formData.baseURI.slice(0, 30)}...` : '—', icon: LinkIcon, link: formData.baseURI },
       { label: 'Reveal Type', value: revealLabels[formData.revealType] || 'Instant', icon: Clock },
     ]
@@ -365,19 +374,36 @@ const DeployCollectionPageV2 = () => {
         revealTime = 0
       }
 
+      // Compute keccak256 hashes for URIs (gas optimization)
+      const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
+      const dropURI = formData.dropURI?.trim() || ''
+      const dropURIHash = dropURI && dropURI.length > 0
+        ? ethers.utils.keccak256(ethers.utils.toUtf8Bytes(dropURI))
+        : ZERO_BYTES32
+      const unrevealedURIHash = unrevealedBaseURI && unrevealedBaseURI.trim().length > 0
+        ? ethers.utils.keccak256(ethers.utils.toUtf8Bytes(unrevealedBaseURI))
+        : ZERO_BYTES32
+
+      // Convert to optimized types
+      const royaltyBps = formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0
+      const maxSupply = parseInt(formData.maxSupply || '0')
+      const revealTimeUint48 = revealTime
+
       const tx = await contracts.nftFactory.connect(signer).deployCollection(
-        standard,
-        formData.name,
-        formData.symbol,
-        formData.baseURI,
-        formData.dropURI || '',
-        address,
-        formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0,
-        formData.royaltyRecipient,
-        parseInt(formData.maxSupply || '0'),
-        revealType,
-        unrevealedBaseURI,
-        revealTime
+        standard,                    // enum PrizeTypes.Standard
+        formData.name,               // string name
+        formData.symbol,             // string symbol
+        formData.baseURI,            // string baseURI
+        dropURI,                     // string dropURI (full URI string)
+        dropURIHash,                 // bytes32 dropURIHash (hash of dropURI)
+        address,                     // address initialOwner
+        royaltyBps,                  // uint96 royaltyBps
+        formData.royaltyRecipient,   // address royaltyRecipient
+        maxSupply,                   // uint64 maxSupply
+        revealType,                  // enum PrizeTypes.RevealType
+        unrevealedBaseURI,           // string unrevealedURI (full URI string)
+        unrevealedURIHash,           // bytes32 unrevealedURIHash (hash of unrevealedURI)
+        revealTimeUint48             // uint48 revealTime
       )
       const receipt = await tx.wait()
 
@@ -388,6 +414,16 @@ const DeployCollectionPageV2 = () => {
       if (collectionAddress) {
         setDeployedCollectionAddress(collectionAddress)
         console.log('Collection deployed at:', collectionAddress)
+
+        // Register URIs in local storage for hash-based resolution
+        // This allows the application to resolve images from stored URIs
+        storeCollectionURIs(collectionAddress, {
+          dropURI: dropURI,
+          unrevealedURI: unrevealedBaseURI,
+          dropURIHash: dropURIHash,
+          unrevealedURIHash: unrevealedURIHash
+        })
+        console.log('Collection URIs registered for hash-based resolution')
       }
 
       toast.success(`${isERC721 ? 'ERC721' : 'ERC1155'} collection deployed successfully!`)

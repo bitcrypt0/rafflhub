@@ -21,21 +21,21 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90",
         outline:
           "text-foreground [a&]:hover:bg-muted",
-        // Phase 2: Status variants for raffle states
+        // Phase 2: Status variants for raffle states - using solid light backgrounds for consistent contrast across all themes
         pending:
-          "border-transparent bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 animate-pulse-subtle",
+          "border-transparent bg-yellow-100 text-yellow-800 animate-pulse-subtle",
         active:
-          "border-transparent bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+          "border-transparent bg-green-100 text-green-800",
         live:
           "border-transparent bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-pulse",
         ended:
-          "border-transparent bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+          "border-transparent bg-red-100 text-red-800",
         drawing:
           "border-transparent bg-gradient-to-r from-purple-500 to-pink-500 text-white bg-[length:200%_100%] animate-gradient-x",
         completed:
-          "border-transparent bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+          "border-transparent bg-blue-100 text-blue-800",
         deleted:
-          "border-transparent bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 line-through",
+          "border-transparent bg-gray-200 text-gray-800 line-through",
         success:
           "border-transparent bg-success/10 text-success dark:bg-success/20",
         warning:
