@@ -22,10 +22,7 @@ if (process.env.NODE_ENV === 'development') {
   import('./utils/eventListenerTest');
 }
 import ProfilePage from './pages/ProfilePage';
-import ProfilePageV2 from './pages/ProfilePageV2';
-import CreateRafflePage from './pages/CreateRafflePage';
 import CreateRafflePageV2 from './pages/CreateRafflePageV2';
-import DeployCollectionPage from './pages/DeployCollectionPage';
 import DeployCollectionPageV2 from './pages/DeployCollectionPageV2';
 import RaffleDetailPage from './pages/RaffleDetailPage';
 import AuthCallback from './pages/AuthCallback';
@@ -75,14 +72,10 @@ const AppContent = () => {
           <Route path="/" element={<Homepage />} />
           <Route path="/app" element={<LandingPage />} />
           <Route path="/docs" element={<DocumentationPage />} />
-          {/* V2 redesigned pages as primary routes */}
+          {/* Primary routes */}
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePageV2 />} />
           <Route path="/deploy-collection" element={<DeployCollectionPageV2 />} />
-          {/* Legacy pages available at /legacy paths for rollback */}
-          <Route path="/legacy/profile" element={<ProfilePageV2 />} />
-          <Route path="/legacy/create-raffle" element={<CreateRafflePage />} />
-          <Route path="/legacy/deploy-collection" element={<DeployCollectionPage />} />
           <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
           {/* OAuth Callback Routes */}

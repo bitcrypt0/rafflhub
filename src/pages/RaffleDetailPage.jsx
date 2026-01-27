@@ -729,7 +729,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   );
 
   return (
-    <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
+    <div className="bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
       <h3 className="font-display text-[length:var(--text-lg)] font-semibold mb-4 flex items-center justify-between">
         Purchase Slots
         {hasTokenGating(raffle) && (
@@ -933,7 +933,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       }}
                       className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-card text-card-foreground transition-colors focus:ring-primary focus:border-primary"
                     />
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
                       <span 
                         className="cursor-pointer hover:text-primary hover:underline transition-colors"
                         onClick={() => setQuantity(Math.max(1, raffle.maxSlotsPerAddress - userSlots))}
@@ -941,15 +941,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                       >
                         Max: {Math.max(0, raffle.maxSlotsPerAddress - userSlots)} slots remaining
                       </span>
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted/50 backdrop-blur-sm border border-border/30 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Total Cost:</span>
-                      <span className="font-body text-[length:var(--text-base)] font-bold">
-                        {formatSlotFee(safeSlotFeeToBigNumber(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
+                      <span className="font-medium">
+                        Total: {formatSlotFee(safeSlotFeeToBigNumber(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
                       </span>
-                    </div>
+                    </p>
                   </div>
                 </>
               ) : null}
@@ -975,7 +970,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               >
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}
               </Button>
-              {socialEngagementRequired && !hasCompletedSocialEngagement && (
+              {socialEngagementRequired && !hasCompletedSocialEngagement && address?.toLowerCase() !== raffle.creator?.toLowerCase() && (
                 <div className="text-center py-2">
                   <p className="text-muted-foreground text-sm">
                     Complete social media verification to enable slot purchase.

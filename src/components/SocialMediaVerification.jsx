@@ -460,14 +460,13 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
         {/* Task Description */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-medium text-sm">{task.title}</h4>
             {task.platform && (
               <Badge variant="outline" className="text-xs">
                 {task.platform.charAt(0).toUpperCase() + task.platform.slice(1)}
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+          <p className="text-xs text-muted-foreground truncate">{task.description?.replace(/^(TWITTER|DISCORD|TELEGRAM|INSTAGRAM|YOUTUBE|FACEBOOK|LINKEDIN):\s*/i, '')}</p>
           
           {/* Authentication Status Indicator (compact) */}
           {task.platform && ['twitter', 'discord', 'telegram'].includes(task.platform.toLowerCase()) && (
@@ -1173,14 +1172,14 @@ const SocialMediaVerification = ({
 
   return (
     <Card className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border">
-      <CardHeader className="pb-0">
+      <CardHeader className={isExpanded ? "pb-1" : "py-3"}>
         <CardTitle 
           className="flex items-center justify-between cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-orange-500" />
-            Social Media Tasks Required
+            <span className="text-sm font-medium">Complete the following social media tasks to participate in this raffle</span>
           </div>
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -1189,13 +1188,10 @@ const SocialMediaVerification = ({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className={isExpanded ? "pt-3 space-y-4" : "pt-1"}>
+      <CardContent className={isExpanded ? "pt-2 space-y-3" : "hidden"}>
 
         {isExpanded && (
           <>
-            <p className="text-sm text-foreground">
-              Complete the following social media tasks to participate in this raffle:
-            </p>
             {/* Connected Accounts Summary */}
             {Object.keys(authenticatedAccounts).length > 0 && (
               <div className="border border-border rounded-lg p-3">
@@ -1227,7 +1223,24 @@ const SocialMediaVerification = ({
               </div>
             )}
 
-            <div className="space-y-3">
+            {/* Progress Indicator - moved above task cards */}
+            {socialTasks.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-muted-foreground">
+                    Progress: {completedTasks.size} of {socialTasks.length} tasks completed
+                  </p>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500 ease-out" 
+                    style={{ width: `${(completedTasks.size / socialTasks.length) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
               {socialTasks.map((task) => (
                 <TaskDisplayComponent
                   key={task.id}
@@ -1256,35 +1269,6 @@ const SocialMediaVerification = ({
               ))}
             </div>
 
-            {socialTasks.length > 0 && (
-              <div className="pt-4 border-t border-border">
-                {/* Removed manual "Verify Task Completion" button - using real-time verification */}
-                
-                {socialTasks.some(task => !completedTasks.has(task.id)) && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Complete all tasks above. Verification happens automatically.
-                  </p>
-                )}
-
-                {/* Real-Time Verification Progress */}
-                <div className="mt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-muted-foreground">
-                      Progress: {completedTasks.size} of {socialTasks.length} tasks completed
-                    </p>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-green-500 h-2.5 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${(completedTasks.size / socialTasks.length) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5 text-center">
-                    Updates automatically when you complete tasks
-                  </p>
-                </div>
-              </div>
-            )}
           </>
         )}
       </CardContent>

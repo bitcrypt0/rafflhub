@@ -311,53 +311,81 @@ const NewMobileProfilePage = () => {
       );
     }
 
+    // Activity type styling matching ProfileTabs
+    const getActivityTypeStyles = (type) => {
+      const styles = {
+        ticket_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        raffle_created: { color: 'text-green-500', bg: 'bg-green-500/10' },
+        raffle_deleted: { color: 'text-red-500', bg: 'bg-red-500/10' },
+        prize_won: { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+        prize_claimed: { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+        refund_claimed: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
+        revenue_withdrawn: { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        admin_withdrawn: { color: 'text-purple-500', bg: 'bg-purple-500/10' },
+      };
+      return styles[type] || { color: 'text-muted-foreground', bg: 'bg-muted/50' };
+    };
+
     return (
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Recent Activity</h3>
           <span className="text-sm text-muted-foreground">{userActivity.length} activities</span>
         </div>
 
-        {userActivity.slice(0, 10).map((activity, index) => (
-          <div
-            key={activity.id || index}
-            className="bg-card border border-border rounded-lg p-4 hover:bg-card/90 transition-colors"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-1">
-                {getActivityIcon(activity.type)}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-foreground text-sm">
+        {/* Table-style rows without card containers - matching Winners section */}
+        <div className="w-full">
+          <div className="divide-y divide-border/30">
+            {userActivity.slice(0, 10).map((activity, index) => {
+              const styles = getActivityTypeStyles(activity.type);
+              
+              return (
+                <div
+                  key={activity.id || index}
+                  className="grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                  style={{ gridTemplateColumns: 'auto 1fr auto' }}
+                >
+                  {/* Icon */}
+                  <div className="flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center`}>
+                      {getActivityIcon(activity.type)}
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm text-foreground leading-tight">
                       {getActivityTitle(activity)}
-                    </h4>
-                    <p className="text-muted-foreground text-sm mt-1">
-                      {getActivityDescription(activity)}
+                    </div>
+                    {getActivityDescription(activity) && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {getActivityDescription(activity)}
+                      </div>
+                    )}
+                    {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          onClick={() => claimRefund(activity.raffleAddress)}
+                          variant="primary"
+                          size="sm"
+                        >
+                          Claim Refund
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Timestamp */}
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(activity.timestamp)}
                     </p>
                   </div>
-                  <span className="text-sm text-muted-foreground flex-shrink-0">
-                    {formatDate(activity.timestamp)}
-                  </span>
                 </div>
-
-                <div className="flex gap-2 mt-3">
-                  {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
-                    <Button
-                      onClick={() => claimRefund(activity.raffleAddress)}
-                      variant="primary"
-                      size="sm"
-                    >
-                      Claim Refund
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
       </div>
     );
   };

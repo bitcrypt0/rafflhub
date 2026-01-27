@@ -157,18 +157,8 @@ const RaffleDetailsCard = ({
 
           {/* Duration */}
           <div>
-            <span className="text-muted-foreground flex items-center gap-1">
+            <span className="text-muted-foreground">
               Duration:
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex items-center cursor-help">
-                    <Info className="h-3.5 w-3.5 opacity-70" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" align="center">
-                  Shows the default duration until the raffle ends, then shows the actual duration taken.
-                </TooltipContent>
-              </Tooltip>
             </span>
             <p className="font-medium">
               {(() => {
@@ -260,7 +250,7 @@ const RaffleDetailsCard = ({
           {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (
             <>
               <div>
-                <span className="text-muted-foreground">Prize Collection:</span>
+                <span className="text-muted-foreground">Collection:</span>
                 <a
                   href={getExplorerLink(raffle.prizeCollection, raffle.chainId)}
                   target="_blank"
@@ -274,7 +264,7 @@ const RaffleDetailsCard = ({
               </div>
               <div>
                 <span className="text-muted-foreground">
-                  {isEscrowedPrize ? 'Prize Type:' : 'Collection Type:'}
+                  {isEscrowedPrize ? 'Prize Type:' : 'Type:'}
                 </span>
                 <p className="font-medium">
                   {(() => {

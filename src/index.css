@@ -1067,19 +1067,8 @@ body, #root {
   color: var(--foreground) !important;
 }
 
-/* LandingPage RaffleCard theme-local variables to keep content readable in dark and dim-blue */
-.dark .landing-raffle-card,
-html.dim-blue .landing-raffle-card {
-  /* Use the light beige card surface and light-theme text/border vars locally */
-  --card: 31 56% 91%;             /* #F5E9DC */
-  --card-foreground: 240 10% 3.9%; /* dark text on light surface */
-  --foreground: 240 10% 3.9%;      /* ensure text-foreground inside card is dark */
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --accent: 240 4.8% 95.9%;
-  /* Let existing bg-card/80 class render the background using the local --card */
-}
+/* LandingPage RaffleCard - beige background removed, now uses standard theme colors */
+/* Components use standard theme variables for proper contrast in dark/dim-blue themes */
 
 
 /* Winner card highlighting for all themes */

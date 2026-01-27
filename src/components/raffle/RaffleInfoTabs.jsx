@@ -116,7 +116,7 @@ const RaffleInfoTabs = ({
 
   return (
     <div className={`raffle-info-tabs ${className}`}>
-      <div className="detail-beige-card bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+      <div className="bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
           {/* ProfileTabs-style Tab Headers - Horizontal with border styling */}
           <div className="grid w-full border-b border-border" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>

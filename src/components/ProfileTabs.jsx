@@ -301,12 +301,9 @@ const ProfileTabs = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
-          
-          {/* Activity items */}
-          <div className="space-y-3">
+        <div className="w-full">
+          {/* Table-style rows without card containers - matching Winners section */}
+          <div className="divide-y divide-border/30">
             {activities.slice(0, 15).map((activity, index) => {
               const styles = getActivityTypeStyles(activity.type);
               const IconComponent = styles.icon;
@@ -314,30 +311,33 @@ const ProfileTabs = ({
               return (
                 <div 
                   key={index} 
-                  className={`relative pl-12 pr-4 py-3 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl hover:bg-card/80 hover:shadow-sm hover:border-border/60 transition-all duration-200 border-l-4 ${styles.border}`}
+                  className="grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                  style={{ gridTemplateColumns: 'auto 1fr auto' }}
                 >
-                  {/* Timeline dot with icon */}
-                  <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center ring-4 ring-background`}>
-                    <IconComponent className={`h-4 w-4 ${styles.color}`} />
+                  {/* Icon */}
+                  <div className="flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center`}>
+                      <IconComponent className={`h-4 w-4 ${styles.color}`} />
+                    </div>
                   </div>
                   
                   {/* Content */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-foreground leading-tight">
-                        {activity.title}
-                      </p>
-                      {activity.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {activity.description}
-                        </p>
-                      )}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm text-foreground leading-tight">
+                      {activity.title}
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-xs text-muted-foreground" title={activity.timestamp}>
-                        {getRelativeTime(activity.timestamp)}
-                      </p>
-                    </div>
+                    {activity.description && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {activity.description}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Timestamp */}
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-xs text-muted-foreground" title={activity.timestamp}>
+                      {getRelativeTime(activity.timestamp)}
+                    </p>
                   </div>
                 </div>
               );
@@ -657,21 +657,53 @@ const ProfileTabs = ({
           </button>
         </div>
       ) : (
-        // Desktop: horizontal tabs
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activity">
-            Activity
-          </TabsTrigger>
-          <TabsTrigger value="created">
-            My Raffles
-          </TabsTrigger>
-          <TabsTrigger value="purchased">
-            My Collections
-          </TabsTrigger>
-          <TabsTrigger value="dashboard">
-            Dashboard
-          </TabsTrigger>
-        </TabsList>
+        // Desktop: horizontal tabs with RaffleInfoTabs styling
+        <div className="grid w-full border-b border-border" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === 'activity'
+                ? 'border-primary text-foreground bg-muted/30'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            <span>Activity</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('created')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === 'created'
+                ? 'border-primary text-foreground bg-muted/30'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+            }`}
+          >
+            <Crown className="h-4 w-4" />
+            <span>My Raffles</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('purchased')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === 'purchased'
+                ? 'border-primary text-foreground bg-muted/30'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            <span>My Collections</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === 'dashboard'
+                ? 'border-primary text-foreground bg-muted/30'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Dashboard</span>
+          </button>
+        </div>
       )}
 
       <TabsContent value="activity" className={isMobile ? "mt-4" : "mt-6"}>

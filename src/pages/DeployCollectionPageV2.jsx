@@ -578,22 +578,31 @@ const DeployCollectionPageV2 = () => {
           {/* Form Column */}
           <div className={isDesktop ? 'col-span-3' : ''}>
             <Tabs value={collectionType} onValueChange={setCollectionType} className="w-full">
-              <TabsList className={`w-full flex items-center justify-center gap-2 ${isMobile ? 'p-1.5 h-12 mb-6' : 'p-1 h-10 mb-6'} bg-muted/80 border border-border/50 shadow-sm rounded-xl`}>
-                <TabsTrigger
-                  value="ERC721"
-                  className={`flex items-center gap-2 flex-1 data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md transition-all rounded-lg ${isMobile ? 'h-9 text-sm' : 'h-[calc(100%-1px)]'}`}
+              {/* RaffleInfoTabs-style tab selector */}
+              <div className={`grid w-full border-b border-border ${isMobile ? 'mb-6' : 'mb-6'}`} style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                <button
+                  onClick={() => setCollectionType('ERC721')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                    collectionType === 'ERC721'
+                      ? 'border-primary text-foreground bg-muted/30'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+                  }`}
                 >
                   <Image className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                  <span className="font-medium">{isMobile ? 'ERC721' : 'ERC721 Collection'}</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ERC1155"
-                  className={`flex items-center gap-2 flex-1 data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md transition-all rounded-lg ${isMobile ? 'h-9 text-sm' : 'h-[calc(100%-1px)]'}`}
+                  <span>{isMobile ? 'ERC721' : 'ERC721 Collection'}</span>
+                </button>
+                <button
+                  onClick={() => setCollectionType('ERC1155')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                    collectionType === 'ERC1155'
+                      ? 'border-primary text-foreground bg-muted/30'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+                  }`}
                 >
                   <Star className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                  <span className="font-medium">{isMobile ? 'ERC1155' : 'ERC1155 Collection'}</span>
-                </TabsTrigger>
-              </TabsList>
+                  <span>{isMobile ? 'ERC1155' : 'ERC1155 Collection'}</span>
+                </button>
+              </div>
 
               {/* Form Content - Shared between both types */}
               <TabsContent value={collectionType} forceMount className={collectionType !== collectionType ? 'hidden' : ''}>

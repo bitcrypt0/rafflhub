@@ -573,20 +573,13 @@ const PrizeImageCard = ({
           </div>
         )}
 
-        {/* NFT Drop Badges - Collection Name + Optional Collab Drop Badge */}
-        {showNFTDropBadge && (
-          <div className="absolute bottom-3 right-3 flex flex-row items-center gap-2">
-            {/* Collection Name Badge */}
-            <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap bg-purple-100 text-purple-800">
-              {collectionName || 'NFT'}
-            </span>
-            
+        {/* NFT Drop Badge - Collab Drop Badge Only (Collection Name badge removed) */}
+        {showNFTDropBadge && isCollabDrop && (
+          <div className="absolute bottom-3 right-3">
             {/* Collab Drop Badge - Only for NFT Collab Drop pools */}
-            {isCollabDrop && (
-              <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap bg-blue-100 text-blue-800">
-                Collab Drop
-              </span>
-            )}
+            <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap bg-blue-100 text-blue-800">
+              Collab Drop
+            </span>
           </div>
         )}
       </div>

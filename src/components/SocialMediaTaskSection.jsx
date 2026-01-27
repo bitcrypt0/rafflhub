@@ -412,22 +412,6 @@ const SocialMediaTaskSection = ({
                     />
                   </div>
                 </div>
-
-                {/* Task Description */}
-                <div className="mt-3">
-                  <label className="block font-medium mb-1 text-sm">
-                    Description (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={task.description}
-                    onChange={(e) => updateTask(task.id, 'description', e.target.value)}
-                    className={`w-full border border-border rounded-lg bg-background ${
-                      isMobile ? 'px-3 py-2 text-base' : 'px-3 py-2 text-sm'
-                    }`}
-                    placeholder="Additional instructions for participants"
-                  />
-                </div>
               </div>
             ))}
 
