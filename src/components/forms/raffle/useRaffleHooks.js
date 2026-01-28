@@ -151,7 +151,7 @@ export const constructMetadataURIs = (baseUri) => {
 }
 
 /**
- * Hook to fetch raffle limits from ProtocolManager
+ * Hook to fetch raffle limits from PoolDeployer
  */
 export function useRaffleLimits(contracts, isPrized) {
   const [limits, setLimits] = useState({
@@ -163,34 +163,27 @@ export function useRaffleLimits(contracts, isPrized) {
   })
 
   useEffect(() => {
-    if (!contracts?.protocolManager) return
+    if (!contracts?.poolDeployer) return
 
     async function fetchLimits() {
       try {
-        const [slotLimits, durationLimits, maxSlots] = await Promise.all([
-          contracts.protocolManager.getAllSlotLimits(),
-          contracts.protocolManager.getDurationLimits(),
-          contracts.protocolManager.getMaxSlotsPerAddress()
+        // Fetch limits from PoolDeployer contract
+        const [minDuration, maxDuration, maxSlot, minSlot] = await Promise.all([
+          contracts.poolDeployer.minPoolDuration(),
+          contracts.poolDeployer.maxPoolDuration(),
+          contracts.poolDeployer.maxSlotLimit(),
+          contracts.poolDeployer.getMinSlotLimit(isPrized)
         ])
 
-        if (isPrized) {
-          setLimits({
-            minSlot: slotLimits.minPrized?.toString(),
-            maxSlot: slotLimits.max?.toString(),
-            minDuration: durationLimits[0]?.toString(),
-            maxDuration: durationLimits[1]?.toString(),
-            maxTicketsPerParticipant: maxSlots.max?.toString(),
-          })
-        } else {
-          setLimits({
-            minSlot: slotLimits.minNonPrized?.toString(),
-            maxSlot: slotLimits.max?.toString(),
-            minDuration: durationLimits[0]?.toString(),
-            maxDuration: durationLimits[1]?.toString(),
-            maxTicketsPerParticipant: maxSlots.max?.toString(),
-          })
-        }
+        setLimits({
+          minSlot: minSlot?.toString(),
+          maxSlot: maxSlot?.toString(),
+          minDuration: minDuration?.toString(),
+          maxDuration: maxDuration?.toString(),
+          maxTicketsPerParticipant: undefined, // Not available on PoolDeployer
+        })
       } catch (e) {
+        console.warn('[useRaffleLimits] Failed to fetch limits from PoolDeployer:', e.message)
         // fallback: do nothing
       }
     }

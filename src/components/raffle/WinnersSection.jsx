@@ -1007,16 +1007,16 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
     return (
       <div className="w-full">
-        {/* Table Header - conditionally show Prize/Status columns only for prized pools */}
-        <div className={`grid gap-2 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/50 bg-muted/20 ${
-          raffle.isPrized ? 'grid-cols-12' : 'grid-cols-12'
+        {/* Table Header - conditionally show Prize/Status columns only for prized pools (hidden on mobile) */}
+        <div className={`flex md:grid gap-2 px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/50 bg-muted/20 ${
+          raffle.isPrized ? 'md:grid-cols-12' : 'md:grid-cols-12'
         }`}>
-          <div className="col-span-1">#</div>
-          <div className={raffle.isPrized ? 'col-span-5' : 'col-span-11'}>Winner</div>
+          <div className="md:col-span-1">#</div>
+          <div className={raffle.isPrized ? 'md:col-span-5' : 'md:col-span-11'}>Winner</div>
           {raffle.isPrized && (
             <>
-              <div className="col-span-3 text-center">Prize</div>
-              <div className="col-span-3 text-right">Status</div>
+              <div className="hidden md:block md:col-span-3 text-center">Prize</div>
+              <div className="hidden md:block md:col-span-3 text-right">Status</div>
             </>
           )}
         </div>
@@ -1033,17 +1033,17 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
             return (
               <div 
                 key={winner.index}
-                className={`grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${
-                  raffle.isPrized ? 'grid-cols-12' : 'grid-cols-12'
+                className={`flex md:grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${
+                  raffle.isPrized ? 'md:grid-cols-12' : 'md:grid-cols-12'
                 } ${isCurrentUser ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : ''}`}
               >
                 {/* Rank */}
-                <div className="col-span-1 text-sm font-medium text-muted-foreground">
+                <div className="md:col-span-1 text-sm font-medium text-muted-foreground">
                   {i + 1}
                 </div>
                 
                 {/* Winner Address with Etherscan link */}
-                <div className={`flex items-center gap-2 min-w-0 ${raffle.isPrized ? 'col-span-5' : 'col-span-11'}`}>
+                <div className={`flex items-center gap-2 min-w-0 ${raffle.isPrized ? 'md:col-span-5' : 'md:col-span-11'}`}>
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isCurrentUser ? 'bg-yellow-400' : 'bg-primary'}`} />
                   <span className="font-mono text-sm truncate" title={winner.address}>
                     {winner.address.slice(0, 6)}...{winner.address.slice(-4)}
@@ -1073,18 +1073,18 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                   )}
                 </div>
                 
-                {/* Prize Info - only for prized pools */}
+                {/* Prize Info - only for prized pools, hidden on mobile */}
                 {raffle.isPrized && (
-                  <div className="col-span-3 text-center text-sm font-medium">
+                  <div className="hidden md:block md:col-span-3 text-center text-sm font-medium">
                     <span className="text-foreground">
                       {raffle.winnersCount > 0 ? `1/${raffle.winnersCount}` : '—'}
                     </span>
                   </div>
                 )}
                 
-                {/* Claim Status - only for prized pools */}
+                {/* Claim Status - only for prized pools, hidden on mobile */}
                 {raffle.isPrized && (
-                  <div className="col-span-3 flex justify-end">
+                  <div className="hidden md:flex md:col-span-3 justify-end">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${claimStatus.bg} ${claimStatus.color}`}>
                       {winner.prizeClaimed && <CheckCircle className="h-3 w-3" />}
                       {claimStatus.text}
