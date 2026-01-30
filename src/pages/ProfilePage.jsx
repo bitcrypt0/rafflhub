@@ -523,6 +523,49 @@ const DesktopProfilePage = () => {
   } = useProfileData();
 
   const [activeTab, setActiveTab] = useState('activity');
+  const [availablePoints, setAvailablePoints] = useState(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAvailablePoints = async () => {
+      if (!connected || !address || !chainId) {
+        if (!cancelled) setAvailablePoints(null);
+        return;
+      }
+
+      setPointsLoading(true);
+
+      try {
+        const rewardsFlywheelAddress = SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel;
+        if (!rewardsFlywheelAddress) {
+          if (!cancelled) setAvailablePoints(null);
+          return;
+        }
+
+        const rewardsFlywheel = getContractInstance(rewardsFlywheelAddress, 'rewardsFlywheel');
+        if (!rewardsFlywheel) {
+          if (!cancelled) setAvailablePoints(null);
+          return;
+        }
+
+        const claimable = await rewardsFlywheel.getClaimablePointsReward(address);
+        const claimablePoints = claimable?.claimablePoints ?? claimable?.[0];
+        if (!cancelled) setAvailablePoints(claimablePoints ?? null);
+      } catch (e) {
+        if (!cancelled) setAvailablePoints(null);
+      } finally {
+        if (!cancelled) setPointsLoading(false);
+      }
+    };
+
+    fetchAvailablePoints();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connected, address, chainId, getContractInstance]);
 
   // Transform raw activity data to match ProfileTabs expectations
   const transformedActivities = useMemo(() => {
@@ -596,6 +639,12 @@ const DesktopProfilePage = () => {
       };
     });
   }, [userActivity]);
+
+  const formatPointsDisplay = (value) => {
+    if (!value || !value.toString) return '0';
+    const s = value.toString();
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
 
   // Utility to extract only the revert reason from contract errors
   function extractRevertReason(error) {
@@ -831,6 +880,18 @@ const DesktopProfilePage = () => {
                       })()}
                     </p>
                     <p className="text-xs text-muted-foreground">Total Claimable Refunds</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-6 w-6 text-purple-500" />
+                  <div>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                      {pointsLoading ? '…' : formatPointsDisplay(availablePoints)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Available Points</p>
                   </div>
                 </div>
               </div>

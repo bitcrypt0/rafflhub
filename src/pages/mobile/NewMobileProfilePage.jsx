@@ -2322,10 +2322,6 @@ const NewMobileProfilePage = () => {
         <p className="text-sm text-muted-foreground mb-4">
           Track activities and manage your raffles
         </p>
-        <div className="bg-card border border-border rounded-lg p-3">
-          <p className="text-sm font-medium">Connected Account:</p>
-          <p className="text-xs font-mono break-all">{address}</p>
-        </div>
       </div>
 
       {/* Tab Navigation - 4 tabs to match desktop */}

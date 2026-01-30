@@ -29,6 +29,15 @@ const FlywheelRewardsComponent = ({ onBack }) => {
   const { getContractInstance } = useContract();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('deposit'); // 'deposit', 'claim', or 'withdraw'
+
+  const [pointsLoading, setPointsLoading] = useState(false);
+  const [pointsError, setPointsError] = useState('');
+  const [pointsSystemInfo, setPointsSystemInfo] = useState(null);
+  const [pointsRewardTokenInfo, setPointsRewardTokenInfo] = useState(null);
+  const [userPointsInfo, setUserPointsInfo] = useState(null);
+  const [claimablePointsInfo, setClaimablePointsInfo] = useState(null);
+  const [timeUntilNextPointsClaim, setTimeUntilNextPointsClaim] = useState(0);
+  const [insufficientPointsRewardBalance, setInsufficientPointsRewardBalance] = useState(false);
   
   // Pool state
   const [poolAddress, setPoolAddress] = useState('');
@@ -66,6 +75,23 @@ const FlywheelRewardsComponent = ({ onBack }) => {
   useEffect(() => {
     setError('');
   }, [activeTab]);
+
+  useEffect(() => {
+    setPointsError('');
+  }, [connected, chainId, address]);
+
+  useEffect(() => {
+    if (connected && provider && chainId && address) {
+      fetchPointsData();
+    } else {
+      setPointsSystemInfo(null);
+      setPointsRewardTokenInfo(null);
+      setUserPointsInfo(null);
+      setClaimablePointsInfo(null);
+      setTimeUntilNextPointsClaim(0);
+      setInsufficientPointsRewardBalance(false);
+    }
+  }, [connected, provider, chainId, address]);
 
   // Fetch pool info when pool address changes
   useEffect(() => {
@@ -194,6 +220,151 @@ const FlywheelRewardsComponent = ({ onBack }) => {
       setPoolExists(false);
     } finally {
       setPoolLoading(false);
+    }
+  };
+
+  const fetchPointsData = async () => {
+    if (!connected || !provider || !chainId || !address) return;
+
+    setPointsLoading(true);
+    setPointsError('');
+
+    try {
+      const rewardsFlywheelAddress = SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel;
+      if (!rewardsFlywheelAddress) return;
+
+      const rewardsFlywheel = getContractInstance(rewardsFlywheelAddress, 'rewardsFlywheel');
+      if (!rewardsFlywheel) return;
+
+      const [systemInfo, userPoints, claimable, secondsRemaining] = await Promise.all([
+        rewardsFlywheel.getPointsSystemInfo(),
+        rewardsFlywheel.getUserPoints(address),
+        rewardsFlywheel.getClaimablePointsReward(address),
+        rewardsFlywheel.getTimeUntilNextClaim(address)
+      ]);
+
+      const info = {
+        active: systemInfo.active,
+        claimsActive: systemInfo.claimsActive,
+        token: systemInfo.token,
+        rate: systemInfo.rate,
+        totalDeposited: systemInfo.totalDeposited
+      };
+      setPointsSystemInfo(info);
+      setUserPointsInfo({
+        totalPoints: userPoints.totalPoints,
+        claimedPoints: userPoints.claimedPoints,
+        lastClaimTime: userPoints.lastClaimTime
+      });
+
+      setClaimablePointsInfo({
+        claimablePoints: claimable.claimablePoints,
+        tokenAmount: claimable.tokenAmount
+      });
+
+      setTimeUntilNextPointsClaim(secondsRemaining.toNumber());
+
+      if (info.token && info.token !== ethers.constants.AddressZero) {
+        try {
+          const tokenContract = new ethers.Contract(
+            info.token,
+            ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'],
+            provider
+          );
+          const [symbol, decimals] = await Promise.all([
+            tokenContract.symbol(),
+            tokenContract.decimals()
+          ]);
+          setPointsRewardTokenInfo({ symbol, decimals });
+        } catch {
+          setPointsRewardTokenInfo(null);
+        }
+      } else {
+        setPointsRewardTokenInfo(null);
+      }
+
+      if (claimable.claimablePoints.gt(0) && info.rate.gt(0)) {
+        const computedTokenAmount = claimable.claimablePoints
+          .mul(ethers.constants.WeiPerEther)
+          .div(info.rate);
+        setInsufficientPointsRewardBalance(computedTokenAmount.gt(info.totalDeposited));
+      } else {
+        setInsufficientPointsRewardBalance(false);
+      }
+    } catch (err) {
+      console.error('Error fetching points data:', err);
+      setPointsError('Failed to fetch points information');
+    } finally {
+      setPointsLoading(false);
+    }
+  };
+
+  const formatSecondsToCooldown = (seconds) => {
+    if (!seconds || seconds <= 0) return '0s';
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const formatPointsRate = (rate) => {
+    try {
+      return ethers.utils.formatUnits(rate, 18);
+    } catch {
+      return '0';
+    }
+  };
+
+  const formatPointsTokenAmount = (amount) => {
+    const decimals = pointsRewardTokenInfo?.decimals ?? 18;
+    try {
+      return ethers.utils.formatUnits(amount, decimals);
+    } catch {
+      try {
+        return ethers.utils.formatUnits(amount, 18);
+      } catch {
+        return '0';
+      }
+    }
+  };
+
+  const handleClaimPoints = async () => {
+    if (!connected) {
+      setPointsError('Please connect your wallet');
+      return;
+    }
+
+    setLoading(true);
+    setPointsError('');
+
+    try {
+      const rewardsFlywheelAddress = SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel;
+      if (!rewardsFlywheelAddress) {
+        setPointsError('RewardsFlywheel contract not available on this network');
+        return;
+      }
+
+      const rewardsFlywheel = getContractInstance(rewardsFlywheelAddress, 'rewardsFlywheel');
+      if (!rewardsFlywheel) {
+        setPointsError('RewardsFlywheel contract not available on this network');
+        return;
+      }
+
+      const tx = await rewardsFlywheel.claimPointsRewards();
+      toast.info('Points claim transaction sent...');
+      await tx.wait();
+      toast.success('Points rewards claimed successfully!');
+
+      await fetchPointsData();
+    } catch (err) {
+      const reason = await extractRevertReason(err, provider);
+      setPointsError(reason || 'Claim failed');
+      notifyError(reason || 'Failed to claim points rewards');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -656,6 +827,160 @@ const FlywheelRewardsComponent = ({ onBack }) => {
 
   return (
     <div className="w-full mx-auto space-y-6 overflow-x-hidden">
+      <Card className="w-full">
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-base font-medium flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                Points Rewards
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Track your points and claim token rewards when claims are active
+              </p>
+            </div>
+            {pointsSystemInfo && (
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant={pointsSystemInfo.claimsActive ? 'default' : 'secondary'} className="text-[10px] sm:text-xs">
+                  {pointsSystemInfo.claimsActive ? 'Claims Active' : 'Claims Inactive'}
+                </Badge>
+                <Badge variant={pointsSystemInfo.active ? 'outline' : 'secondary'} className="text-[10px] sm:text-xs">
+                  {pointsSystemInfo.active ? 'Allocation On' : 'Allocation Off'}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {!connected && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs sm:text-sm">
+                Connect your wallet to view points and claim rewards.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {connected && pointsLoading && (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          )}
+
+          {connected && !pointsLoading && pointsSystemInfo && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Reward Token</span>
+                  <span className="text-xs sm:text-sm text-right break-all">
+                    {pointsRewardTokenInfo?.symbol || (pointsSystemInfo.token === ethers.constants.AddressZero ? 'Not set' : pointsSystemInfo.token)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Points per Token</span>
+                  <span className="text-xs sm:text-sm text-right break-all">
+                    {pointsSystemInfo.rate && !pointsSystemInfo.rate.eq(0)
+                      ? formatPointsRate(pointsSystemInfo.rate)
+                      : 'Not set'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Reward Balance</span>
+                  <span className="text-xs sm:text-sm text-right break-all">
+                    {pointsSystemInfo.totalDeposited
+                      ? `${formatPointsTokenAmount(pointsSystemInfo.totalDeposited)} ${pointsRewardTokenInfo?.symbol || ''}`
+                      : '0'}
+                  </span>
+                </div>
+              </div>
+
+              {userPointsInfo && claimablePointsInfo && (
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">Total Points</div>
+                      <div className="text-sm font-semibold break-all">{userPointsInfo.totalPoints.toString()}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">Claimed Points</div>
+                      <div className="text-sm font-semibold break-all">{userPointsInfo.claimedPoints.toString()}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">Unclaimed Points</div>
+                      <div className="text-sm font-semibold break-all">
+                        {claimablePointsInfo.claimablePoints.toString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t space-y-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Estimated Reward</span>
+                      <span className="text-xs sm:text-sm font-semibold text-green-600 text-right break-all">
+                        {claimablePointsInfo.tokenAmount && claimablePointsInfo.tokenAmount.gt(0)
+                          ? `${formatPointsTokenAmount(claimablePointsInfo.tokenAmount)} ${pointsRewardTokenInfo?.symbol || ''}`
+                          : '0'}
+                      </span>
+                    </div>
+
+                    {timeUntilNextPointsClaim > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Info className="h-4 w-4 text-amber-600" />
+                        <span className="text-xs text-amber-700 dark:text-amber-300 break-words">
+                          Next claim available in {formatSecondsToCooldown(timeUntilNextPointsClaim)}
+                        </span>
+                      </div>
+                    )}
+
+                    {insufficientPointsRewardBalance && (
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <span className="text-xs text-red-700 dark:text-red-300 break-words">
+                          Insufficient reward balance to fulfill your full claim right now.
+                        </span>
+                      </div>
+                    )}
+
+                    {!pointsSystemInfo.claimsActive && (
+                      <div className="flex items-center gap-2">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground break-words">
+                          Points claims are not active yet.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleClaimPoints}
+                    disabled={
+                      loading ||
+                      !pointsSystemInfo.claimsActive ||
+                      !claimablePointsInfo.claimablePoints ||
+                      claimablePointsInfo.claimablePoints.eq(0) ||
+                      timeUntilNextPointsClaim > 0 ||
+                      insufficientPointsRewardBalance
+                    }
+                    className="w-full text-sm"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    Claim Points Rewards
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {pointsError && (
+            <Alert variant="destructive" className="w-full">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs sm:text-sm break-words">{pointsError}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Pool Address Input */}
       <Card className="w-full">
         <CardContent className="space-y-4 p-4">
