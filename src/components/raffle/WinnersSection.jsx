@@ -209,49 +209,39 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
     // Use actualAmountPerWinner from contract if available, otherwise fallback to raffle data
     const amountPerWinner = actualAmountPerWinner !== null ? actualAmountPerWinner : (raffle.amountPerWinner || 1);
 
-    // Native Prize - Calculate from total amount divided by winners
+    // Calculate actualWinnersCount based on contract formula:
+    // bool isTokenGated = holderData.holderTokenAddress != address(0);
+    // uint256 actualWinnersCount = isTokenGated && winnersSelected < _winnersCount ? winnersSelected : _winnersCount;
+    const isTokenGated = raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero;
+    const winnersSelected = raffle.winnersSelected || 0;
+    const winnersCount = raffle.winnersCount || 1;
+    const actualWinnersCount = (isTokenGated && winnersSelected < winnersCount && winnersSelected > 0) 
+      ? winnersSelected 
+      : winnersCount;
+
+    // winsToClaim for this winner (typically 1, but could be more if winner won multiple times)
+    const winsToClaim = winner.claimedWins || 1;
+
+    // Native Prize - Calculate using contract formula:
+    // totalPrize = (prizeData.nativePrizeAmount / actualWinnersCount) * winsToClaim
     if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+      // Calculate prize per winner, then multiply by winsToClaim
+      const prizePerWinner = raffle.nativePrizeAmount.div(actualWinnersCount);
+      const totalPrize = prizePerWinner.mul(winsToClaim);
 
-      console.log(`🔍 Native Prize Debug:`, {
-        totalPrizeAmount: raffle.nativePrizeAmount.toString(),
-        winnersCount: raffle.winnersCount,
-        amountPerWinnerFromContract: amountPerWinner,
-        amountPerWinnerType: typeof amountPerWinner
-      });
-
-      // For native currency, always calculate from total amount divided by winners
-      // This ensures accuracy regardless of what amountPerWinner() returns
-      const winnersCount = raffle.winnersCount || 1;
-      const prizePerWinner = raffle.nativePrizeAmount.div(winnersCount);
-
-      console.log(`💰 Native calculation: ${raffle.nativePrizeAmount.toString()} / ${winnersCount} = ${prizePerWinner.toString()}`);
-
-      const result = formatPrizeAmount(prizePerWinner);
-      console.log(`💰 Native prize display: ${result} (prizePerWinner: ${prizePerWinner.toString()})`);
+      const result = formatPrizeAmount(totalPrize);
       return result;
     }
 
-    // ERC20 Prize - Use amountPerWinner from contract
+    // ERC20 Prize - Calculate using contract formula:
+    // totalPrize = (prizeData.erc20PrizeAmount * winsToClaim) / actualWinnersCount
     if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
         raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+      // Calculate: (erc20PrizeAmount * winsToClaim) / actualWinnersCount
+      const totalPrize = raffle.erc20PrizeAmount.mul(winsToClaim).div(actualWinnersCount);
 
-      console.log(`🔍 ERC20 Prize Debug:`, {
-        totalPrizeAmount: raffle.erc20PrizeAmount.toString(),
-        winnersCount: raffle.winnersCount,
-        amountPerWinnerFromContract: amountPerWinner,
-        amountPerWinnerType: typeof amountPerWinner
-      });
-
-      // For ERC20 tokens, always calculate from total amount divided by winners
-      // This ensures accuracy regardless of what amountPerWinner() returns
-      const winnersCount = raffle.winnersCount || 1;
-      const prizePerWinner = raffle.erc20PrizeAmount.div(winnersCount);
-
-      console.log(`💰 ERC20 calculation: ${raffle.erc20PrizeAmount.toString()} / ${winnersCount} = ${prizePerWinner.toString()}`);
-
-      const formattedAmount = ethers.utils.formatUnits(prizePerWinner, 18);
+      const formattedAmount = ethers.utils.formatUnits(totalPrize, 18);
       const result = `${formattedAmount} ${erc20Symbol}`;
-      console.log(`💰 ERC20 prize display: ${result} (prizePerWinner: ${prizePerWinner.toString()}, formatted: ${formattedAmount})`);
       return result;
     }
 
@@ -268,13 +258,6 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
             ? `#${tokenId}`
             : '#Unknown';
 
-          console.log(`🔍 Escrowed ERC721 token ID debug:`, {
-            rawTokenId: raffle.prizeTokenId,
-            stringTokenId: tokenId,
-            prizeId: prizeId,
-            isEscrowedPrize: isEscrowedPrize
-          });
-
           let result;
           if (collectionSymbol) {
             result = `${collectionSymbol} ${prizeId}`; // Use symbol if available (e.g., "BAYC #23")
@@ -284,21 +267,21 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
             result = `ERC721 NFT ${prizeId}`; // Final fallback
           }
 
-          console.log(`🏆 Escrowed ERC721 prize display: ${result} (symbol: ${collectionSymbol}, name: ${collectionName}, tokenId: ${raffle.prizeTokenId})`);
           return result;
         } else {
           // For mintable ERC721 prizes: show amount + symbol (e.g., "1 BAYC")
           const displayName = collectionSymbol || collectionName || 'ERC721 NFT';
-          const result = `${amountPerWinner} ${displayName}`;
+          const totalAmount = amountPerWinner * winsToClaim;
+          const result = `${totalAmount} ${displayName}`;
 
-          console.log(`🎨 Mintable ERC721 prize display: ${result} (symbol: ${collectionSymbol}, name: ${collectionName}, amount: ${amountPerWinner})`);
           return result;
         }
       }
       if (raffle.standard === 1) {
         // ERC1155: Use amountPerWinner from contract (variable amount per winner)
         const name = collectionName || 'ERC1155 Token';
-        return `${amountPerWinner} ${name}`;
+        const totalAmount = amountPerWinner * winsToClaim;
+        return `${totalAmount} ${name}`;
       }
     }
 
@@ -462,6 +445,8 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   const [winnerSelectionTx, setWinnerSelectionTx] = useState(null);
   const [winnerTxMap, setWinnerTxMap] = useState({}); // Maps winner address to their batch transaction hash
   const [collectionName, setCollectionName] = useState(null);
+  const [collectionSymbol, setCollectionSymbol] = useState(null);
+  const [erc20Symbol, setErc20Symbol] = useState('TOKEN');
   const [lastWinnersUpdate, setLastWinnersUpdate] = useState(null);
   const [winnersSelectedCount, setWinnersSelectedCount] = useState(raffle?.winnersSelected || 0);
 
@@ -627,11 +612,12 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     setWinnerSelectionTx(null);
   }, [raffle]);
 
-  // Fetch collection name for NFT prizes
+  // Fetch collection name and symbol for NFT prizes
   useEffect(() => {
-    const fetchCollectionName = async () => {
+    const fetchCollectionInfo = async () => {
       if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
         setCollectionName(null);
+        setCollectionSymbol(null);
         return;
       }
 
@@ -639,14 +625,54 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         const contract = getContractInstance(raffle.prizeCollection, raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize');
         const name = await contract.name();
         setCollectionName(name);
+        
+        // Try to fetch symbol
+        try {
+          if (typeof contract.symbol === 'function') {
+            const symbol = await contract.symbol();
+            setCollectionSymbol(symbol);
+          }
+        } catch (symbolError) {
+          setCollectionSymbol(null);
+        }
       } catch (error) {
-
         setCollectionName(null);
+        setCollectionSymbol(null);
       }
     };
 
-    fetchCollectionName();
+    fetchCollectionInfo();
   }, [raffle, getContractInstance]);
+
+  // Fetch ERC20 token symbol if needed
+  useEffect(() => {
+    const fetchERC20Symbol = async () => {
+      if (!raffle?.erc20PrizeToken || raffle.erc20PrizeToken === ethers.constants.AddressZero) {
+        return;
+      }
+
+      try {
+        // Use global cache to avoid repeated calls
+        if (!window.__erc20SymbolCache) window.__erc20SymbolCache = {};
+        if (window.__erc20SymbolCache[raffle.erc20PrizeToken]) {
+          setErc20Symbol(window.__erc20SymbolCache[raffle.erc20PrizeToken]);
+          return;
+        }
+
+        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+        const erc20Abi = ["function symbol() view returns (string)"];
+        const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
+        const symbol = await contract.symbol();
+
+        setErc20Symbol(symbol);
+        window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
+      } catch (error) {
+        setErc20Symbol('TOKEN');
+      }
+    };
+
+    fetchERC20Symbol();
+  }, [raffle?.erc20PrizeToken]);
 
   // Extract fetchWinners function so it can be called by event listeners
   const fetchWinners = useCallback(async () => {
@@ -1005,6 +1031,67 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     // Use the winner's specific batch transaction hash if available
     const getWinnerTxHash = (winner) => winner.batchTxHash || winnerSelectionTx;
 
+    // Calculate prize display for each winner using contract formula
+    const getWinnerPrizeDisplay = (winner) => {
+      if (!raffle.isPrized) return '—';
+
+      // Calculate actualWinnersCount based on contract formula
+      const isTokenGated = raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero;
+      const winnersSelected = raffle.winnersSelected || 0;
+      const winnersCount = raffle.winnersCount || 1;
+      const actualWinnersCount = (isTokenGated && winnersSelected < winnersCount && winnersSelected > 0) 
+        ? winnersSelected 
+        : winnersCount;
+
+      // winsToClaim for this winner (typically 1)
+      const winsToClaim = winner.claimedWins || 1;
+
+      // Native Prize: (nativePrizeAmount / actualWinnersCount) * winsToClaim
+      if (raffle.nativePrizeAmount && raffle.nativePrizeAmount.gt && raffle.nativePrizeAmount.gt(0)) {
+        const prizePerWinner = raffle.nativePrizeAmount.div(actualWinnersCount);
+        const totalPrize = prizePerWinner.mul(winsToClaim);
+        return formatPrizeAmount(totalPrize);
+      }
+
+      // ERC20 Prize: (erc20PrizeAmount * winsToClaim) / actualWinnersCount
+      if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
+          raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+        const totalPrize = raffle.erc20PrizeAmount.mul(winsToClaim).div(actualWinnersCount);
+        const formattedAmount = ethers.utils.formatUnits(totalPrize, 18);
+        return `${formattedAmount} ${erc20Symbol}`;
+      }
+
+      // NFT Prizes
+      if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
+        const amountPerWinner = raffle.amountPerWinner || 1;
+        
+        if (raffle.standard === 0) {
+          // ERC721
+          if (isEscrowedPrize) {
+            // Escrowed: show symbol + token ID
+            const tokenId = raffle.prizeTokenId?.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId;
+            const prizeId = (tokenId !== undefined && tokenId !== null && tokenId !== '0') ? `#${tokenId}` : '';
+            const displayName = collectionSymbol || collectionName || 'NFT';
+            return `${displayName} ${prizeId}`.trim();
+          } else {
+            // Mintable: show amount + symbol
+            const displayName = collectionSymbol || collectionName || 'NFT';
+            const totalAmount = amountPerWinner * winsToClaim;
+            return `${totalAmount} ${displayName}`;
+          }
+        }
+        
+        if (raffle.standard === 1) {
+          // ERC1155
+          const displayName = collectionSymbol || collectionName || 'Token';
+          const totalAmount = amountPerWinner * winsToClaim;
+          return `${totalAmount} ${displayName}`;
+        }
+      }
+
+      return '—';
+    };
+
     return (
       <div className="w-full">
         {/* Table Header - conditionally show Prize/Status columns only for prized pools (hidden on mobile) */}
@@ -1077,7 +1164,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                 {raffle.isPrized && (
                   <div className="hidden md:block md:col-span-3 text-center text-sm font-medium">
                     <span className="text-foreground">
-                      {raffle.winnersCount > 0 ? `1/${raffle.winnersCount}` : '—'}
+                      {getWinnerPrizeDisplay(winner)}
                     </span>
                   </div>
                 )}

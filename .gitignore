@@ -2,6 +2,7 @@ node_modules/
 abis/
 docs/
 supabase/
+extras/
 package-lock.json
 abis.code-workspace
 temp_types.ts
@@ -9,7 +10,6 @@ generate-error-selectors.js
 .env.local
 setup-supabase.ps1
 .trae/
-extras/
 HASH_BASED_URI_RESOLUTION_IMPLEMENTATION.txt
 RAFFLE_DETAIL_TAB_LAYOUT_REDESIGN_PLAN.md
 REDESIGN_PLAN.md

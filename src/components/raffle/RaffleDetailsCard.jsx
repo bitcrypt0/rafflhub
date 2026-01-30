@@ -60,10 +60,7 @@ function ERC20PrizeAmount({ token, amount }) {
   }, [token]);
 
   return (
-    <div className="flex justify-between">
-      <span className="text-foreground/80 dark:text-foreground">Prize Amount:</span>
-      <span>{ethers.utils.formatUnits(amount, 18)} {symbol}</span>
-    </div>
+    <p className="font-medium">{ethers.utils.formatUnits(amount, 18)} {symbol}</p>
   );
 }
 
@@ -240,9 +237,7 @@ const RaffleDetailsCard = ({
             raffle.erc20PrizeAmount.gt(0) && (
               <div>
                 <span className="text-muted-foreground">Prize Amount:</span>
-                <div className="font-medium">
-                  <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
-                </div>
+                <ERC20PrizeAmount token={raffle.erc20PrizeToken} amount={raffle.erc20PrizeAmount} />
               </div>
             )}
 

@@ -334,7 +334,7 @@ export const useProfileData = () => {
             executeCall(raffleContract.winnersCount, 'winnersCount'),
             executeCall(raffleContract.usesCustomFee, 'usesCustomFee'),
             executeCall(raffleContract.totalCreatorRevenue, 'totalCreatorRevenue'),
-            stableContracts.protocolManager ? executeCall(stableContracts.protocolManager.poolCreationTimestamps, 'poolCreationTimestamps', raffleAddress) : Promise.resolve({ success: false })
+            stableContracts.poolDeployer ? executeCall(stableContracts.poolDeployer.poolCreationTimestamps, 'poolCreationTimestamps', raffleAddress) : Promise.resolve({ success: false })
           ]);
 
           const name = nameResult.success ? nameResult.result : `Raffle ${raffleAddress.slice(0, 8)}...`;
