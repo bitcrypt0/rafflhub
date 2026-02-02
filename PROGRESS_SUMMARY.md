@@ -108,13 +108,44 @@
 
 ---
 
-## 🚧 What's Pending
+## ✅ Phase 3: Extended Indexers (READY TO DEPLOY)
+**Completed:** February 2, 2026
 
-### Phase 3: Extended Indexers (Next)
-- [ ] `index-nft-factory` - NFT collection deployment tracking
-- [ ] `index-collection-events` - Collection reveals, minting, vesting
-- [ ] `index-rewards` - Rewards flywheel claims
-- [ ] `fetch-nft-metadata` - IPFS/Arweave artwork caching
+**Deliverables:**
+- ✅ `index-nft-factory` - NFT collection deployment tracking
+  - Monitors CollectionCreated events from NFTFactory
+  - Creates collection records with metadata
+  - Tracks creator activity
+
+- ✅ `index-collection-events` - Collection reveals, minting, vesting
+  - Monitors Revealed, Transfer (mints), VestingScheduleSet events
+  - Updates collection metadata and supply
+  - Creates user activity for mints and reveals
+
+- ✅ `index-rewards` - Rewards flywheel claims
+  - Monitors RewardsClaimed events
+  - Updates rewards_claims table
+  - Tracks user reward activity
+
+- ✅ `fetch-nft-metadata` - IPFS/Arweave artwork caching
+  - Fetches metadata from IPFS/Arweave with fallback gateways
+  - Batch processing (up to 50 tokens)
+  - Automatic retry logic with exponential backoff
+  - Caches artwork URLs and attributes
+
+**Files Created:**
+- `supabase/functions/index-nft-factory/index.ts`
+- `supabase/functions/index-collection-events/index.ts`
+- `supabase/functions/index-rewards/index.ts`
+- `supabase/functions/fetch-nft-metadata/index.ts`
+- `PHASE_3_DEPLOYMENT.md` - Deployment guide
+- Updated `.github/workflows/blockchain-indexer.yml` with new indexers
+
+**Next Step:** Deploy functions with `supabase functions deploy` (see PHASE_3_DEPLOYMENT.md)
+
+---
+
+## 🚧 What's Pending
 
 ### Phase 4: API Layer
 - [ ] `api-pools` - Pool data endpoints

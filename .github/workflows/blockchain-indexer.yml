@@ -29,6 +29,20 @@ jobs:
             -d '{"chainId": 84532, "poolAddress": "0x09988afeace77d9147b141fad522e43c9e8cbd0e"}')
           echo "Pool events indexer response: $response"
 
+      - name: Index NFT Factory (Find new collections)
+        run: |
+          response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-nft-factory \
+            -H "Content-Type: application/json" \
+            -d '{"chainId": 84532}')
+          echo "NFT Factory indexer response: $response"
+
+      - name: Index Rewards (Track reward claims)
+        run: |
+          response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-rewards \
+            -H "Content-Type: application/json" \
+            -d '{"chainId": 84532}')
+          echo "Rewards indexer response: $response"
+
       - name: Check for errors
         run: |
           echo "✅ Indexing cycle completed"
