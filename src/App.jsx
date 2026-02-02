@@ -27,6 +27,7 @@ import DeployCollectionPageV2 from './pages/DeployCollectionPageV2';
 import RaffleDetailPage from './pages/RaffleDetailPage';
 import AuthCallback from './pages/AuthCallback';
 import DocumentationPage from './pages/DocumentationPage';
+import SupabaseIntegrationTest from './components/SupabaseIntegrationTest';
 
 
 import './App.css';
@@ -82,6 +83,8 @@ const AppContent = () => {
           <Route path="/auth/callback/twitter" element={<AuthCallback />} />
           <Route path="/auth/callback/discord" element={<AuthCallback />} />
           <Route path="/auth/callback/telegram" element={<AuthCallback />} />
+          {/* Supabase Integration Test (Development) */}
+          <Route path="/test-supabase" element={<SupabaseIntegrationTest />} />
         </Routes>
       </main>
       <FooterModern />
