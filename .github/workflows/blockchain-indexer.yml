@@ -7,6 +7,9 @@ on:
     - cron: '*/5 * * * *'  # Every 5 minutes
   workflow_dispatch:  # Allows manual triggering from GitHub UI
 
+env:
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
 jobs:
   index-blockchain:
     runs-on: ubuntu-latest
@@ -16,6 +19,7 @@ jobs:
         run: |
           response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-pool-deployer \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"chainId": 84532}')
           echo "PoolDeployer indexer response: $response"
 
@@ -26,6 +30,7 @@ jobs:
           # TODO: Query Supabase for all active pools and loop through them
           response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-pool-events \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"chainId": 84532, "poolAddress": "0x09988afeace77d9147b141fad522e43c9e8cbd0e"}')
           echo "Pool events indexer response: $response"
 
@@ -33,6 +38,7 @@ jobs:
         run: |
           response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-nft-factory \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"chainId": 84532}')
           echo "NFT Factory indexer response: $response"
 
@@ -40,6 +46,7 @@ jobs:
         run: |
           response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-rewards \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -d '{"chainId": 84532}')
           echo "Rewards indexer response: $response"
 
