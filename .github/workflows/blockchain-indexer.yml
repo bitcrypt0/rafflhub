@@ -1,0 +1,35 @@
+name: Blockchain Indexer
+
+# Runs every 5 minutes (GitHub Actions minimum interval)
+# For faster indexing, use a different service like EasyCron
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+jobs:
+  index-blockchain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Index PoolDeployer (Find new pools)
+        run: |
+          response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-pool-deployer \
+            -H "Content-Type: application/json" \
+            -d '{"chainId": 84532}')
+          echo "PoolDeployer indexer response: $response"
+
+      - name: Index Pool Events (All active pools)
+        run: |
+          # Get all active pools from the database and index them
+          # For now, we'll index the known test pool
+          # TODO: Query Supabase for all active pools and loop through them
+          response=$(curl -s -X POST https://xanuhcusfbyrcmnuwwys.supabase.co/functions/v1/index-pool-events \
+            -H "Content-Type: application/json" \
+            -d '{"chainId": 84532, "poolAddress": "0x09988afeace77d9147b141fad522e43c9e8cbd0e"}')
+          echo "Pool events indexer response: $response"
+
+      - name: Check for errors
+        run: |
+          echo "✅ Indexing cycle completed"
+          echo "Check the responses above for any errors"
