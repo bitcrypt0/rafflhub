@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { resolveChainIdFromSlug } from '../utils/urlNetworks';
 import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send, Coins, Gift, Sparkles, Star } from 'lucide-react';
 import { getPoolMetadata, hasAnyMetadata, formatSocialLink } from '../utils/poolMetadataService';
-import { SUPPORTED_NETWORKS } from '../networks';
+import { SUPPORTED_NETWORKS, DEFAULT_CHAIN_ID } from '../networks';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -1947,6 +1947,7 @@ const RaffleDetailPage = () => {
         hasMetadata: true,
       } : null,
       _fromBackend: true,
+      _backendArtworkUrl: pool.artwork_url || null,
       _backendActivity: pool.activity || [],
       _backendParticipants: pool.participants || [],
       _backendWinners: pool.winners || [],
@@ -1954,6 +1955,75 @@ const RaffleDetailPage = () => {
       collection_artwork: pool.collection_artwork || null,
     };
   }, []);
+
+  // Backend-only fetch: loads pool data from Supabase without requiring wallet connection.
+  // This enables the page to render for visitors who haven't connected a wallet.
+  const fetchBackendOnly = useCallback(async () => {
+    if (!stableRaffleAddress) return;
+    if (backendDataLoaded) return; // Already loaded
+
+    const currentChainId = resolveChainIdFromSlug(chainSlug) || DEFAULT_CHAIN_ID;
+
+    if (!supabaseService.isAvailable() || !currentChainId) return;
+
+    if (!hasInitiallyLoadedRef.current) {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      const backendPool = await supabaseService.getPoolEnhanced(currentChainId, stableRaffleAddress);
+      if (backendPool) {
+        const transformedPool = transformBackendPool(backendPool);
+        if (transformedPool) {
+          setRaffle(prev => {
+            if (!prev) return transformedPool;
+            const merged = { ...prev, ...transformedPool };
+            if (prev.stateNum > merged.stateNum) {
+              merged.stateNum = prev.stateNum;
+              merged.state = POOL_STATE_LABELS[prev.stateNum] || prev.state;
+            }
+            return merged;
+          });
+          setIsRefundable(transformedPool.isRefundable);
+          setIsCollabPool(transformedPool.isCollabPool);
+          setIsEscrowedPrize(transformedPool.isEscrowedPrize);
+          setPoolActivity(prev => {
+            const backendActivities = transformedPool._backendActivity || [];
+            if (prev.length === 0) return backendActivities;
+            const existingIds = new Set(prev.map(a => a.id));
+            const newFromBackend = backendActivities.filter(a => !existingIds.has(a.id));
+            if (newFromBackend.length === 0) return prev;
+            return [...prev, ...newFromBackend].sort((a, b) => {
+              const timeA = new Date(a.timestamp || a.created_at).getTime();
+              const timeB = new Date(b.timestamp || b.created_at).getTime();
+              return timeB - timeA;
+            });
+          });
+          if (transformedPool._backendMetadata) {
+            setPoolMetadata(transformedPool._backendMetadata);
+          }
+          setBackendDataLoaded(true);
+          hasInitiallyLoadedRef.current = true;
+          setLoading(false);
+          return;
+        }
+      }
+      // Backend returned nothing — if no wallet, show a helpful message
+      if (!connected) {
+        setError('Pool not found in backend. Connect your wallet for on-chain lookup.');
+      }
+    } catch (err) {
+      console.warn('Backend-only fetch failed:', err);
+      if (!connected) {
+        setError('Failed to load pool data. Connect your wallet for on-chain lookup.');
+      }
+    } finally {
+      if (!hasInitiallyLoadedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [stableRaffleAddress, chainSlug, backendDataLoaded, connected, transformBackendPool]);
 
   // Memoized fetch function to prevent recreation on every render
   const fetchRaffleData = useCallback(async () => {
@@ -1968,13 +2038,16 @@ const RaffleDetailPage = () => {
           throw new Error('No raffle address provided');
         }
 
-        // Wait for wallet initialization and contract context to be ready
-        if (!isInitialized || isReconnecting) {
+        // If wallet is not ready, skip RPC enrichment.
+        // Backend-only data (from fetchBackendOnly) is sufficient for read-only viewing.
+        if (!isInitialized || isReconnecting || !getContractInstance) {
+          if (backendDataLoaded) {
+            // Backend data already loaded — no need for RPC, just return
+            setLoading(false);
+            return;
+          }
+          // No backend data and no wallet — can't proceed
           throw new Error('Wallet is initializing, please wait...');
-        }
-
-        if (!getContractInstance) {
-          throw new Error('Contract context not ready');
         }
 
         // Get chain ID for backend query
@@ -2032,6 +2105,16 @@ const RaffleDetailPage = () => {
           } catch (backendError) {
             console.warn('Backend fetch failed, falling back to RPC:', backendError);
           }
+        }
+
+        // Skip RPC enrichment if wallet is not connected.
+        // Backend data is sufficient for read-only viewing.
+        if (!connected) {
+          if (backendDataLoaded || backendPool) {
+            setLoading(false);
+            return;
+          }
+          throw new Error('Pool not found in backend. Connect your wallet for on-chain lookup.');
         }
 
         // Get browser-specific configuration
@@ -2285,7 +2368,15 @@ const RaffleDetailPage = () => {
     }
   }, [raffle?.socialEngagementRequired, connected, address, checkSocialEngagementStatus]);
 
-  // Effect to trigger fetchRaffleData when dependencies change
+  // Backend-only fetch: runs immediately without wallet connection.
+  // Enables the page to render read-only pool data for all visitors.
+  useEffect(() => {
+    if (stableRaffleAddress && !backendDataLoaded) {
+      fetchBackendOnly();
+    }
+  }, [stableRaffleAddress, backendDataLoaded, fetchBackendOnly]);
+
+  // RPC enrichment: runs when wallet is connected to add user-specific data
   useEffect(() => {
     if (stableRaffleAddress && getContractInstance && isInitialized && !isReconnecting) {
       fetchRaffleData();
@@ -3173,7 +3264,7 @@ const RaffleDetailPage = () => {
     }
   };
 
-  if (loading || isReconnecting) {
+  if (loading || (isReconnecting && !raffle)) {
     return (
       <PageContainer className="max-w-[85rem]">
         <ContentLoading

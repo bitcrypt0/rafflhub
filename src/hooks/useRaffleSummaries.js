@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../contexts/WalletContext';
-import { SUPPORTED_NETWORKS } from '../networks';
+import { SUPPORTED_NETWORKS, DEFAULT_CHAIN_ID } from '../networks';
 import { contractABIs } from '../contracts/contractABIs';
 
 /**
@@ -16,7 +16,9 @@ export const useRaffleSummaries = ({
   cacheTTLms = 2 * 60 * 1000, // 2 minutes
   useCache = true,
 } = {}) => {
-  const { chainId, provider } = useWallet();
+  const { chainId: walletChainId, provider } = useWallet();
+  // Use wallet chainId if available, otherwise fall back to default
+  const chainId = walletChainId || DEFAULT_CHAIN_ID;
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

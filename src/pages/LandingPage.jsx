@@ -20,7 +20,7 @@ import FilterSidebar from '../components/FilterSidebar';
 import FilterToggleButton from '../components/FilterToggleButton';
 import FilteredRaffleGrid from '../components/FilteredRaffleGrid';
 import { useRaffleFilters } from '../hooks/useRaffleFilters';
-import { SUPPORTED_NETWORKS } from '../networks';
+import { SUPPORTED_NETWORKS, DEFAULT_CHAIN_ID } from '../networks';
 import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 import { Badge, StatusBadge } from '../components/ui/badge';
 import { Progress, EnhancedProgress } from '../components/ui/progress';
@@ -45,7 +45,9 @@ const POOL_STATE_LABELS = [
 
 const RaffleCard = ({ raffle }) => {
   const navigate = useNavigate();
-  const { chainId } = useWallet();
+  const { chainId: walletChainId } = useWallet();
+  // Use wallet chainId if connected, fall back to raffle's chainId or default
+  const chainId = walletChainId || raffle.chainId || DEFAULT_CHAIN_ID;
   const [timeLabel, setTimeLabel] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('');
   const [erc20Symbol, setErc20Symbol] = useState('');
@@ -1130,6 +1132,8 @@ const RaffleCard = ({ raffle }) => {
 const LandingPage = () => {
   const { connected } = useWallet();
   const { isMobile } = useMobileBreakpoints();
+  // Note: wallet connection is no longer required to view the landing page.
+  // Backend data (Supabase) is fetched using DEFAULT_CHAIN_ID when wallet is not connected.
   const { formatSlotFee, formatPrizeAmount } = useNativeCurrency();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1218,74 +1222,6 @@ const LandingPage = () => {
     setPage(1);
   }, [isMobile, loading, raffles?.length, filteredRaffles?.length, summaries?.length, hasActiveFilters, searchQuery]);
 
-
-  // Show wallet connection prompt if not connected
-  if (!connected) {
-    return (
-      <PageContainer className="pt-8 pb-4">
-        {/* Enhanced Header */}
-        <div className="text-center mb-12">
-          <h1 className="font-display text-[length:var(--text-4xl)] font-bold mb-4 leading-tight tracking-tighter">
-            Fairness and Transparency,{' '}
-            <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-300 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
-              On-Chain
-            </span>
-          </h1>
-          <p className="font-body text-[length:var(--text-lg)] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
-            Dropr is a permissionless platform built to host decentralized, on-chain raffles. All draws are public and auditable.
-          </p>
-
-          {/* Trust Badges - Homepage hero style */}
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Shield className="h-3 w-3 text-primary" />
-              </div>
-              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">VRF Powered</span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <CheckCircle className="h-3 w-3 text-primary" />
-              </div>
-              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fair Draws</span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <Eye className="h-3 w-3 text-primary" />
-              </div>
-              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Fully Auditable</span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 rounded-full bg-primary/40" />
-            <div className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/20 transition-all duration-300 cursor-default">
-              <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                <LockKeyhole className="h-3 w-3 text-primary" />
-              </div>
-              <span className="relative font-body text-[length:var(--text-xs)] font-medium text-foreground/80 group-hover:text-foreground transition-colors">Trustless</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Connect Wallet Card */}
-        <div className="max-w-md mx-auto">
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-8 text-center shadow-lg">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <Wallet className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="font-display text-[length:var(--text-2xl)] font-bold mb-3 leading-tight">Connect Your Wallet</h3>
-            <p className="font-body text-[length:var(--text-base)] text-muted-foreground mb-6">
-              Connect your wallet to view and interact with raffles on the blockchain.
-            </p>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
 
   // Allow summaries path on mobile even when filters are active to avoid slow first-load UX
   const canUseSummariesForCurrentFilters = isMobile && (summaries?.length > 0) && (!raffles || raffles.length === 0 || loading);

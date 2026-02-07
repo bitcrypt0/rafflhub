@@ -5,6 +5,7 @@ import { useMobileBreakpoints } from './useMobileBreakpoints';
 import { supabaseService } from '../services/supabaseService';
 import raffleService from '../services/RaffleService';
 import { ethers } from 'ethers';
+import { DEFAULT_CHAIN_ID } from '../networks';
 
 /**
  * Enhanced Raffle Service Hook
@@ -22,9 +23,12 @@ export const useRaffleServiceEnhanced = (options = {}) => {
   } = options;
 
   const walletContext = useWallet();
-  const { connected, chainId, signer, provider } = walletContext;
+  const { connected, chainId: walletChainId, signer, provider } = walletContext;
   const contractContext = useContract();
   const { isMobile } = useMobileBreakpoints();
+
+  // Use wallet chainId if connected, otherwise fall back to default
+  const chainId = walletChainId || DEFAULT_CHAIN_ID;
 
   const [raffles, setRaffles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -141,8 +145,9 @@ export const useRaffleServiceEnhanced = (options = {}) => {
   /**
    * Fetch raffles from backend (Supabase)
    */
-  const fetchFromBackend = useCallback(async () => {
-    if (!chainId) return null;
+  const fetchFromBackend = useCallback(async (effectiveChainId) => {
+    const targetChainId = effectiveChainId || chainId;
+    if (!targetChainId) return null;
 
     try {
       console.log('🌐 Fetching raffles from backend...');
@@ -151,7 +156,7 @@ export const useRaffleServiceEnhanced = (options = {}) => {
       // This allows filters and search to access all pools
       // Default filtering will be applied in LandingPage component
       const result = await supabaseService.getPoolsEnhanced({
-        chainId,
+        chainId: targetChainId,
         state: undefined, // Fetch all states to enable filtering/searching hidden pools
         limit: maxRaffles,
         offset: 0,
@@ -190,7 +195,7 @@ export const useRaffleServiceEnhanced = (options = {}) => {
   }, [chainId, maxRaffles, includeFilterCounts, transformBackendPool]);
 
   /**
-   * Fetch raffles from RPC (fallback)
+   * Fetch raffles from RPC (fallback) - requires wallet connection
    */
   const fetchFromRPC = useCallback(async () => {
     if (!connected || !contractContext?.isContractsReady) {
@@ -230,12 +235,6 @@ export const useRaffleServiceEnhanced = (options = {}) => {
    * Main fetch function - tries backend first, falls back to RPC
    */
   const fetchRaffles = useCallback(async (isBackground = false) => {
-    if (!connected) {
-      setRaffles([]);
-      setError('Please connect your wallet to view raffles');
-      return;
-    }
-
     if (!chainId) {
       console.log('⏸️ ChainId not yet available, skipping fetch');
       return;
@@ -300,7 +299,7 @@ export const useRaffleServiceEnhanced = (options = {}) => {
         setLoading(false);
       }
     }
-  }, [connected, chainId, useBackend, fetchFromBackend, fetchFromRPC]);
+  }, [chainId, useBackend, connected, fetchFromBackend, fetchFromRPC]);
 
   /**
    * Force refresh (clears cache and refetches)
@@ -358,19 +357,20 @@ export const useRaffleServiceEnhanced = (options = {}) => {
   }, [chainId, useBackend, transformBackendPool]);
 
   // Auto-fetch on mount and when dependencies change
+  // No longer requires wallet connection — backend fetch works without it
   useEffect(() => {
-    if (autoFetch && connected && chainId) {
+    if (autoFetch && chainId) {
       const timer = setTimeout(() => {
         fetchRaffles();
       }, 300);
 
       return () => clearTimeout(timer);
     }
-  }, [autoFetch, connected, chainId, fetchRaffles]);
+  }, [autoFetch, chainId, fetchRaffles]);
 
-  // Setup polling
+  // Setup polling — works without wallet for backend-first strategy
   useEffect(() => {
-    if (enablePolling && connected && pollingInterval > 0) {
+    if (enablePolling && chainId && pollingInterval > 0) {
       pollingRef.current = setInterval(() => {
         fetchRaffles(true); // Background fetch
       }, pollingInterval);
@@ -382,12 +382,12 @@ export const useRaffleServiceEnhanced = (options = {}) => {
         }
       };
     }
-  }, [enablePolling, connected, pollingInterval, fetchRaffles]);
+  }, [enablePolling, chainId, pollingInterval, fetchRaffles]);
 
   // Real-time subscription for pool updates (state changes, slot purchases)
   const realtimeChannelRef = useRef(null);
   useEffect(() => {
-    if (!connected || !chainId || !supabaseService.isAvailable()) {
+    if (!chainId || !supabaseService.isAvailable()) {
       return;
     }
 
@@ -458,7 +458,7 @@ export const useRaffleServiceEnhanced = (options = {}) => {
         realtimeChannelRef.current = null;
       }
     };
-  }, [connected, chainId, transformBackendPool]);
+  }, [chainId, transformBackendPool]);
 
   /**
    * Categorize raffles by state

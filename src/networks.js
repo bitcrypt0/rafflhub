@@ -1,3 +1,7 @@
+// Default chain ID used when no wallet is connected (Base Sepolia for testnet)
+// Change this to the desired mainnet chain ID when ready for production
+export const DEFAULT_CHAIN_ID = 84532;
+
 export const SUPPORTED_NETWORKS = {
   1: {
     name: 'Ethereum Mainnet',
