@@ -61,12 +61,12 @@ class SupabaseService {
    * Check if Supabase is available
    */
   isAvailable() {
-    const available = this.client !== null && this.SUPABASE_URL !== null && this.SUPABASE_ANON_KEY !== null;
+    const available = !!this.client && !!this.SUPABASE_URL && !!this.SUPABASE_ANON_KEY;
     if (!available) {
       console.warn('⚠️ Supabase not available:', {
-        hasClient: this.client !== null,
-        hasUrl: this.SUPABASE_URL !== null,
-        hasKey: this.SUPABASE_ANON_KEY !== null
+        hasClient: !!this.client,
+        hasUrl: !!this.SUPABASE_URL,
+        hasKey: !!this.SUPABASE_ANON_KEY
       });
     }
     return available;
