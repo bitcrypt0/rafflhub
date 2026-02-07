@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { supabaseService } from '../services/supabaseService';
-import { useRaffleSummaries as useRaffleSummariesRPC } from './useRaffleSummaries';
+import { ethers } from 'ethers';
+// import { useRaffleSummaries as useRaffleSummariesRPC } from './useRaffleSummaries'; // Temporarily disabled for testing
 
 /**
  * Enhanced useRaffleSummaries Hook
@@ -29,12 +30,6 @@ export const useRaffleSummariesEnhanced = ({
   const mountedRef = useRef(true);
   const channelRef = useRef(null);
 
-  // RPC fallback hook (only loads if Supabase fails)
-  const rpcFallback = useRaffleSummariesRPC({
-    initialCount,
-    useCache: true,
-  });
-
   /**
    * Fetch pools from Supabase API
    */
@@ -61,25 +56,57 @@ export const useRaffleSummariesEnhanced = ({
       }
 
       // Transform API response to match expected format
-      const transformed = response.pools.map(pool => ({
-        id: pool.address,
-        address: pool.address,
-        chainId: pool.chain_id,
-        name: pool.name || 'Unnamed Raffle',
-        startTime: parseInt(pool.start_time),
-        duration: parseInt(pool.duration),
-        slotFee: pool.slot_fee,
-        ticketLimit: pool.slot_limit,
-        winnersCount: pool.winners_count,
-        stateNum: pool.state,
-        slotsSold: pool.slots_sold,
-        isSummary: true,
-        // Additional data from Supabase
-        creator: pool.creator,
-        isPrized: pool.is_prized,
-        prizeCollection: pool.prize_collection,
-        createdAt: pool.created_at_timestamp,
-      }));
+      const transformed = response.pools.map(pool => {
+        // Convert string amounts to BigNumber for compatibility with filter utils
+        const nativePrizeAmount = pool.native_prize_amount
+          ? ethers.BigNumber.from(pool.native_prize_amount)
+          : ethers.BigNumber.from(0);
+
+        const erc20PrizeAmount = pool.erc20_prize_amount
+          ? ethers.BigNumber.from(pool.erc20_prize_amount)
+          : ethers.BigNumber.from(0);
+
+        return {
+          id: pool.address,
+          address: pool.address,
+          chainId: pool.chain_id,
+          name: pool.name || 'Unnamed Raffle',
+          startTime: parseInt(pool.start_time),
+          duration: parseInt(pool.duration),
+          actualDuration: pool.actual_duration ? parseInt(pool.actual_duration) : null,
+          slotFee: pool.slot_fee,
+          slotLimit: pool.slot_limit,
+          ticketLimit: pool.slot_limit, // Alias for compatibility
+          winnersCount: pool.winners_count,
+          stateNum: pool.state,
+          state: pool.state, // Alias for compatibility
+          slotsSold: pool.slots_sold,
+          totalSlotsPurchased: pool.slots_sold, // Alias for compatibility
+          usesCustomFee: pool.uses_custom_fee,
+          isSummary: true,
+          // Prize data
+          isPrized: pool.is_prized,
+          prizeCollection: pool.prize_collection,
+          prizeTokenId: pool.prize_token_id,
+          nativePrizeAmount,
+          erc20PrizeToken: pool.erc20_prize_token,
+          erc20PrizeAmount,
+          standard: pool.standard,
+          isEscrowedPrize: pool.is_escrowed_prize,
+          // Collab pool data
+          isCollabPool: pool.is_collab_pool,
+          holderTokenAddress: pool.holder_token_address,
+          holderTokenStandard: pool.holder_token_standard,
+          minHolderTokenBalance: pool.min_holder_token_balance,
+          // Pool configuration
+          isRefundable: pool.is_refundable,
+          isExternalCollection: pool.is_external_collection,
+          revenueRecipient: pool.revenue_recipient,
+          // Additional metadata
+          creator: pool.creator,
+          createdAt: pool.created_at_timestamp,
+        };
+      });
 
       setTotalAvailable(response.pagination?.total || transformed.length);
       return transformed;
@@ -164,9 +191,11 @@ export const useRaffleSummariesEnhanced = ({
                 p.address.toLowerCase() === payload.new.address.toLowerCase()
                   ? {
                       ...p,
-                      stateNum: payload.new.state,
-                      slotsSold: payload.new.slots_sold,
-                      // Update other fields as needed
+                      stateNum: payload.new.state !== undefined ? payload.new.state : p.stateNum,
+                      state: payload.new.state !== undefined ? payload.new.state : p.state,
+                      slotsSold: payload.new.slots_sold !== undefined ? payload.new.slots_sold : p.slotsSold,
+                      totalSlotsPurchased: payload.new.slots_sold !== undefined ? payload.new.slots_sold : p.totalSlotsPurchased,
+                      actualDuration: payload.new.actual_duration !== undefined ? parseInt(payload.new.actual_duration) : p.actualDuration,
                     }
                   : p
               )
@@ -210,18 +239,6 @@ export const useRaffleSummariesEnhanced = ({
   }, [chainId, fetchSummaries]);
 
   /**
-   * Use RPC fallback data if Supabase failed
-   */
-  useEffect(() => {
-    if (dataSource === 'rpc' && rpcFallback.summaries.length > 0) {
-      setSummaries(rpcFallback.summaries);
-      setTotalAvailable(rpcFallback.totalAvailable);
-      setLoading(rpcFallback.loading);
-      setError(rpcFallback.error);
-    }
-  }, [dataSource, rpcFallback.summaries, rpcFallback.loading, rpcFallback.error, rpcFallback.totalAvailable]);
-
-  /**
    * Refresh function
    */
   const refresh = useCallback(() => {
@@ -231,8 +248,8 @@ export const useRaffleSummariesEnhanced = ({
 
   return {
     summaries,
-    loading: dataSource === 'rpc' ? rpcFallback.loading : loading,
-    error: dataSource === 'rpc' ? rpcFallback.error : error,
+    loading,
+    error,
     refresh,
     totalAvailable,
     dataSource, // 'supabase' or 'rpc' - useful for debugging

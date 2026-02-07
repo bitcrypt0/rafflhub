@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from './WalletContext';
@@ -105,7 +105,7 @@ export const ContractProvider = ({ children }) => {
   };
 
   // Create contract instance for a specific address with better error handling
-  const getContractInstance = (address, abiType) => {
+  const getContractInstance = useCallback((address, abiType) => {
     if (!address) {
       console.warn('No address provided for contract instance');
       return null;
@@ -129,7 +129,7 @@ export const ContractProvider = ({ children }) => {
       console.error(`Error creating contract instance for ${abiType}:`, error);
       return null;
     }
-  };
+  }, [signer, provider]);
 
   // Helper function to handle contract transactions
   // Supports transaction options (e.g., { value: ethers.BigNumber })

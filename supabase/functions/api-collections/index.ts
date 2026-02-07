@@ -15,6 +15,7 @@ interface CollectionQuery {
   creator?: string;
   address?: string; // Get specific collection
   isRevealed?: boolean;
+  isExternal?: boolean; // Filter by external collections
   limit?: number;
   offset?: number;
   sortBy?: 'created_at' | 'total_supply';
@@ -40,9 +41,11 @@ serve(async (req) => {
       address: url.searchParams.get('address')?.toLowerCase(),
       isRevealed: url.searchParams.get('isRevealed') === 'true' ? true :
                   url.searchParams.get('isRevealed') === 'false' ? false : undefined,
+      isExternal: url.searchParams.get('isExternal') === 'true' ? true :
+                  url.searchParams.get('isExternal') === 'false' ? false : undefined,
       limit: Math.min(parseInt(url.searchParams.get('limit') || '50'), 100),
       offset: parseInt(url.searchParams.get('offset') || '0'),
-      sortBy: (url.searchParams.get('sortBy') as any) || 'created_at_timestamp',
+      sortBy: (url.searchParams.get('sortBy') as any) || 'created_at',
       sortOrder: (url.searchParams.get('sortOrder') as any) || 'desc',
       includeMetadata: url.searchParams.get('includeMetadata') === 'true',
       tokenId: url.searchParams.get('tokenId') ? parseInt(url.searchParams.get('tokenId')!) : undefined,
@@ -98,6 +101,9 @@ serve(async (req) => {
       }
       if (params.isRevealed !== undefined) {
         query = query.eq('is_revealed', params.isRevealed);
+      }
+      if (params.isExternal !== undefined) {
+        query = query.eq('is_external', params.isExternal);
       }
 
       // Apply sorting

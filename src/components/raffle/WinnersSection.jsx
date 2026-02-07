@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ethers } from 'ethers';
 import { Clock, Trophy, Users, AlertCircle, CheckCircle, Trash2, ChevronDown } from 'lucide-react';
 import { useContract } from '../../contexts/ContractContext';
@@ -6,6 +6,7 @@ import { useWallet } from '../../contexts/WalletContext';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useRaffleEventListener } from '../../hooks/useRaffleService';
 import { Button } from '../ui/button';
+import supabaseService from '../../services/supabaseService';
 
 const POOL_STATE_LABELS = [
   'Pending',
@@ -51,12 +52,12 @@ function getExplorerLink(addressOrTx, chainIdOverride, isTransaction = false) {
 }
 
 // Enhanced Winner Card Component with improved styling
-const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName, isEscrowedPrize, winnerSelectionTx }) => {
+const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, isExpanded, stats, onLoadStats, collectionName, parentCollectionSymbol, isEscrowedPrize, winnerSelectionTx }) => {
   const isCurrentUser = connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase();
   const { formatPrizeAmount } = useNativeCurrency();
   const [erc20Symbol, setErc20Symbol] = React.useState('TOKEN');
   const [actualAmountPerWinner, setActualAmountPerWinner] = React.useState(null);
-  const [collectionSymbol, setCollectionSymbol] = React.useState(null);
+  const [collectionSymbol, setCollectionSymbol] = React.useState(parentCollectionSymbol || null);
   const { getContractInstance } = useContract();
   
   // Use the winner's specific batch transaction hash if available, otherwise fallback to the global one
@@ -434,21 +435,48 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
   );
 };
 
-const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange, onWinnersSelectedChange }) => {
+const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, isMobile, onWinnerCountChange, onWinnersSelectedChange, backendWinners }) => {
   const { getContractInstance, executeTransaction } = useContract();
   const { address: connectedAddress } = useWallet();
   const { formatPrizeAmount } = useNativeCurrency();
-  const [winners, setWinners] = useState([]);
+
+  // Transform backend winners into the format expected by WinnerCard
+  const initialWinners = React.useMemo(() => {
+    if (!backendWinners || !Array.isArray(backendWinners) || backendWinners.length === 0) return [];
+    return backendWinners.map(w => ({
+      address: w.winner_address,
+      index: w.winner_index,
+      claimedWins: 0, // Updated by RPC refresh
+      prizeClaimed: w.prize_claimed || false,
+      batchTxHash: w.selection_tx_hash || null
+    }));
+  }, [backendWinners]);
+
+  const [winners, setWinners] = useState(initialWinners);
   const [loading, setLoading] = useState(false);
+  // Track whether we've displayed winners (from backend or RPC) to suppress loading spinner
+  const hasDisplayedWinnersRef = useRef(initialWinners.length > 0);
+  const appliedBackendWinnersRef = useRef(initialWinners.length > 0);
   const [expandedWinner, setExpandedWinner] = useState(null);
   const [winnerStats, setWinnerStats] = useState({});
   const [winnerSelectionTx, setWinnerSelectionTx] = useState(null);
   const [winnerTxMap, setWinnerTxMap] = useState({}); // Maps winner address to their batch transaction hash
   const [collectionName, setCollectionName] = useState(null);
   const [collectionSymbol, setCollectionSymbol] = useState(null);
+  const [collectionInfoLoaded, setCollectionInfoLoaded] = useState(false);
   const [erc20Symbol, setErc20Symbol] = useState('TOKEN');
   const [lastWinnersUpdate, setLastWinnersUpdate] = useState(null);
   const [winnersSelectedCount, setWinnersSelectedCount] = useState(raffle?.winnersSelected || 0);
+
+  // Sync backend winners into state when they arrive after initial mount
+  useEffect(() => {
+    if (!appliedBackendWinnersRef.current && initialWinners.length > 0) {
+      setWinners(initialWinners);
+      onWinnerCountChange?.(initialWinners.length);
+      appliedBackendWinnersRef.current = true;
+      hasDisplayedWinnersRef.current = true;
+    }
+  }, [initialWinners, onWinnerCountChange]);
 
   // Fetch historical winner selection transaction for completed raffles
   const fetchWinnerSelectionTx = useCallback(async () => {
@@ -460,6 +488,74 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     console.log('Is raffle completed?', isCompleted);
     if (!isCompleted) return;
     
+    // Backend-first approach: Try to get transaction hash from user_activity table
+    // Use raffle.chainId if available, otherwise try to derive from provider
+    let chainIdToUse = raffle.chainId;
+    if (!chainIdToUse) {
+      try {
+        const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
+        if (poolContract && poolContract.provider) {
+          const network = await poolContract.provider.getNetwork();
+          chainIdToUse = network.chainId;
+          console.log('📍 Derived chainId from provider:', chainIdToUse);
+        }
+      } catch (error) {
+        console.warn('Failed to derive chainId from provider:', error);
+      }
+    }
+    
+    console.log('🔍 Backend check:', { 
+      supabaseAvailable: supabaseService.isAvailable(), 
+      chainId: chainIdToUse,
+      address: raffle.address 
+    });
+    
+    if (supabaseService.isAvailable() && chainIdToUse) {
+      try {
+        console.log('🔄 Attempting backend-first fetch for winner selection tx...');
+        const poolData = await supabaseService.getPoolEnhanced(chainIdToUse, raffle.address);
+        
+        console.log('📦 Backend pool data:', {
+          hasPoolData: !!poolData,
+          hasActivity: !!poolData?.activity,
+          activityLength: poolData?.activity?.length || 0,
+          activityTypes: poolData?.activity?.map(a => a.activity_type) || []
+        });
+        
+        if (poolData && poolData.activity && poolData.activity.length > 0) {
+          // Find prize_won events which contain the WinnersSelected transaction hash
+          const prizeWonEvents = poolData.activity.filter(
+            act => act.activity_type === 'prize_won'
+          );
+          
+          console.log('� Prize won events found:', prizeWonEvents.length);
+          
+          if (prizeWonEvents.length > 0) {
+            // Use the transaction hash from any prize_won event (they all share the same WinnersSelected tx)
+            const winnerSelectionTxHash = prizeWonEvents[0].transaction_hash;
+            if (winnerSelectionTxHash) {
+              console.log('✅ Found winner selection tx from backend:', winnerSelectionTxHash);
+              setWinnerSelectionTx(winnerSelectionTxHash);
+              
+              // Build winner-to-transaction mapping from backend activity
+              // All prize_won events share the same transaction hash (WinnersSelected event)
+              const txMap = {};
+              prizeWonEvents.forEach(event => {
+                txMap[event.user_address.toLowerCase()] = event.transaction_hash;
+              });
+              setWinnerTxMap(txMap);
+              
+              return; // Success, no need for RPC fallback
+            }
+          }
+        }
+        console.log('⚠️ No winner selection tx found in backend, falling back to RPC...');
+      } catch (backendError) {
+        console.warn('Backend fetch for winner tx failed, falling back to RPC:', backendError);
+      }
+    }
+    
+    // RPC Fallback: Original implementation
     try {
       const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
       console.log('Pool contract:', !!poolContract);
@@ -510,12 +606,14 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         console.log('No WinnersSelected events found in last 10000 blocks');
         // Fallback: try to get from the transaction that changed state to Completed
         try {
-          const stateChangeFilter = poolContract.filters.StateChanged(3, 4); // Drawing -> Completed
-          const stateChangeEvents = await poolContract.queryFilter(stateChangeFilter, fromBlock, latestBlock);
-          if (stateChangeEvents && stateChangeEvents.length > 0) {
-            const latestStateChange = stateChangeEvents[stateChangeEvents.length - 1];
-            console.log('Using state change transaction:', latestStateChange.transactionHash);
-            setWinnerSelectionTx(latestStateChange.transactionHash);
+          if (typeof poolContract.filters?.StateChanged === 'function') {
+            const stateChangeFilter = poolContract.filters.StateChanged(3, 4); // Drawing -> Completed
+            const stateChangeEvents = await poolContract.queryFilter(stateChangeFilter, fromBlock, latestBlock);
+            if (stateChangeEvents && stateChangeEvents.length > 0) {
+              const latestStateChange = stateChangeEvents[stateChangeEvents.length - 1];
+              console.log('Using state change transaction:', latestStateChange.transactionHash);
+              setWinnerSelectionTx(latestStateChange.transactionHash);
+            }
           }
         } catch (fallbackError) {
           console.warn('Fallback also failed:', fallbackError);
@@ -602,7 +700,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     autoStart: shouldListenForWinners, // Stop listening after completion
     raffleState: raffle?.stateNum || null,
     enableStateConditionalListening: true,
-    stopOnCompletion: true // New flag to stop winner selection listening after completion
+    stopOnCompletion: false // Keep listening in Completed state for claim status polling
   });
 
   // For now, we'll skip the transaction hash fetching due to RPC limitations
@@ -613,6 +711,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
   }, [raffle]);
 
   // Fetch collection name and symbol for NFT prizes
+  // Use Promise.all to prevent flash (name showing before symbol)
   useEffect(() => {
     const fetchCollectionInfo = async () => {
       if (!raffle || !raffle.prizeCollection || raffle.prizeCollection === ethers.constants.AddressZero) {
@@ -623,21 +722,17 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
 
       try {
         const contract = getContractInstance(raffle.prizeCollection, raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize');
-        const name = await contract.name();
+        const [name, symbol] = await Promise.all([
+          contract.name().catch(() => null),
+          (typeof contract.symbol === 'function' ? contract.symbol() : Promise.resolve(null)).catch(() => null)
+        ]);
+        setCollectionSymbol(symbol);
         setCollectionName(name);
-        
-        // Try to fetch symbol
-        try {
-          if (typeof contract.symbol === 'function') {
-            const symbol = await contract.symbol();
-            setCollectionSymbol(symbol);
-          }
-        } catch (symbolError) {
-          setCollectionSymbol(null);
-        }
       } catch (error) {
         setCollectionName(null);
         setCollectionSymbol(null);
+      } finally {
+        setCollectionInfoLoaded(true);
       }
     };
 
@@ -691,7 +786,10 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       return;
     }
 
-    setLoading(true);
+    // Only show loading spinner if we haven't displayed any winners yet (backend or RPC)
+    if (!hasDisplayedWinnersRef.current) {
+      setLoading(true);
+    }
     try {
       const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
       if (!poolContract) {
@@ -735,6 +833,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           }
       }
       setWinners(winnersArray);
+      if (winnersArray.length > 0) hasDisplayedWinnersRef.current = true;
       onWinnerCountChange?.(winnersArray.length);
     } catch (error) {
       setWinners([]);
@@ -772,6 +871,39 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       setWinnersSelectedCount(raffle.winnersSelected);
     }
   }, [raffle?.winnersSelected]);
+
+  // Real-time subscription for pool_winners UPDATE events (prize claim status changes)
+  useEffect(() => {
+    if (!raffle?.address || !supabaseService.isAvailable()) return;
+
+    const addr = raffle.address.toLowerCase();
+    const channel = supabaseService.client
+      .channel(`winners-claim:${addr}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'pool_winners',
+          filter: `pool_address=eq.${addr}`
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (!updated) return;
+          // Update the specific winner's claim status in the local winners array
+          setWinners(prev => prev.map(w =>
+            w.address.toLowerCase() === updated.winner_address?.toLowerCase()
+              ? { ...w, prizeClaimed: updated.prize_claimed || false }
+              : w
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [raffle?.address]);
 
   // Polling mechanism for Drawing state - checks for new winners every 15 seconds
   useEffect(() => {
@@ -880,6 +1012,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                         stats={winnerStats[winner.address]}
                         onLoadStats={handleToggleExpand}
                         collectionName={collectionName}
+                        parentCollectionSymbol={collectionSymbol}
                         isEscrowedPrize={isEscrowedPrize}
                         winnerSelectionTx={winnerSelectionTx}
                       />
@@ -922,6 +1055,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                         stats={winnerStats[winner.address]}
                         onLoadStats={handleToggleExpand}
                         collectionName={collectionName}
+                        parentCollectionSymbol={collectionSymbol}
                         isEscrowedPrize={isEscrowedPrize}
                         winnerSelectionTx={winnerSelectionTx}
                       />
@@ -1064,6 +1198,10 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       // NFT Prizes
       if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
         const amountPerWinner = raffle.amountPerWinner || 1;
+        // Show placeholder while collection info is loading to prevent flash
+        const displayName = collectionInfoLoaded
+          ? (collectionSymbol || collectionName || 'NFT')
+          : '...';
         
         if (raffle.standard === 0) {
           // ERC721
@@ -1071,11 +1209,9 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
             // Escrowed: show symbol + token ID
             const tokenId = raffle.prizeTokenId?.toString ? raffle.prizeTokenId.toString() : raffle.prizeTokenId;
             const prizeId = (tokenId !== undefined && tokenId !== null && tokenId !== '0') ? `#${tokenId}` : '';
-            const displayName = collectionSymbol || collectionName || 'NFT';
             return `${displayName} ${prizeId}`.trim();
           } else {
             // Mintable: show amount + symbol
-            const displayName = collectionSymbol || collectionName || 'NFT';
             const totalAmount = amountPerWinner * winsToClaim;
             return `${totalAmount} ${displayName}`;
           }
@@ -1083,7 +1219,6 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
         
         if (raffle.standard === 1) {
           // ERC1155
-          const displayName = collectionSymbol || collectionName || 'Token';
           const totalAmount = amountPerWinner * winsToClaim;
           return `${totalAmount} ${displayName}`;
         }
@@ -1099,17 +1234,20 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           raffle.isPrized ? 'md:grid-cols-12' : 'md:grid-cols-12'
         }`}>
           <div className="md:col-span-1">#</div>
-          <div className={raffle.isPrized ? 'md:col-span-5' : 'md:col-span-11'}>Winner</div>
+          <div className={raffle.isPrized ? 'md:col-span-3' : 'md:col-span-11'}>Winner</div>
           {raffle.isPrized && (
             <>
-              <div className="hidden md:block md:col-span-3 text-center">Prize</div>
-              <div className="hidden md:block md:col-span-3 text-right">Status</div>
+              <div className="hidden md:block md:col-span-4 text-center">Prize</div>
+              <div className="hidden md:block md:col-span-4 text-center">Status</div>
             </>
           )}
         </div>
         
-        {/* Table Rows */}
-        <div className="divide-y divide-border/30">
+        {/* Table Rows - Scrollable after 7 entries */}
+        <div 
+          className="divide-y divide-border/30 overflow-y-auto"
+          style={{ maxHeight: `${7 * 48}px` }}
+        >
           {winners.map((winner, i) => {
             const isCurrentUser = connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase();
             const claimStatus = winner.prizeClaimed 
@@ -1130,7 +1268,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                 </div>
                 
                 {/* Winner Address with Etherscan link */}
-                <div className={`flex items-center gap-2 min-w-0 ${raffle.isPrized ? 'md:col-span-5' : 'md:col-span-11'}`}>
+                <div className={`flex items-center gap-2 min-w-0 ${raffle.isPrized ? 'md:col-span-3' : 'md:col-span-11'}`}>
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isCurrentUser ? 'bg-yellow-400' : 'bg-primary'}`} />
                   <span className="font-mono text-sm truncate" title={winner.address}>
                     {winner.address.slice(0, 6)}...{winner.address.slice(-4)}
@@ -1162,7 +1300,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                 
                 {/* Prize Info - only for prized pools, hidden on mobile */}
                 {raffle.isPrized && (
-                  <div className="hidden md:block md:col-span-3 text-center text-sm font-medium">
+                  <div className="hidden md:block md:col-span-4 text-center text-sm font-medium">
                     <span className="text-foreground">
                       {getWinnerPrizeDisplay(winner)}
                     </span>
@@ -1171,7 +1309,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
                 
                 {/* Claim Status - only for prized pools, hidden on mobile */}
                 {raffle.isPrized && (
-                  <div className="hidden md:flex md:col-span-3 justify-end">
+                  <div className="hidden md:flex md:col-span-4 justify-center">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${claimStatus.bg} ${claimStatus.color}`}>
                       {winner.prizeClaimed && <CheckCircle className="h-3 w-3" />}
                       {claimStatus.text}

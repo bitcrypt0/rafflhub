@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useContract } from '../../contexts/ContractContext';
-import { useProfileData } from '../../hooks/useProfileData';
+import { useProfileDataEnhanced } from '../../hooks/useProfileDataEnhanced';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useCollections } from '../../hooks/useCollections';
-import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock, Gift, Package, Eye } from 'lucide-react';
+import { Clock, Users, Settings, Activity, ShoppingCart, Crown, RefreshCw, Plus, Search, UserPlus, DollarSign, AlertCircle, Lock, Gift, Package, Eye, Filter, Send, Award, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../components/ui/sonner';
 import { ResponsiveAddressInput, ResponsiveNumberInput } from '../../components/ui/responsive-input';
@@ -34,8 +34,12 @@ const NewMobileProfilePage = () => {
   const { getCurrencySymbol, formatRevenueAmount } = useNativeCurrency();
   const fetchSeqRef = useRef(0);
 
+  // Activity filter state - must be before any early returns
+  const [activityFilter, setActivityFilter] = useState('all');
+  const [showActivityFilterDropdown, setShowActivityFilterDropdown] = useState(false);
+
   
-  // Use existing data hook - match desktop data usage
+  // Use existing data hook - match desktop data usage with real-time updates
   const {
     userActivity,
     createdRaffles,
@@ -44,10 +48,12 @@ const NewMobileProfilePage = () => {
     loading,
     claimRefund,
     creatorStats
-  } = useProfileData();
+  } = useProfileDataEnhanced({
+    useRealtime: true // Enable real-time updates for live activity changes
+  });
 
   // Fetch collections data
-  const { collections, loading: collectionsLoading } = useCollections();
+  const { collections, hasFetched: collectionsReady } = useCollections();
 
 
   // Unified raffle state badge renderer (matches LandingPage/RaffleDetailPage styles)
@@ -186,17 +192,54 @@ const NewMobileProfilePage = () => {
   }
 
 
+  // Activity filter options
+  const MOBILE_ACTIVITY_FILTERS = [
+    { value: 'all', label: 'All Activities' },
+    { value: 'raffle_created', label: 'Created Pools' },
+    { value: 'slot_purchase', label: 'Slot Purchases' },
+    { value: 'randomness_requested', label: 'Randomness Requests' },
+    { value: 'prize_claimed', label: 'Prize Claims' },
+    { value: 'refund_claimed', label: 'Refund Claims' },
+  ];
+
+  const MAX_VISIBLE_ACTIVITIES = 10;
+
+  // Explorer link generator for activity transactions
+  const getExplorerLink = (txHash, activityChainId) => {
+    const explorerMap = {
+      1: 'https://etherscan.io',
+      5: 'https://goerli.etherscan.io',
+      11155111: 'https://sepolia.etherscan.io',
+      137: 'https://polygonscan.com',
+      80001: 'https://mumbai.polygonscan.com',
+      10: 'https://optimistic.etherscan.io',
+      420: 'https://goerli-optimism.etherscan.io',
+      42161: 'https://arbiscan.io',
+      56: 'https://bscscan.com',
+      97: 'https://testnet.bscscan.com',
+      43114: 'https://snowtrace.io',
+      43113: 'https://testnet.snowtrace.io',
+      8453: 'https://basescan.org',
+      84531: 'https://goerli.basescan.org',
+      84532: 'https://sepolia.basescan.org',
+      11155420: 'https://sepolia-optimism.etherscan.io',
+    };
+    const currentChainId = (typeof window !== 'undefined' && window.ethereum && window.ethereum.chainId) ? parseInt(window.ethereum.chainId, 16) : 1;
+    const baseUrl = explorerMap[activityChainId] || explorerMap[currentChainId] || explorerMap[1];
+    return `${baseUrl}/tx/${txHash}`;
+  };
 
   // Activity section rendering
   const renderActivitySection = () => {
     const getActivityIcon = (type) => {
       switch (type) {
         case 'ticket_purchase':
+        case 'slot_purchase':
           return <ShoppingCart className="h-4 w-4 text-blue-500" />;
         case 'raffle_created':
           return <Plus className="h-4 w-4 text-green-500" />;
         case 'raffle_deleted':
-          return <Activity className="h-4 w-4 text-red-500" />;
+          return <Trash2 className="h-4 w-4 text-red-500" />;
         case 'prize_won':
           return <Crown className="h-4 w-4 text-yellow-500" />;
         case 'prize_claimed':
@@ -207,24 +250,29 @@ const NewMobileProfilePage = () => {
           return <DollarSign className="h-4 w-4 text-green-500" />;
         case 'admin_withdrawn':
           return <DollarSign className="h-4 w-4 text-purple-500" />;
+        case 'randomness_requested':
+          return <Send className="h-4 w-4 text-purple-500" />;
+        case 'rewards_claimed':
+          return <Award className="h-4 w-4 text-yellow-500" />;
         default:
           return <Activity className="h-4 w-4 text-gray-500" />;
       }
     };
 
     const getActivityTitle = (activity) => {
-      const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+      const raffleName = activity.raffleName || activity.name || `Pool ${activity.raffleAddress?.slice(0, 8)}...`;
       const quantity = activity.quantity || activity.ticketCount || 1;
 
       switch (activity.type) {
         case 'ticket_purchase':
-          return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
+        case 'slot_purchase':
+          return `Purchased ${quantity} slot${quantity > 1 ? 's' : ''} from "${raffleName}"`;
         case 'raffle_created':
-          return `Created raffle "${raffleName}"`;
+          return `Created pool "${raffleName}"`;
         case 'raffle_deleted':
-          return `Deleted raffle "${raffleName}"`;
+          return `Deleted pool "${raffleName}"`;
         case 'prize_won':
-          return `Won prize in "${raffleName}"`;
+          return `Won in "${raffleName}"`;
         case 'prize_claimed':
           return `Claimed prize from "${raffleName}"`;
         case 'refund_claimed':
@@ -233,27 +281,31 @@ const NewMobileProfilePage = () => {
           return `Withdrew revenue from "${raffleName}"`;
         case 'admin_withdrawn':
           return `Admin withdrawal: ${activity.amount} ${getCurrencySymbol()}`;
+        case 'randomness_requested':
+          return `Requested winner selection for "${raffleName}"`;
+        case 'rewards_claimed':
+          return `Claimed rewards`;
         default:
           return activity.description || 'Activity';
       }
     };
 
     const getActivityDescription = (activity) => {
-      const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
       switch (activity.type) {
         case 'ticket_purchase':
-          return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
-        case 'prize_won':
-          return `${raffleName} • Congratulations!`;
-        case 'prize_claimed':
-          const prizeType = activity.prizeType || 'Prize';
-          const prizeDetails = activity.amount ? ` (${activity.amount} ${activity.prizeType === 'Native Currency' ? getCurrencySymbol() : activity.prizeType === 'ERC20 Token' ? 'tokens' : ''})` :
-                             activity.tokenId ? ` (Token ID: ${activity.tokenId})` : '';
-          return `${prizeType}${prizeDetails}`;
+        case 'slot_purchase':
+          return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
         case 'refund_claimed':
-          return activity.amount ? `${raffleName} • ${activity.amount} ${getCurrencySymbol()}` : raffleName;
-        case 'revenue_withdrawn':
-          return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
+          return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
+        case 'rewards_claimed':
+          return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
+        case 'prize_claimed':
+          if (!activity.amount) return '';
+          // Use prize_symbol for ERC20 prizes, otherwise use native currency symbol
+          const symbol = activity.prize_type === 'erc20' && activity.prize_symbol 
+            ? activity.prize_symbol 
+            : getCurrencySymbol();
+          return `${ethers.utils.formatEther(activity.amount)} ${symbol}`;
         default:
           return activity.description || '';
       }
@@ -293,7 +345,7 @@ const NewMobileProfilePage = () => {
       const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
         ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
         : (currentChainId || '');
-      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+      const path = slug ? `/${slug}/pool/${raffleAddress}` : `/pool/${raffleAddress}`;
       navigate(path);
     };
 
@@ -304,7 +356,7 @@ const NewMobileProfilePage = () => {
             <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
             <p className="text-muted-foreground text-sm">
-              Activity will appear here once you participate in raffles.
+              Activity will appear here once you participate in pools.
             </p>
           </div>
         </div>
@@ -315,6 +367,7 @@ const NewMobileProfilePage = () => {
     const getActivityTypeStyles = (type) => {
       const styles = {
         ticket_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        slot_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
         raffle_created: { color: 'text-green-500', bg: 'bg-green-500/10' },
         raffle_deleted: { color: 'text-red-500', bg: 'bg-red-500/10' },
         prize_won: { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
@@ -322,21 +375,72 @@ const NewMobileProfilePage = () => {
         refund_claimed: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
         revenue_withdrawn: { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         admin_withdrawn: { color: 'text-purple-500', bg: 'bg-purple-500/10' },
+        randomness_requested: { color: 'text-purple-500', bg: 'bg-purple-500/10' },
+        rewards_claimed: { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
       };
       return styles[type] || { color: 'text-muted-foreground', bg: 'bg-muted/50' };
     };
+
+    // Filter activities based on selected filter
+    const filteredActivities = activityFilter === 'all' 
+      ? userActivity 
+      : activityFilter === 'slot_purchase'
+        ? userActivity.filter(a => a.type === 'slot_purchase' || a.type === 'ticket_purchase')
+        : userActivity.filter(a => a.type === activityFilter);
+
+    const currentFilterLabel = MOBILE_ACTIVITY_FILTERS.find(f => f.value === activityFilter)?.label || 'All Activities';
 
     return (
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Recent Activity</h3>
-          <span className="text-sm text-muted-foreground">{userActivity.length} activities</span>
+          <span className="text-sm text-muted-foreground">{filteredActivities.length} activities</span>
         </div>
 
-        {/* Table-style rows without card containers - matching Winners section */}
+        {/* Filter Bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-muted/20 rounded-t-lg mb-2">
+          <span className="text-xs text-muted-foreground">
+            {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'}
+          </span>
+          
+          {/* Filter Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowActivityFilterDropdown(!showActivityFilterDropdown)}
+              className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-background/50 border border-border/50 rounded-md transition-colors"
+            >
+              <Filter className="h-3 w-3" />
+              <span>{currentFilterLabel}</span>
+            </button>
+            
+            {showActivityFilterDropdown && (
+              <div className="absolute right-0 top-full mt-1 z-10 min-w-[160px] bg-card border border-border rounded-md shadow-lg py-1">
+                {MOBILE_ACTIVITY_FILTERS.map(filter => (
+                  <button
+                    key={filter.value}
+                    onClick={() => {
+                      setActivityFilter(filter.value);
+                      setShowActivityFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors ${
+                      activityFilter === filter.value ? 'text-primary font-medium' : 'text-foreground'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable activity rows - max 10 visible entries */}
         <div className="w-full">
-          <div className="divide-y divide-border/30">
-            {userActivity.slice(0, 10).map((activity, index) => {
+          <div 
+            className="divide-y divide-border/30 overflow-y-auto"
+            style={{ maxHeight: `${MAX_VISIBLE_ACTIVITIES * 56}px` }}
+          >
+            {filteredActivities.map((activity, index) => {
               const styles = getActivityTypeStyles(activity.type);
               
               return (
@@ -354,15 +458,33 @@ const NewMobileProfilePage = () => {
                   
                   {/* Content */}
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm text-foreground leading-tight">
-                      {getActivityTitle(activity)}
+                    <div className="font-medium text-sm text-foreground leading-tight flex items-center gap-2">
+                      <span>{getActivityTitle(activity)}</span>
+                      {/* Transaction link */}
+                      {activity.transactionHash && (
+                        <a
+                          href={getExplorerLink(activity.transactionHash, activity.chainId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center flex-shrink-0"
+                          title="View transaction on block explorer"
+                        >
+                          <img
+                            src="/images/etherscan logos/etherscan-logo-circle.svg"
+                            alt="Etherscan"
+                            width="14"
+                            height="14"
+                            className="opacity-70 hover:opacity-100 transition-opacity"
+                          />
+                        </a>
+                      )}
                     </div>
                     {getActivityDescription(activity) && (
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {getActivityDescription(activity)}
                       </div>
                     )}
-                    {activity.type === 'ticket_purchase' && activity.state === 'ended' && (
+                    {(activity.type === 'ticket_purchase' || activity.type === 'slot_purchase') && activity.state === 'ended' && (
                       <div className="flex gap-2 mt-2">
                         <Button
                           onClick={() => claimRefund(activity.raffleAddress)}
@@ -411,11 +533,11 @@ const NewMobileProfilePage = () => {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.length}</div>
-            <div className="text-sm text-muted-foreground">Total Raffles</div>
+            <div className="text-sm text-muted-foreground">Total Pools</div>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">{createdRaffles.filter(r => r.state === 'active').length}</div>
-            <div className="text-sm text-muted-foreground">Active Raffles</div>
+            <div className="text-sm text-muted-foreground">Active Pools</div>
           </div>
           <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-2xl font-bold">
@@ -522,7 +644,7 @@ const NewMobileProfilePage = () => {
               <DollarSign className="h-5 w-5 text-primary" />
               <div>
                 <div className="font-medium">Creator Mint & Revenue Withdrawal</div>
-                <div className="text-sm text-muted-foreground">Withdraw revenue from completed raffles</div>
+                <div className="text-sm text-muted-foreground">Withdraw revenue from completed pools</div>
               </div>
             </div>
           </button>
@@ -1414,7 +1536,7 @@ const NewMobileProfilePage = () => {
 
     const loadRaffleInfo = async (raffleAddress) => {
       if (!raffleAddress || !connected) {
-        toast.error('Please enter a raffle address and connect your wallet');
+        toast.error('Please enter a pool address and connect your wallet');
         return;
       }
 
@@ -1423,7 +1545,7 @@ const NewMobileProfilePage = () => {
         const contract = getContractInstance(raffleAddress, 'pool');
 
         if (!contract) {
-          throw new Error('Failed to create raffle contract instance');
+          throw new Error('Failed to create pool contract instance');
         }
 
         // Get raffle information - matches desktop implementation
@@ -1501,14 +1623,14 @@ const NewMobileProfilePage = () => {
 
       const validStates = ['Completed', 'AllPrizesClaimed', 'Ended'];
       if (!validStates.includes(state.raffleData.raffleState)) {
-        toast.info(`Revenue can only be withdrawn from completed raffles. Current state: ${state.raffleData.raffleState}`);
+        toast.info(`Revenue can only be withdrawn from completed pools. Current state: ${state.raffleData.raffleState}`);
         return;
       }
 
       updateRevenueState({ loading: true });
       try {
         const contract = getContractInstance(state.raffleData.address, 'pool');
-        if (!contract) throw new Error('Failed to create raffle contract instance');
+        if (!contract) throw new Error('Failed to create pool contract instance');
 
         const result = await executeTransaction(contract.withdrawCreatorRevenue);
 
@@ -1846,19 +1968,19 @@ const NewMobileProfilePage = () => {
               Creator Mint & Revenue Withdrawal
             </CardTitle>
             <CardDescription>
-              Withdraw revenue from completed raffles and mint creator tokens
+              Withdraw revenue from completed pools and mint creator tokens
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
 
-        {/* Raffle Lookup */}
+        {/* Pool Lookup */}
             <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="h-4 w-4" />
-                <h3 className="text-sm font-medium">Raffle Lookup</h3>
+                <h3 className="text-sm font-medium">Pool Lookup</h3>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Raffle Address</label>
+                <label className="block text-sm font-medium mb-1">Pool Address</label>
                 <ResponsiveAddressInput
                   value={state.raffleData.address}
                   onChange={(e) => {
@@ -2115,7 +2237,7 @@ const NewMobileProfilePage = () => {
       const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
         ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
         : (currentChainId || '');
-      const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+      const path = slug ? `/${slug}/pool/${raffleAddress}` : `/pool/${raffleAddress}`;
       navigate(path);
     };
 
@@ -2124,16 +2246,16 @@ const NewMobileProfilePage = () => {
         <div className="p-6">
           <div className="text-center py-12">
             <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Raffles Created Yet</h3>
+            <h3 className="text-lg font-semibold mb-2">No Pools Created Yet</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              You haven't created any raffles yet. Start by creating your first raffle!
+              You haven't created any pools yet. Start by creating your first pool!
             </p>
             <Button
               onClick={() => navigate('/create-raffle')}
               variant="primary"
               size="md"
             >
-              Create Your First Raffle
+              Create Your First Pool
             </Button>
           </div>
         </div>
@@ -2143,8 +2265,8 @@ const NewMobileProfilePage = () => {
     return (
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">My Raffles</h3>
-          <span className="text-sm text-muted-foreground">{createdRaffles.length} raffles</span>
+          <h3 className="text-lg font-semibold">My Pools</h3>
+          <span className="text-sm text-muted-foreground">{createdRaffles.length} pools</span>
         </div>
 
         {createdRaffles.map((raffle) => (
@@ -2182,15 +2304,12 @@ const NewMobileProfilePage = () => {
               </div>
             </div>
 
-            <div className="flex gap-2 mt-3">
-              <Button
-                onClick={() => handleRaffleClick(raffle.address)}
-                variant="primary"
-                size="sm"
-              >
-                View Details
-              </Button>
-            </div>
+            <button
+              onClick={() => handleRaffleClick(raffle.address)}
+              className="mt-2 text-sm text-primary font-medium hover:underline"
+            >
+              View Details
+            </button>
           </div>
         ))}
       </div>
@@ -2199,15 +2318,8 @@ const NewMobileProfilePage = () => {
 
   // My Collections section rendering
   const renderMyCollectionsTab = () => {
-    if (collectionsLoading) {
-      return (
-        <div className="p-6">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground text-sm">Loading collections...</p>
-          </div>
-        </div>
-      );
+    if (!collectionsReady) {
+      return null;
     }
 
     if (!collections || collections.length === 0) {
@@ -2217,13 +2329,13 @@ const NewMobileProfilePage = () => {
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Collections Yet</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              You haven't created any NFT collections yet. Create a raffle with an NFT prize to get started!
+              You haven't created any NFT collections yet. Create a pool with an NFT prize to get started!
             </p>
             <button
-              onClick={() => navigate('/create-raffle')}
+              onClick={() => navigate('/create-pool')}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
             >
-              Create Raffle
+              Create Pool
             </button>
           </div>
         </div>
@@ -2284,18 +2396,6 @@ const NewMobileProfilePage = () => {
                   >
                     Copy Address
                   </button>
-                  <button
-                    onClick={() => {
-                      const explorerUrl = SUPPORTED_NETWORKS[chainId]?.blockExplorer;
-                      if (explorerUrl) {
-                        window.open(`${explorerUrl}/address/${collection.address}`, '_blank');
-                      }
-                    }}
-                    className="flex-1 text-xs bg-secondary/10 text-secondary-foreground px-3 py-1.5 rounded-md hover:bg-secondary/20 transition-colors flex items-center justify-center gap-1"
-                  >
-                    <Eye className="h-3 w-3" />
-                    Explorer
-                  </button>
                 </div>
               </div>
             </div>
@@ -2347,7 +2447,7 @@ const NewMobileProfilePage = () => {
                 : 'border-border bg-background hover:bg-card/90 text-foreground'
             }`}
           >
-            <span className="text-sm font-medium">My Raffles</span>
+            <span className="text-sm font-medium">My Pools</span>
           </button>
           <button
             onClick={() => setActiveTab('purchased')}
@@ -2379,12 +2479,7 @@ const NewMobileProfilePage = () => {
         {renderContent()}
       </div>
 
-      {loading && (
-        <div className="text-center py-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-xs text-muted-foreground">Loading on-chain data…</p>
-        </div>
-      )}
+      {/* Loading state removed — data populates silently via real-time subscriptions */}
     </div>
   );
 };

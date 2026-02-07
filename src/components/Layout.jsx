@@ -3,9 +3,7 @@ import { Moon, Sun, Monitor, Wallet, User, Plus, Search, Book, LogOut, Menu } fr
 import { useWallet } from '../contexts/WalletContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useContract } from '../contexts/ContractContext';
-import { ethers } from 'ethers';
-import { contractABIs } from '../contracts/contractABIs';
+import { supabaseService } from '../services/supabaseService';
 import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
 import Logo from './ui/Logo';
@@ -20,9 +18,8 @@ import {
 } from './ui/dropdown-menu';
 
 const Header = () => {
-  const { connected, address, formatAddress, disconnect, connectWallet, provider, chainId } = useWallet();
-  const { contracts, getContractInstance } = useContract();
-  const { theme, cycleTheme, getCurrentTheme } = useTheme();
+  const { connected, address, formatAddress, disconnect, connectWallet, chainId } = useWallet();
+  const { cycleTheme, getCurrentTheme } = useTheme();
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
   const location = useLocation();
@@ -88,70 +85,57 @@ const Header = () => {
     };
   }, [showSearch, mouseInDropdown]);
 
-  // Fetch all pools once for searching
+  // Fetch all pools once for searching (using backend API)
   useEffect(() => {
     const fetchAllPools = async () => {
-      if (!provider || !chainId || !SUPPORTED_NETWORKS[chainId]) {
+      if (!chainId || !SUPPORTED_NETWORKS[chainId]) {
         return;
       }
       if (hasFetchedRaffles.current) {
         return;
       }
       try {
-        const protocolManagerAddress = SUPPORTED_NETWORKS[chainId].contractAddresses.protocolManager;
-        if (!protocolManagerAddress) {
+        // Initialize Supabase if needed
+        if (!supabaseService.isAvailable()) {
+          supabaseService.initialize();
+        }
+
+        if (!supabaseService.isAvailable()) {
           setAllPools([]);
           hasFetchedRaffles.current = true;
           return;
         }
-        const protocolManagerContract = new ethers.Contract(protocolManagerAddress, contractABIs.protocolManager, provider);
-        
-        // Fetch pools using pagination
-        const registeredPools = [];
-        let cursor = 0;
-        let hasMore = true;
-        const pageSize = 100;
-        const maxPools = 1000;
 
-        while (hasMore && registeredPools.length < maxPools) {
-          const [pools, newCursor, more] = await protocolManagerContract.getAllPools(cursor, pageSize);
-          registeredPools.push(...pools);
-          cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
-          hasMore = more;
-          if (pools.length === 0) break;
-        }
-
-        if (registeredPools.length === 0) {
-          setAllPools([]);
-          hasFetchedRaffles.current = true;
-          return;
-        }
-        const poolPromises = registeredPools.map(async (poolAddress) => {
-          try {
-            if (!provider) {
-              return null;
-            }
-            const poolContract = new ethers.Contract(poolAddress, contractABIs.pool, provider);
-            const name = await poolContract.name();
-            return {
-              address: poolAddress,
-              name: name
-            };
-          } catch (error) {
-            return null;
-          }
+        // Fetch pools from backend API
+        const response = await supabaseService.getPools({
+          chainId,
+          limit: 1000,
+          sortBy: 'created_at',
+          sortOrder: 'desc',
         });
-        const poolData = await Promise.all(poolPromises);
-        const validPools = poolData.filter(r => r);
+
+        if (!response || !response.success || !response.pools) {
+          setAllPools([]);
+          hasFetchedRaffles.current = true;
+          return;
+        }
+
+        // Transform to expected format for search
+        const validPools = response.pools.map(pool => ({
+          address: pool.address,
+          name: pool.name || `Pool ${pool.address.slice(0, 8)}...`
+        }));
+
         setAllPools(validPools);
         hasFetchedRaffles.current = true;
       } catch (error) {
+        console.error('Error fetching pools for search:', error);
         setAllPools([]);
         hasFetchedRaffles.current = true;
       }
     };
     fetchAllPools();
-  }, [provider, chainId]);
+  }, [chainId]);
 
   // Monitor allPools changes
   useEffect(() => {
@@ -180,7 +164,7 @@ const Header = () => {
 
   const handleSearchResultClick = (raffleAddress) => {
     const slug = chainId && SUPPORTED_NETWORKS[chainId] ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (chainId || '');
-    const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+    const path = slug ? `/${slug}/pool/${raffleAddress}` : `/pool/${raffleAddress}`;
     navigate(path);
     setTimeout(() => {
       setShowSearch(false);
@@ -193,7 +177,7 @@ const Header = () => {
 
   useEffect(() => {
     hasFetchedRaffles.current = false;
-  }, [provider, chainId]);
+  }, [chainId]);
 
   return (
     <>

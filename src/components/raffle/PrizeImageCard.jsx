@@ -10,7 +10,7 @@
  * - 'compact': Smaller display for sidebar use (192px)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import { Card, CardContent } from '../ui/card';
 import { useContract } from '../../contexts/ContractContext';
@@ -20,8 +20,7 @@ import { constructMetadataURIs } from '../../utils/nftMetadataUtils';
 import {
   isBytes32Hash,
   isZeroHash,
-  resolveURIOrHash,
-  getStoredCollectionURIs
+  resolveURIOrHash
 } from '../../services/uriRegistryService';
 
 // Gateway configurations for decentralized storage
@@ -70,6 +69,9 @@ const PrizeImageCard = ({
   const [suppressRender, setSuppressRender] = useState(false);
   const [imageCandidates, setImageCandidates] = useState([]);
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
+  
+  // Track the last fetched collection to prevent re-fetching on raffle object updates
+  const lastFetchedRef = useRef(null);
 
   const sizeConfig = VARIANT_SIZES[variant] || VARIANT_SIZES.default;
 
@@ -238,6 +240,8 @@ const PrizeImageCard = ({
 
   // Main fetch effect
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchPrizeImageEnhanced() {
       const shouldFetch = raffle.isPrized ||
         (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) ||
@@ -245,187 +249,173 @@ const PrizeImageCard = ({
 
       if (!shouldFetch) return;
 
-      setLoading(true);
-      setImageUrl(null);
-      setFetchSource(null);
+      // Create a unique key based on collection, token ID, and standard only.
+      // Deliberately exclude isEscrowedPrize: once artwork is fetched successfully,
+      // it must be preserved even if isEscrowedPrize toggles from real-time updates.
+      const fetchKey = `${raffle.prizeCollection}-${raffle.prizeTokenId}-${raffle.standard}`;
+      
+      // Skip if we've already successfully fetched for this exact collection/token
+      if (lastFetchedRef.current === fetchKey && imageUrl) {
+        return;
+      }
+
+      // Check if backend artwork URL is already available (pre-resolved)
+      if (raffle._fromBackend && raffle._backendArtworkUrl) {
+        if (!isMounted) return;
+        setImageUrl(raffle._backendArtworkUrl);
+        setImageCandidates([raffle._backendArtworkUrl]);
+        setImageCandidateIndex(0);
+        setFetchSource('backend');
+        setLoading(false);
+        lastFetchedRef.current = fetchKey;
+        return;
+      }
+
+      // Only show loading state if we don't already have an image
+      if (!imageUrl) {
+        setLoading(true);
+      }
+
+      const isMintable = isEscrowedPrize ? false : true;
 
       try {
         let baseUri = null;
-        const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
-        const contract = getContractInstance(raffle.prizeCollection, contractType);
-        const isMintable = isEscrowedPrize ? false : true;
 
-        if (!contract) {
-          setImageUrl(null);
-          setLoading(false);
-          return;
-        }
-
-        if (raffle.standard === 0) {
-          if (isMintable) {
-            // Strategy 1: Try to get URI string directly from contract
-            try {
-              baseUri = await contract.unrevealedBaseURI();
-            } catch (error) {
-              // Method might not exist
+        // For mintable collections (both protocol-native and external), try backend first
+        if (isMintable) {
+          // Check if backend collection artwork is available
+          const collectionArtwork = raffle._backendCollectionArtwork || raffle.collection_artwork;
+          if (collectionArtwork) {
+            // Priority: dropUri > unrevealedUri > baseUri
+            if (collectionArtwork.dropUri && collectionArtwork.dropUri.trim() !== '') {
+              baseUri = collectionArtwork.dropUri;
+            } else if (collectionArtwork.unrevealedUri && collectionArtwork.unrevealedUri.trim() !== '') {
+              baseUri = collectionArtwork.unrevealedUri;
+            } else if (collectionArtwork.baseUri && collectionArtwork.baseUri.trim() !== '') {
+              baseUri = collectionArtwork.baseUri;
             }
+          }
+          
+          // If still no URI from backend, fall back to RPC
+          if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+            const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+            const contract = getContractInstance(raffle.prizeCollection, contractType);
+            
+            if (contract) {
+              if (raffle.standard === 0) {
+                // ERC721 - try unrevealedBaseURI
+                try {
+                  baseUri = await contract.unrevealedBaseURI();
+                } catch (error) {}
+                
+                // Try hash-based resolution
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  let uriHash = null;
+                  try {
+                    if (typeof contract.unrevealedURIHash === 'function') {
+                      uriHash = await contract.unrevealedURIHash();
+                    }
+                  } catch (e) {}
 
-            // Strategy 2: If URI is empty or is a hash, try hash-based resolution
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              let uriHash = null;
-              try {
-                if (typeof contract.unrevealedURIHash === 'function') {
-                  uriHash = await contract.unrevealedURIHash();
+                  if (uriHash && !isZeroHash(uriHash)) {
+                    const resolvedURI = await resolveURIOrHash(uriHash, {
+                      collectionAddress: raffle.prizeCollection,
+                      uriType: 'unrevealedURI'
+                    });
+                    if (resolvedURI) baseUri = resolvedURI;
+                  }
                 }
-              } catch (e) {}
+              } else if (raffle.standard === 1) {
+                // ERC1155 - try unrevealedURI
+                try {
+                  baseUri = await contract.unrevealedURI();
+                } catch (e) {}
+                
+                if (baseUri && isBytes32Hash(baseUri)) {
+                  const resolvedURI = await resolveURIOrHash(baseUri, {
+                    collectionAddress: raffle.prizeCollection,
+                    uriType: 'unrevealedURI'
+                  });
+                  baseUri = resolvedURI || null;
+                }
+                
+                // Try hash-based resolution
+                if (!baseUri || baseUri.trim() === '') {
+                  let uriHash = null;
+                  try {
+                    if (typeof contract.unrevealedURIHash === 'function') {
+                      uriHash = await contract.unrevealedURIHash();
+                    }
+                  } catch (e) {}
 
-              if (uriHash && !isZeroHash(uriHash)) {
-                const resolvedURI = await resolveURIOrHash(uriHash, {
-                  collectionAddress: raffle.prizeCollection,
-                  uriType: 'unrevealedURI'
-                });
-                if (resolvedURI) {
-                  baseUri = resolvedURI;
+                  if (uriHash && !isZeroHash(uriHash)) {
+                    const resolvedURI = await resolveURIOrHash(uriHash, {
+                      collectionAddress: raffle.prizeCollection,
+                      uriType: 'unrevealedURI'
+                    });
+                    if (resolvedURI) baseUri = resolvedURI;
+                  }
+                }
+                
+                // Try tokenURI/uri() as last resort
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  try { baseUri = await contract.tokenURI(raffle.prizeTokenId); } catch (e) {}
+                }
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  try { baseUri = await contract.uri(raffle.prizeTokenId); } catch (e) {}
                 }
               }
             }
-
-            // Strategy 3: Check local storage for stored collection URIs
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
-              if (storedURIs?.unrevealedURI) {
-                baseUri = storedURIs.unrevealedURI;
-              }
-            }
-
-            // If still no valid URI, suppress render
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              setSuppressRender(true);
-              setImageUrl(null);
-              setLoading(false);
-              return;
-            }
-          } else {
+          }
+          
+          // If still no valid URI for mintable, suppress render
+          if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+            if (!isMounted) return;
+            setSuppressRender(true);
+            setImageUrl(null);
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Escrowed prize - use tokenURI/uri() directly (no backend artwork for escrowed)
+          const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+          const contract = getContractInstance(raffle.prizeCollection, contractType);
+          
+          if (!contract) {
+            if (!isMounted) return;
+            setImageUrl(null);
+            setLoading(false);
+            return;
+          }
+          
+          if (raffle.standard === 0) {
             try {
               baseUri = await contract.tokenURI(raffle.prizeTokenId);
             } catch (error) {
+              if (!isMounted) return;
               setImageUrl(null);
               setLoading(false);
               return;
             }
-          }
-        } else if (raffle.standard === 1) {
-          if (isMintable) {
-            let unrevealedUri = null;
-            let tokenUri = null;
-            let revealed = null;
-
-            try { unrevealedUri = await contract.unrevealedURI(); } catch (error) {}
-            try { tokenUri = await contract.tokenURI(raffle.prizeTokenId); } catch (error) {}
-            try { revealed = await contract.isRevealed(); } catch (error) { revealed = null; }
-
-            // Check if unrevealedUri is a hash and try to resolve it
-            if (unrevealedUri && isBytes32Hash(unrevealedUri)) {
-              const resolvedURI = await resolveURIOrHash(unrevealedUri, {
-                collectionAddress: raffle.prizeCollection,
-                uriType: 'unrevealedURI'
-              });
-              if (resolvedURI) {
-                unrevealedUri = resolvedURI;
-              } else {
-                unrevealedUri = null;
-              }
-            }
-
-            // Try hash-based resolution if unrevealedUri is still empty
-            if (!unrevealedUri || unrevealedUri.trim() === '') {
-              let uriHash = null;
-              try {
-                if (typeof contract.unrevealedURIHash === 'function') {
-                  uriHash = await contract.unrevealedURIHash();
-                }
-              } catch (e) {}
-
-              if (uriHash && !isZeroHash(uriHash)) {
-                const resolvedURI = await resolveURIOrHash(uriHash, {
-                  collectionAddress: raffle.prizeCollection,
-                  uriType: 'unrevealedURI'
-                });
-                if (resolvedURI) {
-                  unrevealedUri = resolvedURI;
-                }
-              }
-            }
-
-            // Check local storage as fallback
-            if (!unrevealedUri || unrevealedUri.trim() === '') {
-              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
-              if (storedURIs?.unrevealedURI) {
-                unrevealedUri = storedURIs.unrevealedURI;
-              }
-            }
-
-            if (revealed === false) {
-              if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
-                baseUri = unrevealedUri;
-              } else if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
-                baseUri = tokenUri;
-              } else {
-                try {
-                  baseUri = await contract.uri(raffle?.prizeTokenId);
-                } catch (fallbackError) {
-                  setImageUrl(null);
-                  setLoading(false);
-                  return;
-                }
-              }
-            } else if (revealed === true) {
-              if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
-                baseUri = tokenUri;
-              } else {
-                try {
-                  baseUri = await contract.uri(raffle.prizeTokenId);
-                } catch (fallbackError) {
-                  if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
-                    baseUri = unrevealedUri;
-                  } else {
-                    setImageUrl(null);
-                    setLoading(false);
-                    return;
-                  }
-                }
-              }
-            } else {
-              if (tokenUri && tokenUri.trim() !== '' && !isBytes32Hash(tokenUri)) {
-                baseUri = tokenUri;
-              } else if (unrevealedUri && unrevealedUri.trim() !== '' && !isBytes32Hash(unrevealedUri)) {
-                baseUri = unrevealedUri;
-              } else {
-                try {
-                  baseUri = await contract.uri(raffle.prizeTokenId);
-                } catch (fallbackError) {
-                  setImageUrl(null);
-                  setLoading(false);
-                  return;
-                }
-              }
-            }
-          } else {
+          } else if (raffle.standard === 1) {
             try {
               baseUri = await contract.uri(raffle.prizeTokenId);
             } catch (error) {
+              if (!isMounted) return;
               setImageUrl(null);
               setLoading(false);
               return;
             }
+          } else {
+            if (!isMounted) return;
+            setImageUrl(null);
+            setLoading(false);
+            return;
           }
-        } else {
-          setImageUrl(null);
-          setLoading(false);
-          return;
         }
 
         if (!baseUri || baseUri.trim() === '') {
+          if (!isMounted) return;
           setImageUrl(null);
           setLoading(false);
           return;
@@ -440,17 +430,22 @@ const PrizeImageCard = ({
         const timeoutMs = (raffle.standard === 0 && !isEscrowedPrize) ? 5000 : 10000;
         const result = await fetchMetadataWithFallback(allURIs, timeoutMs);
 
+        if (!isMounted) return;
         const imgCandidates = Array.isArray(result.imageUrl) ? result.imageUrl : [result.imageUrl];
         setImageCandidates(imgCandidates);
         setImageCandidateIndex(0);
         setImageUrl(imgCandidates[0]);
         setFetchSource(result.sourceUri);
+        // Mark this collection/token as successfully fetched
+        lastFetchedRef.current = fetchKey;
       } catch (error) {
-        setImageUrl(null);
-        setFetchSource(null);
+        if (isMounted) {
+          setImageUrl(null);
+          setFetchSource(null);
+        }
       }
 
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
 
     const eligiblePrize = (
@@ -460,7 +455,9 @@ const PrizeImageCard = ({
     );
 
     if (eligiblePrize) fetchPrizeImageEnhanced();
-  }, [raffle, getContractInstance, isEscrowedPrize]);
+
+    return () => { isMounted = false; };
+  }, [raffle?.prizeCollection, raffle?.prizeTokenId, raffle?.standard, raffle?.isPrized, raffle?._backendArtworkUrl, getContractInstance, isEscrowedPrize]);
 
   // Render conditions
   const shouldRender = (

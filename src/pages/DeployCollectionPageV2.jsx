@@ -22,7 +22,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useContract } from '../contexts/ContractContext'
 import { toast } from '../components/ui/sonner'
 import { ethers } from 'ethers'
-import { registerURI, storeCollectionURIs } from '../services/uriRegistryService'
+import { registerURI } from '../services/uriRegistryService'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -407,23 +407,31 @@ const DeployCollectionPageV2 = () => {
       )
       const receipt = await tx.wait()
 
-      // Extract collection address from PrizeCollectionCreated event
-      const collectionCreatedEvent = receipt.events.find(e => e.event === 'PrizeCollectionCreated')
-      const collectionAddress = collectionCreatedEvent?.args?.collection || collectionCreatedEvent?.args?.[0]
+      // Extract collection address from CollectionDeployed event
+      let collectionAddress = null
+
+      // Primary: find parsed event by name
+      const collectionCreatedEvent = receipt.events?.find(e => e.event === 'CollectionDeployed')
+      if (collectionCreatedEvent) {
+        collectionAddress = collectionCreatedEvent.args?.collection || collectionCreatedEvent.args?.[0]
+      }
+
+      // Fallback: search raw logs by topic hash if event wasn't parsed
+      // CollectionDeployed(address indexed collection, address indexed creator, uint8 standard)
+      if (!collectionAddress && receipt.logs) {
+        const topic = ethers.utils.id('CollectionDeployed(address,address,uint8)')
+        const matchingLog = receipt.logs.find(log => log.topics?.[0] === topic)
+        if (matchingLog && matchingLog.topics[1]) {
+          // First indexed param (collection address) is in topics[1], left-padded to 32 bytes
+          collectionAddress = ethers.utils.getAddress('0x' + matchingLog.topics[1].slice(26))
+        }
+      }
 
       if (collectionAddress) {
         setDeployedCollectionAddress(collectionAddress)
         console.log('Collection deployed at:', collectionAddress)
-
-        // Register URIs in local storage for hash-based resolution
-        // This allows the application to resolve images from stored URIs
-        storeCollectionURIs(collectionAddress, {
-          dropURI: dropURI,
-          unrevealedURI: unrevealedBaseURI,
-          dropURIHash: dropURIHash,
-          unrevealedURIHash: unrevealedURIHash
-        })
-        console.log('Collection URIs registered for hash-based resolution')
+      } else {
+        console.warn('Could not extract collection address from receipt')
       }
 
       toast.success(`${isERC721 ? 'ERC721' : 'ERC1155'} collection deployed successfully!`)

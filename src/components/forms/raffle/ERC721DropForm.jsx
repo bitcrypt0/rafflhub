@@ -209,7 +209,7 @@ function ERC721DropForm({ collectionAddress: externalCollectionAddress, setColle
       // Query social engagement fee if enabled
       let socialFee = ethers.BigNumber.from(0)
       if (socialEngagementEnabled) {
-        socialFee = await contracts.protocolManager.socialEngagementFee()
+        socialFee = await contracts.poolDeployer.socialEngagementFee()
         console.log('Social engagement fee:', ethers.utils.formatEther(socialFee), 'ETH')
       }
 
@@ -223,7 +223,7 @@ function ERC721DropForm({ collectionAddress: externalCollectionAddress, setColle
       if (poolAddress) {
         setCreatedRaffleAddress(poolAddress)
       }
-      toast.success('Your raffle was created successfully!')
+      toast.success('Your pool was created successfully!')
     } catch (error) {
       console.error('Error creating raffle:', error)
       toast.error(extractRevertReason(error))
@@ -290,20 +290,20 @@ function ERC721DropForm({ collectionAddress: externalCollectionAddress, setColle
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
               <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
-            <h2 className="font-display text-2xl font-bold mb-2">Raffle Created Successfully!</h2>
-            <p className="text-muted-foreground">Your ERC721 drop raffle has been deployed to the blockchain.</p>
+            <h2 className="font-display text-2xl font-bold mb-2">Pool Created Successfully!</h2>
+            <p className="text-muted-foreground">Your ERC721 drop pool has been deployed to the blockchain.</p>
           </div>
 
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
-            <p className="text-sm text-muted-foreground mb-1">Raffle Address</p>
+            <p className="text-sm text-muted-foreground mb-1">Pool Address</p>
             <p className="font-mono text-sm break-all">{createdRaffleAddress}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to={`/raffle/${createdRaffleAddress}`}>
+            <Link to={`/pool/${createdRaffleAddress}`}>
               <Button variant="primary" className="gap-2 w-full sm:w-auto">
                 <ExternalLink className="h-4 w-4" />
-                View Raffle
+                View Pool
               </Button>
             </Link>
             <Button variant="secondary" onClick={handleCreateAnother} className="gap-2">
@@ -320,15 +320,15 @@ function ERC721DropForm({ collectionAddress: externalCollectionAddress, setColle
   if (showSummary) {
     return (
       <SummaryCard
-          title="Review Your Raffle"
-          description="Please review the details before creating your raffle"
+          title="Review Your Pool"
+          description="Please review the details before creating your pool"
           data={summaryData}
           status={loading ? 'submitting' : 'preview'}
-          statusMessage={loading ? 'Creating your raffle...' : undefined}
+          statusMessage={loading ? 'Creating your pool...' : undefined}
           onEdit={() => { setShowSummary(false); onReviewStateChange?.(false); }}
           onCancel={() => { setShowSummary(false); onReviewStateChange?.(false); }}
           onSubmit={handleSubmit}
-          submitLabel="Create Raffle"
+          submitLabel="Create Pool"
           editLabel="Edit Details"
         />
     )
@@ -372,7 +372,7 @@ function ERC721DropForm({ collectionAddress: externalCollectionAddress, setColle
       <Card variant="elevated" className="p-6 max-w-3xl mx-auto relative z-10">
         <div className="mb-6">
           <h3 className="font-display text-xl font-semibold">ERC721 Drop Event</h3>
-          <p className="text-sm text-muted-foreground">Create a raffle for NFT collection drops</p>
+          <p className="text-sm text-muted-foreground">Create a pool for NFT collection drops</p>
         </div>
 
         {/* Progress indicator */}

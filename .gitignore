@@ -1,13 +1,11 @@
 node_modules/
 abis/
 docs/
-supabase/
 extras/
 package-lock.json
 abis.code-workspace
 temp_types.ts
 generate-error-selectors.js
-.env.local
 setup-supabase.ps1
 .trae/
 HASH_BASED_URI_RESOLUTION_IMPLEMENTATION.txt
@@ -15,4 +13,47 @@ RAFFLE_DETAIL_TAB_LAYOUT_REDESIGN_PLAN.md
 REDESIGN_PLAN.md
 PAGINATION_IMPLEMENTATION_REFERENCE.md
 RAFFLE_DETAIL_PAGE_CONDITIONAL_RENDERING_PLAN.md
+BACKEND_FRONTEND_INTEGRATION_ANALYSIS.md
+CONTRACT_UPDATE_SUMMARY.md
+INDEXER_DEPLOYMENT_STATUS.md
+INDEXER_FIX_SUMMARY.md
+INTEGRATION_UPDATE.md
+LANDINGPAGE_FIXES_SUMMARY.md
+PHASE_5_COMPLETE.md
+POOL_STATE_SYNC_ISSUE.md
+QUICK_START.md
+RAFFLEDETAILPAGE_BACKEND_ANALYSIS.md
+STATE_SYNC_IMPLEMENTATION.md
+backend-infrastructure-plan.md
+buzzing-inventing-planet.md
+check-function-logs.md
+check_contract_abi.js
+check_pool_state.js
+check_tx_block.js
+fetch_and_insert_pool.js
+prompt.txt
 .claude/
+
+# Environment files (contain API keys and secrets)
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+
+# Build output (contains baked-in credentials)
+dist/
+
+# IDE / AI assistant
+.windsurf/
+
+# Documentation containing credentials
+PHASE_3_DEPLOYMENT_COMPLETE.md
+DEBUG_CHECKLIST.md
+
+# Debug/utility SQL scripts
+*.sql
+!supabase/migrations/*.sql
+
+# PowerShell scripts with credential references
+trigger_indexer.ps1

@@ -61,35 +61,14 @@ export const useRaffleSummaries = ({
   }, [cacheKey, useCache]);
 
   /**
-   * Fetch all pool addresses using pagination to prevent RPC timeouts
-   * Returns addresses in newest-first order
+   * Fetch all pool addresses using pagination
+   * @deprecated getAllPools has been removed from ProtocolManager contract
+   * Use useRaffleSummariesEnhanced hook with backend API instead
    */
   const fetchAllAddressesNewestFirst = useCallback(async () => {
-    const addr = getProtocolManagerAddress();
-    if (!addr || !readProvider) throw new Error('ProtocolManager not available');
-    const manager = new ethers.Contract(addr, contractABIs.protocolManager, readProvider);
-    
-    const allAddresses = [];
-    let cursor = 0;
-    let hasMore = true;
-    const pageSize = 100; // Max allowed by contract
-    const maxPools = 1000; // Safety limit
-
-    while (hasMore && allAddresses.length < maxPools) {
-      const [pools, newCursor, more] = await manager.getAllPools(cursor, pageSize);
-      allAddresses.push(...pools);
-      cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
-      hasMore = more;
-      
-      // Safety: prevent infinite loops
-      if (pools.length === 0) break;
-    }
-
-    // newest first
-    const list = allAddresses.slice().reverse();
-    if (mountedRef.current) setTotalAvailable(list.length);
-    return list;
-  }, [getProtocolManagerAddress, readProvider]);
+    console.warn('⚠️ useRaffleSummaries.fetchAllAddressesNewestFirst is deprecated - getAllPools removed from ProtocolManager. Use useRaffleSummariesEnhanced instead.');
+    throw new Error('DEPRECATED_FUNCTION');
+  }, []);
 
   const callWithTimeout = (p, ms) => {
     let t;

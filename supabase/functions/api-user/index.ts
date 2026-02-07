@@ -72,23 +72,28 @@ serve(async (req) => {
       // Pools participated
       let participatedQuery = supabase
         .from('pool_participants')
-        .select('*, pools!inner(name, state)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('participant_address', params.address);
       if (params.chainId) participatedQuery = participatedQuery.eq('chain_id', params.chainId);
       const { data: participations, count: participatedCount } = await participatedQuery;
       stats.pools.participated = participatedCount || 0;
 
-      // Calculate total spent
+      // Calculate total spent and total slots purchased
+      let totalSlotsPurchased = 0;
       if (participations) {
         stats.pools.totalSpent = participations
           .reduce((sum, p) => sum + BigInt(p.total_spent || '0'), BigInt(0))
           .toString();
+        
+        // Sum up all slots purchased across all pools
+        totalSlotsPurchased = participations.reduce((sum, p) => sum + (p.slots_purchased || 0), 0);
       }
+      stats.pools.totalSlotsPurchased = totalSlotsPurchased;
 
       // Pools won
       let winsQuery = supabase
         .from('pool_winners')
-        .select('*, pools!inner(name)', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('winner_address', params.address);
       if (params.chainId) winsQuery = winsQuery.eq('chain_id', params.chainId);
       const { data: wins, count: winsCount } = await winsQuery;
@@ -96,6 +101,25 @@ serve(async (req) => {
 
       // Calculate total won (prize value would need to be calculated separately)
       stats.pools.totalWon = wins ? wins.length.toString() : '0';
+
+      // Calculate total refundable amount across all pools
+      let refundableQuery = supabase
+        .from('pool_participants')
+        .select('refundable_amount, refund_claimed')
+        .eq('participant_address', params.address)
+        .eq('refund_claimed', false);
+      if (params.chainId) refundableQuery = refundableQuery.eq('chain_id', params.chainId);
+      const { data: refundableData } = await refundableQuery;
+      
+      let totalRefundable = BigInt(0);
+      if (refundableData) {
+        for (const p of refundableData) {
+          if (p.refundable_amount) {
+            totalRefundable += BigInt(p.refundable_amount);
+          }
+        }
+      }
+      stats.pools.totalRefundable = totalRefundable.toString();
 
       // Collections created
       let collectionsQuery = supabase
@@ -134,7 +158,7 @@ serve(async (req) => {
       result.stats = stats;
     }
 
-    // Get user activity feed
+    // Get user activity feed with pool prize type information
     if (params.includeActivity) {
       let activityQuery = supabase
         .from('user_activity')
@@ -149,8 +173,80 @@ serve(async (req) => {
 
       const { data: activity, count: activityCount } = await activityQuery;
 
+      // Get unique pool addresses from prize_claimed activities to fetch prize type info
+      const prizeClaimActivities = (activity || []).filter(
+        (a: any) => a.activity_type === 'prize_claimed' && a.pool_address
+      );
+      const uniquePoolKeys: string[] = Array.from(new Set(
+        prizeClaimActivities.map((a: any) => `${a.chain_id}:${a.pool_address}`)
+      )) as string[];
+
+      // Fetch pool prize info for these pools
+      const poolPrizeMap: Record<string, { prize_type: string; prize_symbol: string | null }> = {};
+      
+      if (uniquePoolKeys.length > 0) {
+        try {
+          // Build OR conditions for each chain_id + pool_address pair
+          const poolConditions = uniquePoolKeys.map((key: string) => {
+            const [chainId, poolAddr] = key.split(':');
+            return `and(chain_id.eq.${chainId},address.eq.${poolAddr})`;
+          });
+
+          const { data: pools, error: poolsError } = await supabase
+            .from('pools')
+            .select('address, chain_id, prize_collection, erc20_prize_token, erc20_prize_token_symbol, native_prize_amount')
+            .or(poolConditions.join(','));
+
+          if (poolsError) {
+            console.error('Error fetching pool prize info:', poolsError);
+          }
+
+          if (pools) {
+            for (const pool of pools) {
+              const key = `${pool.chain_id}:${pool.address}`;
+              const hasNFTPrize = pool.prize_collection && 
+                                 pool.prize_collection !== '0x0000000000000000000000000000000000000000';
+              const hasERC20Prize = pool.erc20_prize_token && 
+                                   pool.erc20_prize_token !== '0x0000000000000000000000000000000000000000';
+              const hasNativePrize = pool.native_prize_amount && 
+                                    pool.native_prize_amount !== '0';
+
+              let prizeType = 'unknown';
+              let prizeSymbol = null;
+
+              if (hasNFTPrize) {
+                prizeType = 'nft';
+              } else if (hasERC20Prize) {
+                prizeType = 'erc20';
+                prizeSymbol = pool.erc20_prize_token_symbol || 'TOKEN';
+              } else if (hasNativePrize) {
+                prizeType = 'native';
+              }
+
+              poolPrizeMap[key] = { prize_type: prizeType, prize_symbol: prizeSymbol };
+            }
+          }
+        } catch (poolLookupError) {
+          console.error('Pool lookup failed:', poolLookupError);
+        }
+      }
+
+      // Enrich activity items with prize type information
+      const enrichedActivity = (activity || []).map((item: any) => {
+        if (item.activity_type === 'prize_claimed' && item.pool_address) {
+          const key = `${item.chain_id}:${item.pool_address}`;
+          const prizeInfo = poolPrizeMap[key] || { prize_type: 'native', prize_symbol: null };
+          return {
+            ...item,
+            prize_type: prizeInfo.prize_type,
+            prize_symbol: prizeInfo.prize_symbol,
+          };
+        }
+        return item;
+      });
+
       result.activity = {
-        items: activity || [],
+        items: enrichedActivity,
         pagination: {
           total: activityCount || 0,
           limit: params.activityLimit,

@@ -23,6 +23,10 @@ function mapPoolState(stateNum) {
 }
 
 /**
+ * @deprecated This hook uses deprecated ProtocolManager functions (getAllPools, getPoolsByCreator, getPoolCount).
+ * These functions have been removed from the latest ProtocolManager contract.
+ * Use useProfileDataEnhanced hook instead, which fetches data from the backend API.
+ * 
  * Shared data hook for ProfilePage (both desktop and mobile)
  * Extracts all data fetching logic to be reused across implementations
  */

@@ -152,7 +152,7 @@ const CreateRafflePageV2 = () => {
             Connect Your Wallet
           </h2>
           <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
-            Please connect your wallet to create raffles and deploy collections.
+            Please connect your wallet to create pools and deploy collections.
           </p>
         </motion.div>
       </div>
@@ -195,7 +195,7 @@ const CreateRafflePageV2 = () => {
                     <span>Step 1 of 3</span>
                   </div>
                   <h2 className={`font-display font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-                    What type of raffle do you want to create?
+                    What type of pool do you want to create?
                   </h2>
                   <p className="text-muted-foreground max-w-xl mx-auto">
                     Select the type that best fits your needs. Each option has different features and requirements.

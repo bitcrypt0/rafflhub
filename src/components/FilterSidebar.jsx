@@ -70,6 +70,7 @@ const FilterSidebar = ({
   onFiltersChange,
   raffleCount = 0,
   allRaffles = [], // All raffles for counting
+  backendFilterCounts = null, // Pre-computed counts from backend
   className = ""
 }) => {
   const { countEnhancedRaffleTypes } = useCollabDetection();
@@ -86,16 +87,31 @@ const FilterSidebar = ({
     prizeStandard: true
   });
 
-  // Calculate counts for filter options using enhanced detection
+  // Calculate counts for filter options — always recompute from live allRaffles
+  // so counts stay in sync with real-time updates (state changes, new pools, etc.)
   const raffleCounts = useMemo(() => {
-    const standardCounts = countRafflesByFilters(allRaffles);
-    const enhancedRaffleTypeCounts = countEnhancedRaffleTypes(allRaffles);
+    // When allRaffles is populated, always compute from live data for real-time accuracy
+    if (allRaffles && allRaffles.length > 0) {
+      const standardCounts = countRafflesByFilters(allRaffles);
+      const enhancedRaffleTypeCounts = countEnhancedRaffleTypes(allRaffles);
+      return {
+        ...standardCounts,
+        raffleType: enhancedRaffleTypeCounts
+      };
+    }
 
-    return {
-      ...standardCounts,
-      raffleType: enhancedRaffleTypeCounts
-    };
-  }, [allRaffles, countEnhancedRaffleTypes]);
+    // Fallback to backend counts during initial load (before allRaffles is populated)
+    if (backendFilterCounts) {
+      return {
+        raffleState: backendFilterCounts.raffleState || {},
+        raffleType: backendFilterCounts.raffleType || {},
+        prizeType: backendFilterCounts.prizeType || {},
+        prizeStandard: backendFilterCounts.prizeStandard || {}
+      };
+    }
+
+    return { raffleState: {}, raffleType: {}, prizeType: {}, prizeStandard: {} };
+  }, [allRaffles, countEnhancedRaffleTypes, backendFilterCounts]);
 
   // Filter options with dynamic counts
   const filterOptions = useMemo(() => ({

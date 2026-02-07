@@ -95,7 +95,7 @@ const MobileHeader = () => {
     const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
       ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
       : (currentChainId || '');
-    const path = slug ? `/${slug}/raffle/${raffleAddress}` : `/raffle/${raffleAddress}`;
+    const path = slug ? `/${slug}/pool/${raffleAddress}` : `/pool/${raffleAddress}`;
     navigate(path);
     setShowSearch(false);
     setSearchTerm('');

@@ -227,7 +227,7 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
 
       let socialFee = ethers.BigNumber.from(0)
       if (socialEngagementEnabled) {
-        socialFee = await contracts.protocolManager.socialEngagementFee()
+        socialFee = await contracts.poolDeployer.socialEngagementFee()
       }
 
       const result = await executeTransaction(
@@ -244,9 +244,9 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
         if (poolAddress) {
           setCreatedRaffleAddress(poolAddress)
         }
-        toast.success('Your raffle was created successfully!')
+        toast.success('Your pool was created successfully!')
       } else {
-        toast.error(result.error || 'Failed to create raffle')
+        toast.error(result.error || 'Failed to create pool')
       }
     } catch (error) {
       console.error('Error creating raffle:', error)
@@ -321,20 +321,20 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
               <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
-            <h2 className="font-display text-2xl font-bold mb-2">Raffle Created Successfully!</h2>
-            <p className="text-muted-foreground">Your whitelist raffle has been deployed to the blockchain.</p>
+            <h2 className="font-display text-2xl font-bold mb-2">Pool Created Successfully!</h2>
+            <p className="text-muted-foreground">Your whitelist pool has been deployed to the blockchain.</p>
           </div>
 
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
-            <p className="text-sm text-muted-foreground mb-1">Raffle Address</p>
+            <p className="text-sm text-muted-foreground mb-1">Pool Address</p>
             <p className="font-mono text-sm break-all">{createdRaffleAddress}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to={`/raffle/${createdRaffleAddress}`}>
+            <Link to={`/pool/${createdRaffleAddress}`}>
               <Button variant="primary" className="gap-2 w-full sm:w-auto">
                 <ExternalLink className="h-4 w-4" />
-                View Raffle
+                View Pool
               </Button>
             </Link>
             <Button variant="secondary" onClick={handleCreateAnother} className="gap-2">
@@ -351,15 +351,15 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
   if (showSummary) {
     return (
       <SummaryCard
-          title="Review Your Raffle"
-          description="Please review the details before creating your raffle"
+          title="Review Your Pool"
+          description="Please review the details before creating your pool"
           data={summaryData}
           status={loading ? 'submitting' : 'preview'}
-          statusMessage={loading ? 'Creating your raffle...' : undefined}
+          statusMessage={loading ? 'Creating your pool...' : undefined}
           onEdit={() => { setShowSummary(false); onReviewStateChange?.(false); }}
           onCancel={() => { setShowSummary(false); onReviewStateChange?.(false); }}
           onSubmit={handleSubmit}
-          submitLabel="Create Raffle"
+          submitLabel="Create Pool"
           editLabel="Edit Details"
           variant="elevated"
         />
@@ -369,8 +369,8 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
   return (
     <Card variant="elevated" className="p-6 max-w-3xl mx-auto">
       <div className="mb-6">
-        <h3 className="font-display text-xl font-semibold">Whitelist Raffle</h3>
-        <p className="text-sm text-muted-foreground">Create a free entry raffle for your community</p>
+        <h3 className="font-display text-xl font-semibold">Whitelist Pool</h3>
+        <p className="text-sm text-muted-foreground">Create a free entry pool for your community</p>
       </div>
 
       {/* Progress indicator */}
@@ -409,7 +409,7 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
               className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-background transition-colors ${
                 errors.name ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'
               }`}
-              placeholder="My Awesome Raffle"
+              placeholder="My Awesome Pool"
               required
             />
             {errors.name && (
@@ -563,7 +563,7 @@ const WhitelistRaffleFormV2 = ({ onFormDataChange, onReviewStateChange }) => {
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" tabIndex={0} />
                   </TooltipTrigger>
                   <TooltipContent sideOffset={6}>
-                    Fixed at 1 for whitelist raffles
+                    Fixed at 1 for whitelist pools
                   </TooltipContent>
                 </Tooltip>
               </label>

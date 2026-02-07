@@ -6,28 +6,39 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
 class SupabaseService {
   constructor() {
     this.client = null;
     this.cache = new Map();
     this.cacheTimeout = 30 * 1000; // 30 seconds for API results
     this.subscriptions = new Map();
+    this.SUPABASE_URL = null;
+    this.SUPABASE_ANON_KEY = null;
   }
 
   /**
    * Initialize Supabase client
    */
   initialize() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    // Load environment variables
+    this.SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    this.SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    console.log('🔍 Environment check:', {
+      hasUrl: !!this.SUPABASE_URL,
+      hasKey: !!this.SUPABASE_ANON_KEY,
+      url: this.SUPABASE_URL ? `${this.SUPABASE_URL.slice(0, 30)}...` : 'undefined',
+      keyPrefix: this.SUPABASE_ANON_KEY ? `${this.SUPABASE_ANON_KEY.slice(0, 20)}...` : 'undefined'
+    });
+
+    if (!this.SUPABASE_URL || !this.SUPABASE_ANON_KEY) {
       console.warn('⚠️ Supabase credentials not configured');
+      console.warn('Expected: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env');
       return false;
     }
 
     try {
-      this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      this.client = createClient(this.SUPABASE_URL, this.SUPABASE_ANON_KEY, {
         auth: {
           persistSession: false, // Don't need session for public data
         },
@@ -37,7 +48,8 @@ class SupabaseService {
           },
         },
       });
-      console.log('✅ Supabase client initialized');
+      console.log('✅ Supabase client initialized successfully');
+      console.log('📡 API Base URL:', `${this.SUPABASE_URL}/functions/v1`);
       return true;
     } catch (error) {
       console.error('❌ Failed to initialize Supabase:', error);
@@ -49,7 +61,15 @@ class SupabaseService {
    * Check if Supabase is available
    */
   isAvailable() {
-    return this.client !== null;
+    const available = this.client !== null && this.SUPABASE_URL !== null && this.SUPABASE_ANON_KEY !== null;
+    if (!available) {
+      console.warn('⚠️ Supabase not available:', {
+        hasClient: this.client !== null,
+        hasUrl: this.SUPABASE_URL !== null,
+        hasKey: this.SUPABASE_ANON_KEY !== null
+      });
+    }
+    return available;
   }
 
   /**
@@ -75,6 +95,24 @@ class SupabaseService {
     } else {
       this.cache.clear();
     }
+  }
+
+  /**
+   * Get from cache by key
+   */
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  /**
+   * Set cache with key, data, and TTL
+   */
+  setCache(key, data, ttl = this.cacheTimeout) {
+    this.cache.set(key, { data, timestamp: Date.now(), ttl });
   }
 
   // ==================== POOLS API ====================
@@ -110,24 +148,47 @@ class SupabaseService {
 
     return this.getCached(cacheKey, async () => {
       try {
-        const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-pools?${params}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json'
-            }
+        const url = `${this.SUPABASE_URL}/functions/v1/api-pools?${params}`;
+        console.log('🔄 Fetching pools:', {
+          url,
+          hasUrl: !!this.SUPABASE_URL,
+          hasKey: !!this.SUPABASE_ANON_KEY,
+          urlValue: this.SUPABASE_URL?.slice(0, 30)
+        });
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
           }
-        );
+        });
+
+        console.log('📥 Pools API response:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ API error response:', errorText);
+          throw new Error(`API error: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log('✅ Pools data received:', {
+          success: data.success,
+          poolsCount: data.pools?.length || 0,
+          hasPoolsArray: Array.isArray(data.pools)
+        });
         return data;
       } catch (error) {
-        console.error('Error fetching pools:', error);
+        console.error('❌ Error fetching pools:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         return null;
       }
     });
@@ -148,24 +209,24 @@ class SupabaseService {
 
     return this.getCached(cacheKey, async () => {
       try {
-        const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-pools?${params}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json'
-            }
+        const url = `${this.SUPABASE_URL}/functions/v1/api-pools?${params}`;
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
           }
-        );
+        });
 
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
           throw new Error(`API error: ${response.status}`);
         }
 
         const data = await response.json();
         return data.pool || null;
       } catch (error) {
-        console.error('Error fetching pool:', error);
+        console.error('Error fetching pool:', error.message);
         return null;
       }
     });
@@ -197,10 +258,10 @@ class SupabaseService {
     return this.getCached(cacheKey, async () => {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-user?${params}`,
+          `${this.SUPABASE_URL}/functions/v1/api-user?${params}`,
           {
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
               'Content-Type': 'application/json'
             }
           }
@@ -239,10 +300,10 @@ class SupabaseService {
     return this.getCached(cacheKey, async () => {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-collections?${params}`,
+          `${this.SUPABASE_URL}/functions/v1/api-collections?${params}`,
           {
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
               'Content-Type': 'application/json'
             }
           }
@@ -278,10 +339,10 @@ class SupabaseService {
     return this.getCached(cacheKey, async () => {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-collections?${params}`,
+          `${this.SUPABASE_URL}/functions/v1/api-collections?${params}`,
           {
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
               'Content-Type': 'application/json'
             }
           }
@@ -317,10 +378,10 @@ class SupabaseService {
     return this.getCached(cacheKey, async () => {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-collections?${params}`,
+          `${this.SUPABASE_URL}/functions/v1/api-collections?${params}`,
           {
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
               'Content-Type': 'application/json'
             }
           }
@@ -357,10 +418,10 @@ class SupabaseService {
     return this.getCached(cacheKey, async () => {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/api-stats?${params}`,
+          `${this.SUPABASE_URL}/functions/v1/api-stats?${params}`,
           {
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
               'Content-Type': 'application/json'
             }
           }
@@ -473,6 +534,340 @@ class SupabaseService {
   unsubscribeAll() {
     this.subscriptions.forEach((channel) => channel.unsubscribe());
     this.subscriptions.clear();
+  }
+
+  // ============================================
+  // FLYWHEEL REWARDS API
+  // ============================================
+
+  /**
+   * Get flywheel data (points system, pool rewards, creator rewards)
+   * @param {Object} options - Query options
+   * @param {number} options.chainId - Chain ID
+   * @param {string} [options.userAddress] - User address for user-specific data
+   * @param {string} [options.poolAddress] - Pool address for pool-specific rewards
+   * @param {boolean} [options.includePoolRewards] - Include pool rewards data
+   * @param {boolean} [options.includeCreatorRewards] - Include creator rewards data
+   * @param {boolean} [options.includeUserPoints] - Include user points data
+   */
+  async getFlywheelData(options = {}) {
+    const {
+      chainId,
+      userAddress,
+      poolAddress,
+      includePoolRewards = false,
+      includeCreatorRewards = false,
+      includeUserPoints = true,
+    } = options;
+
+    if (!chainId) {
+      console.warn('[SupabaseService] getFlywheelData: chainId required');
+      return null;
+    }
+
+    const cacheKey = `flywheel:${chainId}:${userAddress || 'anon'}:${poolAddress || 'none'}:${includePoolRewards}:${includeCreatorRewards}`;
+
+    try {
+      return await this.getCached(cacheKey, async () => {
+        const params = new URLSearchParams({
+          chainId: chainId.toString(),
+        });
+
+        if (userAddress) params.append('userAddress', userAddress);
+        if (poolAddress) params.append('poolAddress', poolAddress);
+        if (includePoolRewards) params.append('includePoolRewards', 'true');
+        if (includeCreatorRewards) params.append('includeCreatorRewards', 'true');
+        if (includeUserPoints) params.append('includeUserPoints', 'true');
+
+        const response = await fetch(
+          `${this.SUPABASE_URL}/functions/v1/api-flywheel?${params.toString()}`,
+          {
+            headers: {
+              'apikey': this.SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        return await response.json();
+      }, 15000); // 15 second cache for flywheel data
+    } catch (error) {
+      console.error('[SupabaseService] getFlywheelData error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get points system info
+   */
+  async getPointsSystemInfo(chainId) {
+    const data = await this.getFlywheelData({ chainId });
+    return data?.pointsSystem || null;
+  }
+
+  /**
+   * Get user points
+   */
+  async getUserPoints(chainId, userAddress) {
+    const data = await this.getFlywheelData({ chainId, userAddress, includeUserPoints: true });
+    return data?.userPoints || null;
+  }
+
+  /**
+   * Get pool rewards info
+   */
+  async getPoolRewards(chainId, poolAddress, userAddress = null) {
+    const data = await this.getFlywheelData({
+      chainId,
+      poolAddress,
+      userAddress,
+      includePoolRewards: true,
+    });
+    return {
+      poolRewards: data?.poolRewards || null,
+      userPoolClaim: data?.userPoolClaim || null,
+    };
+  }
+
+  /**
+   * Get creator rewards config
+   */
+  async getCreatorRewards(chainId, poolAddress = null, userAddress = null) {
+    const data = await this.getFlywheelData({
+      chainId,
+      poolAddress,
+      userAddress,
+      includeCreatorRewards: true,
+    });
+    return {
+      creatorRewards: data?.creatorRewards || [],
+      userCreatorClaimsForPool: data?.userCreatorClaimsForPool || [],
+    };
+  }
+
+  /**
+   * Get complete flywheel data for a user and pool
+   */
+  async getCompleteFlywheelData(chainId, userAddress, poolAddress = null) {
+    return await this.getFlywheelData({
+      chainId,
+      userAddress,
+      poolAddress,
+      includePoolRewards: !!poolAddress,
+      includeCreatorRewards: true,
+      includeUserPoints: true,
+    });
+  }
+
+  // ============================================
+  // Pools API Methods (for LandingPage)
+  // ============================================
+
+  /**
+   * Fetch pools from backend with filters (Enhanced version for LandingPage)
+   * @param {Object} options - Query options
+   * @returns {Promise<Object>} - { pools, pagination, filterCounts }
+   */
+  async getPoolsEnhanced(options = {}) {
+    if (!this.isAvailable()) {
+      return { pools: [], pagination: { total: 0, limit: 50, offset: 0, hasMore: false }, filterCounts: null };
+    }
+
+    const {
+      chainId,
+      creator,
+      state,
+      isPrized,
+      isCollabPool,
+      hasHolderToken,
+      prizeType,
+      prizeStandard,
+      search,
+      limit = 50,
+      offset = 0,
+      sortBy = 'created_at_timestamp',
+      sortOrder = 'desc',
+      includeFilterCounts = false,
+    } = options;
+
+    const cacheKey = `pools_enhanced_${chainId}_${JSON.stringify(options)}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const params = new URLSearchParams();
+      if (chainId) params.append('chainId', chainId.toString());
+      if (creator) params.append('creator', creator);
+      if (state !== undefined) {
+        params.append('state', Array.isArray(state) ? state.join(',') : state.toString());
+      }
+      if (isPrized !== undefined) params.append('isPrized', isPrized.toString());
+      if (isCollabPool !== undefined) params.append('isCollabPool', isCollabPool.toString());
+      if (hasHolderToken !== undefined) params.append('hasHolderToken', hasHolderToken.toString());
+      if (prizeType) params.append('prizeType', prizeType);
+      if (prizeStandard !== undefined) params.append('prizeStandard', prizeStandard.toString());
+      if (search) params.append('search', search);
+      if (limit !== null && limit !== undefined) params.append('limit', limit.toString());
+      if (offset !== null && offset !== undefined) params.append('offset', offset.toString());
+      if (sortBy) params.append('sortBy', sortBy);
+      if (sortOrder) params.append('sortOrder', sortOrder);
+      if (includeFilterCounts) params.append('includeFilterCounts', 'true');
+
+      const url = `${this.SUPABASE_URL}/functions/v1/api-pools?${params}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data?.success) {
+        const result = {
+          pools: data.pools || [],
+          pagination: data.pagination || { total: 0, limit, offset, hasMore: false },
+          filterCounts: data.filterCounts || null,
+        };
+        this.setCache(cacheKey, result, 60000); // 1 minute cache
+        return result;
+      }
+
+      return { pools: [], pagination: { total: 0, limit, offset, hasMore: false }, filterCounts: null };
+    } catch (error) {
+      console.error('Error fetching pools from backend:', error);
+      return { pools: [], pagination: { total: 0, limit, offset, hasMore: false }, filterCounts: null };
+    }
+  }
+
+  /**
+   * Fetch a single pool by address (Enhanced version)
+   * @param {number} chainId
+   * @param {string} address
+   * @returns {Promise<Object|null>}
+   */
+  async getPoolEnhanced(chainId, address) {
+    if (!this.isAvailable()) return null;
+
+    const cacheKey = `pool_enhanced_${chainId}_${address}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const params = new URLSearchParams();
+      params.append('chainId', chainId.toString());
+      params.append('address', address.toLowerCase());
+
+      const url = `${this.SUPABASE_URL}/functions/v1/api-pools?${params}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data?.success && data.pool) {
+        this.setCache(cacheKey, data.pool, 30000); // 30 second cache
+        return data.pool;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching pool from backend:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get filter counts for FilterSidebar
+   * @param {number} chainId
+   * @returns {Promise<Object|null>}
+   */
+  async getPoolFilterCountsEnhanced(chainId) {
+    if (!this.isAvailable()) return null;
+
+    const cacheKey = `pool_filter_counts_enhanced_${chainId}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const params = new URLSearchParams();
+      params.append('chainId', chainId.toString());
+      params.append('limit', '1'); // Minimal data, we just want counts
+      params.append('includeFilterCounts', 'true');
+
+      const url = `${this.SUPABASE_URL}/functions/v1/api-pools?${params}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data?.success && data.filterCounts) {
+        this.setCache(cacheKey, data.filterCounts, 120000); // 2 minute cache
+        return data.filterCounts;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching filter counts:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Search pools by name or address
+   * @param {number} chainId
+   * @param {string} searchTerm
+   * @param {number} limit
+   * @returns {Promise<Array>}
+   */
+  async searchPools(chainId, searchTerm, limit = 20) {
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      return [];
+    }
+
+    try {
+      const result = await this.getPoolsEnhanced({
+        chainId,
+        search: searchTerm.trim(),
+        limit,
+        sortBy: 'created_at_timestamp',
+        sortOrder: 'desc',
+      });
+
+      return result.pools || [];
+    } catch (error) {
+      console.error('Error searching pools:', error);
+      return [];
+    }
   }
 }
 

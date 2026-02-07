@@ -22,7 +22,7 @@ import { Card } from "../../ui/card"
 const RAFFLE_TYPES = [
   {
     id: 'whitelist',
-    name: 'Whitelist Raffle',
+    name: 'Whitelist Pool',
     description: 'Create a whitelisting event for your community.',
     icon: Users,
     color: 'from-blue-500 to-indigo-500',
@@ -58,7 +58,7 @@ const RAFFLE_TYPES = [
   {
     id: 'lucky-sale',
     name: 'NFT Lucky Sale/NFT Giveaway',
-    description: 'Raffle off an existing NFT from your wallet.',
+    description: 'Give away an existing NFT from your wallet.',
     icon: Gift,
     color: 'from-amber-500 to-orange-500',
     bgColor: 'bg-amber-500/10',

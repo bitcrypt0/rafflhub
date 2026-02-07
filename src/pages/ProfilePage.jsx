@@ -12,7 +12,7 @@ import ProfileTabs from '../components/ProfileTabs';
 import { toast } from '../components/ui/sonner';
 
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
-import { useProfileData } from '../hooks/useProfileData';
+import { useProfileDataEnhanced } from '../hooks/useProfileDataEnhanced';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
@@ -45,13 +45,13 @@ const ActivityCard = ({ activity }) => {
   const getActivityDescription = () => {
     switch (activity.type) {
       case 'ticket_purchase':
-        const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+        const raffleName = activity.raffleName || activity.name || `Pool ${activity.raffleAddress?.slice(0, 8)}...`;
         const quantity = activity.quantity || activity.ticketCount || 1;
         return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
       case 'raffle_created':
-        return `Created raffle "${activity.raffleName}"`;
+        return `Created pool "${activity.raffleName}"`;
       case 'raffle_deleted':
-        return `Deleted raffle "${activity.raffleName}"`;
+        return `Deleted pool "${activity.raffleName}"`;
       case 'prize_won':
         return `Won prize in "${activity.raffleName}"`;
       case 'prize_claimed':
@@ -104,7 +104,7 @@ const ActivityCard = ({ activity }) => {
           <button
             onClick={() => {
               const slug = activity.chainId && SUPPORTED_NETWORKS[activity.chainId] ? SUPPORTED_NETWORKS[activity.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (activity.chainId || '');
-              const path = slug ? `/${slug}/raffle/${activity.raffleAddress}` : `/raffle/${activity.raffleAddress}`;
+              const path = slug ? `/${slug}/pool/${activity.raffleAddress}` : `/pool/${activity.raffleAddress}`;
               navigate(path);
             }}
             className="p-1 hover:bg-muted rounded-md transition-colors"
@@ -239,7 +239,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
         <Button
           onClick={() => {
               const slug = raffle.chainId && SUPPORTED_NETWORKS[raffle.chainId] ? SUPPORTED_NETWORKS[raffle.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (raffle.chainId || '');
-              const path = slug ? `/${slug}/raffle/${raffle.address}` : `/raffle/${raffle.address}`;
+              const path = slug ? `/${slug}/pool/${raffle.address}` : `/pool/${raffle.address}`;
               navigate(path);
             }}
           className="flex-1 bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
@@ -258,7 +258,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
           onClick={() => onDelete(raffle)}
           disabled={!canDelete()}
           className="px-3 py-2 bg-[#614E41] text-white rounded-md hover:bg-[#4a3a30] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          title={canDelete() ? (raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle") : "Cannot delete: Raffle is not in pending or active state"}
+          title={canDelete() ? (raffle.ticketsSold > 0 ? "Delete pool (refunds will be processed automatically)" : "Delete this pool") : "Cannot delete: Pool is not in pending or active state"}
         >
           Delete
         </Button>
@@ -296,7 +296,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       {/* Show info for non-deletable raffles */}
       {!canDelete() && (
         <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-800">
-          <p>⚠️ Cannot delete: Raffle is not in pending or active state</p>
+          <p>⚠️ Cannot delete: Pool is not in pending or active state</p>
         </div>
       )}
     </div>
@@ -354,12 +354,12 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
         <Button
           onClick={() => {
               const slug = ticket.chainId && SUPPORTED_NETWORKS[ticket.chainId] ? SUPPORTED_NETWORKS[ticket.chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (ticket.chainId || '');
-              const path = slug ? `/${slug}/raffle/${ticket.raffleAddress}` : `/raffle/${ticket.raffleAddress}`;
+              const path = slug ? `/${slug}/pool/${ticket.raffleAddress}` : `/pool/${ticket.raffleAddress}`;
               navigate(path);
             }}
           className="w-full bg-[#614E41] text-white px-3 py-2 rounded-md hover:bg-[#4a3a30] transition-colors text-sm"
         >
-          Visit Raffle Page
+          Visit Pool Page
         </Button>
 
         <Button
@@ -505,7 +505,7 @@ const DesktopProfilePage = () => {
   const { isMobile } = useMobileBreakpoints(); // Move hook to top to fix Rules of Hooks violation
   const { getCurrencySymbol } = useNativeCurrency();
 
-  // Use the same hook as mobile for consistent data structure
+  // Use enhanced hook for backend-first data fetching
   const {
     userActivity,
     createdRaffles,
@@ -513,14 +513,15 @@ const DesktopProfilePage = () => {
     activityStats,
     creatorStats,
     loading,
-    showRevenueModal,
-    selectedRaffle,
-    setSelectedRaffle,
     fetchCreatedRaffles,
     fetchPurchasedTickets,
-    withdrawRevenue,
-    claimRefund
-  } = useProfileData();
+    refresh,
+    dataSource
+  } = useProfileDataEnhanced({ useRealtime: true });
+
+  // Revenue modal state (managed locally since not in enhanced hook)
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
+  const [selectedRaffle, setSelectedRaffle] = useState(null);
 
   const [activeTab, setActiveTab] = useState('activity');
   const [availablePoints, setAvailablePoints] = useState(null);
@@ -569,20 +570,22 @@ const DesktopProfilePage = () => {
 
   // Transform raw activity data to match ProfileTabs expectations
   const transformedActivities = useMemo(() => {
+    if (!userActivity || !Array.isArray(userActivity)) return [];
     return userActivity.map(activity => {
       const getActivityTitle = () => {
-        const raffleName = activity.raffleName || activity.name || `Raffle ${activity.raffleAddress?.slice(0, 8)}...`;
+        const raffleName = activity.raffleName || activity.name || `Pool ${activity.raffleAddress?.slice(0, 8)}...`;
         const quantity = activity.quantity || activity.ticketCount || 1;
 
         switch (activity.type) {
           case 'ticket_purchase':
-            return `Purchased ${quantity} ${raffleName} slot${quantity > 1 ? 's' : ''}`;
+          case 'slot_purchase':
+            return `Purchased ${quantity} slot${quantity > 1 ? 's' : ''} from "${raffleName}"`;
           case 'raffle_created':
-            return `Created raffle "${raffleName}"`;
+            return `Created pool "${raffleName}"`;
           case 'raffle_deleted':
-            return `Deleted raffle "${raffleName}"`;
+            return `Deleted pool "${raffleName}"`;
           case 'prize_won':
-            return `Won prize in "${raffleName}"`;
+            return `Won in "${raffleName}"`;
           case 'prize_claimed':
             return `Claimed prize from "${raffleName}"`;
           case 'refund_claimed':
@@ -591,6 +594,10 @@ const DesktopProfilePage = () => {
             return `Withdrew revenue from "${raffleName}"`;
           case 'admin_withdrawn':
             return `Admin withdrawal: ${activity.amount} ${getCurrencySymbol()}`;
+          case 'randomness_requested':
+            return `Requested winner selection for "${raffleName}"`;
+          case 'rewards_claimed':
+            return `Claimed rewards`;
           default:
             return activity.description || 'Activity';
         }
@@ -599,9 +606,19 @@ const DesktopProfilePage = () => {
       const getActivityDescription = () => {
         switch (activity.type) {
           case 'ticket_purchase':
-            return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
+          case 'slot_purchase':
+            return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
           case 'refund_claimed':
-            return activity.amount ? `${activity.amount} ${getCurrencySymbol()}` : '';
+            return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
+          case 'rewards_claimed':
+            return activity.amount ? `${ethers.utils.formatEther(activity.amount)} ${getCurrencySymbol()}` : '';
+          case 'prize_claimed':
+            if (!activity.amount) return '';
+            // Use prize_symbol for ERC20 prizes, otherwise use native currency symbol
+            const symbol = activity.prize_type === 'erc20' && activity.prize_symbol 
+              ? activity.prize_symbol 
+              : getCurrencySymbol();
+            return `${ethers.utils.formatEther(activity.amount)} ${symbol}`;
           default:
             return activity.description || '';
         }
@@ -610,6 +627,7 @@ const DesktopProfilePage = () => {
       const getActivityIcon = () => {
         switch (activity.type) {
           case 'ticket_purchase':
+          case 'slot_purchase':
             return <ShoppingCart className="h-4 w-4 text-blue-500" />;
           case 'raffle_created':
             return <Plus className="h-4 w-4 text-green-500" />;
@@ -625,6 +643,10 @@ const DesktopProfilePage = () => {
             return <DollarSign className="h-4 w-4 text-green-500" />;
           case 'admin_withdrawn':
             return <DollarSign className="h-4 w-4 text-purple-500" />;
+          case 'randomness_requested':
+            return <Activity className="h-4 w-4 text-purple-500" />;
+          case 'rewards_claimed':
+            return <Trophy className="h-4 w-4 text-yellow-500" />;
           default:
             return <Activity className="h-4 w-4 text-gray-500" />;
         }
@@ -834,7 +856,7 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-2">
                   <Ticket className="h-6 w-6 text-blue-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalSlotsPurchased || 0).toLocaleString()}</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats?.totalSlotsPurchased || 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Slots Purchased</p>
                   </div>
                 </div>
@@ -843,7 +865,7 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-2">
                   <Plus className="h-6 w-6 text-green-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalRafflesCreated || 0).toLocaleString()}</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats?.totalRafflesCreated || 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Raffles Created</p>
                   </div>
                 </div>
@@ -852,7 +874,7 @@ const DesktopProfilePage = () => {
                 <div className="flex items-center gap-2">
                   <Trophy className="h-6 w-6 text-yellow-500" />
                   <div>
-                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats.totalPrizesWon || 0).toLocaleString()}</p>
+                    <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{Number(activityStats?.totalPrizesWon || 0).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Total Wins</p>
                   </div>
                 </div>
@@ -864,11 +886,14 @@ const DesktopProfilePage = () => {
                   <div>
                     <p className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>
                       {(() => {
-                        const bn = activityStats.totalClaimableRefunds;
+                        const refundValue = activityStats?.totalClaimableRefunds;
                         const symbol = getCurrencySymbol();
-                        if (!bn || !bn.toString) return `0 ${symbol}`;
+                        if (!refundValue) return `0 ${symbol}`;
                         try {
-                          const v = parseFloat(ethers.utils.formatEther(bn));
+                          // Handle both BigNumber and string formats
+                          const v = typeof refundValue === 'string' 
+                            ? parseFloat(ethers.utils.formatEther(refundValue))
+                            : (refundValue.toString ? parseFloat(ethers.utils.formatEther(refundValue)) : 0);
                           // Show up to 8 decimals; trim trailing zeros for cleaner rendering
                           const fixed = v.toFixed(8);
                           const trimmed = fixed.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
@@ -899,13 +924,7 @@ const DesktopProfilePage = () => {
           </div>
         )}
 
-        {/* Profile Tabs - now always rendered; show lightweight loader above */}
-        {loading && (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Loading on-chain data…</p>
-          </div>
-        )}
+        {/* Profile Tabs - always rendered without loading state */}
         <ProfileTabs
           activities={transformedActivities}
           createdRaffles={createdRaffles}

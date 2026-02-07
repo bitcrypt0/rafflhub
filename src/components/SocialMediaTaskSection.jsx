@@ -7,7 +7,6 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { SOCIAL_TASK_CONSTANTS } from '../constants/socialTasks';
-import { contractABIs } from '../contracts/contractABIs';
 
 // Maximum number of social media tasks allowed
 const MAX_SOCIAL_TASKS = SOCIAL_TASK_CONSTANTS.MAX_TASKS;
@@ -32,7 +31,7 @@ const SocialMediaTaskSection = ({
   // Fetch social engagement fee and task assignment pause status on mount
   useEffect(() => {
     const fetchSocialData = async () => {
-      if (!contracts?.protocolManager) {
+      if (!contracts?.poolDeployer) {
         setLoadingFee(false);
         setLoadingPauseStatus(false);
         return;
@@ -43,7 +42,7 @@ const SocialMediaTaskSection = ({
         console.log('🔍 Debug: socialEngagementManager exists:', !!contracts?.socialEngagementManager);
         
         // Fetch social engagement fee
-        const fee = await contracts.protocolManager.socialEngagementFee();
+        const fee = await contracts.poolDeployer.socialEngagementFee();
         setSocialFee(fee);
         
         // Fetch task assignment pause status

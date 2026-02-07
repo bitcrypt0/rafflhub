@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Trophy, Search, Filter, Shield, CheckCircle, Eye, LockKeyhole, Sparkles, Wallet, Clock, Users, Ticket, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -11,6 +11,7 @@ import { PageContainer } from '../components/Layout';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import { useNativeCurrency } from '../hooks/useNativeCurrency';
 import { useRaffleService } from '../hooks/useRaffleService';
+import { useRaffleServiceEnhanced } from '../hooks/useRaffleServiceEnhanced';
 import { NetworkError, LoadingError } from '../components/ui/error-boundary';
 import { PageLoading, ContentLoading, CardSkeleton, SkeletonCard } from '../components/ui/loading';
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display';
@@ -23,14 +24,12 @@ import { SUPPORTED_NETWORKS } from '../networks';
 import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 import { Badge, StatusBadge } from '../components/ui/badge';
 import { Progress, EnhancedProgress } from '../components/ui/progress';
-
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import { constructMetadataURIs } from '../utils/nftMetadataUtils';
 import {
   isBytes32Hash,
   isZeroHash,
-  resolveURIOrHash,
-  getStoredCollectionURIs
+  resolveURIOrHash
 } from '../services/uriRegistryService';
 
 const POOL_STATE_LABELS = [
@@ -59,11 +58,13 @@ const RaffleCard = ({ raffle }) => {
   const [collectionSymbol, setCollectionSymbol] = useState(null);
   const [directContractValues, setDirectContractValues] = useState(null);
   
+  
   // NFT artwork state
   const [nftImageUrl, setNftImageUrl] = useState(null);
   const [nftImageLoading, setNftImageLoading] = useState(false);
   const [imageCandidates, setImageCandidates] = useState([]);
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
+  const lastArtworkFetchRef = useRef(null);
 
   useEffect(() => {
     let interval;
@@ -148,10 +149,21 @@ const RaffleCard = ({ raffle }) => {
     return () => { isMounted = false; };
   }, [raffle.erc20PrizeToken]);
 
-  // Fetch tickets sold using the same logic as RaffleDetailPage
+  // Fetch tickets sold - use backend data if available, otherwise RPC
   useEffect(() => {
     let isMounted = true;
     async function fetchTicketsSold() {
+      // Use backend/parent data if available (updated in real-time by chain-wide subscription)
+      if (raffle.totalSlotsPurchased !== undefined && raffle.totalSlotsPurchased !== null) {
+        if (isMounted) setTicketsSold(raffle.totalSlotsPurchased);
+        return;
+      }
+      if (raffle._fromBackend && raffle._backendSlotsSold !== undefined) {
+        if (isMounted) setTicketsSold(raffle._backendSlotsSold);
+        return;
+      }
+      
+      // Fallback to RPC
       try {
         const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
         if (!poolContract) {
@@ -167,9 +179,10 @@ const RaffleCard = ({ raffle }) => {
     }
     fetchTicketsSold();
     // Only refetch if address changes
-  }, [raffle.address, getContractInstance]);
+  }, [raffle.address, raffle.totalSlotsPurchased, raffle._fromBackend, raffle._backendSlotsSold, getContractInstance]);
 
   // Direct contract query for NFT prizes to get accurate values
+  // Skip RPC if backend data already provides these values
   useEffect(() => {
     async function fetchDirectContractValues() {
       // Only fetch for NFT prizes
@@ -177,6 +190,17 @@ const RaffleCard = ({ raffle }) => {
         return;
       }
 
+      // If backend data is available, use it directly (no RPC needed)
+      if (raffle._fromBackend) {
+        setDirectContractValues({
+          isCollabPool: raffle.isCollabPool,
+          usesCustomFee: raffle.usesCustomFee,
+          isEscrowedPrize: raffle.isEscrowedPrize
+        });
+        return;
+      }
+
+      // Fallback to RPC
       try {
         const poolContract = getContractInstance(raffle.address, 'pool');
         if (!poolContract) {
@@ -203,7 +227,7 @@ const RaffleCard = ({ raffle }) => {
     }
 
     fetchDirectContractValues();
-  }, [raffle.address, raffle.prizeCollection, getContractInstance]);
+  }, [raffle.address, raffle.prizeCollection, raffle._fromBackend, raffle.isCollabPool, raffle.usesCustomFee, raffle.isEscrowedPrize, getContractInstance]);
 
   // Fetch collection name and symbol for NFT prizes
   useEffect(() => {
@@ -296,9 +320,10 @@ const RaffleCard = ({ raffle }) => {
     };
 
     fetchCollectionInfo();
-  }, [raffle, getContractInstance]);
+  }, [raffle.prizeCollection, raffle.standard, getContractInstance]);
 
   // Check for collab status with holderTokenAddress
+  // Skip RPC if backend data provides holderTokenAddress
   useEffect(() => {
     let isMounted = true;
     const checkCollabStatus = async () => {
@@ -311,31 +336,37 @@ const RaffleCard = ({ raffle }) => {
       // Set loading state
       setCollabLoading(raffle.address, true);
 
-      // Check holderTokenAddress first (needed for both types)
       let hasHolderToken = false;
-      let retryCount = 0;
-      const maxRetries = 3;
 
-      while (retryCount < maxRetries && isMounted) {
-        try {
-          const poolContract = getContractInstance(raffle.address, 'pool');
-          if (!poolContract) {
-            throw new Error('Failed to get contract instance');
-          }
+      // If backend data is available, use it directly (no RPC needed)
+      if (raffle._fromBackend && raffle.holderTokenAddress !== undefined) {
+        hasHolderToken = raffle.holderTokenAddress && raffle.holderTokenAddress !== ethers.constants.AddressZero;
+      } else {
+        // Fallback to RPC
+        let retryCount = 0;
+        const maxRetries = 3;
 
-          const holderTokenAddr = await poolContract.holderTokenAddress();
-          hasHolderToken = holderTokenAddr && holderTokenAddr !== ethers.constants.AddressZero;
-          break; // Success, exit retry loop
+        while (retryCount < maxRetries && isMounted) {
+          try {
+            const poolContract = getContractInstance(raffle.address, 'pool');
+            if (!poolContract) {
+              throw new Error('Failed to get contract instance');
+            }
 
-        } catch (error) {
-          retryCount++;
+            const holderTokenAddr = await poolContract.holderTokenAddress();
+            hasHolderToken = holderTokenAddr && holderTokenAddr !== ethers.constants.AddressZero;
+            break; // Success, exit retry loop
 
-          if (retryCount >= maxRetries) {
-            // After max retries, assume no holder token
-            hasHolderToken = false;
-          } else {
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          } catch (error) {
+            retryCount++;
+
+            if (retryCount >= maxRetries) {
+              // After max retries, assume no holder token
+              hasHolderToken = false;
+            } else {
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
           }
         }
       }
@@ -367,11 +398,30 @@ const RaffleCard = ({ raffle }) => {
     return () => {
       isMounted = false;
     };
-  }, [raffle, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
+  }, [raffle.address, raffle.isCollabPool, raffle._fromBackend, raffle.holderTokenAddress, getContractInstance, getCollabStatus, setCollabLoading, updateCollabStatus]);
 
   // NFT artwork fetching for NFT Drop, NFT Giveaway, and Lucky NFT Sale pools
   useEffect(() => {
     let isMounted = true;
+
+    // Create a stable fetch key based on collection, token ID, and standard only.
+    // Deliberately exclude isEscrowedPrize: once artwork is fetched successfully,
+    // it must be preserved even if isEscrowedPrize toggles from real-time updates.
+    const fetchKey = `${raffle.prizeCollection}-${raffle.prizeTokenId}-${raffle.standard}`;
+
+    // Skip if we've already successfully fetched for this exact key
+    if (lastArtworkFetchRef.current === fetchKey && nftImageUrl) {
+      return;
+    }
+
+    // Check if backend artwork URL is already available (pre-resolved)
+    if (raffle._fromBackend && raffle._backendArtworkUrl) {
+      setNftImageUrl(raffle._backendArtworkUrl);
+      setImageCandidates([raffle._backendArtworkUrl]);
+      setNftImageLoading(false);
+      lastArtworkFetchRef.current = fetchKey;
+      return;
+    }
     
     // IPFS gateways for decentralized URIs
     const IPFS_GATEWAYS = [
@@ -504,150 +554,135 @@ const RaffleCard = ({ raffle }) => {
         : raffle.isEscrowedPrize === true;
       const isMintable = !isEscrowedPrize;
 
-      // Skip NFT Collab pools (externally prized), but allow NFT Drop pools (mintable)
-      // NFT Collab: isCollabPool=true AND isEscrowedPrize=true (external NFT)
-      // NFT Drop: isCollabPool=true BUT isMintable=true (pool mints NFTs)
-      if (raffle.isCollabPool && isEscrowedPrize) {
-        return;
+      // Only show loading state if we don't already have an image
+      if (!nftImageUrl) {
+        setNftImageLoading(true);
       }
 
-      setNftImageLoading(true);
-
       try {
-        const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
-        const contract = getContractInstance(raffle.prizeCollection, contractType);
-        
-        if (!contract) {
-          setNftImageLoading(false);
-          return;
-        }
-
         let baseUri = null;
 
-        if (raffle.standard === 0) {
-          // ERC721
-          if (isMintable) {
-            // NFT Drop - use unrevealedBaseURI with hash-based resolution fallback
-            // Strategy 1: Try to get URI string directly from contract
-            try {
-              baseUri = await contract.unrevealedBaseURI();
-            } catch (error) {
-              // Method might not exist
+        // For mintable collections (both protocol-native and external), try backend first
+        if (isMintable) {
+          // Check if backend collection artwork is available
+          const collectionArtwork = raffle._backendCollectionArtwork || raffle.collection_artwork;
+          if (collectionArtwork) {
+            // Priority: dropUri > unrevealedUri > baseUri
+            if (collectionArtwork.dropUri && collectionArtwork.dropUri.trim() !== '') {
+              baseUri = collectionArtwork.dropUri;
+            } else if (collectionArtwork.unrevealedUri && collectionArtwork.unrevealedUri.trim() !== '') {
+              baseUri = collectionArtwork.unrevealedUri;
+            } else if (collectionArtwork.baseUri && collectionArtwork.baseUri.trim() !== '') {
+              baseUri = collectionArtwork.baseUri;
             }
+          }
+          
+          // If still no URI from backend, fall back to RPC
+          if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+            const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+            const contract = getContractInstance(raffle.prizeCollection, contractType);
+            
+            if (contract) {
+              if (raffle.standard === 0) {
+                // ERC721 - try unrevealedBaseURI
+                try {
+                  baseUri = await contract.unrevealedBaseURI();
+                } catch (error) {}
+                
+                // Try hash-based resolution
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  let uriHash = null;
+                  try {
+                    if (typeof contract.unrevealedURIHash === 'function') {
+                      uriHash = await contract.unrevealedURIHash();
+                    }
+                  } catch (e) {}
 
-            // Strategy 2: If URI is empty or is a hash, try hash-based resolution
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              let uriHash = null;
-              try {
-                if (typeof contract.unrevealedURIHash === 'function') {
-                  uriHash = await contract.unrevealedURIHash();
+                  if (uriHash && !isZeroHash(uriHash)) {
+                    const resolvedURI = await resolveURIOrHash(uriHash, {
+                      collectionAddress: raffle.prizeCollection,
+                      uriType: 'unrevealedURI'
+                    });
+                    if (resolvedURI) baseUri = resolvedURI;
+                  }
                 }
-              } catch (e) {}
+              } else if (raffle.standard === 1) {
+                // ERC1155 - try unrevealedURI
+                try {
+                  baseUri = await contract.unrevealedURI();
+                } catch (e) {}
+                
+                if (baseUri && isBytes32Hash(baseUri)) {
+                  const resolvedURI = await resolveURIOrHash(baseUri, {
+                    collectionAddress: raffle.prizeCollection,
+                    uriType: 'unrevealedURI'
+                  });
+                  baseUri = resolvedURI || null;
+                }
+                
+                // Try hash-based resolution
+                if (!baseUri || baseUri.trim() === '') {
+                  let uriHash = null;
+                  try {
+                    if (typeof contract.unrevealedURIHash === 'function') {
+                      uriHash = await contract.unrevealedURIHash();
+                    }
+                  } catch (e) {}
 
-              if (uriHash && !isZeroHash(uriHash)) {
-                const resolvedURI = await resolveURIOrHash(uriHash, {
-                  collectionAddress: raffle.prizeCollection,
-                  uriType: 'unrevealedURI'
-                });
-                if (resolvedURI) {
-                  baseUri = resolvedURI;
+                  if (uriHash && !isZeroHash(uriHash)) {
+                    const resolvedURI = await resolveURIOrHash(uriHash, {
+                      collectionAddress: raffle.prizeCollection,
+                      uriType: 'unrevealedURI'
+                    });
+                    if (resolvedURI) baseUri = resolvedURI;
+                  }
+                }
+                
+                // Try tokenURI/uri() as last resort
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  try { baseUri = await contract.tokenURI(raffle.prizeTokenId); } catch (e) {}
+                }
+                if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+                  try { baseUri = await contract.uri(raffle.prizeTokenId); } catch (e) {}
                 }
               }
             }
-
-            // Strategy 3: Check local storage for stored collection URIs
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
-              if (storedURIs?.unrevealedURI) {
-                baseUri = storedURIs.unrevealedURI;
-              }
-            }
-
-            // If still no valid URI, return
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              setNftImageLoading(false);
-              return;
-            }
-          } else {
-            // NFT Giveaway or Lucky Sale - use tokenURI
+          }
+          
+          // If still no valid URI for mintable, return
+          if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
+            if (isMounted) setNftImageLoading(false);
+            return;
+          }
+        } else {
+          // Escrowed prize - use tokenURI/uri() directly (no backend artwork for escrowed)
+          const contractType = raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize';
+          const contract = getContractInstance(raffle.prizeCollection, contractType);
+          
+          if (!contract) {
+            if (isMounted) setNftImageLoading(false);
+            return;
+          }
+          
+          if (raffle.standard === 0) {
             try {
               baseUri = await contract.tokenURI(raffle.prizeTokenId);
             } catch (error) {
-              setNftImageLoading(false);
+              if (isMounted) setNftImageLoading(false);
               return;
             }
-          }
-        } else if (raffle.standard === 1) {
-          // ERC1155
-          if (isMintable) {
-            // Try unrevealedURI first with hash-based resolution fallback
-            try {
-              baseUri = await contract.unrevealedURI();
-            } catch (e) {}
-
-            // Check if it's a hash and try to resolve
-            if (baseUri && isBytes32Hash(baseUri)) {
-              const resolvedURI = await resolveURIOrHash(baseUri, {
-                collectionAddress: raffle.prizeCollection,
-                uriType: 'unrevealedURI'
-              });
-              baseUri = resolvedURI || null;
-            }
-
-            // Try hash-based resolution if still empty
-            if (!baseUri || baseUri.trim() === '') {
-              let uriHash = null;
-              try {
-                if (typeof contract.unrevealedURIHash === 'function') {
-                  uriHash = await contract.unrevealedURIHash();
-                }
-              } catch (e) {}
-
-              if (uriHash && !isZeroHash(uriHash)) {
-                const resolvedURI = await resolveURIOrHash(uriHash, {
-                  collectionAddress: raffle.prizeCollection,
-                  uriType: 'unrevealedURI'
-                });
-                if (resolvedURI) {
-                  baseUri = resolvedURI;
-                }
-              }
-            }
-
-            // Check local storage as fallback
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              const storedURIs = getStoredCollectionURIs(raffle.prizeCollection);
-              if (storedURIs?.unrevealedURI) {
-                baseUri = storedURIs.unrevealedURI;
-              }
-            }
-
-            // Try tokenURI if still no valid URI
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              try {
-                baseUri = await contract.tokenURI(raffle.prizeTokenId);
-              } catch (e) {}
-            }
-
-            // Try uri() as last resort
-            if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-              try {
-                baseUri = await contract.uri(raffle.prizeTokenId);
-              } catch (e) {}
-            }
           } else {
-            // Escrowed - use uri()
             try {
               baseUri = await contract.uri(raffle.prizeTokenId);
             } catch (error) {
-              setNftImageLoading(false);
+              if (isMounted) setNftImageLoading(false);
               return;
             }
           }
         }
 
         if (!baseUri || baseUri.trim() === '' || isBytes32Hash(baseUri)) {
-          setNftImageLoading(false);
+          if (isMounted) setNftImageLoading(false);
           return;
         }
 
@@ -669,6 +704,7 @@ const RaffleCard = ({ raffle }) => {
           setImageCandidates(imgCandidates);
           setImageCandidateIndex(0);
           setNftImageUrl(imgCandidates[0]);
+          lastArtworkFetchRef.current = fetchKey;
         }
       } catch (error) {
         // Silent fail
@@ -688,7 +724,7 @@ const RaffleCard = ({ raffle }) => {
     }
 
     return () => { isMounted = false; };
-  }, [raffle, getContractInstance, directContractValues]);
+  }, [raffle.prizeCollection, raffle.prizeTokenId, raffle.standard, raffle._fromBackend, raffle._backendArtworkUrl, raffle._backendCollectionArtwork, raffle.collection_artwork, getContractInstance, directContractValues]);
 
   // Handle image load error - try next gateway
   const handleNftImageError = () => {
@@ -849,7 +885,7 @@ const RaffleCard = ({ raffle }) => {
   const handleViewRaffle = () => {
     const currentChainId = raffle.chainId || chainId;
     const slug = currentChainId && SUPPORTED_NETWORKS[currentChainId] ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (currentChainId || '');
-    const path = slug ? `/${slug}/raffle/${raffle.address}` : `/raffle/${raffle.address}`;
+    const path = slug ? `/${slug}/pool/${raffle.address}` : `/pool/${raffle.address}`;
     navigate(path);
   };
 
@@ -1098,24 +1134,64 @@ const LandingPage = () => {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Use the new RaffleService hook (full dataset for filtering)
+  // Use the enhanced RaffleService hook with backend-first strategy
   const {
     raffles,
     loading,
     backgroundLoading,
     error,
-    refreshRaffles
-  } = useRaffleService({
+    refreshRaffles,
+    filterCounts: backendFilterCounts,
+    dataSource,
+    isBackendData
+  } = useRaffleServiceEnhanced({
     autoFetch: true,
     enablePolling: true,
     pollingInterval: 120000, // 2 minutes
-    maxRaffles: null // fetch all for accurate filters
+    maxRaffles: null, // fetch all for accurate filters
+    useBackend: true, // Enable Supabase-first fetching
+    includeFilterCounts: true // Get filter counts from backend
   });
 
   // Fast, minimal summaries for mobile-first paint
   const { summaries, loading: summariesLoading, totalAvailable } = useRaffleSummaries({ initialCount: 12 });
 
-  // Use filter system
+  // Temporary state to track if filters are active
+  const [hasFiltersActive, setHasFiltersActive] = useState(false);
+
+  // Apply default filtering to hide certain pools when no filters/search are active
+  const defaultFilteredRaffles = useMemo(() => {
+    // If user has active filters or search, show all pools (including hidden ones)
+    // This allows users to find Completed, Deleted, etc. pools via filters/search
+    const hasSearch = searchQuery && searchQuery.trim() !== '';
+    
+    if (hasSearch || hasFiltersActive) {
+      // When searching or filtering, return all pools to enable finding hidden pools
+      return raffles;
+    }
+    
+    // Default filtering: hide certain states and expired Pending pools
+    const now = Math.floor(Date.now() / 1000);
+    return raffles.filter(raffle => {
+      // Hide Completed (4), Deleted (5), AllPrizesClaimed (6), Unengaged (7/8)
+      if (raffle.stateNum >= 4) {
+        return false;
+      }
+      
+      // Hide expired Pending pools (state 0 with elapsed duration)
+      if (raffle.stateNum === 0) {
+        const endTime = raffle.startTime + raffle.duration;
+        const hasExpired = now >= endTime;
+        if (hasExpired) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [raffles, searchQuery, hasFiltersActive]);
+
+  // Use filter system on the default-filtered raffles
   const {
     filters,
     filteredRaffles,
@@ -1125,7 +1201,12 @@ const LandingPage = () => {
     clearFilters,
     toggleFilter,
     filteredCount
-  } = useRaffleFilters(raffles, searchQuery);
+  } = useRaffleFilters(defaultFilteredRaffles, searchQuery);
+
+  // Sync hasFiltersActive with actual filter state
+  useEffect(() => {
+    setHasFiltersActive(hasActiveFilters);
+  }, [hasActiveFilters]);
 
   // Clear all filters including search
   const handleClearAll = () => {
@@ -1360,6 +1441,7 @@ const LandingPage = () => {
         onFiltersChange={updateFilters}
         raffleCount={filteredCount}
         allRaffles={raffles}
+        backendFilterCounts={backendFilterCounts}
       />
 
       {/* Main content - full width */}

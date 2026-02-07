@@ -658,32 +658,31 @@ const SocialMediaVerification = ({
   const [taskStatuses, setTaskStatuses] = useState({}); // Track verification status per task
   const [retryingTasks, setRetryingTasks] = useState(new Set());
 
-  // Load tasks from events when raffle address is available
+  // Load tasks: prefer backend socialTaskDescription, fall back to RPC events
   useEffect(() => {
-    if (raffle?.address && provider && contracts?.socialEngagementManager) {
-      loadTasksFromEvents();
+    if (!raffle?.address || !raffle?.socialEngagementRequired) {
+      setSocialTasks([]);
+      return;
     }
-  }, [raffle?.address, provider, contracts?.socialEngagementManager]);
 
-  // Fallback: Try to get tasks from raffle data if event fetching fails
-  useEffect(() => {
-    if (socialTasks.length === 0 && !loading && raffle?.socialTaskDescription) {
-      console.log('Using fallback: parsing tasks from raffle data');
+    // If backend provided the task description, parse it directly (no RPC needed)
+    if (raffle.socialTaskDescription) {
+      console.log('Using backend socialTaskDescription:', raffle.socialTaskDescription);
       const parsedTasks = parseTaskDescription(raffle.socialTaskDescription);
       setSocialTasks(parsedTasks);
+      return;
     }
-  }, [socialTasks.length, loading, raffle?.socialTaskDescription]);
 
-  // Function to load tasks from events
+    // Fallback: fetch from RPC events if backend didn't have the data
+    if (provider && contracts?.socialEngagementManager) {
+      loadTasksFromEvents();
+    }
+  }, [raffle?.address, raffle?.socialEngagementRequired, raffle?.socialTaskDescription, provider, contracts?.socialEngagementManager]);
+
+  // RPC fallback: load tasks from blockchain events
   const loadTasksFromEvents = async () => {
     try {
       setLoading(true);
-      
-      // If social engagement is not required, don't fetch tasks
-      if (!raffle?.socialEngagementRequired) {
-        setSocialTasks([]);
-        return;
-      }
       
       const tasks = await eventTaskService.getSocialTasksFromEvents(
         raffle.address,

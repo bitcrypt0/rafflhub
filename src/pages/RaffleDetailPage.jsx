@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolveChainIdFromSlug } from '../utils/urlNetworks';
-import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send, Coins, Gift, Sparkles } from 'lucide-react';
+import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send, Coins, Gift, Sparkles, Star } from 'lucide-react';
 import { getPoolMetadata, hasAnyMetadata, formatSocialLink } from '../utils/poolMetadataService';
 import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from '../contexts/WalletContext';
@@ -12,7 +12,6 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 import { PageContainer } from '../components/Layout';
-import { contractABIs } from '../contracts/contractABIs';
 import { toast } from '../components/ui/sonner';
 import { notifyError } from '../utils/notificationService';
 import { PageLoading, ContentLoading, BlockchainLoading, TransactionStatus } from '../components/ui/loading';
@@ -26,6 +25,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/toolti
 import SocialMediaVerification from '../components/SocialMediaVerification';
 import PoolMetadataDisplay from '../components/PoolMetadataDisplay';
 import signatureService from '../services/signatureService';
+import supabaseService from '../services/supabaseService';
+import { useRealtimePool } from '../hooks/useRealtimePool';
 import { parseContractError, logContractError, formatErrorForDisplay } from '../utils/contractErrorHandler';
 import {
   batchContractCalls,
@@ -73,18 +74,6 @@ function safeSlotFeeToBigNumber(slotFee) {
 
 // Utility function to check if ERC721 token selector should be shown
 const shouldShowTokenSelector = (raffle) => {
-  console.log('Token Selector Debug:', {
-    holderTokenAddress: raffle.holderTokenAddress,
-    holderTokenStandard: raffle.holderTokenStandard,
-    holderTokenStandardType: typeof raffle.holderTokenStandard,
-    holderTokenStandardNumber: raffle.holderTokenStandard !== undefined && raffle.holderTokenStandard !== null ? (raffle.holderTokenStandard.toNumber ? raffle.holderTokenStandard.toNumber() : Number(raffle.holderTokenStandard)) : 'N/A',
-    zeroAddress: ethers.constants.AddressZero,
-    addressMatches: raffle.holderTokenAddress === ethers.constants.AddressZero,
-    standardMatches: raffle.holderTokenStandard === 0, // ERC721 = 0 in contract
-    standardMatchesGTE: raffle.holderTokenStandard !== undefined && raffle.holderTokenStandard !== null && (raffle.holderTokenStandard.toNumber ? raffle.holderTokenStandard.toNumber() === 0 : Number(raffle.holderTokenStandard) === 0),
-    tokenGatingEnabled: raffle.holderTokenStandard === 0, // ERC721 = 0
-  });
-  
   // Check if holder token address is set and not zero address
   if (!raffle.holderTokenAddress || raffle.holderTokenAddress === ethers.constants.AddressZero) {
     return false;
@@ -308,7 +297,16 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
 
   useEffect(() => {
     fetchUserSlots();
-  }, [raffle.address, address]);
+  }, [raffle.address, address, raffle.slotsSold]);
+
+  // Auto-clamp quantity when available slots change (e.g., from real-time updates)
+  useEffect(() => {
+    const maxAllowed = Math.max(0, raffle.maxSlotsPerAddress - userSlots);
+    const effectiveMax = Math.min(raffle.slotLimit - raffle.slotsSold, maxAllowed);
+    if (effectiveMax > 0 && quantity > effectiveMax) {
+      setQuantity(effectiveMax);
+    }
+  }, [raffle.slotsSold, userSlots, raffle.slotLimit, raffle.maxSlotsPerAddress]);
 
   // Fetch user's ERC721 tokens when needed
   useEffect(() => {
@@ -521,6 +519,11 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     setLoading(true);
     try {
       await onPurchase(quantity, selectedTokenIds);
+      // Optimistic update: immediately reflect purchased slots in UI
+      setUserSlots(prev => prev + quantity);
+      setQuantity(1);
+      // Also re-fetch from contract for accuracy
+      fetchUserSlots();
     } catch (error) {
       const errorDetails = formatErrorForDisplay(error, 'purchase tickets');
       logContractError(error, 'Purchase Tickets', { quantity, selectedTokenIds });
@@ -573,21 +576,6 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     // For token-gated pools, calculate minimum required participants (50% of winnersCount)
     const minimumRequired = isTokenGated ? Math.ceil((raffle.winnersCount * 50) / 100) : raffle.winnersCount;
     
-    // Debug logging
-    console.log('canClosePool debug:', {
-      now,
-      raffleEndTime,
-      timePassed: now >= raffleEndTime,
-      participantsCount,
-      winnersCount: raffle.winnersCount,
-      isTokenGated,
-      minimumRequired,
-      sufficientParticipants: participantsCount < raffle.winnersCount,
-      belowMinimum: participantsCount < minimumRequired,
-      state: raffle.state?.toLowerCase(),
-      validState: (raffle.state?.toLowerCase() === 'active' || raffle.state?.toLowerCase() === 'pending')
-    });
-    
     // For token-gated pools, only show Close Pool if participants < 50% threshold
     // For non-token-gated pools, show Close Pool if participants < winnersCount
     return now >= raffleEndTime && 
@@ -603,22 +591,6 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
     
     // For token-gated pools, calculate minimum required participants (50% of winnersCount)
     const minimumRequired = isTokenGated ? Math.ceil((raffle.winnersCount * 50) / 100) : raffle.winnersCount;
-    
-    // Debug logging
-    console.log('canRequestRandomness debug:', {
-      now,
-      raffleEndTime,
-      timePassed: now >= raffleEndTime,
-      participantsCount,
-      winnersCount: raffle.winnersCount,
-      winnersSelected: raffle.winnersSelected,
-      isTokenGated,
-      minimumRequired,
-      sufficientParticipants: participantsCount >= minimumRequired,
-      moreWinnersNeeded: raffle.winnersSelected < raffle.winnersCount,
-      state: raffle.state?.toLowerCase(),
-      stateNum: raffle.stateNum
-    });
     
     // For Ended pools (stateNum === 2), the state itself confirms time has passed
     if (raffle.stateNum === 2) {
@@ -721,12 +693,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
   const now = Math.floor(Date.now() / 1000);
   const canActivate = raffle && raffle.startTime ? now >= raffle.startTime : false;
 
-  // Fix: Define maxPurchasable for slot purchase logic
+  // Define maxPurchasable accounting for both global remaining and per-user remaining
   const remainingSlots = raffle.slotLimit - raffle.slotsSold;
-  const maxPurchasable = Math.min(
-    remainingSlots,
-    raffle.maxSlotsPerAddress
-  );
+  const userRemainingAllocation = Math.max(0, raffle.maxSlotsPerAddress - userSlots);
+  const maxPurchasable = Math.min(remainingSlots, userRemainingAllocation);
 
   return (
     <div className="bg-card/80 text-foreground backdrop-blur-sm border border-border rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col min-h-[360px] sm:min-h-[380px] lg:min-h-[420px] overflow-hidden">
@@ -878,16 +848,6 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               >
                 {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
               </Button>
-            ) : canClosePool() ? (
-              <Button
-                onClick={handleClosePool}
-                disabled={closingPool}
-                variant="primary"
-                size="lg"
-                className="w-full"
-              >
-                {closingPool ? 'Closing...' : (!hasTokenGating(raffle) && isEscrowedPrize && address?.toLowerCase() === raffle.creator.toLowerCase() ? 'Withdraw Prize' : 'Close Pool')}
-              </Button>
             ) : maxPurchasable <= 0 ? (
               <Button
                 disabled
@@ -895,16 +855,13 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 size="lg"
                 className="w-full opacity-60 cursor-not-allowed"
               >
-                {raffle.state === 'Deleted' || raffle.stateNum === 5 ? 'Pool Deleted' : 'Pool Closed'}
-              </Button>
-            ) : userSlots >= raffle.maxSlotsPerAddress ? (
-              <Button
-                disabled
-                variant="primary"
-                size="lg"
-                className="w-full opacity-60 cursor-not-allowed"
-              >
-                Limit Reached
+                {raffle.state === 'Deleted' || raffle.stateNum === 5
+                  ? 'Pool Deleted'
+                  : remainingSlots <= 0
+                    ? 'All Slots Sold'
+                    : userRemainingAllocation <= 0
+                      ? 'Limit Reached'
+                      : 'Pool Closed'}
               </Button>
         ) : (
             <>
@@ -916,7 +873,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <input
                       type="number"
                       min={1}
-                      max={raffle.maxSlotsPerAddress}
+                      max={maxPurchasable || 1}
                       value={quantity}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -927,7 +884,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                           if (isNaN(parsedValue)) {
                             setQuantity(1);
                           } else {
-                            setQuantity(Math.max(1, Math.min(raffle.maxSlotsPerAddress, parsedValue)));
+                            setQuantity(Math.max(1, Math.min(maxPurchasable || 1, parsedValue)));
                           }
                         }
                       }}
@@ -936,10 +893,10 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                     <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
                       <span 
                         className="cursor-pointer hover:text-primary hover:underline transition-colors"
-                        onClick={() => setQuantity(Math.max(1, raffle.maxSlotsPerAddress - userSlots))}
+                        onClick={() => setQuantity(Math.max(1, maxPurchasable))}
                         title="Click to set quantity to maximum"
                       >
-                        Max: {Math.max(0, raffle.maxSlotsPerAddress - userSlots)} slots remaining
+                        Max: {maxPurchasable} slots remaining
                       </span>
                       <span className="font-medium">
                         Total: {formatSlotFee(safeSlotFeeToBigNumber(raffle.slotFee).mul(isNaN(quantity) ? 1 : quantity))}
@@ -963,7 +920,7 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
               
               <Button
                 onClick={() => handlePurchase(quantity, selectedTokenIds)}
-                disabled={loading || !connected || !canPurchaseTickets() || (socialEngagementRequired && !hasCompletedSocialEngagement) || !isTokenSelectionValid()}
+                disabled={loading || !connected || !canPurchaseTickets() || maxPurchasable <= 0 || quantity > maxPurchasable || (socialEngagementRequired && !hasCompletedSocialEngagement) || !isTokenSelectionValid()}
                 variant="primary"
                 size="lg"
                 className="w-full shadow-sm"
@@ -1011,6 +968,8 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
   // Image gateway fallback state
   const [imageCandidates, setImageCandidates] = useState([]);
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
+  // Track the last fetched collection to prevent re-fetching on raffle object updates
+  const lastFetchedRef = useRef(null);
 
   // Multiple gateways for decentralized URIs
   const IPFS_GATEWAYS = [
@@ -1352,22 +1311,32 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
 
   // Main fetch function with enhanced logic
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchPrizeImageEnhanced() {
-
-
       // Check if we should attempt to fetch (same logic as render condition)
       const shouldFetch = raffle.isPrized ||
         (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) ||
         (raffle.standard !== undefined && raffle.prizeTokenId !== undefined);
 
       if (!shouldFetch) {
-
         return;
       }
 
-      setLoading(true);
-      setImageUrl(null);
-      setFetchSource(null);
+      // Create a unique key based on collection, token ID, and standard only.
+      // Deliberately exclude isEscrowedPrize: once artwork is fetched successfully,
+      // it must be preserved even if isEscrowedPrize toggles from real-time updates.
+      const fetchKey = `${raffle.prizeCollection}-${raffle.prizeTokenId}-${raffle.standard}`;
+
+      // Skip if we've already successfully fetched for this exact key
+      if (lastFetchedRef.current === fetchKey && imageUrl) {
+        return;
+      }
+
+      // Only show loading state if we don't already have an image
+      if (!imageUrl) {
+        setLoading(true);
+      }
 
       try {
         // Step 1: Get base URI from contract
@@ -1382,7 +1351,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
 
 
         if (!contract) {
-
+          if (!isMounted) return;
           setImageUrl(null);
           setLoading(false);
           return;
@@ -1395,6 +1364,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
               baseUri = await contract.unrevealedBaseURI();
               // If empty/unavailable, suppress rendering per requirement
               if (!baseUri || baseUri.trim() === '') {
+                if (!isMounted) return;
                 setSuppressRender(true);
                 setImageUrl(null);
                 setLoading(false);
@@ -1402,6 +1372,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
               }
             } catch (error) {
               // unrevealedBaseURI unavailable: suppress render
+              if (!isMounted) return;
               setSuppressRender(true);
               setImageUrl(null);
               setLoading(false);
@@ -1411,6 +1382,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
             try {
               baseUri = await contract.tokenURI(raffle.prizeTokenId);
             } catch (error) {
+              if (!isMounted) return;
               setImageUrl(null);
               setLoading(false);
               return;
@@ -1454,6 +1426,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
                   const tokenIdForCall = raffle?.prizeTokenId;
                   baseUri = await contract.uri(tokenIdForCall);
                 } catch (fallbackError) {
+                  if (!isMounted) return;
                   setImageUrl(null);
                   setLoading(false);
                   return;
@@ -1471,6 +1444,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
                   if (unrevealedUri && unrevealedUri.trim() !== '') {
                     baseUri = unrevealedUri;
                   } else {
+                    if (!isMounted) return;
                     setImageUrl(null);
                     setLoading(false);
                     return;
@@ -1487,6 +1461,7 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
                 try {
                   baseUri = await contract.uri(raffle.prizeTokenId);
                 } catch (fallbackError) {
+                  if (!isMounted) return;
                   setImageUrl(null);
                   setLoading(false);
                   return;
@@ -1497,19 +1472,21 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
             try {
               baseUri = await contract.uri(raffle.prizeTokenId);
             } catch (error) {
+              if (!isMounted) return;
               setImageUrl(null);
               setLoading(false);
               return;
             }
           }
         } else {
+          if (!isMounted) return;
           setImageUrl(null);
           setLoading(false);
           return;
         }
 
         if (!baseUri || baseUri.trim() === '') {
-
+          if (!isMounted) return;
           setImageUrl(null);
           setLoading(false);
           return;
@@ -1531,18 +1508,21 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
 
         // Build media candidates for gateway fallback
         const imgCandidates = Array.isArray(result.imageUrl) ? result.imageUrl : [result.imageUrl];
+        if (!isMounted) return;
         setImageCandidates(imgCandidates);
         setImageCandidateIndex(0);
         setImageUrl(imgCandidates[0]);
         setFetchSource(result.sourceUri);
-        // Early exit if we resolved a root metadata; no further attempts needed
+        lastFetchedRef.current = fetchKey;
 
       } catch (error) {
-        setImageUrl(null);
-        setFetchSource(null);
+        if (isMounted) {
+          setImageUrl(null);
+          setFetchSource(null);
+        }
       }
 
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
 
     // Trigger fetch only when all prize conditions are met (no dependency on isCollabPool)
@@ -1553,7 +1533,9 @@ const PrizeImageCard = ({ raffle, isMintableERC721, isEscrowedPrize }) => {
     );
 
     if (eligiblePrize) fetchPrizeImageEnhanced();
-  }, [raffle, getContractInstance, isEscrowedPrize]);
+
+    return () => { isMounted = false; };
+  }, [raffle?.prizeCollection, raffle?.prizeTokenId, raffle?.standard, raffle?.isPrized, raffle?._backendArtworkUrl, getContractInstance, isEscrowedPrize]);
 
   // Render only when prize conditions are met (no dependency on isCollabPool)
   const shouldRender = (
@@ -1735,7 +1717,7 @@ const RaffleDetailPage = () => {
     const nameSlug = currentChainId && SUPPORTED_NETWORKS[currentChainId]
       ? SUPPORTED_NETWORKS[currentChainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
       : (currentChainId || '');
-    return `${nameSlug ? `/${nameSlug}` : ''}/raffle/${raffleAddress}`;
+    return `${nameSlug ? `/${nameSlug}` : ''}/pool/${raffleAddress}`;
   }, [provider, raffleAddress]);
 
   const { refreshTrigger, triggerRefresh } = useRaffleStateManager();
@@ -1747,29 +1729,27 @@ const RaffleDetailPage = () => {
   const [error, setError] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isEscrowedPrize, setIsEscrowedPrize] = useState(false);
-    const [updatingVrfStatus, setUpdatingVrfStatus] = useState(false);
   const [raffleCollectionName, setRaffleCollectionName] = useState(null);
   const [gatingTokenName, setGatingTokenName] = useState(null);
   const [deletingRaffle, setDeletingRaffle] = useState(false);
-  const [is1155Approved, setIs1155Approved] = useState(false);
-  const [checkingApproval, setCheckingApproval] = useState(false);
-  const [approving, setApproving] = useState(false);
   const [hasCompletedSocialEngagement, setHasCompletedSocialEngagement] = useState(false);
 
   // Auto-refresh state for Drawing state monitoring
   const [lastDrawingStateTime, setLastDrawingStateTime] = useState(null);
   const [autoRefreshCount, setAutoRefreshCount] = useState(0);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
-  const [isERC20Approved, setIsERC20Approved] = useState(false);
-  const [checkingERC20Approval, setCheckingERC20Approval] = useState(false);
-  const [approvingERC20, setApprovingERC20] = useState(false);
-  const [isERC721Approved, setIsERC721Approved] = useState(false);
-  const [checkingERC721Approval, setCheckingERC721Approval] = useState(false);
-  const [approvingERC721] = useState(false);
   const [isRefundable, setIsRefundable] = useState(null);
   const [isCollabPool, setIsCollabPool] = useState(false);
   const [poolMetadata, setPoolMetadata] = useState(null);
   const [loadingMetadata, setLoadingMetadata] = useState(false);
+  const [poolActivity, setPoolActivity] = useState([]);
+  const [backendDataLoaded, setBackendDataLoaded] = useState(false);
+
+  // Claim Points state
+  const [canClaimParticipantPoints, setCanClaimParticipantPoints] = useState(false);
+  const [canClaimCreatorPoints, setCanClaimCreatorPoints] = useState(false);
+  const [claimingPoints, setClaimingPoints] = useState(false);
+  const [pointsSystemActive, setPointsSystemActive] = useState(false);
   // If URL includes a chain slug, gently ensure wallet is on the right network
   useEffect(() => {
     async function ensureNetworkFromUrl() {
@@ -1823,6 +1803,8 @@ const RaffleDetailPage = () => {
   const stableRaffleAddress = useMemo(() => raffleAddress, [raffleAddress]);
 
   const actualDurationDebounceRef = useRef(null);
+  const lastPolledStateRef = useRef(null);
+  const hasInitiallyLoadedRef = useRef(false);
   const fetchActualDurationImmediate = useCallback(async () => {
     try {
       const contract = getContractInstance(stableRaffleAddress || raffleAddress, 'pool');
@@ -1836,9 +1818,8 @@ const RaffleDetailPage = () => {
   }, [getContractInstance, stableRaffleAddress, raffleAddress]);
 
   // Event listener for raffle state changes
-  // Stop listening for winner selection events after raffle is completed
-  const isMainRaffleCompleted = raffle?.stateNum === 4 || raffle?.stateNum === 6; // Completed or AllPrizesClaimed (6)
-  const shouldMainListenForWinners = !!raffle && !isMainRaffleCompleted;
+  // Keep listener active in Completed state so polling detects Completed→AllPrizesClaimed
+  const shouldMainListen = !!raffle;
 
   const { isListening: isMainListening, eventHistory: mainEventHistory } = useRaffleEventListener(raffleAddress, {
     onWinnersSelected: (winners, event) => {
@@ -1857,28 +1838,48 @@ const RaffleDetailPage = () => {
       }, 5000); // 5 second delay
     },
     onStateChange: (newState, blockNumber) => {
-      // Reset auto-refresh monitoring when state changes successfully
-      if (newState !== 3) { // Not Drawing state
+      // Directly update state badge immediately (no waiting for triggerRefresh)
+      setRaffle(prev => {
+        if (!prev || prev.stateNum === newState) return prev;
+        return { ...prev, stateNum: newState, state: POOL_STATE_LABELS[newState] || prev.state };
+      });
+
+      // Only perform side effects and full refresh if state actually changed
+      if (newState === lastPolledStateRef.current) return;
+      lastPolledStateRef.current = newState;
+
+      if (newState !== 3) {
         setAutoRefreshCount(0);
         setLastDrawingStateTime(null);
       }
 
-      // If transitioning into an ended/terminal state, debounce a direct fetch of actualDuration
       if ([2,3,4,5,6,7,8].includes(newState)) {
         if (actualDurationDebounceRef.current) clearTimeout(actualDurationDebounceRef.current);
         actualDurationDebounceRef.current = setTimeout(() => {
           fetchActualDurationImmediate();
-        }, 600); // small debounce
+        }, 600);
       }
 
-      // Trigger refresh when state changes (to update other fields)
       triggerRefresh();
     },
-    onPrizeClaimed: (winner, tokenId, event) => {
-
+    onPrizeClaimed: (winner, amount, event) => {
       toast.success(`Prize claimed by ${winner.slice(0, 6)}...${winner.slice(-4)}!`);
-      // Trigger refresh to update claim status
-      triggerRefresh();
+      if (address && winner.toLowerCase() === address.toLowerCase()) {
+        setWinnerData(prev => prev ? { ...prev, prizeClaimed: true } : prev);
+      }
+      // Query contract state directly to detect transitions (e.g., → AllPrizesClaimed)
+      const poolContract = getContractInstance && getContractInstance(raffleAddress, 'pool');
+      if (poolContract) {
+        poolContract.state().then(s => {
+          const stateVal = s.toNumber ? s.toNumber() : Number(s);
+          setRaffle(prev => {
+            if (!prev || prev.stateNum === stateVal) return prev;
+            return { ...prev, stateNum: stateVal, state: POOL_STATE_LABELS[stateVal] || prev.state };
+          });
+          // Refresh to update winners list, activity, etc.
+          triggerRefresh();
+        }).catch(() => {});
+      }
     },
     onTicketsPurchased: (participant, quantity, event) => {
 
@@ -1895,15 +1896,72 @@ const RaffleDetailPage = () => {
     },
     enablePolling: true,
     pollingInterval: raffle?.stateNum === 3 ? 10000 : 15000, // Faster polling during Drawing state
-    autoStart: shouldMainListenForWinners, // Stop listening for winners after completion
+    autoStart: shouldMainListen,
     raffleState: raffle?.stateNum || null,
     enableStateConditionalListening: true,
-    stopOnCompletion: true // New flag to stop winner selection listening after completion
+    stopOnCompletion: false // Keep polling active in Completed state to detect → AllPrizesClaimed
   });
+
+  // Helper function to transform backend pool data to expected raffle format
+  const transformBackendPool = useCallback((pool) => {
+    if (!pool) return null;
+    return {
+      address: pool.address,
+      name: pool.name || 'Unknown Pool',
+      creator: pool.creator,
+      startTime: Number(pool.start_time),
+      duration: Number(pool.duration),
+      actualDuration: pool.actual_duration ? Number(pool.actual_duration) : undefined,
+      slotFee: pool.slot_fee ? ethers.BigNumber.from(pool.slot_fee) : ethers.BigNumber.from(0),
+      slotLimit: pool.slot_limit || 0,
+      slotsSold: pool.slots_sold || 0,
+      winnersCount: pool.winners_count || 0,
+      winnersSelected: pool.winners_selected || 0,
+      maxSlotsPerAddress: pool.max_slots_per_address || 0,
+      stateNum: pool.state,
+      state: POOL_STATE_LABELS[pool.state] || 'Unknown',
+      isPrized: pool.is_prized || false,
+      prizeCollection: pool.prize_collection || ethers.constants.AddressZero,
+      prizeTokenId: pool.prize_token_id ? ethers.BigNumber.from(pool.prize_token_id) : ethers.BigNumber.from(0),
+      standard: pool.standard,
+      erc20PrizeToken: pool.erc20_prize_token || ethers.constants.AddressZero,
+      erc20PrizeAmount: pool.erc20_prize_amount ? ethers.BigNumber.from(pool.erc20_prize_amount) : ethers.BigNumber.from(0),
+      nativePrizeAmount: pool.native_prize_amount ? ethers.BigNumber.from(pool.native_prize_amount) : ethers.BigNumber.from(0),
+      usesCustomFee: pool.uses_custom_fee || false,
+      isEscrowedPrize: pool.is_escrowed_prize !== false, // Default to true
+      isCollabPool: pool.is_collab_pool || false,
+      amountPerWinner: pool.amount_per_winner || 1,
+      holderTokenAddress: pool.holder_token_address || ethers.constants.AddressZero,
+      holderTokenStandard: pool.holder_token_standard || 0,
+      minHolderTokenBalance: pool.min_holder_token_balance ? ethers.BigNumber.from(pool.min_holder_token_balance) : ethers.BigNumber.from(0),
+      isRefundable: pool.is_refundable || false,
+      chainId: pool.chain_id,
+      socialEngagementRequired: pool.social_engagement_required || false,
+      socialTaskDescription: pool.social_task_description || null,
+      // Pool metadata from backend
+      _backendMetadata: (pool.description || pool.twitter_link || pool.discord_link || pool.telegram_link) ? {
+        description: pool.description || '',
+        twitterLink: pool.twitter_link || '',
+        discordLink: pool.discord_link || '',
+        telegramLink: pool.telegram_link || '',
+        hasMetadata: true,
+      } : null,
+      _fromBackend: true,
+      _backendActivity: pool.activity || [],
+      _backendParticipants: pool.participants || [],
+      _backendWinners: pool.winners || [],
+      _backendCollectionArtwork: pool.collection_artwork || null,
+      collection_artwork: pool.collection_artwork || null,
+    };
+  }, []);
 
   // Memoized fetch function to prevent recreation on every render
   const fetchRaffleData = useCallback(async () => {
-      setLoading(true);
+      // Only show full-page loading on initial load, not on triggerRefresh()
+      // Showing loading on refresh unmounts all children (WinnersSection, etc.)
+      if (!hasInitiallyLoadedRef.current) {
+        setLoading(true);
+      }
       setError(null); // Clear previous errors
       try {
         if (!stableRaffleAddress) {
@@ -1919,6 +1977,63 @@ const RaffleDetailPage = () => {
           throw new Error('Contract context not ready');
         }
 
+        // Get chain ID for backend query
+        const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+
+        // Try backend-first fetching for faster initial load
+        let backendPool = null;
+        if (supabaseService.isAvailable() && currentChainId) {
+          try {
+            backendPool = await supabaseService.getPoolEnhanced(currentChainId, stableRaffleAddress);
+            if (backendPool) {
+              const transformedPool = transformBackendPool(backendPool);
+              if (transformedPool) {
+                // Set initial data from backend (fast path)
+                // On refreshes, never downgrade stateNum from real-time subscription
+                setRaffle(prev => {
+                  if (!prev) return transformedPool;
+                  const merged = { ...prev, ...transformedPool };
+                  if (prev.stateNum > merged.stateNum) {
+                    merged.stateNum = prev.stateNum;
+                    merged.state = POOL_STATE_LABELS[prev.stateNum] || prev.state;
+                  }
+                  return merged;
+                });
+                setIsRefundable(transformedPool.isRefundable);
+                setIsCollabPool(transformedPool.isCollabPool);
+                setIsEscrowedPrize(transformedPool.isEscrowedPrize);
+                // Merge backend activities with any real-time activities already received
+                // to avoid losing activities that arrived via subscription but aren't yet indexed
+                setPoolActivity(prev => {
+                  const backendActivities = transformedPool._backendActivity || [];
+                  if (prev.length === 0) return backendActivities;
+                  // Merge: keep all existing real-time activities, add any new backend ones
+                  const existingIds = new Set(prev.map(a => a.id));
+                  const newFromBackend = backendActivities.filter(a => !existingIds.has(a.id));
+                  if (newFromBackend.length === 0) return prev;
+                  return [...prev, ...newFromBackend].sort((a, b) => {
+                    const timeA = new Date(a.timestamp || a.created_at).getTime();
+                    const timeB = new Date(b.timestamp || b.created_at).getTime();
+                    return timeB - timeA;
+                  });
+                });
+                // Use backend metadata if available (avoids RPC event queries)
+                if (transformedPool._backendMetadata) {
+                  setPoolMetadata(transformedPool._backendMetadata);
+                }
+                setBackendDataLoaded(true);
+                hasInitiallyLoadedRef.current = true;
+                setLoading(false);
+                
+                // Continue to fetch user-specific data via RPC in background
+                // (refundable amount, etc.)
+              }
+            }
+          } catch (backendError) {
+            console.warn('Backend fetch failed, falling back to RPC:', backendError);
+          }
+        }
+
         // Get browser-specific configuration
         const platformConfig = getPlatformConfig();
         const browserInfo = getBrowserInfo();
@@ -1932,7 +2047,7 @@ const RaffleDetailPage = () => {
         }
 
         // Create SocialEngagementManager contract instance for social task queries
-        const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+        // Note: currentChainId already declared above for backend query
         const socialEngagementManagerContract = getContractInstance(
           SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.socialEngagementManager,
           'socialEngagementManager'
@@ -2092,68 +2207,6 @@ const RaffleDetailPage = () => {
           minHolderTokenBalance
         };
 
-        // Determine if this raffle has an assigned VRF subscription (can be deregistered)
-        console.log('[VRF Debug] Checking poolToSubscriptionId', {
-          chainSlug,
-          providerChainId: provider?.network?.chainId,
-          resolvedChainId: resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId,
-          raffleAddress
-        });
-        
-        let hasVRFSubscription = false;
-        try {
-          const currentChainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
-          const managerAddr = currentChainId ? SUPPORTED_NETWORKS[currentChainId]?.contractAddresses?.protocolManager : undefined;
-          if (managerAddr) {
-            const managerContract = getContractInstance(managerAddr, 'protocolManager');
-            
-            console.log('[VRF Debug] Built manager contract?', { hasContract: !!managerContract });
-            
-            if (managerContract && managerContract.getPoolSubscription) {
-              const subscriptionId = await managerContract.getPoolSubscription(raffleAddress);
-              hasVRFSubscription = subscriptionId !== '0';
-              raffleData.subscriptionId = subscriptionId; // Store ProtocolManager's subscription ID
-              
-              console.log('[VRF Debug] manager.getPoolSubscription result', { subscriptionId, hasVRFSubscription });
-            }
-            
-            // Fetch pool's stored subscription ID
-            const poolContract = getContractInstance(raffleAddress, 'pool');
-            if (poolContract && poolContract.poolSubscriptionId) {
-              const poolSubscriptionId = await poolContract.poolSubscriptionId();
-              raffleData.poolSubscriptionId = poolSubscriptionId;
-              console.log('[VRF Debug] pool.poolSubscriptionId result', { poolSubscriptionId });
-            }
-          }
-        } catch (_) {}
-        
-console.log('[VRF Debug] Setting raffle.isVrfConsumer based on subscription', { hasVRFSubscription: !!hasVRFSubscription });
-        
-raffleData.isVrfConsumer = !!hasVRFSubscription;
-
-setRaffle(raffleData);
-        // Fallback: if manager contract exists in context, prefer it directly (no address lookups)
-        try {
-          if (!hasVRFSubscription && contracts?.protocolManager?.getPoolSubscription) {
-            console.log('[VRF Debug] Using context manager to check getPoolSubscription', { manager: contracts.protocolManager.address, raffleAddress });
-            const subscriptionId = await contracts.protocolManager.getPoolSubscription(raffleAddress);
-            hasVRFSubscription = subscriptionId !== '0';
-            raffleData.subscriptionId = subscriptionId; // Store ProtocolManager's subscription ID
-            console.log('[VRF Debug] Context manager getPoolSubscription result', { hasVRFSubscription });
-            raffleData.isVrfConsumer = !!hasVRFSubscription;
-            
-            // Also fetch pool's stored subscription ID in fallback
-            const poolContract = getContractInstance(raffleAddress, 'pool');
-            if (poolContract && poolContract.poolSubscriptionId) {
-              const poolSubscriptionId = await poolContract.poolSubscriptionId();
-              raffleData.poolSubscriptionId = poolSubscriptionId;
-              console.log('[VRF Debug] Fallback pool.poolSubscriptionId result', { poolSubscriptionId });
-            }
-          }
-        } catch (err) {
-          console.warn('[VRF Debug] Context manager poolToSubscriptionId check failed', err);
-        }
-
         setIsRefundable(isRefundableFlag);
         setIsCollabPool(isCollabPoolFlag);
         // If externally prized, re-query prizeCollection
@@ -2165,10 +2218,17 @@ setRaffle(raffleData);
             // fallback: keep previous value
           }
         }
-        // Update raffle state with latest prizeCollection
-        setRaffle({
-          ...raffleData,
-          prizeCollection: updatedPrizeCollection
+        // Update raffle state with latest RPC data while preserving backend-only fields
+        // (e.g., _backendArtworkUrl, _backendCollectionArtwork, _fromBackend, _backendMetadata)
+        // IMPORTANT: Never downgrade stateNum — real-time subscriptions are authoritative.
+        // RPC nodes can be behind, returning stale state that causes badge flashing.
+        setRaffle(prev => {
+          const merged = { ...prev, ...raffleData, prizeCollection: updatedPrizeCollection };
+          if (prev && prev.stateNum > merged.stateNum) {
+            merged.stateNum = prev.stateNum;
+            merged.state = POOL_STATE_LABELS[prev.stateNum] || prev.state;
+          }
+          return merged;
         });
       } catch (error) {
 
@@ -2182,9 +2242,8 @@ setRaffle(raffleData);
         // Set error state instead of navigating away immediately
         setError(errorMessage);
       } finally {
+        hasInitiallyLoadedRef.current = true;
         setLoading(false);
-
-
       }
   }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress, isInitialized, isReconnecting, refreshTrigger]);
 
@@ -2232,6 +2291,114 @@ setRaffle(raffleData);
       fetchRaffleData();
     }
   }, [fetchRaffleData, stableRaffleAddress, getContractInstance, isInitialized, isReconnecting, refreshTrigger]);
+
+  // Real-time subscription for pool updates from Supabase
+  // Accept ALL state updates so the page reflects state transitions immediately
+  useRealtimePool(stableRaffleAddress, (updatedPool) => {
+    // Clear cached backend data so re-navigation fetches fresh data
+    if (stableRaffleAddress) {
+      const chainIdForCache = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+      if (chainIdForCache) {
+        supabaseService.clearCache(`pool_enhanced_${chainIdForCache}_${stableRaffleAddress}`);
+      }
+    }
+    setRaffle(prev => {
+      if (!prev) return prev;
+      const newState = updatedPool.state !== undefined ? updatedPool.state : prev.stateNum;
+      const stateChanged = newState !== prev.stateNum;
+      const updated = {
+        ...prev,
+        slotsSold: updatedPool.slots_sold !== undefined ? updatedPool.slots_sold : prev.slotsSold,
+        winnersSelected: updatedPool.winners_selected !== undefined ? updatedPool.winners_selected : prev.winnersSelected,
+        stateNum: newState,
+        state: POOL_STATE_LABELS[newState] || prev.state,
+        actualDuration: updatedPool.actual_duration !== undefined ? Number(updatedPool.actual_duration) : prev.actualDuration,
+      };
+      // When state transitions to Completed+ (winners/activity now available in backend),
+      // schedule a delayed backend refetch to pick up new data
+      if (stateChanged && newState >= 3) {
+        setTimeout(() => triggerRefresh(), 2000);
+      }
+      return updated;
+    });
+  }, true);
+
+  // Real-time subscription for pool-specific activity, participants, and winners
+  // Multiplexed onto a single channel for efficiency
+  useEffect(() => {
+    if (!stableRaffleAddress || !supabaseService.isAvailable()) return;
+
+    const addr = stableRaffleAddress.toLowerCase();
+    const channelKey = `pool-detail:${addr}`;
+    const channel = supabaseService.client
+      .channel(channelKey)
+      // Activity feed (slot purchases, refunds, prize claims, etc.)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_activity',
+          filter: `pool_address=eq.${addr}`
+        },
+        (payload) => {
+          const newItem = payload.new;
+          if (!newItem) return;
+
+          setPoolActivity(prev => {
+            if (prev.some(a => a.id === newItem.id)) return prev;
+            return [newItem, ...prev];
+          });
+        }
+      )
+      // New participants — immediately increment slotsSold (arrives before pools UPDATE)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pool_participants',
+          filter: `pool_address=eq.${addr}`
+        },
+        (payload) => {
+          const participant = payload.new;
+          if (!participant) return;
+          const slotCount = participant.slots_purchased || 1;
+          setRaffle(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              slotsSold: (prev.slotsSold || 0) + slotCount,
+            };
+          });
+        }
+      )
+      // New winners — update winnersSelected count
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pool_winners',
+          filter: `pool_address=eq.${addr}`
+        },
+        (payload) => {
+          if (!payload.new) return;
+          setRaffle(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              winnersSelected: (prev.winnersSelected || 0) + 1,
+            };
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [stableRaffleAddress]);
 
   // Fetch collection name for raffle detail section
   useEffect(() => {
@@ -2394,11 +2561,12 @@ setRaffle(raffleData);
     fetchEscrowedPrizeFlag();
   }, [raffleAddress, getContractInstance]);
 
-  // Fetch pool metadata from events
+  // Fetch pool metadata from events (RPC fallback — only if backend didn't provide metadata)
   useEffect(() => {
     const fetchMetadata = async () => {
+      // Skip RPC fetch if backend already provided metadata
+      if (poolMetadata?.hasMetadata) return;
       if (!raffleAddress || !contracts?.poolDeployer) {
-        setPoolMetadata(null);
         return;
       }
 
@@ -2407,198 +2575,16 @@ setRaffle(raffleData);
         const metadata = await getPoolMetadata(raffleAddress, contracts.poolDeployer);
         setPoolMetadata(metadata);
       } catch (error) {
-        console.error('Error fetching pool metadata:', error);
-        setPoolMetadata(null);
+        console.error('Error fetching pool metadata via RPC:', error);
       } finally {
         setLoadingMetadata(false);
       }
     };
 
     fetchMetadata();
-  }, [raffleAddress, contracts?.poolDeployer]);
-
-  useEffect(() => {
-    const checkApproval = async () => {
-      if (
-        raffle &&
-        raffle.standard === 1 &&
-        raffle.prizeCollection &&
-        address &&
-        address.toLowerCase() === raffle.creator.toLowerCase()
-      ) {
-        setCheckingApproval(true);
-        try {
-          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-          const signer = provider.getSigner();
-          const erc1155 = new ethers.Contract(
-            raffle.prizeCollection,
-            contractABIs.erc1155Prize,
-            signer
-          );
-          const approved = await erc1155.isApprovedForAll(address, raffle.address);
-          setIs1155Approved(approved);
-        } catch (e) {
-          setIs1155Approved(false);
-        } finally {
-          setCheckingApproval(false);
-        }
-      }
-    };
-    checkApproval();
-  }, [raffle, address]);
-
-  const handleApprove1155 = async () => {
-    if (!raffle || !raffle.prizeCollection || !address) return;
-    setApproving(true);
-    try {
-      const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-      const signer = provider.getSigner();
-      const erc1155 = new ethers.Contract(
-        raffle.prizeCollection,
-        contractABIs.erc1155Prize,
-        signer
-      );
-      const tx = await erc1155.setApprovalForAll(raffle.address, true);
-      await tx.wait();
-      setIs1155Approved(true);
-      toast.success('Approval successful! You can now deposit the prize.');
-    } catch (e) {
-      const errorDetails = formatErrorForDisplay(e, 'approve ERC1155');
-      logContractError(e, 'Approve ERC1155');
-      notifyError(e, { action: 'approveERC1155' });
-    } finally {
-      setApproving(false);
-    }
-  };
-
-  useEffect(() => {
-    const checkERC20Approval = async () => {
-      if (
-        raffle &&
-        raffle.erc20PrizeToken &&
-        raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
-        raffle.erc20PrizeAmount &&
-        address &&
-        address.toLowerCase() === raffle.creator.toLowerCase()
-      ) {
-        setCheckingERC20Approval(true);
-        try {
-          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-          const signer = provider.getSigner();
-          const erc20 = new ethers.Contract(
-            raffle.erc20PrizeToken,
-            contractABIs.erc20,
-            signer
-          );
-          const allowance = await erc20.allowance(address, raffle.address);
-          setIsERC20Approved(allowance.gte(raffle.erc20PrizeAmount));
-        } catch (e) {
-          setIsERC20Approved(false);
-        } finally {
-          setCheckingERC20Approval(false);
-        }
-      }
-    };
-    checkERC20Approval();
-  }, [raffle, address]);
-
-  const handleApproveERC20 = async () => {
-    if (!raffle || !raffle.erc20PrizeToken || !raffle.erc20PrizeAmount || !address) return;
-    setApprovingERC20(true);
-    try {
-      const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-      const signer = provider.getSigner();
-      const erc20 = new ethers.Contract(
-        raffle.erc20PrizeToken,
-        contractABIs.erc20,
-        signer
-      );
-      const tx = await erc20.approve(raffle.address, ethers.constants.MaxUint256);
-      await tx.wait();
-      setIsERC20Approved(true);
-      toast.success('ERC20 approval successful! You can now deposit the prize.');
-    } catch (e) {
-      const errorDetails = formatErrorForDisplay(e, 'approve ERC20');
-      logContractError(e, 'Approve ERC20');
-      notifyError(e, { action: 'approveERC20' });
-    } finally {
-      setApprovingERC20(false);
-    }
-  };
-
-  useEffect(() => {
-    const checkERC721Approval = async () => {
-      if (
-        raffle &&
-        raffle.standard === 0 &&
-        raffle.prizeCollection &&
-        typeof raffle.prizeTokenId !== 'undefined' &&
-        address &&
-        address.toLowerCase() === raffle.creator.toLowerCase()
-      ) {
-        setCheckingERC721Approval(true);
-        try {
-          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-          const signer = provider.getSigner();
-          const erc721 = new ethers.Contract(
-            raffle.prizeCollection,
-            contractABIs.erc721Prize,
-            signer
-          );
-          const approvedAddress = await erc721.getApproved(raffle.prizeTokenId);
-          if (approvedAddress && approvedAddress.toLowerCase() === raffle.address.toLowerCase()) {
-            setIsERC721Approved(true);
-          } else {
-            const isAll = await erc721.isApprovedForAll(address, raffle.address);
-            setIsERC721Approved(isAll);
-          }
-        } catch (e) {
-          setIsERC721Approved(false);
-        } finally {
-          setCheckingERC721Approval(false);
-        }
-      }
-    };
-    checkERC721Approval();
-  }, [raffle, address]);
-
-  const handleApproveERC721 = async () => {
-    if (!raffle || !raffle.prizeCollection || typeof raffle.prizeTokenId === 'undefined' || !address) return;
-    setApprovingERC721(true);
-    try {
-      const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
-      const signer = provider.getSigner();
-      const erc721 = new ethers.Contract(
-        raffle.prizeCollection,
-        contractABIs.erc721Prize,
-        signer
-      );
-      const tx = await erc721.approve(raffle.address, raffle.prizeTokenId);
-      await tx.wait();
-      setIsERC721Approved(true);
-      toast.success('ERC721 approval successful! You can now deposit the prize.');
-    } catch (e) {
-      const errorDetails = formatErrorForDisplay(e, 'approve ERC721');
-      logContractError(e, 'Approve ERC721');
-      notifyError(e, { action: 'approveERC721' });
-    } finally {
-      setApprovingERC721(false);
-    }
-  };
+  }, [raffleAddress, contracts?.poolDeployer, poolMetadata?.hasMetadata]);
 
   const handlePurchaseTickets = async (quantity, selectedTokenIds = []) => {
-    console.log('🎯 handlePurchaseTickets START:', {
-      quantity,
-      selectedTokenIds,
-      selectedTokenIdsType: typeof selectedTokenIds,
-      selectedTokenIdsLength: selectedTokenIds?.length,
-      minHolderTokenBalance: raffle.minHolderTokenBalance?.toString(),
-      minHolderTokenBalanceFormatted: raffle.minHolderTokenBalance ? ethers.utils.formatUnits(raffle.minHolderTokenBalance, 18) : 'N/A',
-      holderTokenAddress: raffle.holderTokenAddress,
-      holderTokenStandard: raffle.holderTokenStandard,
-      userAddress: address
-    });
-    
     if (!connected || !raffle) {
       throw new Error('Wallet not connected or raffle not loaded');
     }
@@ -2625,7 +2611,6 @@ setRaffle(raffleData);
       // 1. Users who have completed social media verification (hasCompletedSocialEngagement = true from frontend)
       // 2. Users who have previously purchased slots (hasCompletedSocialEngagement = true from contract)
       try {
-        console.log('Generating signature for social engagement required pool...');
         const signatureResult = await signatureService.generatePurchaseSignature(
           address, 
           raffle.address, 
@@ -2636,7 +2621,6 @@ setRaffle(raffleData);
           signature = signatureResult.signature;
           deadline = signatureResult.deadline;
           signatureToUse = signature;
-          console.log('Signature generated successfully with deadline:', deadline);
         } else {
           throw new Error(signatureResult.error || 'Failed to generate signature');
         }
@@ -2654,29 +2638,6 @@ setRaffle(raffleData);
     // For pools without social engagement requirements, signatureToUse remains '0x'
 
     // Call purchaseSlots with deadline, signature, and selected token IDs
-    console.log('Purchase Debug:', {
-      quantity,
-      deadline,
-      signatureLength: signatureToUse.length,
-      selectedTokenIds,
-      selectedTokenIdsLength: selectedTokenIds.length,
-      selectedTokenIdsTypes: selectedTokenIds.map(id => typeof id),
-      convertedTokenIds: selectedTokenIds.map(id => id.toString()),
-      numericTokenIds: selectedTokenIds.map(id => Number(id)),
-      totalCost: totalCost.toString(),
-      holderTokenStandard: raffle.holderTokenStandard,
-      holderTokenAddress: raffle.holderTokenAddress,
-      minHolderTokenBalance: raffle.minHolderTokenBalance?.toString(),
-      userAddress: address,
-      // Detailed validation info
-      validationChecks: {
-        hasTokenIds: selectedTokenIds.length > 0,
-        tokenIdsValid: selectedTokenIds.every(id => !isNaN(Number(id))),
-        holderAddressValid: raffle.holderTokenAddress !== ethers.constants.AddressZero,
-        userAddressValid: !!address
-      }
-    });
-    
     // Convert token IDs to numbers for contract (contract expects uint256[])
     const numericTokenIds = selectedTokenIds.map(id => {
       const tokenId = Number(id);
@@ -2684,13 +2645,6 @@ setRaffle(raffleData);
         throw new Error(`Invalid token ID: ${id}`);
       }
       return tokenId;
-    });
-    
-    console.log('Final Contract Call Args:', {
-      numericTokenIds,
-      numericTokenIdsLength: numericTokenIds.length,
-      expectedMinBalance: raffle.minHolderTokenBalance?.toString(),
-      contractAddress: raffle.address
     });
     
     const tx = await poolContract.purchaseSlots(quantity, deadline, signatureToUse, numericTokenIds, { value: totalCost });
@@ -2745,6 +2699,146 @@ setRaffle(raffleData);
       now < raffleEndTime && // Only allow deletion before pool ends
       raffle?.usesCustomFee === true // Only pools with custom slot fee can be deleted
     );
+  };
+
+  // Check points claim eligibility
+  useEffect(() => {
+    const checkPointsEligibility = async () => {
+      if (!raffle || !address || !connected || !provider) {
+        setCanClaimParticipantPoints(false);
+        setCanClaimCreatorPoints(false);
+        setPointsSystemActive(false);
+        return;
+      }
+
+      const chainId = resolveChainIdFromSlug(chainSlug) || provider?.network?.chainId;
+      const rewardsFlywheelAddress = SUPPORTED_NETWORKS[chainId]?.contractAddresses?.rewardsFlywheel;
+      if (!rewardsFlywheelAddress) {
+        console.warn('[ClaimPoints] No rewardsFlywheel address for chainId:', chainId);
+        setCanClaimParticipantPoints(false);
+        setCanClaimCreatorPoints(false);
+        setPointsSystemActive(false);
+        return;
+      }
+
+      try {
+        const rewardsFlywheel = getContractInstance(rewardsFlywheelAddress, 'rewardsFlywheel');
+        if (!rewardsFlywheel) {
+          console.warn('[ClaimPoints] Failed to create rewardsFlywheel contract instance');
+          return;
+        }
+
+        // Check if points system is active
+        const isActive = await rewardsFlywheel.pointsSystemActive();
+        setPointsSystemActive(isActive);
+        console.log('[ClaimPoints] pointsSystemActive:', isActive);
+
+        if (!isActive) {
+          setCanClaimParticipantPoints(false);
+          setCanClaimCreatorPoints(false);
+          return;
+        }
+
+        // Pool must be in Completed (4) or AllPrizesClaimed (6) state
+        const isEligibleState = raffle.stateNum === 4 || raffle.stateNum === 6;
+        console.log('[ClaimPoints] stateNum:', raffle.stateNum, 'isEligibleState:', isEligibleState);
+        if (!isEligibleState) {
+          setCanClaimParticipantPoints(false);
+          setCanClaimCreatorPoints(false);
+          return;
+        }
+
+        const poolContract = getContractInstance(raffle.address, 'pool');
+        if (!poolContract) {
+          console.warn('[ClaimPoints] Failed to create pool contract instance');
+          return;
+        }
+
+        // Check participant eligibility
+        // Conditions: non-refundable pool (usesCustomFee), user purchased slots, points not already claimed
+        const userSlots = await poolContract.getSlotsPurchased(address);
+        const hasPurchasedSlots = userSlots && userSlots.gt(0);
+        console.log('[ClaimPoints] usesCustomFee:', raffle.usesCustomFee, 'hasPurchasedSlots:', hasPurchasedSlots);
+
+        if (raffle.usesCustomFee && hasPurchasedSlots) {
+          const participantPointsAllocated = await rewardsFlywheel.participantPointsAllocated(raffle.address, address);
+          console.log('[ClaimPoints] participantPointsAllocated:', participantPointsAllocated);
+          setCanClaimParticipantPoints(!participantPointsAllocated);
+        } else {
+          setCanClaimParticipantPoints(false);
+        }
+
+        // Check creator eligibility
+        // Conditions: user is creator, points not already claimed
+        const isCreator = address?.toLowerCase() === raffle?.creator?.toLowerCase();
+        console.log('[ClaimPoints] isCreator:', isCreator, 'address:', address?.toLowerCase(), 'creator:', raffle?.creator?.toLowerCase());
+        if (isCreator) {
+          const creatorPointsAllocated = await rewardsFlywheel.creatorPointsAllocated(raffle.address);
+          console.log('[ClaimPoints] creatorPointsAllocated:', creatorPointsAllocated);
+          setCanClaimCreatorPoints(!creatorPointsAllocated);
+        } else {
+          setCanClaimCreatorPoints(false);
+        }
+      } catch (error) {
+        console.error('[ClaimPoints] Error checking points eligibility:', error);
+        setCanClaimParticipantPoints(false);
+        setCanClaimCreatorPoints(false);
+      }
+    };
+
+    checkPointsEligibility();
+  }, [raffle, address, connected, provider, getContractInstance, refreshTrigger, chainSlug]);
+
+  // Handle claiming points
+  const handleClaimPoints = async (isCreator) => {
+    if (!raffle || !connected || !getContractInstance) return;
+
+    setClaimingPoints(true);
+    try {
+      const poolContract = getContractInstance(raffle.address, 'pool');
+      if (!poolContract) {
+        throw new Error('Pool contract instance not available');
+      }
+
+      let tx;
+      if (isCreator) {
+        // Preflight simulate
+        try {
+          await poolContract.callStatic.claimCreatorPoints();
+        } catch (simErr) {
+          notifyError(simErr, { action: 'claimCreatorPoints', phase: 'preflight' });
+          throw simErr;
+        }
+        tx = await poolContract.claimCreatorPoints();
+      } else {
+        // Preflight simulate
+        try {
+          await poolContract.callStatic.claimParticipantPoints();
+        } catch (simErr) {
+          notifyError(simErr, { action: 'claimParticipantPoints', phase: 'preflight' });
+          throw simErr;
+        }
+        tx = await poolContract.claimParticipantPoints();
+      }
+
+      await tx.wait();
+      toast.success(`Successfully claimed ${isCreator ? 'creator' : 'participant'} points!`);
+      
+      // Update state after successful claim
+      if (isCreator) {
+        setCanClaimCreatorPoints(false);
+      } else {
+        setCanClaimParticipantPoints(false);
+      }
+      
+      triggerRefresh();
+    } catch (error) {
+      const errorDetails = formatErrorForDisplay(error, 'claim points');
+      logContractError(error, isCreator ? 'Claim Creator Points' : 'Claim Participant Points');
+      notifyError(error, { action: isCreator ? 'claimCreatorPoints' : 'claimParticipantPoints' });
+    } finally {
+      setClaimingPoints(false);
+    }
   };
 
   const getStatusBadge = () => {
@@ -2876,17 +2970,9 @@ setRaffle(raffleData);
         // Check refund eligibility for both global fee and custom fee pools
         try {
           const refundable = await poolContract.getRefundableAmount(address);
-          console.log('Debug - Refund info:', {
-            address,
-            stateNum: raffle.stateNum,
-            usesCustomFee: raffle.usesCustomFee,
-            refundableAmount: refundable?.toString(),
-            refundableGt: refundable && refundable.gt && refundable.gt(0)
-          });
           setRefundableAmount(refundable);
           setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
         } catch (e) {
-          console.log('Debug - getRefundableAmount error:', e);
           setRefundableAmount(null);
           setEligibleForRefund(false);
         }
@@ -2912,14 +2998,12 @@ setRaffle(raffleData);
     if (raffle.stateNum === 3) { // Drawing state
       if (!lastDrawingStateTime) {
         setLastDrawingStateTime(Date.now());
-        console.log('🎯 Raffle entered Drawing state - starting auto-refresh monitoring');
       }
     } else {
       // Reset when leaving Drawing state
       if (lastDrawingStateTime) {
         setLastDrawingStateTime(null);
         setAutoRefreshCount(0);
-        console.log('🎯 Raffle left Drawing state - stopping auto-refresh monitoring');
       }
     }
   }, [raffle?.stateNum, lastDrawingStateTime]);
@@ -2929,13 +3013,9 @@ setRaffle(raffleData);
   useEffect(() => {
     if (!lastDrawingStateTime || raffle?.stateNum !== 3) return;
 
-    console.log('🎯 Drawing state active - visual indicator enabled');
-
     const autoRefreshInterval = setInterval(async () => {
       setIsAutoRefreshing(true);
       setAutoRefreshCount(prev => prev + 1);
-
-      console.log(`🔄 Drawing state monitoring active (${autoRefreshCount + 1})`);
 
       // Check if pool state has changed (e.g., Drawing -> Completed)
       try {
@@ -2946,7 +3026,6 @@ setRaffle(raffleData);
           
           // If state changed from Drawing (3) to something else, trigger full refresh
           if (stateNum !== 3) {
-            console.log(`🎯 State changed from Drawing to ${stateNum}, triggering refresh`);
             triggerRefresh();
           }
         }
@@ -2961,7 +3040,6 @@ setRaffle(raffleData);
     }, 15000); // Check every 15 seconds
 
     return () => {
-      console.log('🎯 Drawing state monitoring stopped');
       clearInterval(autoRefreshInterval);
     };
   }, [lastDrawingStateTime, raffle?.stateNum, raffle?.address, autoRefreshCount, getContractInstance, triggerRefresh]);
@@ -3030,7 +3108,22 @@ setRaffle(raffleData);
         
         const action = isMintablePrize ? 'minted' : 'claimed';
         toast.success(`Successfully ${action} your ${prizeType}!`);
-        window.location.reload();
+        // Update winner data directly
+        setWinnerData(prev => prev ? { ...prev, prizeClaimed: true } : prev);
+        // Prize claim atomically claims available refunds — clear refund state immediately
+        setEligibleForRefund(false);
+        setRefundableAmount(null);
+        // Directly query contract state after claim to detect Completed→AllPrizesClaimed
+        // This is more reliable than waiting for events/polling/subscriptions
+        try {
+          const s = await poolContract.state();
+          const stateVal = s.toNumber ? s.toNumber() : Number(s);
+          setRaffle(prev => {
+            if (!prev || prev.stateNum === stateVal) return prev;
+            return { ...prev, stateNum: stateVal, state: POOL_STATE_LABELS[stateVal] || prev.state };
+          });
+        } catch (_) {}
+        triggerRefresh();
       } else {
         throw new Error(result.error);
       }
@@ -3235,7 +3328,33 @@ setRaffle(raffleData);
                   {deletingRaffle ? 'Deleting...' : 'Delete Pool'}
                 </Button>
             )}
-                        
+
+            {/* Claim Points Buttons */}
+            {canClaimCreatorPoints && (
+              <Button
+                onClick={() => handleClaimPoints(true)}
+                variant="primary"
+                size="md"
+                className="text-sm font-medium"
+                title="Claim your creator points for this pool"
+                disabled={claimingPoints}
+              >
+                {claimingPoints ? 'Claiming...' : 'Claim Creator Points'}
+              </Button>
+            )}
+
+            {canClaimParticipantPoints && (
+              <Button
+                onClick={() => handleClaimPoints(false)}
+                variant="primary"
+                size="md"
+                className="text-sm font-medium"
+                title="Claim your participant points for this pool"
+                disabled={claimingPoints}
+              >
+                {claimingPoints ? 'Claiming...' : 'Claim Points'}
+              </Button>
+            )}
 
           </div>
         </div>
@@ -3333,6 +3452,7 @@ setRaffle(raffleData);
               isMobile={isMobile}
               onWinnerCountChange={setWinnerCount}
               onWinnersSelectedChange={handleWinnersSelectedChange}
+              backendWinners={raffle?._backendWinners}
             />
           }
           raffleDetailsCard={
@@ -3348,6 +3468,7 @@ setRaffle(raffleData);
           poolActivitySection={
             <PoolActivity
               raffle={raffle}
+              activity={poolActivity}
               variant="nft"
             />
           }
@@ -3400,6 +3521,7 @@ setRaffle(raffleData);
               isMobile={isMobile}
               onWinnerCountChange={setWinnerCount}
               onWinnersSelectedChange={handleWinnersSelectedChange}
+              backendWinners={raffle?._backendWinners}
             />
           }
           raffleDetailsCard={
@@ -3415,6 +3537,7 @@ setRaffle(raffleData);
           poolActivitySection={
             <PoolActivity
               raffle={raffle}
+              activity={poolActivity}
               variant="standard"
             />
           }

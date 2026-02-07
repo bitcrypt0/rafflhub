@@ -77,8 +77,8 @@ const AppContent = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/create-raffle" element={<CreateRafflePageV2 />} />
           <Route path="/deploy-collection" element={<DeployCollectionPageV2 />} />
-          <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-          <Route path="/:chainSlug/raffle/:raffleAddress" element={<RaffleDetailPage />} />
+          <Route path="/pool/:raffleAddress" element={<RaffleDetailPage />} />
+          <Route path="/:chainSlug/pool/:raffleAddress" element={<RaffleDetailPage />} />
           {/* OAuth Callback Routes */}
           <Route path="/auth/callback/twitter" element={<AuthCallback />} />
           <Route path="/auth/callback/discord" element={<AuthCallback />} />

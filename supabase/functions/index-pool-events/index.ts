@@ -1,25 +1,34 @@
 // Supabase Edge Function: index-pool-events
-// Indexes Pool contract events: SlotsPurchased, WinnersSelected, RandomRequested, PrizeClaimed, RefundClaimed
-// Updates pools, pool_participants, pool_winners, and user_activity tables
+// Indexes all pool contract events: SlotsPurchased, WinnersSelected, RandomRequested,
+// PrizeClaimed, RefundClaimed, PoolActivated, PoolEnded.
+//
+// Design decisions:
+//   - All 7 queryFilter calls fire in parallel (single block-range scan each).
+//   - All block data is fetched in one batched round via fetchBlockMap.
+//   - SlotsPurchased: checks user_activity for already-indexed tx hashes before
+//     accumulating into pool_participants, preventing double-counting on re-index.
+//   - WinnersSelected: wins_count is set to the absolute count derived from
+//     pool_winners (not incremented), making it safe to re-run.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ethers } from 'https://esm.sh/ethers@5.7.2';
+import { corsHeaders, verifyInternalAuth, fetchBlockMap } from '../_shared/helpers.ts';
+import { providerCache } from '../_shared/provider-cache.ts';
+import { isSupportedNetwork } from '../_shared/networks.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Pool ABI - Events
 const POOL_ABI = [
   'event SlotsPurchased(address indexed participant, uint256 quantity)',
   'event WinnersSelected(address[] winners)',
-  'event RandomRequested(uint256 requestId)',
-  'event PrizeClaimed(address indexed winner, uint256 tokenId)',
+  'event RandomRequested(uint256 requestId, address indexed caller)',
+  'event PrizeClaimed(address indexed winner, uint256 amount)',
   'event RefundClaimed(address indexed participant, uint256 amount)',
+  'event PoolActivated(uint256 timestamp)',
+  'event PoolEnded(uint256 timestamp)',
   'function name() view returns (string)',
   'function slotFee() view returns (uint256)',
+  'function getRefundableAmount(address participant) view returns (uint256)',
+  'function isRefundable() view returns (bool)',
 ];
 
 interface IndexRequest {
@@ -41,31 +50,25 @@ serve(async (req) => {
 
     const { chainId, poolAddress, fromBlock, toBlock = 'latest' }: IndexRequest = await req.json();
 
-    if (!chainId || !poolAddress) {
+    if (!chainId || !isSupportedNetwork(chainId) || !poolAddress) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters: chainId, poolAddress' }),
+        JSON.stringify({ error: 'Missing or invalid parameters: chainId, poolAddress' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const poolAddr = poolAddress.toLowerCase();
-
-    // Get RPC URL from environment
-    const rpcUrl = Deno.env.get(`RPC_URL_${chainId}`) || 'https://base-sepolia-rpc.publicnode.com';
+    const provider = providerCache.getProvider(chainId);
+    const poolContract = new ethers.Contract(poolAddr, POOL_ABI, provider);
 
     console.log(`[Chain ${chainId}] Indexing pool events for ${poolAddr}`);
 
-    // Connect to blockchain
-    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    const poolContract = new ethers.Contract(poolAddr, POOL_ABI, provider);
-
-    // Get pool name and slot fee for activity records
     const [poolName, slotFee] = await Promise.all([
       poolContract.name().catch(() => ''),
       poolContract.slotFee(),
     ]);
 
-    // Get sync state
+    // Resume from last indexed block
     const { data: syncState } = await supabase
       .from('indexer_sync_state')
       .select('last_indexed_block')
@@ -75,28 +78,103 @@ serve(async (req) => {
       .single();
 
     const currentBlock = await provider.getBlockNumber();
-    const startBlock = fromBlock !== undefined ? fromBlock : (syncState?.last_indexed_block ? syncState.last_indexed_block + 1 : Math.max(0, currentBlock - 1000));
+    const startBlock = fromBlock !== undefined
+      ? fromBlock
+      : (syncState?.last_indexed_block ? syncState.last_indexed_block + 1 : Math.max(0, currentBlock - 10000));
     const endBlock = toBlock === 'latest' ? currentBlock : toBlock;
 
     console.log(`[Chain ${chainId}] Scanning blocks ${startBlock} to ${endBlock}`);
+
+    // ---------------------------------------------------------------
+    // Fire all 7 event filters in parallel — single pass over the block range
+    // ---------------------------------------------------------------
+    const [
+      slotsPurchasedEvents,
+      winnersSelectedEvents,
+      randomRequestedEvents,
+      prizeClaimedEvents,
+      refundClaimedEvents,
+      poolActivatedEvents,
+      poolEndedEvents,
+    ] = await Promise.all([
+      poolContract.queryFilter(poolContract.filters.SlotsPurchased(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.WinnersSelected(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.RandomRequested(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.PrizeClaimed(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.RefundClaimed(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.PoolActivated(), startBlock, endBlock),
+      poolContract.queryFilter(poolContract.filters.PoolEnded(), startBlock, endBlock),
+    ]);
+
+    // Batch-fetch all block data across every event type in one round
+    const allEvents = [
+      ...slotsPurchasedEvents,
+      ...winnersSelectedEvents,
+      ...randomRequestedEvents,
+      ...prizeClaimedEvents,
+      ...refundClaimedEvents,
+      ...poolActivatedEvents,
+      ...poolEndedEvents,
+    ];
+    const blockMap = await fetchBlockMap(provider, allEvents.map((e) => e.blockNumber));
+
+    // ---------------------------------------------------------------
+    // Idempotency: batch-fetch already-indexed tx hashes for the two
+    // event types that mutate accumulated state (SlotsPurchased and
+    // WinnersSelected).  Events whose tx hash is already present in
+    // user_activity are skipped to avoid double-counting.
+    // ---------------------------------------------------------------
+    const slotsTxHashes = slotsPurchasedEvents.map((e) => e.transactionHash);
+    const winnersTxHashes = winnersSelectedEvents.map((e) => e.transactionHash);
+
+    const [processedSlotsTxs, processedWinnersTxs] = await Promise.all([
+      slotsTxHashes.length > 0
+        ? supabase
+            .from('user_activity')
+            .select('transaction_hash')
+            .eq('chain_id', chainId)
+            .eq('pool_address', poolAddr)
+            .eq('activity_type', 'slot_purchase')
+            .in('transaction_hash', slotsTxHashes)
+        : { data: [] as { transaction_hash: string }[] },
+      winnersTxHashes.length > 0
+        ? supabase
+            .from('user_activity')
+            .select('transaction_hash')
+            .eq('chain_id', chainId)
+            .eq('pool_address', poolAddr)
+            .eq('activity_type', 'prize_won')
+            .in('transaction_hash', winnersTxHashes)
+        : { data: [] as { transaction_hash: string }[] },
+    ]);
+
+    const processedSlotsTxSet = new Set(
+      (processedSlotsTxs.data || []).map((r: { transaction_hash: string }) => r.transaction_hash)
+    );
+    const processedWinnersTxSet = new Set(
+      (processedWinnersTxs.data || []).map((r: { transaction_hash: string }) => r.transaction_hash)
+    );
 
     let eventsProcessed = 0;
     let errors = 0;
 
     // ============================================
-    // 1. SlotsPurchased Events
+    // 1. SlotsPurchased
     // ============================================
-    const slotsPurchasedFilter = poolContract.filters.SlotsPurchased();
-    const slotsPurchasedEvents = await poolContract.queryFilter(slotsPurchasedFilter, startBlock, endBlock);
     console.log(`[Chain ${chainId}] Found ${slotsPurchasedEvents.length} SlotsPurchased events`);
 
     for (const event of slotsPurchasedEvents) {
       try {
+        // Skip if this tx was already indexed — prevents double-accumulation
+        if (processedSlotsTxSet.has(event.transactionHash)) {
+          eventsProcessed++;
+          continue;
+        }
+
         const participant = event.args!.participant.toLowerCase();
         const quantity = event.args!.quantity.toNumber();
-        const block = await provider.getBlock(event.blockNumber);
+        const block = blockMap.get(event.blockNumber)!;
 
-        // Update or create participant record
         const { data: existing } = await supabase
           .from('pool_participants')
           .select('slots_purchased, total_spent')
@@ -112,48 +190,53 @@ serve(async (req) => {
 
         await supabase
           .from('pool_participants')
-          .upsert({
-            pool_address: poolAddr,
-            chain_id: chainId,
-            participant_address: participant,
-            slots_purchased: newSlotsPurchased,
-            total_spent: newTotalSpent,
-            first_purchase_block: existing ? undefined : event.blockNumber,
-            first_purchase_at: existing ? undefined : new Date(block.timestamp * 1000).toISOString(),
-            last_purchase_block: event.blockNumber,
-            last_purchase_at: new Date(block.timestamp * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'pool_address,chain_id,participant_address'
-          });
+          .upsert(
+            {
+              pool_address: poolAddr,
+              chain_id: chainId,
+              participant_address: participant,
+              slots_purchased: newSlotsPurchased,
+              total_spent: newTotalSpent,
+              first_purchase_block: existing ? undefined : event.blockNumber,
+              first_purchase_at: existing ? undefined : new Date(block.timestamp * 1000).toISOString(),
+              last_purchase_block: event.blockNumber,
+              last_purchase_at: new Date(block.timestamp * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'pool_address,chain_id,participant_address' }
+          );
 
-        // Create user activity record
+        // Activity record — idempotent via ignoreDuplicates; also serves as the
+        // dedup marker for future runs.
         await supabase
           .from('user_activity')
-          .upsert({
-            user_address: participant,
-            chain_id: chainId,
-            activity_type: 'slot_purchase',
-            pool_address: poolAddr,
-            pool_name: poolName || null,
-            quantity: quantity,
-            amount: slotFee.mul(quantity).toString(),
-            block_number: event.blockNumber,
-            transaction_hash: event.transactionHash,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
-          }, {
-            onConflict: 'chain_id,transaction_hash,activity_type,user_address',
-            ignoreDuplicates: true
-          });
+          .upsert(
+            {
+              user_address: participant,
+              chain_id: chainId,
+              activity_type: 'slot_purchase',
+              pool_address: poolAddr,
+              pool_name: poolName || null,
+              quantity: quantity,
+              amount: slotFee.mul(quantity).toString(),
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              timestamp: new Date(block.timestamp * 1000).toISOString(),
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,activity_type,user_address',
+              ignoreDuplicates: true,
+            }
+          );
 
         eventsProcessed++;
       } catch (err) {
-        console.error(`Error processing SlotsPurchased event:`, err);
+        console.error('Error processing SlotsPurchased event:', err);
         errors++;
       }
     }
 
-    // Update pool slots_sold count
+    // Recompute total slots_sold for the pool from current participant data
     if (slotsPurchasedEvents.length > 0) {
       const { data: participants } = await supabase
         .from('pool_participants')
@@ -161,7 +244,9 @@ serve(async (req) => {
         .eq('pool_address', poolAddr)
         .eq('chain_id', chainId);
 
-      const totalSlotsSold = participants?.reduce((sum, p) => sum + p.slots_purchased, 0) || 0;
+      const totalSlotsSold = (participants || []).reduce(
+        (sum: number, p: { slots_purchased: number }) => sum + p.slots_purchased, 0
+      );
 
       await supabase
         .from('pools')
@@ -171,134 +256,204 @@ serve(async (req) => {
     }
 
     // ============================================
-    // 2. WinnersSelected Events
+    // 2. WinnersSelected
     // ============================================
-    const winnersSelectedFilter = poolContract.filters.WinnersSelected();
-    const winnersSelectedEvents = await poolContract.queryFilter(winnersSelectedFilter, startBlock, endBlock);
     console.log(`[Chain ${chainId}] Found ${winnersSelectedEvents.length} WinnersSelected events`);
 
     for (const event of winnersSelectedEvents) {
       try {
         const winners = event.args!.winners.map((w: string) => w.toLowerCase());
-        const block = await provider.getBlock(event.blockNumber);
+        const block = blockMap.get(event.blockNumber)!;
 
         for (let i = 0; i < winners.length; i++) {
           const winner = winners[i];
 
-          // Insert winner record
+          // Upsert is idempotent on the composite key
+          // Include selection_tx_hash for block explorer linking
           await supabase
             .from('pool_winners')
-            .upsert({
-              pool_address: poolAddr,
-              chain_id: chainId,
-              winner_address: winner,
-              winner_index: i,
-              selected_block: event.blockNumber,
-              selected_at: new Date(block.timestamp * 1000).toISOString(),
-            }, {
-              onConflict: 'pool_address,chain_id,winner_address,winner_index'
-            });
+            .upsert(
+              {
+                pool_address: poolAddr,
+                chain_id: chainId,
+                winner_address: winner,
+                winner_index: i,
+                selected_block: event.blockNumber,
+                selected_at: new Date(block.timestamp * 1000).toISOString(),
+                selection_tx_hash: event.transactionHash,
+              },
+              { onConflict: 'pool_address,chain_id,winner_address,winner_index' }
+            );
 
-          // Create user activity record
           await supabase
             .from('user_activity')
-            .upsert({
-              user_address: winner,
-              chain_id: chainId,
-              activity_type: 'prize_won',
-              pool_address: poolAddr,
-              pool_name: poolName || null,
-              block_number: event.blockNumber,
-              transaction_hash: event.transactionHash,
-              timestamp: new Date(block.timestamp * 1000).toISOString(),
-            }, {
-              onConflict: 'chain_id,transaction_hash,activity_type,user_address',
-              ignoreDuplicates: true
-            });
-
-          // Update participant wins_count
-          await supabase.rpc('execute_sql', {
-            sql: `UPDATE pool_participants
-                  SET wins_count = wins_count + 1
-                  WHERE pool_address = $1 AND chain_id = $2 AND participant_address = $3`,
-            params: [poolAddr, chainId, winner]
-          }).catch(() => {}); // Ignore if function doesn't exist
+            .upsert(
+              {
+                user_address: winner,
+                chain_id: chainId,
+                activity_type: 'prize_won',
+                pool_address: poolAddr,
+                pool_name: poolName || null,
+                block_number: event.blockNumber,
+                transaction_hash: event.transactionHash,
+                timestamp: new Date(block.timestamp * 1000).toISOString(),
+              },
+              {
+                onConflict: 'chain_id,transaction_hash,activity_type,user_address',
+                ignoreDuplicates: true,
+              }
+            );
         }
 
-        // Update pool winners_selected count
+        // Only advance state to Completed (4) if current DB state is less advanced.
+        // This prevents overwriting AllPrizesClaimed (6) back to Completed (4) on re-index.
+        const { data: currentPool } = await supabase
+          .from('pools')
+          .select('state')
+          .eq('address', poolAddr)
+          .eq('chain_id', chainId)
+          .single();
+
+        const updatePayload: Record<string, unknown> = { winners_selected: winners.length };
+        if (!currentPool || currentPool.state < 4) {
+          updatePayload.state = 4;
+        }
+
         await supabase
           .from('pools')
-          .update({ winners_selected: winners.length, state: 4 }) // State 4 = completed
+          .update(updatePayload)
           .eq('address', poolAddr)
           .eq('chain_id', chainId);
 
         eventsProcessed++;
       } catch (err) {
-        console.error(`Error processing WinnersSelected event:`, err);
+        console.error('Error processing WinnersSelected event:', err);
         errors++;
       }
     }
 
+    // Recompute wins_count from pool_winners — absolute count, not an increment,
+    // so re-running this block is safe.
+    if (winnersSelectedEvents.length > 0) {
+      const { data: allWinners } = await supabase
+        .from('pool_winners')
+        .select('winner_address')
+        .eq('pool_address', poolAddr)
+        .eq('chain_id', chainId);
+
+      const winCounts = new Map<string, number>();
+      for (const w of (allWinners || [])) {
+        winCounts.set(w.winner_address, (winCounts.get(w.winner_address) || 0) + 1);
+      }
+
+      for (const [address, count] of winCounts) {
+        await supabase
+          .from('pool_participants')
+          .update({ wins_count: count })
+          .eq('pool_address', poolAddr)
+          .eq('chain_id', chainId)
+          .eq('participant_address', address);
+      }
+
+      // Calculate and store refundable amounts for all participants
+      // This happens when winners are selected (pool becomes completed)
+      // Always use getRefundableAmount() for accurate values - the contract handles winner logic
+      try {
+        const { data: allParticipants } = await supabase
+          .from('pool_participants')
+          .select('participant_address, refund_claimed')
+          .eq('pool_address', poolAddr)
+          .eq('chain_id', chainId);
+
+        for (const participant of (allParticipants || [])) {
+          // Skip if already claimed refund - amount is already 0
+          if (participant.refund_claimed) continue;
+
+          // Fetch refundable amount from contract for ALL participants
+          // The contract's getRefundableAmount() handles winner/non-winner logic correctly
+          try {
+            const refundableAmount = await poolContract.getRefundableAmount(participant.participant_address);
+            await supabase
+              .from('pool_participants')
+              .update({ refundable_amount: refundableAmount.toString() })
+              .eq('pool_address', poolAddr)
+              .eq('chain_id', chainId)
+              .eq('participant_address', participant.participant_address);
+          } catch (refundErr) {
+            console.warn(`Failed to get refundable amount for ${participant.participant_address}:`, refundErr);
+          }
+        }
+        console.log(`[Chain ${chainId}] Updated refundable amounts for ${allParticipants?.length || 0} participants`);
+      } catch (refundCalcErr) {
+        console.error('Error calculating refundable amounts:', refundCalcErr);
+      }
+    }
+
     // ============================================
-    // 3. RandomRequested Events
+    // 3. RandomRequested
     // ============================================
-    const randomRequestedFilter = poolContract.filters.RandomRequested();
-    const randomRequestedEvents = await poolContract.queryFilter(randomRequestedFilter, startBlock, endBlock);
     console.log(`[Chain ${chainId}] Found ${randomRequestedEvents.length} RandomRequested events`);
 
     for (const event of randomRequestedEvents) {
       try {
         const requestId = event.args!.requestId.toString();
-        const block = await provider.getBlock(event.blockNumber);
-        const tx = await event.getTransaction();
-        const requester = tx.from.toLowerCase();
+        const caller = event.args!.caller.toLowerCase();
+        const block = blockMap.get(event.blockNumber)!;
 
-        // Create user activity record
-        await supabase
+        const { error: activityError } = await supabase
           .from('user_activity')
-          .upsert({
-            user_address: requester,
-            chain_id: chainId,
-            activity_type: 'randomness_requested',
-            pool_address: poolAddr,
-            pool_name: poolName || null,
-            request_id: requestId,
-            block_number: event.blockNumber,
-            transaction_hash: event.transactionHash,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
-          }, {
-            onConflict: 'chain_id,transaction_hash,activity_type,user_address',
-            ignoreDuplicates: true
-          });
+          .upsert(
+            {
+              user_address: caller,
+              chain_id: chainId,
+              activity_type: 'randomness_requested',
+              pool_address: poolAddr,
+              pool_name: poolName || null,
+              request_id: requestId,
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              timestamp: new Date(block.timestamp * 1000).toISOString(),
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,activity_type,user_address',
+              ignoreDuplicates: true,
+            }
+          );
 
-        // Update pool state to drawing
-        await supabase
+        if (activityError) {
+          console.error('Failed to insert randomness_requested activity:', activityError);
+          throw activityError;
+        }
+
+        const { error: poolError } = await supabase
           .from('pools')
-          .update({ state: 3 }) // State 3 = drawing
+          .update({ state: 3 })
           .eq('address', poolAddr)
           .eq('chain_id', chainId);
 
+        if (poolError) {
+          console.error('Failed to update pool state:', poolError);
+        }
+
         eventsProcessed++;
       } catch (err) {
-        console.error(`Error processing RandomRequested event:`, err);
+        console.error('Error processing RandomRequested event:', err);
         errors++;
       }
     }
 
     // ============================================
-    // 4. PrizeClaimed Events
+    // 4. PrizeClaimed
     // ============================================
-    const prizeClaimedFilter = poolContract.filters.PrizeClaimed();
-    const prizeClaimedEvents = await poolContract.queryFilter(prizeClaimedFilter, startBlock, endBlock);
     console.log(`[Chain ${chainId}] Found ${prizeClaimedEvents.length} PrizeClaimed events`);
 
     for (const event of prizeClaimedEvents) {
       try {
         const winner = event.args!.winner.toLowerCase();
-        const tokenId = event.args!.tokenId.toNumber();
-        const block = await provider.getBlock(event.blockNumber);
+        const amount = event.args!.amount.toString();
+        const block = blockMap.get(event.blockNumber)!;
 
-        // Update winner record
+        // Idempotent: sets the same values on re-run
         await supabase
           .from('pool_winners')
           .update({
@@ -306,101 +461,206 @@ serve(async (req) => {
             prize_claimed_at: new Date(block.timestamp * 1000).toISOString(),
             prize_claimed_block: event.blockNumber,
             prize_claimed_tx_hash: event.transactionHash,
-            minted_token_id: tokenId,
           })
           .eq('pool_address', poolAddr)
           .eq('chain_id', chainId)
           .eq('winner_address', winner);
 
-        // Create user activity record
         await supabase
           .from('user_activity')
-          .upsert({
-            user_address: winner,
-            chain_id: chainId,
-            activity_type: 'prize_claimed',
-            pool_address: poolAddr,
-            pool_name: poolName || null,
-            token_id: tokenId,
-            block_number: event.blockNumber,
-            transaction_hash: event.transactionHash,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
-          }, {
-            onConflict: 'chain_id,transaction_hash,activity_type,user_address',
-            ignoreDuplicates: true
-          });
+          .upsert(
+            {
+              user_address: winner,
+              chain_id: chainId,
+              activity_type: 'prize_claimed',
+              pool_address: poolAddr,
+              pool_name: poolName || null,
+              amount: amount,
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              timestamp: new Date(block.timestamp * 1000).toISOString(),
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,activity_type,user_address',
+              ignoreDuplicates: true,
+            }
+          );
 
         eventsProcessed++;
       } catch (err) {
-        console.error(`Error processing PrizeClaimed event:`, err);
+        console.error('Error processing PrizeClaimed event:', err);
         errors++;
       }
     }
 
     // ============================================
-    // 5. RefundClaimed Events
+    // 5. RefundClaimed
     // ============================================
-    const refundClaimedFilter = poolContract.filters.RefundClaimed();
-    const refundClaimedEvents = await poolContract.queryFilter(refundClaimedFilter, startBlock, endBlock);
     console.log(`[Chain ${chainId}] Found ${refundClaimedEvents.length} RefundClaimed events`);
 
     for (const event of refundClaimedEvents) {
       try {
         const participant = event.args!.participant.toLowerCase();
         const amount = event.args!.amount.toString();
-        const block = await provider.getBlock(event.blockNumber);
+        const block = blockMap.get(event.blockNumber)!;
 
-        // Update participant record
+        // Idempotent: sets the same final state on re-run
         await supabase
           .from('pool_participants')
-          .update({
-            refund_claimed: true,
-            refundable_amount: '0',
-          })
+          .update({ refund_claimed: true, refundable_amount: '0' })
           .eq('pool_address', poolAddr)
           .eq('chain_id', chainId)
           .eq('participant_address', participant);
 
-        // Create user activity record
         await supabase
           .from('user_activity')
-          .upsert({
-            user_address: participant,
-            chain_id: chainId,
-            activity_type: 'refund_claimed',
-            pool_address: poolAddr,
-            pool_name: poolName || null,
-            amount: amount,
-            block_number: event.blockNumber,
-            transaction_hash: event.transactionHash,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
-          }, {
-            onConflict: 'chain_id,transaction_hash,activity_type,user_address',
-            ignoreDuplicates: true
-          });
+          .upsert(
+            {
+              user_address: participant,
+              chain_id: chainId,
+              activity_type: 'refund_claimed',
+              pool_address: poolAddr,
+              pool_name: poolName || null,
+              amount: amount,
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              timestamp: new Date(block.timestamp * 1000).toISOString(),
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,activity_type,user_address',
+              ignoreDuplicates: true,
+            }
+          );
 
         eventsProcessed++;
       } catch (err) {
-        console.error(`Error processing RefundClaimed event:`, err);
+        console.error('Error processing RefundClaimed event:', err);
         errors++;
       }
     }
 
-    // Update sync state
+    // ============================================
+    // 6. PoolActivated
+    // ============================================
+    console.log(`[Chain ${chainId}] Found ${poolActivatedEvents.length} PoolActivated events`);
+
+    for (const event of poolActivatedEvents) {
+      try {
+        const activatedTimestamp = event.args!.timestamp.toNumber();
+        const block = blockMap.get(event.blockNumber)!;
+
+        await supabase
+          .from('pools')
+          .update({
+            state: 1,
+            activated_at: new Date(activatedTimestamp * 1000).toISOString(),
+            activated_block: event.blockNumber,
+          })
+          .eq('address', poolAddr)
+          .eq('chain_id', chainId);
+
+        await supabase
+          .from('blockchain_events')
+          .upsert(
+            {
+              chain_id: chainId,
+              contract_address: poolAddr,
+              event_name: 'PoolActivated',
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              log_index: event.logIndex,
+              block_timestamp: new Date(block.timestamp * 1000).toISOString(),
+              event_data: { activatedTimestamp },
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,log_index',
+              ignoreDuplicates: true,
+            }
+          );
+
+        eventsProcessed++;
+      } catch (err) {
+        console.error('Error processing PoolActivated event:', err);
+        errors++;
+      }
+    }
+
+    // ============================================
+    // 7. PoolEnded
+    // ============================================
+    console.log(`[Chain ${chainId}] Found ${poolEndedEvents.length} PoolEnded events`);
+
+    for (const event of poolEndedEvents) {
+      try {
+        const endedTimestamp = event.args!.timestamp.toNumber();
+        const block = blockMap.get(event.blockNumber)!;
+
+        const { data: poolData } = await supabase
+          .from('pools')
+          .select('activated_at')
+          .eq('address', poolAddr)
+          .eq('chain_id', chainId)
+          .single();
+
+        let actualDuration = null;
+        if (poolData?.activated_at) {
+          const activatedTime = new Date(poolData.activated_at).getTime() / 1000;
+          actualDuration = endedTimestamp - activatedTime;
+        }
+
+        await supabase
+          .from('pools')
+          .update({
+            state: 2,
+            ended_at: new Date(endedTimestamp * 1000).toISOString(),
+            ended_block: event.blockNumber,
+            actual_duration: actualDuration,
+          })
+          .eq('address', poolAddr)
+          .eq('chain_id', chainId);
+
+        await supabase
+          .from('blockchain_events')
+          .upsert(
+            {
+              chain_id: chainId,
+              contract_address: poolAddr,
+              event_name: 'PoolEnded',
+              block_number: event.blockNumber,
+              transaction_hash: event.transactionHash,
+              log_index: event.logIndex,
+              block_timestamp: new Date(block.timestamp * 1000).toISOString(),
+              event_data: { endedTimestamp, actualDuration },
+            },
+            {
+              onConflict: 'chain_id,transaction_hash,log_index',
+              ignoreDuplicates: true,
+            }
+          );
+
+        eventsProcessed++;
+      } catch (err) {
+        console.error('Error processing PoolEnded event:', err);
+        errors++;
+      }
+    }
+
+    // Advance sync pointer
     await supabase
       .from('indexer_sync_state')
-      .upsert({
-        chain_id: chainId,
-        contract_type: 'pool',
-        contract_address: poolAddr,
-        last_indexed_block: endBlock,
-        last_block_hash: (await provider.getBlock(endBlock)).hash,
-        last_indexed_at: new Date().toISOString(),
-        is_healthy: true,
-        error_message: null,
-      }, {
-        onConflict: 'chain_id,contract_type,contract_address'
-      });
+      .upsert(
+        {
+          chain_id: chainId,
+          contract_type: 'pool',
+          contract_address: poolAddr,
+          last_indexed_block: endBlock,
+          last_block_hash: (await provider.getBlock(endBlock)).hash,
+          last_indexed_at: new Date().toISOString(),
+          is_healthy: true,
+          error_message: null,
+        },
+        { onConflict: 'chain_id,contract_type,contract_address' }
+      );
 
     console.log(`[Chain ${chainId}] Pool indexing complete: ${eventsProcessed} events processed, ${errors} errors`);
 
@@ -415,7 +675,6 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Pool indexer error:', error);
     return new Response(

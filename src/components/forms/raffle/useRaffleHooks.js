@@ -153,7 +153,7 @@ export const constructMetadataURIs = (baseUri) => {
 /**
  * Hook to fetch raffle limits from PoolDeployer
  */
-export function useRaffleLimits(contracts, isPrized) {
+export function useRaffleLimits(contracts, isPrized = false) {
   const [limits, setLimits] = useState({
     minSlot: undefined,
     maxSlot: undefined,
@@ -192,74 +192,6 @@ export function useRaffleLimits(contracts, isPrized) {
   }, [contracts, isPrized])
 
   return limits
-}
-
-/**
- * Hook to check collection whitelist status
- */
-export function useCollectionWhitelistStatus(address, contracts) {
-  const [status, setStatus] = useState(null) // null | true | false
-  const [checking, setChecking] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function check(addr) {
-      if (!contracts?.protocolManager || !addr || addr.length !== 42) {
-        setStatus(null)
-        return
-      }
-      setChecking(true)
-      try {
-        const isWhite = await contracts.protocolManager.isCollectionApproved(addr)
-        if (!cancelled) setStatus(isWhite)
-      } catch (error) {
-        console.warn('[useCollectionWhitelistStatus] Failed to check collection approval:', error.message)
-        if (!cancelled) setStatus(false)
-      } finally {
-        if (!cancelled) setChecking(false)
-      }
-    }
-
-    check(address)
-    return () => { cancelled = true }
-  }, [address, contracts])
-
-  return { status, checking }
-}
-
-/**
- * Hook to check internal collection status
- */
-export function useCollectionInternalStatus(address, contracts) {
-  const [status, setStatus] = useState(null) // null | true | false
-  const [checking, setChecking] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function check(addr) {
-      if (!contracts?.protocolManager || !addr || addr.length !== 42) {
-        setStatus(null)
-        return
-      }
-      setChecking(true)
-      try {
-        const isInternal = await contracts.protocolManager.isInternalCollection(addr)
-        if (!cancelled) setStatus(isInternal)
-      } catch (error) {
-        console.warn('[useCollectionInternalStatus] Failed to check internal collection:', error.message)
-        if (!cancelled) setStatus(false)
-      } finally {
-        if (!cancelled) setChecking(false)
-      }
-    }
-
-    check(address)
-    return () => { cancelled = true }
-  }, [address, contracts])
-
-  return { status, checking }
 }
 
 /**

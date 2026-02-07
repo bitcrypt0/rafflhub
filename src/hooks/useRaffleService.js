@@ -444,6 +444,7 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
   const {
     onWinnersSelected,
     onStateChange,
+    onPrizeClaimed,
     onTicketsPurchased,
     onRpcError, // New callback for RPC error detection
     enablePolling = true,
@@ -492,22 +493,24 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
       return true; // Always listen if conditional listening is disabled
     }
 
-    // If stopOnCompletion is enabled, stop listening for winner selection events after completion
-    if (stopOnCompletion && (currentRaffleState === 4 || currentRaffleState === 7)) {
-      console.log(`🎧 Stopping winner selection listening - raffle completed (state=${currentRaffleState})`);
+    // Terminal states where no more contract events are expected
+    // 5 = Deleted, 6 = AllPrizesClaimed, 7 = Unengaged
+    if ([5, 6, 7].includes(currentRaffleState)) {
+      return false;
+    }
+
+    // If stopOnCompletion is enabled, stop at Completed (4) since winners are already selected
+    if (stopOnCompletion && currentRaffleState === 4) {
       return false;
     }
 
     // Listen when raffle is in states where events are likely:
-    // 1 = Active (for TicketsPurchased events)
-    // 3 = Drawing (for WinnersSelected events - this is key!)
-    // 4 = Completed (for PrizeClaimed events)
-    // 7 = Prizes Claimed (for PrizeClaimed events)
-    const activeStates = [1, 3, 4, 7];
-    const shouldListenNow = currentRaffleState === null || activeStates.includes(currentRaffleState);
-
-    console.log(`🎧 Should listen check: state=${currentRaffleState}, shouldListen=${shouldListenNow}, stopOnCompletion=${stopOnCompletion}`);
-    return shouldListenNow;
+    // 1 = Active (for SlotsPurchased events)
+    // 2 = Ended (transition to Drawing)
+    // 3 = Drawing (for WinnersSelected events)
+    // 4 = Completed (for state polling)
+    const activeStates = [1, 2, 3, 4];
+    return currentRaffleState === null || activeStates.includes(currentRaffleState);
   }, [currentRaffleState, enableStateConditionalListening, stopOnCompletion]);
 
   // Enhanced event handler with better error handling and WinnersSelected priority
@@ -599,8 +602,14 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
         listenersRef.current.push({ contract, event: 'WinnersSelected', handler: winnersHandler });
       }
 
-      // Note: PrizeClaimed event listener removed - Pool.sol doesn't emit this event
-      // Claim status is tracked via winner.prizeClaimed property from contract state
+      // PrizeClaimed event — Pool.sol emits PrizeClaimed(address indexed winner, uint256 amount)
+      if (onPrizeClaimed) {
+        const prizeHandler = createEventHandler('PrizeClaimed', (winner, amount, event) => {
+          onPrizeClaimed(winner, amount, event);
+        });
+        contract.on('PrizeClaimed', prizeHandler);
+        listenersRef.current.push({ contract, event: 'PrizeClaimed', handler: prizeHandler });
+      }
 
       // SlotsPurchased event
       if (onTicketsPurchased) {
@@ -618,7 +627,7 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
       console.error('Error setting up event listeners:', error);
       setIsListening(false);
     }
-  }, [raffleAddress, connected, onWinnersSelected, onTicketsPurchased, createEventHandler]);
+  }, [raffleAddress, connected, onWinnersSelected, onPrizeClaimed, onTicketsPurchased, createEventHandler]);
 
   // Cleanup event listeners
   const cleanupEventListeners = useCallback(() => {
@@ -642,9 +651,8 @@ export const useRaffleEventListener = (raffleAddress, options = {}) => {
       return;
     }
 
-    // Check if we should stop polling based on completion status
-    if (stopOnCompletion && (currentRaffleState === 4 || currentRaffleState === 7)) {
-      console.log(`📊 Stopping state polling - raffle completed (state=${currentRaffleState})`);
+    // Check if we should stop polling based on terminal/completion status
+    if ([5, 6, 7].includes(currentRaffleState) || (stopOnCompletion && currentRaffleState === 4)) {
       return;
     }
 

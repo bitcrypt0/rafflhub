@@ -200,61 +200,14 @@ class RaffleService {
   }
 
   /**
-   * Fetch all raffle addresses from ProtocolManager using pagination
-   * @param {Object} options - Configuration options
-   * @param {number} options.maxPools - Maximum pools to fetch (default: 1000)
-   * @param {number} options.pageSize - Pools per page (default: 100, max: 100)
-   * @returns {Promise<string[]>} Array of pool addresses (newest first)
+   * Fetch all raffle addresses from ProtocolManager
+   * @deprecated getAllPools has been removed from ProtocolManager contract
+   * Use backend API (supabaseService.getPools) instead
+   * @returns {Promise<string[]>} Empty array - function is deprecated
    */
   async getAllRaffleAddresses(options = {}) {
-    const { maxPools = 1000, pageSize = 100 } = options;
-    const cacheKey = `raffleAddresses_${this.walletContext?.chainId}`;
-    const cached = this.cache.get(cacheKey);
-
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.data;
-    }
-
-    // Check if contracts are available on this network
-    if (!this.areContractsAvailable()) {
-      throw new Error('CONTRACTS_NOT_AVAILABLE');
-    }
-
-    const protocolManager = this.getProtocolManagerContract();
-    if (!protocolManager) {
-      throw new Error('CONTRACTS_NOT_AVAILABLE');
-    }
-
-    // Fetch all pools using pagination
-    const allAddresses = [];
-    let cursor = 0;
-    let hasMore = true;
-
-    while (hasMore && allAddresses.length < maxPools) {
-      const result = await this.withRetry(
-        () => protocolManager.getAllPools(cursor, pageSize),
-        `getAllPools(cursor=${cursor})`
-      );
-
-      const [pools, newCursor, more] = result;
-      allAddresses.push(...pools);
-      cursor = newCursor.toNumber ? newCursor.toNumber() : Number(newCursor);
-      hasMore = more;
-
-      // Safety: prevent infinite loops
-      if (pools.length === 0) break;
-    }
-
-    // Reverse the order to get newest raffles first (newest deployed contracts have higher indices)
-    const sortedAddresses = allAddresses.slice().reverse();
-
-    // Cache the result
-    this.cache.set(cacheKey, {
-      data: sortedAddresses,
-      timestamp: Date.now()
-    });
-
-    return sortedAddresses;
+    console.warn('⚠️ getAllRaffleAddresses is deprecated - getAllPools removed from ProtocolManager. Use backend API instead.');
+    throw new Error('DEPRECATED_FUNCTION');
   }
 
   /**
@@ -357,7 +310,7 @@ class RaffleService {
         } catch (_) {}
       }
 
-      return {
+      const raffleData = {
         id: raffleAddress,
         name,
         address: raffleAddress,
@@ -368,8 +321,8 @@ class RaffleService {
         actualDuration,
         slotFee,
         ticketLimit: ticketLimit.toNumber(),
-        slotLimit: ticketLimit.toNumber(), // Add slotLimit for compatibility with RaffleCard
-        ticketsSold: 0, // Will be fetched separately if needed
+        slotLimit: ticketLimit.toNumber(),
+        ticketsSold: 0,
         winnersCount: winnersCount.toNumber(),
         maxSlotsPerAddress: maxSlotsPerAddress.toNumber(),
         isPrized: !!isPrizedContract,
@@ -385,22 +338,6 @@ class RaffleService {
         usesCustomFee: usesCustomFee,
         isEscrowedPrize: isEscrowedPrize
       };
-
-      // Debug logging for NFT prizes to investigate the issue
-      if (raffleData.prizeCollection && raffleData.prizeCollection !== ethers.constants.AddressZero) {
-        console.log(`[RaffleService] NFT Prize raffle data for ${raffleAddress}:`, {
-          prizeCollection: raffleData.prizeCollection,
-          prizeTokenId: raffleData.prizeTokenId,
-          prizeTokenIdRaw: prizeTokenId,
-          isCollabPool: raffleData.isCollabPool,
-          isCollabPoolRaw: isCollabPool,
-          usesCustomFee: raffleData.usesCustomFee,
-          usesCustomFeeRaw: usesCustomFee,
-          isEscrowedPrize: raffleData.isEscrowedPrize,
-          isEscrowedPrizeRaw: isEscrowedPrize,
-          standard: raffleData.standard
-        });
-      }
 
       return raffleData;
     } catch (error) {
@@ -483,97 +420,20 @@ class RaffleService {
 
   /**
    * Main method to fetch all raffles with platform-specific optimizations
+   * @deprecated This RPC-based method is deprecated. Use useRaffleServiceEnhanced hook with backend API instead.
    */
   async fetchAllRaffles(options = {}) {
-    const {
-      isMobile = false,
-      useCache = true,
-      maxRaffles = null
-    } = options;
-
-    const config = this.getPlatformConfig(isMobile);
-    const cacheKey = `allRaffles_${this.walletContext?.chainId}_${isMobile}`;
-    const timerKey = this.startTimer('fetchAllRaffles', { isMobile, chainId: this.walletContext?.chainId });
-
-    // Check cache first
-    if (useCache) {
-      const cached = this.cache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-        this.endTimer(timerKey, { fromCache: true, rafflCount: cached.data.length });
-        return cached.data;
-      }
-    }
-
-    try {
-      // Get all raffle addresses
-      const addressTimer = this.startTimer('getAllRaffleAddresses', { isMobile });
-      const allAddresses = await this.getAllRaffleAddresses();
-      this.endTimer(addressTimer, { addressCount: allAddresses?.length || 0 });
-
-      if (!allAddresses || allAddresses.length === 0) {
-        this.endTimer(timerKey, { rafflCount: 0, fromCache: false });
-        return [];
-      }
-
-      // Limit addresses based on platform and options
-      const maxToFetch = maxRaffles || config.maxRafflesToFetch;
-      const addressesToFetch = allAddresses.slice(0, maxToFetch);
-
-      // Process in batches
-      const batchTimer = this.startTimer('processBatch', {
-        isMobile,
-        totalAddresses: addressesToFetch.length,
-        batchSize: config.concurrency
-      });
-
-      const raffles = await this.processBatch(addressesToFetch, {
-        ...config,
-        isMobile,
-        onProgress: (completed, total) => {
-          console.log(`[RaffleService] Progress: ${completed}/${total} raffles processed (${((completed/total)*100).toFixed(1)}%)`);
-        }
-      });
-
-      this.endTimer(batchTimer, {
-        successfulRaffles: raffles.length,
-        failedRaffles: addressesToFetch.length - raffles.length
-      });
-
-      // Cache the result
-      if (useCache) {
-        this.cache.set(cacheKey, {
-          data: raffles,
-          timestamp: Date.now()
-        });
-      }
-
-      this.endTimer(timerKey, {
-        rafflCount: raffles.length,
-        fromCache: false,
-        totalAddresses: allAddresses.length,
-        processedAddresses: addressesToFetch.length
-      });
-
-      return raffles;
-    } catch (error) {
-      this.trackError('fetchAllRaffles', error, { isMobile, chainId: this.walletContext?.chainId });
-      this.endTimer(timerKey, { error: true, errorMessage: error.message });
-      throw error;
-    }
+    console.warn('⚠️ RaffleService.fetchAllRaffles is deprecated - use backend API via useRaffleServiceEnhanced hook');
+    throw new Error('DEPRECATED_FUNCTION');
   }
 
   /**
    * Search raffles by name or address
+   * @deprecated This method relies on deprecated fetchAllRaffles. Use backend API instead.
    */
   async searchRaffles(searchTerm, options = {}) {
-    const raffles = await this.fetchAllRaffles(options);
-    const term = searchTerm.trim().toLowerCase();
-    
-    return raffles.filter(raffle =>
-      (raffle.name || '').toLowerCase().includes(term) ||
-      (raffle.address || '').toLowerCase().includes(term) ||
-      (raffle.address || '').toLowerCase() === term
-    );
+    console.warn('⚠️ RaffleService.searchRaffles is deprecated - use backend API instead');
+    throw new Error('DEPRECATED_FUNCTION');
   }
 
   /**

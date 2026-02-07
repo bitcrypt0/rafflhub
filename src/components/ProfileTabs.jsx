@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SUPPORTED_NETWORKS } from '../networks';
 
 import { createPortal } from 'react-dom';
@@ -29,7 +29,9 @@ import {
   RefreshCw,
   Trash2,
   Clock,
-  Check
+  Check,
+  Filter,
+  Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -243,6 +245,7 @@ const ProfileTabs = ({
   const getActivityTypeStyles = (type) => {
     const styles = {
       ticket_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-l-blue-500', icon: ShoppingCart },
+      slot_purchase: { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-l-blue-500', icon: ShoppingCart },
       raffle_created: { color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-green-500', icon: Plus },
       raffle_deleted: { color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-l-red-500', icon: Trash2 },
       prize_won: { color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-l-yellow-500', icon: Crown },
@@ -250,8 +253,46 @@ const ProfileTabs = ({
       refund_claimed: { color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-l-orange-500', icon: RefreshCw },
       revenue_withdrawn: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-l-emerald-500', icon: DollarSign },
       admin_withdrawn: { color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-l-purple-500', icon: DollarSign },
+      randomness_requested: { color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-l-purple-500', icon: Send },
+      rewards_claimed: { color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-l-yellow-500', icon: Award },
     };
     return styles[type] || { color: 'text-muted-foreground', bg: 'bg-muted/50', border: 'border-l-muted-foreground', icon: Activity };
+  };
+
+  // Activity filter options for ProfilePage
+  const PROFILE_ACTIVITY_FILTERS = [
+    { value: 'all', label: 'All Activities' },
+    { value: 'raffle_created', label: 'Created Pools' },
+    { value: 'slot_purchase', label: 'Slot Purchases' },
+    { value: 'randomness_requested', label: 'Randomness Requests' },
+    { value: 'prize_claimed', label: 'Prize Claims' },
+    { value: 'refund_claimed', label: 'Refund Claims' },
+  ];
+
+  const MAX_VISIBLE_ACTIVITIES = 10;
+
+  // Explorer link generator for activity transactions
+  const getExplorerLink = (txHash, activityChainId) => {
+    const explorerMap = {
+      1: 'https://etherscan.io',
+      5: 'https://goerli.etherscan.io',
+      11155111: 'https://sepolia.etherscan.io',
+      137: 'https://polygonscan.com',
+      80001: 'https://mumbai.polygonscan.com',
+      10: 'https://optimistic.etherscan.io',
+      420: 'https://goerli-optimism.etherscan.io',
+      42161: 'https://arbiscan.io',
+      56: 'https://bscscan.com',
+      97: 'https://testnet.bscscan.com',
+      43114: 'https://snowtrace.io',
+      43113: 'https://testnet.snowtrace.io',
+      8453: 'https://basescan.org',
+      84531: 'https://goerli.basescan.org',
+      84532: 'https://sepolia.basescan.org',
+      11155420: 'https://sepolia-optimism.etherscan.io',
+    };
+    const baseUrl = explorerMap[activityChainId] || explorerMap[chainId] || explorerMap[1];
+    return `${baseUrl}/tx/${txHash}`;
   };
 
   // Format relative time
@@ -275,108 +316,174 @@ const ProfileTabs = ({
     }
   };
 
-  const ActivityTab = () => (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Recent Activity</h3>
-          <p className="text-sm text-muted-foreground">Your latest transactions and events</p>
-        </div>
-        <Badge variant="secondary" className="font-medium">
-          {activities.length} {activities.length === 1 ? 'activity' : 'activities'}
-        </Badge>
-      </div>
+  const ActivityTab = () => {
+    const [activityFilter, setActivityFilter] = useState('all');
+    const [showActivityFilterDropdown, setShowActivityFilterDropdown] = useState(false);
 
-      {activities.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
-              <Clock className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h4 className="font-medium text-foreground mb-1">No activity yet</h4>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Your transaction history will appear here once you start participating in raffles or creating events.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="w-full">
-          {/* Table-style rows without card containers - matching Winners section */}
-          <div className="divide-y divide-border/30">
-            {activities.slice(0, 15).map((activity, index) => {
-              const styles = getActivityTypeStyles(activity.type);
-              const IconComponent = styles.icon;
-              
-              return (
-                <div 
-                  key={index} 
-                  className="grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
-                  style={{ gridTemplateColumns: 'auto 1fr auto' }}
-                >
-                  {/* Icon */}
-                  <div className="flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center`}>
-                      <IconComponent className={`h-4 w-4 ${styles.color}`} />
-                    </div>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm text-foreground leading-tight">
-                      {activity.title}
-                    </div>
-                    {activity.description && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {activity.description}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Timestamp */}
-                  <div className="flex-shrink-0 text-right">
-                    <p className="text-xs text-muted-foreground" title={activity.timestamp}>
-                      {getRelativeTime(activity.timestamp)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+    // Filter activities based on selected filter
+    const filteredActivities = useMemo(() => {
+      if (activityFilter === 'all') return activities;
+      // Handle both slot_purchase and ticket_purchase for slot purchases filter
+      if (activityFilter === 'slot_purchase') {
+        return activities.filter(a => a.type === 'slot_purchase' || a.type === 'ticket_purchase');
+      }
+      return activities.filter(a => a.type === activityFilter);
+    }, [activities, activityFilter]);
+
+    const currentFilterLabel = PROFILE_ACTIVITY_FILTERS.find(f => f.value === activityFilter)?.label || 'All Activities';
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Recent Activity</h3>
+            <p className="text-sm text-muted-foreground">Your latest transactions and events</p>
           </div>
-          
-          {/* Show more indicator if there are more activities */}
-          {activities.length > 15 && (
-            <div className="text-center pt-4">
-              <p className="text-sm text-muted-foreground">
-                + {activities.length - 15} more activities
-              </p>
-            </div>
-          )}
+          <Badge variant="secondary" className="font-medium">
+            {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'}
+          </Badge>
         </div>
-      )}
-    </div>
-  );
+
+        {activities.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
+                <Clock className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h4 className="font-medium text-foreground mb-1">No activity yet</h4>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Your transaction history will appear here once you start participating in pools or creating events.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="w-full">
+            {/* Filter Bar */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-muted/20 rounded-t-lg">
+              <span className="text-xs text-muted-foreground">
+                {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'}
+              </span>
+              
+              {/* Filter Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowActivityFilterDropdown(!showActivityFilterDropdown)}
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-background/50 border border-border/50 rounded-md transition-colors"
+                >
+                  <Filter className="h-3 w-3" />
+                  <span>{currentFilterLabel}</span>
+                </button>
+                
+                {showActivityFilterDropdown && (
+                  <div className="absolute right-0 top-full mt-1 z-10 min-w-[160px] bg-card border border-border rounded-md shadow-lg py-1">
+                    {PROFILE_ACTIVITY_FILTERS.map(filter => (
+                      <button
+                        key={filter.value}
+                        onClick={() => {
+                          setActivityFilter(filter.value);
+                          setShowActivityFilterDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors ${
+                          activityFilter === filter.value ? 'text-primary font-medium' : 'text-foreground'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Scrollable activity rows - max 10 visible entries */}
+            <div 
+              className="divide-y divide-border/30 overflow-y-auto"
+              style={{ maxHeight: `${MAX_VISIBLE_ACTIVITIES * 56}px` }}
+            >
+              {filteredActivities.map((activity, index) => {
+                const styles = getActivityTypeStyles(activity.type);
+                const IconComponent = styles.icon;
+                
+                return (
+                  <div 
+                    key={index} 
+                    className="grid gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                    style={{ gridTemplateColumns: 'auto 1fr auto' }}
+                  >
+                    {/* Icon */}
+                    <div className="flex-shrink-0">
+                      <div className={`w-8 h-8 rounded-full ${styles.bg} flex items-center justify-center`}>
+                        <IconComponent className={`h-4 w-4 ${styles.color}`} />
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm text-foreground leading-tight flex items-center gap-2">
+                        <span>{activity.title}</span>
+                        {/* Transaction link */}
+                        {activity.transactionHash && (
+                          <a
+                            href={getExplorerLink(activity.transactionHash, activity.chainId)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center flex-shrink-0"
+                            title="View transaction on block explorer"
+                          >
+                            <img
+                              src="/images/etherscan logos/etherscan-logo-circle.svg"
+                              alt="Etherscan"
+                              width="14"
+                              height="14"
+                              className="opacity-70 hover:opacity-100 transition-opacity"
+                            />
+                          </a>
+                        )}
+                      </div>
+                      {activity.description && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {activity.description}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Timestamp */}
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-xs text-muted-foreground" title={activity.timestamp}>
+                        {getRelativeTime(activity.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
 
 
   const CreatedRafflesTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">My Raffles</h3>
-        <Badge variant="outline">{createdRaffles.length} raffles</Badge>
+        <h3 className="text-lg font-semibold">My Pools</h3>
+        <Badge variant="outline">{createdRaffles.length} pools</Badge>
       </div>
 
       {createdRaffles.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
 
-            <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
+            <p className="text-muted-foreground mb-4">You haven't created any pools yet</p>
             <Button
               onClick={() => navigate('/create-raffle')}
               variant="primary"
               size="md"
             >
-              Create Your First Raffle
+              Create Your First Pool
             </Button>
           </CardContent>
         </Card>
@@ -388,7 +495,7 @@ const ProfileTabs = ({
               raffle={raffle}
               onRaffleClick={(address) => {
                   const slug = chainId && SUPPORTED_NETWORKS[chainId] ? SUPPORTED_NETWORKS[chainId].name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : (chainId || '');
-                  const path = slug ? `/${slug}/raffle/${address}` : `/raffle/${address}`;
+                  const path = slug ? `/${slug}/pool/${address}` : `/pool/${address}`;
                   navigate(path);
                 }}
               formatRevenueAmount={formatRevenueAmount}
@@ -401,7 +508,7 @@ const ProfileTabs = ({
   );
 
   const MyCollectionsTab = () => {
-    const { collections, loading: collectionsLoading } = useCollections();
+    const { collections, hasFetched } = useCollections();
     const [copiedAddress, setCopiedAddress] = useState(null);
 
     const handleCopyAddress = async (address) => {
@@ -440,16 +547,7 @@ const ProfileTabs = ({
           </Badge>
         </div>
 
-        {collectionsLoading ? (
-          <Card className="border-dashed">
-            <CardContent className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-              </div>
-              <p className="text-muted-foreground">Loading your collections...</p>
-            </CardContent>
-          </Card>
-        ) : collections.length === 0 ? (
+        {collections.length === 0 && hasFetched ? (
           <Card className="border-dashed">
             <CardContent className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
@@ -457,7 +555,7 @@ const ProfileTabs = ({
               </div>
               <h4 className="font-medium text-foreground mb-1">No collections yet</h4>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-                Deploy your first NFT collection to start creating drop events and raffles.
+                Deploy your first NFT collection to start creating drop events and pools.
               </p>
               <Button
                 onClick={() => navigate('/deploy-collection')}
@@ -468,7 +566,7 @@ const ProfileTabs = ({
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        ) : collections.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {collections.map((collection, index) => (
               <div 
@@ -541,7 +639,7 @@ const ProfileTabs = ({
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -552,13 +650,13 @@ const ProfileTabs = ({
       <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Raffles</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pools</CardTitle>
             <Plus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Number(creatorStats.totalRaffles || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {Number(creatorStats.activeRaffles || 0).toLocaleString()} currently active
+              {Number(creatorStats.activePools || 0).toLocaleString()} currently active
             </p>
           </CardContent>
         </Card>
@@ -571,7 +669,7 @@ const ProfileTabs = ({
           <CardContent>
             <div className="text-2xl font-bold">{formatRevenueAmount(creatorStats.withdrawableRevenue || '0')}</div>
             <p className="text-xs text-muted-foreground">
-              Available to withdraw across all raffles
+              Available to withdraw across all pools
             </p>
           </CardContent>
         </Card>
@@ -584,7 +682,7 @@ const ProfileTabs = ({
           <CardContent>
             <div className="text-2xl font-bold">{Number(creatorStats.totalParticipants || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Total slots purchased across all your raffles
+              Total slots purchased across all your pools
             </p>
           </CardContent>
         </Card>
@@ -597,7 +695,7 @@ const ProfileTabs = ({
           <CardContent>
             <div className="text-2xl font-bold">{creatorStats.successRate}%</div>
             <p className="text-xs text-muted-foreground">
-              Completed raffles
+              Completed pools
             </p>
           </CardContent>
         </Card>
@@ -679,7 +777,7 @@ const ProfileTabs = ({
             }`}
           >
             <Crown className="h-4 w-4" />
-            <span>My Raffles</span>
+            <span>My Pools</span>
           </button>
           <button
             onClick={() => setActiveTab('purchased')}
