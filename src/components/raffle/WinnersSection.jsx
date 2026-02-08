@@ -7,6 +7,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useRaffleEventListener } from '../../hooks/useRaffleService';
 import { Button } from '../ui/button';
 import supabaseService from '../../services/supabaseService';
+import { SUPPORTED_NETWORKS, DEFAULT_CHAIN_ID } from '../../networks';
 
 const POOL_STATE_LABELS = [
   'Pending',
@@ -77,7 +78,10 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
           return;
         }
 
-        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+        const rpcUrl = SUPPORTED_NETWORKS[raffle.chainId || DEFAULT_CHAIN_ID]?.rpcUrl;
+        const provider = rpcUrl
+          ? new ethers.providers.JsonRpcProvider(rpcUrl)
+          : ethers.getDefaultProvider();
         const erc20Abi = ["function symbol() view returns (string)"];
         const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
         const symbol = await contract.symbol();
@@ -94,7 +98,7 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
 
     fetchERC20Symbol();
     return () => { isMounted = false; };
-  }, [raffle.erc20PrizeToken]);
+  }, [raffle.erc20PrizeToken, raffle.chainId]);
 
   // Fetch actual amountPerWinner from contract for all prize types
   React.useEffect(() => {
@@ -178,6 +182,21 @@ const WinnerCard = ({ winner, index, raffle, connectedAddress, onToggleExpand, i
               }
             } catch (erc1155Error) {
               // Both failed, continue with null symbol
+            }
+          }
+        }
+
+        // Fallback: use JsonRpcProvider when getContractInstance returned null (no wallet)
+        if (!symbol && !contract) {
+          const rpcUrl = SUPPORTED_NETWORKS[raffle.chainId || DEFAULT_CHAIN_ID]?.rpcUrl;
+          if (rpcUrl) {
+            const readProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+            const minimalAbi = ["function symbol() view returns (string)"];
+            const readContract = new ethers.Contract(raffle.prizeCollection, minimalAbi, readProvider);
+            try {
+              symbol = await readContract.symbol();
+            } catch (rpcError) {
+              symbol = null;
             }
           }
         }
@@ -721,7 +740,24 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
       }
 
       try {
-        const contract = getContractInstance(raffle.prizeCollection, raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize');
+        let contract = getContractInstance(raffle.prizeCollection, raffle.standard === 0 ? 'erc721Prize' : 'erc1155Prize');
+
+        // Fallback: use JsonRpcProvider when getContractInstance returned null (no wallet)
+        if (!contract) {
+          const rpcUrl = SUPPORTED_NETWORKS[raffle.chainId || DEFAULT_CHAIN_ID]?.rpcUrl;
+          if (rpcUrl) {
+            const readProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+            const minimalAbi = ["function name() view returns (string)", "function symbol() view returns (string)"];
+            contract = new ethers.Contract(raffle.prizeCollection, minimalAbi, readProvider);
+          }
+        }
+
+        if (!contract) {
+          setCollectionName(null);
+          setCollectionSymbol(null);
+          return;
+        }
+
         const [name, symbol] = await Promise.all([
           contract.name().catch(() => null),
           (typeof contract.symbol === 'function' ? contract.symbol() : Promise.resolve(null)).catch(() => null)
@@ -754,7 +790,10 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
           return;
         }
 
-        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+        const rpcUrl = SUPPORTED_NETWORKS[raffle.chainId || DEFAULT_CHAIN_ID]?.rpcUrl;
+        const provider = rpcUrl
+          ? new ethers.providers.JsonRpcProvider(rpcUrl)
+          : ethers.getDefaultProvider();
         const erc20Abi = ["function symbol() view returns (string)"];
         const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
         const symbol = await contract.symbol();
@@ -767,7 +806,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     };
 
     fetchERC20Symbol();
-  }, [raffle?.erc20PrizeToken]);
+  }, [raffle?.erc20PrizeToken, raffle?.chainId]);
 
   // Extract fetchWinners function so it can be called by event listeners
   const fetchWinners = useCallback(async () => {
@@ -793,8 +832,7 @@ const WinnersSection = React.memo(({ raffle, isMintableERC721, isEscrowedPrize, 
     try {
       const poolContract = getContractInstance && getContractInstance(raffle.address, 'pool');
       if (!poolContract) {
-        setWinners([]);
-        onWinnerCountChange?.(0);
+        // No contract instance (wallet not connected) — preserve backend winners
         setLoading(false);
         return;
       }
