@@ -30,8 +30,8 @@ export const ThemeProvider = ({ children }) => {
       return 'dark';
     }
 
-    // Default to dark theme (as per original app behavior)
-    return 'dark';
+    // Default to light theme
+    return 'light';
   });
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const getCurrentTheme = () => {
-    return AVAILABLE_THEMES.find(t => t.id === theme) || AVAILABLE_THEMES[1]; // fallback to dark
+    return AVAILABLE_THEMES.find(t => t.id === theme) || AVAILABLE_THEMES[0]; // fallback to light
   };
 
   const value = {
