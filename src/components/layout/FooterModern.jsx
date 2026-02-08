@@ -168,11 +168,11 @@ const FooterModern = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="flex-1 h-12 bg-background/50 backdrop-blur-sm border-border/50"
+                className="flex-1 h-9 sm:h-12 bg-background/50 backdrop-blur-sm border-border/50"
               />
               <Button 
                 type="submit" 
-                className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="h-9 px-5 sm:h-12 sm:px-8 text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {isSubscribed ? 'Subscribed!' : 'Subscribe'}
               </Button>
@@ -214,7 +214,7 @@ const FooterModern = () => {
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  The go-to platform for project teams and KOLs to host fairly launch NFT drops, host social media campaigns, and transparently distribute rewards to Web3 communities.
+                  The go-to platform for project teams and KOLs to fairly launch NFT drops, host social media campaigns, and transparently distribute rewards to Web3 communities.
                 </p>
                 
                 {/* Social links */}

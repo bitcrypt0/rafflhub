@@ -18,6 +18,7 @@ import { contractABIs } from '../../contracts/contractABIs';
 import KOLApprovalComponent from '../../components/KOLApprovalComponent';
 import VestingConfigurationComponent from '../../components/VestingConfigurationComponent';
 import FlywheelRewardsComponent from '../../components/FlywheelRewardsComponent';
+import WalletConnectionPrompt from '../../components/ui/WalletConnectionPrompt';
 
 import { SUPPORTED_NETWORKS } from '../../networks';
 
@@ -180,14 +181,9 @@ const NewMobileProfilePage = () => {
   // Wallet connection check
   if (!connected) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
-          <p className="text-muted-foreground">
-            Please connect your wallet to view your profile and activity.
-          </p>
-        </div>
-      </div>
+      <WalletConnectionPrompt
+        subtitle="Please connect your wallet to view your profile and activity."
+      />
     );
   }
 

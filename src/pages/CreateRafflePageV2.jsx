@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus,
   Sparkles,
   ArrowLeft,
   Check,
@@ -14,6 +13,7 @@ import { SUPPORTED_NETWORKS } from '../networks'
 // UI Components
 import { Button } from '../components/ui/button'
 import { RaffleErrorDisplay } from '../components/ui/raffle-error-display'
+import WalletConnectionPrompt from '../components/ui/WalletConnectionPrompt'
 
 // Form Components
 import { PageHero } from '../components/forms/PageHero'
@@ -138,23 +138,10 @@ const CreateRafflePageV2 = () => {
   // Not connected state
   if (!connected) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto px-4"
-        >
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-3xl" />
-            <Plus className={`relative mx-auto text-muted-foreground ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
-          </div>
-          <h2 className={`font-display font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-            Connect Your Wallet
-          </h2>
-          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
-            Please connect your wallet to create pools and deploy collections.
-          </p>
-        </motion.div>
+      <div className="min-h-screen bg-background">
+        <WalletConnectionPrompt
+          subtitle="Please connect your wallet to create pools."
+        />
       </div>
     )
   }

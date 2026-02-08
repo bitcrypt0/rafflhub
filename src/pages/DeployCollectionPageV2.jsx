@@ -45,6 +45,7 @@ import {
   DialogDescription,
 } from '../components/ui/dialog'
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints'
+import WalletConnectionPrompt from '../components/ui/WalletConnectionPrompt'
 import { PageHero } from '../components/forms/PageHero'
 import { FormSection } from '../components/forms/FormSection'
 import { FormField } from '../components/forms/FormField'
@@ -476,14 +477,10 @@ const DeployCollectionPageV2 = () => {
 
   if (!connected) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Gift className={`mx-auto mb-4 text-muted-foreground ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`} />
-          <h2 className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>Connect Your Wallet</h2>
-          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-base'}`}>
-            Please connect your wallet to deploy NFT collections.
-          </p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <WalletConnectionPrompt
+          subtitle="Please connect your wallet to deploy NFT collections."
+        />
       </div>
     )
   }

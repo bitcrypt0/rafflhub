@@ -18,6 +18,7 @@ import { useRaffleSummaries } from '../hooks/useRaffleSummaries';
 import { useWinnerCount, getDynamicPrizeLabel } from '../hooks/useWinnerCount';
 import { getTicketsSoldCount } from '../utils/contractCallUtils';
 import NewMobileProfilePage from './mobile/NewMobileProfilePage';
+import WalletConnectionPrompt from '../components/ui/WalletConnectionPrompt';
 
 function mapPoolState(stateNum) {
   switch (stateNum) {
@@ -799,15 +800,9 @@ const DesktopProfilePage = () => {
 
   if (!connected) {
     return (
-      <div className="container mx-auto px-4 pt-8 pb-4">
-        <div className="text-center mb-8">
-
-          <h2 className="text-3xl font-bold mb-4 font-display">Connect Your Wallet</h2>
-          <p className="text-muted-foreground">
-            Please connect your wallet to view your profile and activity.
-          </p>
-        </div>
-      </div>
+      <WalletConnectionPrompt
+        subtitle="Please connect your wallet to view your profile and activity."
+      />
     );
   }
 
