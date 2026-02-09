@@ -106,34 +106,48 @@ export default function AuthCallback() {
         setMessage(`${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected successfully!`);
         toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected!`);
         
-        // Store success in localStorage so parent window can detect it
-        localStorage.setItem('oauth_success', JSON.stringify({
+        // Mark OAuth as completed for the return page to detect
+        sessionStorage.setItem('oauth_completed', JSON.stringify({
           platform,
+          success: true,
           timestamp: Date.now()
         }));
 
-        // Close popup after short delay
+        // Redirect back to original page
+        const returnState = sessionStorage.getItem('oauth_return_state');
+        const returnUrl = returnState ? JSON.parse(returnState).returnUrl : '/';
         setTimeout(() => {
-          window.close();
-        }, 2000);
+          navigate(new URL(returnUrl).pathname + new URL(returnUrl).search);
+        }, 1500);
       } else {
         setStatus('error');
         setMessage(result.error || 'Authentication failed');
         toast.error(result.error || 'Authentication failed');
+        
+        sessionStorage.setItem('oauth_completed', JSON.stringify({
+          platform,
+          success: false,
+          error: result.error,
+          timestamp: Date.now()
+        }));
+        
+        const returnState = sessionStorage.getItem('oauth_return_state');
+        const returnUrl = returnState ? JSON.parse(returnState).returnUrl : '/';
         setTimeout(() => {
-          window.close();
-          navigate('/');
-        }, 3000);
+          navigate(new URL(returnUrl).pathname + new URL(returnUrl).search);
+        }, 2500);
       }
     } catch (error) {
       console.error('Callback error:', error);
       setStatus('error');
       setMessage(error.message || 'An unexpected error occurred');
       toast.error('Authentication failed');
+      
+      const returnState = sessionStorage.getItem('oauth_return_state');
+      const returnUrl = returnState ? JSON.parse(returnState).returnUrl : '/';
       setTimeout(() => {
-        window.close();
-        navigate('/');
-      }, 3000);
+        navigate(new URL(returnUrl).pathname + new URL(returnUrl).search);
+      }, 2500);
     }
   };
 
@@ -158,7 +172,7 @@ export default function AuthCallback() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Success!</h2>
               <p className="text-gray-600">{message}</p>
-              <p className="text-sm text-gray-500 mt-4">This window will close automatically...</p>
+              <p className="text-sm text-gray-500 mt-4">Redirecting you back...</p>
             </>
           )}
 
@@ -171,7 +185,7 @@ export default function AuthCallback() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
               <p className="text-gray-600">{message}</p>
-              <p className="text-sm text-gray-500 mt-4">This window will close automatically...</p>
+              <p className="text-sm text-gray-500 mt-4">Redirecting you back...</p>
             </>
           )}
         </div>

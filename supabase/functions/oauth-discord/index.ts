@@ -259,10 +259,7 @@ async function handleCallback(
       JSON.stringify({
         success: true,
         user_id: userData.id,
-        username: userData.username,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt
+        username: userData.username
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

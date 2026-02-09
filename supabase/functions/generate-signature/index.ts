@@ -24,6 +24,16 @@ serve(async (req) => {
   }
 
   try {
+    // Fail fast if signing key is missing
+    const signingKey = Deno.env.get('SIGNATURE_PRIVATE_KEY')
+    if (!signingKey) {
+      console.error('SIGNATURE_PRIVATE_KEY not configured')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server signing key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -96,12 +106,11 @@ serve(async (req) => {
 
     // Check if user has completed all required social media tasks for this raffle
     const { data: verificationRecords, error: verificationError } = await supabaseClient
-      .from('verification_records')
+      .from('social_media_verifications')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_address', user_address.toLowerCase())
       .eq('raffle_id', raffle_id)
-      .eq('chain_id', chain_id) // Filter by network to ensure proper isolation
-      .eq('status', 'verified')
+      .eq('status', 'completed')
 
     if (verificationError) {
       console.error('Error checking verification records:', verificationError)
@@ -183,21 +192,15 @@ serve(async (req) => {
     // Store signature record in database
     const { data: signatureRecord, error: signatureError } = await supabaseClient
       .from('purchase_signatures')
-      .insert({
-        user_id: user.id,
-        user_address,
+      .upsert({
+        user_address: user_address.toLowerCase(),
         raffle_id,
-        raffle_address,
         signature,
-        slot_count,
-        chain_id: chain_id, // Track signature per network
-        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes expiry
-        metadata: {
-          generated_at: new Date().toISOString(),
-          verification_records: verificationRecords.length,
-          chain_id: chain_id
-        }
-      })
+        deadline,
+        chain_id: chain_id,
+        is_used: false,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      }, { onConflict: 'user_address,raffle_id' })
       .select()
       .single()
 
@@ -344,53 +347,4 @@ function isValidEthereumAddress(address: string): boolean {
   // Basic Ethereum address validation
   const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/
   return ethAddressRegex.test(address)
-}
-
-// Helper function to verify signature (for future use)
-async function verifyPurchaseSignature(
-  signature: string,
-  userAddress: string,
-  raffleId: string,
-  raffleAddress?: string,
-  slotCount: number = 1
-): Promise<boolean> {
-  try {
-    const signingKey = Deno.env.get('SIGNATURE_PRIVATE_KEY')
-    
-    if (!signingKey) {
-      return false
-    }
-
-    // Parse signature components
-    const [signatureHash, timestamp, nonce] = signature.split(':')
-    
-    if (!signatureHash || !timestamp || !nonce) {
-      return false
-    }
-
-    // Recreate the original message
-    const messageComponents = [
-      userAddress.toLowerCase(),
-      raffleId,
-      raffleAddress?.toLowerCase() || '',
-      slotCount.toString(),
-      timestamp,
-      nonce
-    ]
-    
-    const message = messageComponents.join('|')
-    
-    // Generate expected signature
-    const encoder = new TextEncoder()
-    const data = encoder.encode(message + signingKey)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const expectedSignature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-    
-    return signatureHash === expectedSignature
-    
-  } catch (error) {
-    console.error('Error verifying signature:', error)
-    return false
-  }
 }

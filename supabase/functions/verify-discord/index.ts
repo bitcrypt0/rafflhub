@@ -7,12 +7,14 @@ const corsHeaders = {
 }
 
 interface DiscordVerificationRequest {
-  user_id: string;
-  task_type: 'join_server' | 'verify_role';
+  user_address: string;
+  task_type: string;
   task_data: {
-    server_id: string;
+    server_id?: string;
     role_id?: string;
+    target?: string;
   };
+  chain_id: number;
 }
 
 serve(async (req) => {
@@ -22,39 +24,33 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
+    // Create Supabase client with service role for DB access
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the user from the request
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
+    const { user_address, task_type, task_data, chain_id }: DiscordVerificationRequest = await req.json()
 
-    if (!user) {
+    // Validate required parameters
+    if (!user_address || !task_type || !task_data || chain_id === undefined) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required parameters: user_address, task_type, task_data, and chain_id' 
+        }),
         { 
-          status: 401, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    const { user_id, task_type, task_data }: DiscordVerificationRequest = await req.json()
-
     // Get user's Discord credentials from database
     const { data: socialAccount, error: accountError } = await supabaseClient
       .from('user_social_accounts')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('user_address', user_address)
       .eq('platform', 'discord')
       .single()
 
@@ -87,29 +83,67 @@ serve(async (req) => {
       )
     }
 
+    // Normalize task_type: frontend sends 'join' but edge function expects 'join_server'
+    const normalizedTaskType = normalizeTaskType(task_type);
+
+    // Normalize task_data: frontend sends { target: "https://discord.gg/abc" }
+    // but edge function expects { server_id: "..." }
+    let serverId = task_data.server_id;
+    if (!serverId && task_data.target) {
+      const inviteCode = extractDiscordInviteCode(task_data.target);
+      if (inviteCode) {
+        serverId = await resolveDiscordInviteToGuildId(inviteCode);
+        if (!serverId) {
+          console.error(`Could not resolve Discord invite code: ${inviteCode}`);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Could not resolve Discord invite link. Please ensure the invite link is valid.' 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      } else {
+        serverId = task_data.target;
+      }
+    }
+
+    if (!serverId) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Could not determine Discord server ID from task data' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     let verificationResult = false
     let verificationDetails = {}
 
-    // Perform verification based on task type
-    switch (task_type) {
+    // Perform verification based on normalized task type
+    switch (normalizedTaskType) {
       case 'join_server':
         verificationResult = await verifyDiscordServerMembership(
           discordBotToken,
-          task_data.server_id,
+          serverId,
           socialAccount.platform_user_id
         )
-        verificationDetails = { server_id: task_data.server_id }
+        verificationDetails = { server_id: serverId }
         break
 
       case 'verify_role':
         verificationResult = await verifyDiscordRole(
           discordBotToken,
-          task_data.server_id,
+          serverId,
           socialAccount.platform_user_id,
           task_data.role_id!
         )
         verificationDetails = { 
-          server_id: task_data.server_id, 
+          server_id: serverId, 
           role_id: task_data.role_id 
         }
         break
@@ -118,7 +152,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Invalid task type' 
+            error: `Invalid task type: ${task_type}` 
           }),
           { 
             status: 400, 
@@ -154,6 +188,47 @@ serve(async (req) => {
     )
   }
 })
+
+// Normalize task type from frontend format to edge function format
+function normalizeTaskType(taskType: string): string {
+  switch (taskType?.toLowerCase()) {
+    case 'join':
+    case 'join_server':
+    case 'discord_join':
+      return 'join_server';
+    case 'role':
+    case 'verify_role':
+    case 'discord_role':
+      return 'verify_role';
+    default:
+      return taskType;
+  }
+}
+
+// Extract invite code from a Discord invite URL
+function extractDiscordInviteCode(input: string): string | null {
+  if (!input) return null;
+  const match = input.match(/(?:discord\.gg|discord\.com\/invite)\/([a-zA-Z0-9-]+)/);
+  return match ? match[1] : null;
+}
+
+// Resolve a Discord invite code to a guild (server) ID using the public API
+async function resolveDiscordInviteToGuildId(inviteCode: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://discord.com/api/v10/invites/${inviteCode}`, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      console.error('Failed to resolve Discord invite:', await response.text());
+      return null;
+    }
+    const data = await response.json();
+    return data.guild?.id || null;
+  } catch (error) {
+    console.error('Error resolving Discord invite:', error);
+    return null;
+  }
+}
 
 // Helper functions for Discord API verification
 async function verifyDiscordServerMembership(botToken: string, serverId: string, userId: string): Promise<boolean> {

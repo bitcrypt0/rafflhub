@@ -129,6 +129,7 @@ export const EDGE_FUNCTIONS = {
   VERIFY_TWITTER: 'verify-twitter',
   VERIFY_DISCORD: 'verify-discord',
   VERIFY_TELEGRAM: 'verify-telegram',
+  GENERATE_PURCHASE_AUTH: 'generate-purchase-auth',
   GENERATE_SIGNATURE: 'generate-signature',
   OAUTH_TWITTER: 'oauth-twitter',
   OAUTH_DISCORD: 'oauth-discord'

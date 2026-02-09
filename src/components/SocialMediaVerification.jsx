@@ -308,33 +308,17 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
 
       if (authResult.success) {
         if (authResult.authUrl) {
-          console.log('Opening OAuth popup for platform:', task.platform);
-          // Open OAuth URL in popup and listen for completion
-          const popup = window.open(authResult.authUrl, '_blank', 'width=600,height=600');
-          toast.success('Authentication window opened. Please complete the OAuth process.');
+          // Store pre-auth state so we can return after OAuth
+          sessionStorage.setItem('oauth_return_state', JSON.stringify({
+            returnUrl: window.location.href,
+            platform: task.platform?.toLowerCase(),
+            raffleAddress: raffleId,
+            timestamp: Date.now()
+          }));
           
-          // Listen for popup closure
-          const checkClosed = setInterval(() => {
-            console.log('Checking if popup is closed...', popup?.closed);
-            if (popup && popup.closed) {
-              console.log('Popup closed, refreshing authentication status for:', task.platform);
-              clearInterval(checkClosed);
-              // Use the onAuthenticate prop passed from parent component
-              onAuthenticate(task.platform);
-            }
-          }, 1000);
-          
-          // Fallback: check after 5 minutes max
-          setTimeout(() => {
-            console.log('Fallback timeout reached, forcing popup close and refresh');
-            clearInterval(checkClosed);
-            if (popup && !popup.closed) {
-              popup.close();
-              onAuthenticate(task.platform);
-            }
-          }, 300000);
+          // Redirect to OAuth URL (works on all devices including mobile)
+          window.location.href = authResult.authUrl;
         }
-        // Don't call onAuthenticate here - wait for popup to close
       } else {
         toast.error(authResult.error || 'Authentication failed');
       }
@@ -422,17 +406,17 @@ const TaskDisplayComponent = ({ task, onComplete, onAuthenticate, isCompleted, i
             taskData
           });
           
-          verificationResult = await verificationService.verifyTwitterTask(userAddress, raffleId, taskType, taskData);
+          verificationResult = await verificationService.verifyTwitterTask(userAddress, raffleId, taskType, taskData, task.chainId);
           break;
         case 'discord':
           const discordTaskType = task.type || task.action || 'follow'; // Default to 'follow' if missing
           const discordTaskData = task.data || { target: task.target };
-          verificationResult = await verificationService.verifyDiscordTask(userAddress, raffleId, discordTaskType, discordTaskData);
+          verificationResult = await verificationService.verifyDiscordTask(userAddress, raffleId, discordTaskType, discordTaskData, task.chainId);
           break;
         case 'telegram':
           const telegramTaskType = task.type || task.action || 'follow'; // Default to 'follow' if missing
           const telegramTaskData = task.data || { target: task.target };
-          verificationResult = await verificationService.verifyTelegramTask(userAddress, raffleId, telegramTaskType, telegramTaskData);
+          verificationResult = await verificationService.verifyTelegramTask(userAddress, raffleId, telegramTaskType, telegramTaskData, task.chainId);
           break;
         default:
           throw new Error(`Unsupported platform: ${task.platform}`);
@@ -699,6 +683,31 @@ const SocialMediaVerification = ({
     }
   };
 
+  // Detect return from OAuth redirect flow
+  useEffect(() => {
+    const oauthCompleted = sessionStorage.getItem('oauth_completed');
+    if (oauthCompleted && connected && userAddress) {
+      try {
+        const data = JSON.parse(oauthCompleted);
+        // Only process if recent (within 5 minutes)
+        if (Date.now() - data.timestamp < 300000) {
+          if (data.success) {
+            toast.success(`${data.platform?.charAt(0).toUpperCase() + data.platform?.slice(1)} account connected!`);
+          } else {
+            toast.error(data.error || 'Authentication failed');
+          }
+          // Refresh auth data
+          loadUserData();
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+      // Clean up
+      sessionStorage.removeItem('oauth_completed');
+      sessionStorage.removeItem('oauth_return_state');
+    }
+  }, [connected, userAddress]);
+
   // Load authenticated accounts and verification records
   useEffect(() => {
     if (connected && userAddress) {
@@ -959,7 +968,8 @@ const SocialMediaVerification = ({
             userAddress, 
             raffle.address, 
             task.type || task.action, 
-            task.data || { target: task.target }
+            task.data || { target: task.target },
+            raffle.chainId
           );
           break;
         case 'discord':
@@ -967,7 +977,8 @@ const SocialMediaVerification = ({
             userAddress, 
             raffle.address, 
             task.type || task.action, 
-            task.data || { target: task.target }
+            task.data || { target: task.target },
+            raffle.chainId
           );
           break;
         case 'telegram':
@@ -975,7 +986,8 @@ const SocialMediaVerification = ({
             userAddress, 
             raffle.address, 
             task.type || task.action, 
-            task.data || { target: task.target }
+            task.data || { target: task.target },
+            raffle.chainId
           );
           break;
         default:

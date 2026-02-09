@@ -14,7 +14,7 @@ class VerificationService {
    * @param {Object} taskData - Task configuration data
    * @returns {Promise<{success: boolean, verificationId: string|null, error: string|null}>}
    */
-  async verifyTwitterTask(walletAddress, raffleAddress, taskType, taskData) {
+  async verifyTwitterTask(walletAddress, raffleAddress, taskType, taskData, chainId) {
     try {
       // Check if user has authenticated Twitter account
       const { isAuthenticated, account } = await socialAuthService.isAuthenticated(walletAddress, PLATFORMS.TWITTER);
@@ -28,24 +28,31 @@ class VerificationService {
         walletAddress,
         raffleAddress,
         platform: PLATFORMS.TWITTER,
-        taskType,  // Use the taskType parameter instead of taskData.type
-        taskData
+        taskType,
+        taskData,
+        chainId
       });
 
-      // Call Twitter verification edge function
+      // Call Twitter verification edge function (tokens read server-side)
       const { data, error } = await callEdgeFunction('verify-twitter', {
         user_address: walletAddress,
         raffle_id: raffleAddress,
         verification_id: verificationRecord.id,
-        task_type: taskType,  // Use the taskType parameter instead of taskData.type
+        task_type: taskType,
         task_data: taskData,
-        twitter_user_id: account.platform_user_id,
-        access_token: account.access_token
+        chain_id: chainId
       });
 
       if (error) {
         await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, error.message);
         throw error;
+      }
+
+      // Check if the edge function reported verification success
+      if (!data?.success) {
+        const failMsg = data?.error || 'Twitter task verification failed. Please ensure you completed the task and try again.';
+        await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, failMsg);
+        return { success: false, verificationId: verificationRecord.id, error: failMsg };
       }
 
       // Update verification status
@@ -71,7 +78,7 @@ class VerificationService {
    * @param {Object} taskData - Task configuration data
    * @returns {Promise<{success: boolean, verificationId: string|null, error: string|null}>}
    */
-  async verifyDiscordTask(walletAddress, raffleAddress, taskType, taskData) {
+  async verifyDiscordTask(walletAddress, raffleAddress, taskType, taskData, chainId) {
     try {
       // Check if user has authenticated Discord account
       const { isAuthenticated, account } = await socialAuthService.isAuthenticated(walletAddress, PLATFORMS.DISCORD);
@@ -85,24 +92,31 @@ class VerificationService {
         walletAddress,
         raffleAddress,
         platform: PLATFORMS.DISCORD,
-        taskType,  // Use the taskType parameter instead of taskData.type
-        taskData
+        taskType,
+        taskData,
+        chainId
       });
 
-      // Call Discord verification edge function
+      // Call Discord verification edge function (tokens read server-side)
       const { data, error } = await callEdgeFunction('verify-discord', {
         user_address: walletAddress,
         raffle_id: raffleAddress,
         verification_id: verificationRecord.id,
-        task_type: taskType,  // Use the taskType parameter instead of taskData.type
+        task_type: taskType,
         task_data: taskData,
-        discord_user_id: account.platform_user_id,
-        access_token: account.access_token
+        chain_id: chainId
       });
 
       if (error) {
         await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, error.message);
         throw error;
+      }
+
+      // Check if the edge function reported verification success
+      if (!data?.success) {
+        const failMsg = data?.error || 'Discord task verification failed. Please ensure you completed the task and try again.';
+        await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, failMsg);
+        return { success: false, verificationId: verificationRecord.id, error: failMsg };
       }
 
       // Update verification status
@@ -128,7 +142,7 @@ class VerificationService {
    * @param {Object} taskData - Task configuration data
    * @returns {Promise<{success: boolean, verificationId: string|null, error: string|null}>}
    */
-  async verifyTelegramTask(walletAddress, raffleAddress, taskType, taskData) {
+  async verifyTelegramTask(walletAddress, raffleAddress, taskType, taskData, chainId) {
     try {
       // Check if user has authenticated Telegram account
       const { isAuthenticated, account } = await socialAuthService.isAuthenticated(walletAddress, PLATFORMS.TELEGRAM);
@@ -142,23 +156,31 @@ class VerificationService {
         walletAddress,
         raffleAddress,
         platform: PLATFORMS.TELEGRAM,
-        taskType,  // Use the taskType parameter instead of taskData.type
-        taskData
+        taskType,
+        taskData,
+        chainId
       });
 
-      // Call Telegram verification edge function
+      // Call Telegram verification edge function (tokens read server-side)
       const { data, error } = await callEdgeFunction('verify-telegram', {
         user_address: walletAddress,
         raffle_id: raffleAddress,
         verification_id: verificationRecord.id,
-        task_type: taskType,  // Use the taskType parameter instead of taskData.type
+        task_type: taskType,
         task_data: taskData,
-        telegram_user_id: account.platform_user_id
+        chain_id: chainId
       });
 
       if (error) {
         await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, error.message);
         throw error;
+      }
+
+      // Check if the edge function reported verification success
+      if (!data?.success) {
+        const failMsg = data?.error || 'Telegram task verification failed. Please ensure you completed the task and try again.';
+        await this.updateVerificationStatus(verificationRecord.id, VERIFICATION_STATUS.FAILED, failMsg);
+        return { success: false, verificationId: verificationRecord.id, error: failMsg };
       }
 
       // Update verification status
@@ -185,8 +207,7 @@ class VerificationService {
     try {
       // Check if supabase is properly configured
       if (!supabase || !supabase.from || typeof supabase.from !== 'function') {
-        console.warn('Supabase not configured, returning mock verification record');
-        return { id: 'mock-id', ...recordData, status: VERIFICATION_STATUS.PENDING };
+        throw new Error('Backend service not configured. Please check your connection and try again.');
       }
 
       const {
@@ -194,7 +215,8 @@ class VerificationService {
         raffleAddress,
         platform,
         taskType,
-        taskData
+        taskData,
+        chainId
       } = recordData;
 
       const record = {
@@ -203,6 +225,7 @@ class VerificationService {
         platform,
         task_type: taskType,
         task_data: taskData,
+        chain_id: chainId || 84532,
         status: VERIFICATION_STATUS.PENDING,
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString() // Will be updated by upsert if record exists
@@ -225,8 +248,7 @@ class VerificationService {
       return data;
     } catch (error) {
       console.error('Failed to create verification record:', error);
-      // Return mock record to prevent app crash
-      return { id: 'mock-id', ...recordData, status: VERIFICATION_STATUS.PENDING };
+      throw new Error(`Verification service unavailable: ${error.message}`);
     }
   }
 
@@ -372,14 +394,14 @@ class VerificationService {
    * @param {Object} taskData - Task configuration data
    * @returns {Promise<{success: boolean, verificationId: string|null, error: string|null}>}
    */
-  async verifyTask(platform, walletAddress, raffleAddress, taskData) {
+  async verifyTask(platform, walletAddress, raffleAddress, taskType, taskData, chainId) {
     switch (platform) {
       case PLATFORMS.TWITTER:
-        return await this.verifyTwitterTask(walletAddress, raffleAddress, taskData);
+        return await this.verifyTwitterTask(walletAddress, raffleAddress, taskType, taskData, chainId);
       case PLATFORMS.DISCORD:
-        return await this.verifyDiscordTask(walletAddress, raffleAddress, taskData);
+        return await this.verifyDiscordTask(walletAddress, raffleAddress, taskType, taskData, chainId);
       case PLATFORMS.TELEGRAM:
-        return await this.verifyTelegramTask(walletAddress, raffleAddress, taskData);
+        return await this.verifyTelegramTask(walletAddress, raffleAddress, taskType, taskData, chainId);
       default:
         return { 
           success: false, 

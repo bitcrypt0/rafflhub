@@ -48,18 +48,11 @@ class SocialAuthService {
         throw error;
       }
 
-      // Store the authenticated account
-      await this.storeSocialAccount({
-        walletAddress,
-        platform: PLATFORMS.TWITTER,
-        platformUserId: data.user_id,
-        platformUsername: data.username,
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresAt: data.expires_at
+      // Backend already stores the account — just update local cache
+      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.TWITTER}`, {
+        user_id: data.user_id,
+        username: data.username
       });
-
-      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.TWITTER}`, data);
 
       return { success: true, error: null };
     } catch (error) {
@@ -111,18 +104,11 @@ class SocialAuthService {
         throw error;
       }
 
-      // Store the authenticated account
-      await this.storeSocialAccount({
-        walletAddress,
-        platform: PLATFORMS.DISCORD,
-        platformUserId: data.user_id,
-        platformUsername: data.username,
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresAt: data.expires_at
+      // Backend already stores the account — just update local cache
+      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.DISCORD}`, {
+        user_id: data.user_id,
+        username: data.username
       });
-
-      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.DISCORD}`, data);
 
       return { success: true, error: null };
     } catch (error) {
@@ -179,18 +165,11 @@ class SocialAuthService {
         throw error;
       }
 
-      // Store the authenticated account
-      await this.storeSocialAccount({
-        walletAddress,
-        platform: PLATFORMS.TELEGRAM,
-        platformUserId: data.user_id,
-        platformUsername: data.username,
-        accessToken: null, // Telegram doesn't use traditional OAuth tokens
-        refreshToken: null,
-        expiresAt: null
+      // Backend already stores the account — just update local cache
+      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.TELEGRAM}`, {
+        user_id: data.user_id,
+        username: data.username
       });
-
-      this.authenticatedAccounts.set(`${walletAddress}_${PLATFORMS.TELEGRAM}`, data);
 
       return { success: true, error: null };
     } catch (error) {
@@ -292,17 +271,32 @@ class SocialAuthService {
       // Ensure data is an array
       const accountsData = Array.isArray(data) ? data : [];
 
-      // Filter out expired accounts but allow pending ones (rate limited)
-      const validAccounts = accountsData.filter(account => {
-        // Filter out expired accounts
+      // Auto-refresh expired tokens instead of filtering them out
+      const validAccounts = [];
+      for (const account of accountsData) {
         if (account.token_expires_at && new Date(account.token_expires_at) < new Date()) {
-          return false;
+          // Token expired — try refresh
+          if (account.refresh_token) {
+            const refreshResult = await this._attemptTokenRefresh(walletAddress, account.platform, account);
+            if (refreshResult.success) {
+              // Re-fetch the updated account
+              const { data: refreshed } = await supabase
+                .from(TABLES.USER_SOCIAL_ACCOUNTS)
+                .select('*')
+                .eq('user_address', walletAddress)
+                .eq('platform', account.platform)
+                .maybeSingle();
+              if (refreshed) {
+                validAccounts.push(refreshed);
+                continue;
+              }
+            }
+          }
+          // Refresh failed — skip this expired account
+          continue;
         }
-        
-        // Allow pending accounts (rate limited) - they're still authenticated
-        // The profile will be updated when rate limits reset
-        return true;
-      });
+        validAccounts.push(account);
+      }
 
       console.log('Valid accounts found:', validAccounts.length);
       return { accounts: validAccounts, error: null };
@@ -352,8 +346,24 @@ class SocialAuthService {
         return { success: true, isAuthenticated: false, account: null };
       }
 
-      // Check if token is expired
+      // Check if token is expired — attempt auto-refresh
       if (data.token_expires_at && new Date(data.token_expires_at) < new Date()) {
+        if (data.refresh_token) {
+          const refreshResult = await this._attemptTokenRefresh(walletAddress, platform, data);
+          if (refreshResult.success) {
+            // Re-fetch the updated account
+            const { data: refreshed } = await supabase
+              .from(TABLES.USER_SOCIAL_ACCOUNTS)
+              .select('*')
+              .eq('user_address', walletAddress)
+              .eq('platform', platform)
+              .maybeSingle();
+            if (refreshed) {
+              return { success: true, isAuthenticated: true, account: refreshed };
+            }
+          }
+        }
+        // Refresh failed or no refresh token — expired
         return { success: true, isAuthenticated: false, account: null };
       }
 
@@ -371,36 +381,48 @@ class SocialAuthService {
    * @param {string} platform - Social media platform
    * @returns {Promise<{success: boolean, error: string|null}>}
    */
+  /**
+   * Internal: attempt token refresh using account data directly (no recursive isAuthenticated call)
+   */
+  async _attemptTokenRefresh(walletAddress, platform, accountData) {
+    try {
+      if (!accountData?.refresh_token) {
+        return { success: false, error: 'No refresh token' };
+      }
+
+      const { data, error } = await callEdgeFunction(`oauth-${platform}`, {
+        user_address: walletAddress,
+        refresh_token: accountData.refresh_token,
+        action: 'refresh'
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // Backend edge function updates the DB directly — no need for frontend storeSocialAccount
+      return { success: true, error: null };
+    } catch (error) {
+      console.error(`Token refresh failed for ${platform}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async refreshToken(walletAddress, platform) {
     try {
-      const { account } = await this.isAuthenticated(walletAddress, platform);
+      // Get account data directly from DB
+      const { data: account } = await supabase
+        .from(TABLES.USER_SOCIAL_ACCOUNTS)
+        .select('*')
+        .eq('user_address', walletAddress)
+        .eq('platform', platform)
+        .maybeSingle();
       
       if (!account || !account.refresh_token) {
         throw new Error('No refresh token available');
       }
 
-      const { data, error } = await callEdgeFunction(`oauth-${platform}`, {
-        user_address: walletAddress,
-        refresh_token: account.refresh_token,
-        action: 'refresh'
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // Update stored tokens
-      await this.storeSocialAccount({
-        walletAddress,
-        platform,
-        platformUserId: account.platform_user_id,
-        platformUsername: account.platform_username,
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token || account.refresh_token,
-        expiresAt: data.expires_at
-      });
-
-      return { success: true, error: null };
+      return await this._attemptTokenRefresh(walletAddress, platform, account);
     } catch (error) {
       console.error('Token refresh failed:', error);
       return { success: false, error: error.message };

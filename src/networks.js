@@ -14,7 +14,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   10: {
@@ -28,7 +29,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   56: {
@@ -42,7 +44,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   97: {
@@ -56,7 +59,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   43113: {
@@ -70,7 +74,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   43114: {
@@ -84,7 +89,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   8453: {
@@ -98,7 +104,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   84532: {
@@ -107,12 +114,13 @@ export const SUPPORTED_NETWORKS = {
     explorer: 'https://sepolia.basescan.org',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     contractAddresses: {
-      protocolManager: '0x5c99196D547e82bD3aF10e9777F0636929aD36fA',
-      poolDeployer: '0xa74c039138D3E726A6Af9A358b92Ee8639692cc1',
-      revenueManager: '0x2627B40e2CdD72dc84F1e32d453B006F76b2D450',
-      nftFactory: '0x2a5dC41C66D4101967cC1a7fDBf387A3640C14E2',
-	  rewardsFlywheel: '0xdf232bB1E31CaebF958A82c1AfF66783F459D180',
-      socialEngagementManager: '0x87a4b1fc931249BE90ede3452B9b0F03e1dfe1BC'
+      protocolManager: '0x0D984A5481e1d169C69eEdFD1C7E891e85954Dde',
+      poolDeployer: '0x12F3BDC7EF325B8Bb276Ef892AB3Ae08901963bD',
+      revenueManager: '0x249CdDC74E46Fa9A76D6150e6A23B1df6B6edE81',
+      nftFactory: '0xD445FdB2d365D10e87e3223EDA0Ea448BAe0c175',
+      rewardsFlywheel: '0xfF80d0126684293f25D80cb604B06c330cA54d5e',
+      socialEngagementManager: '0xd92a96E964aBC68F89f20F245eAffE554D053f72',
+      purchaseAuthorizer: '0x720fB9D409421dC8BC2620B68E36287A4886efAD'
     }
   },
   11155111: {
@@ -126,7 +134,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   11155420: {
@@ -140,7 +149,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   2020: {
@@ -154,7 +164,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   2021: {
@@ -168,7 +179,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   42161: {
@@ -182,7 +194,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
   421614: {
@@ -196,7 +209,8 @@ export const SUPPORTED_NETWORKS = {
       revenueManager: '0x...',
       nftFactory: '0x...',
       socialEngagementManager: '0x...',
-      rewardsFlywheel: '0x...'
+      rewardsFlywheel: '0x...',
+      purchaseAuthorizer: '0x...'
     }
   },
 };

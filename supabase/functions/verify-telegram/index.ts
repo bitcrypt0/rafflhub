@@ -7,11 +7,13 @@ const corsHeaders = {
 }
 
 interface TelegramVerificationRequest {
-  user_id: string;
-  task_type: 'join_group';
+  user_address: string;
+  task_type: string;
   task_data: {
-    chat_id: string;
+    chat_id?: string;
+    target?: string;
   };
+  chain_id: number;
 }
 
 serve(async (req) => {
@@ -21,39 +23,33 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
+    // Create Supabase client with service role for DB access
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the user from the request
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
+    const { user_address, task_type, task_data, chain_id }: TelegramVerificationRequest = await req.json()
 
-    if (!user) {
+    // Validate required parameters
+    if (!user_address || !task_type || !task_data || chain_id === undefined) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required parameters: user_address, task_type, task_data, and chain_id' 
+        }),
         { 
-          status: 401, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    const { user_id, task_type, task_data }: TelegramVerificationRequest = await req.json()
-
     // Get user's Telegram credentials from database
     const { data: socialAccount, error: accountError } = await supabaseClient
       .from('user_social_accounts')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('user_address', user_address)
       .eq('platform', 'telegram')
       .single()
 
@@ -86,25 +82,48 @@ serve(async (req) => {
       )
     }
 
+    // Normalize task_type: frontend sends 'join' but edge function expects 'join_group'
+    const normalizedTaskType = normalizeTelegramTaskType(task_type);
+
+    // Normalize task_data: frontend sends { target: "https://t.me/groupname" }
+    // but edge function expects { chat_id: "@groupname" or numeric ID }
+    let chatId = task_data.chat_id;
+    if (!chatId && task_data.target) {
+      chatId = extractTelegramChatId(task_data.target);
+    }
+
+    if (!chatId) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Could not determine Telegram chat ID from task data' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     let verificationResult = false
     let verificationDetails = {}
 
-    // Perform verification based on task type
-    switch (task_type) {
+    // Perform verification based on normalized task type
+    switch (normalizedTaskType) {
       case 'join_group':
         verificationResult = await verifyTelegramGroupMembership(
           telegramBotToken,
-          task_data.chat_id,
+          chatId,
           socialAccount.platform_user_id
         )
-        verificationDetails = { chat_id: task_data.chat_id }
+        verificationDetails = { chat_id: chatId }
         break
 
       default:
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Invalid task type' 
+            error: `Invalid task type: ${task_type}` 
           }),
           { 
             status: 400, 
@@ -140,6 +159,33 @@ serve(async (req) => {
     )
   }
 })
+
+// Normalize task type from frontend format to edge function format
+function normalizeTelegramTaskType(taskType: string): string {
+  switch (taskType?.toLowerCase()) {
+    case 'join':
+    case 'join_group':
+    case 'telegram_join':
+      return 'join_group';
+    default:
+      return taskType;
+  }
+}
+
+// Extract Telegram chat ID from a t.me URL or raw input
+function extractTelegramChatId(input: string): string {
+  if (!input) return input;
+  // Match https://t.me/groupname or t.me/groupname
+  const match = input.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]+)/);
+  if (match) {
+    // Telegram Bot API accepts @username as chat_id for public groups/channels
+    return `@${match[1]}`;
+  }
+  // If it starts with @, use as-is
+  if (input.startsWith('@')) return input;
+  // Otherwise return as-is (might be a numeric chat_id)
+  return input;
+}
 
 // Helper functions for Telegram Bot API verification
 async function verifyTelegramGroupMembership(botToken: string, chatId: string, userId: string): Promise<boolean> {

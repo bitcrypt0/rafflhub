@@ -13,9 +13,9 @@ interface TwitterVerificationRequest {
     tweet_id?: string;
     username?: string;
     hashtag?: string;
+    target?: string;
   };
-  access_token: string;
-  chain_id: number; // Required: Chain ID for multi-network support
+  chain_id: number;
 }
 
 serve(async (req) => {
@@ -29,17 +29,16 @@ serve(async (req) => {
   console.log('Request headers:', Object.fromEntries(req.headers.entries()))
 
   try {
-    // Create Supabase client
+    // Create Supabase client with service role for DB access
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
     // Get the request body
     const requestBody = await req.json()
-    console.log('Request body:', requestBody)
     
-    const { user_address, task_type, task_data, access_token, chain_id }: TwitterVerificationRequest = requestBody
+    const { user_address, task_type, task_data, chain_id }: TwitterVerificationRequest = requestBody
 
     // Validate required parameters
     if (!user_address || !task_type || !task_data || chain_id === undefined) {
@@ -79,22 +78,40 @@ serve(async (req) => {
       )
     }
 
-    // Twitter API configuration
-    const twitterApiKey = Deno.env.get('TWITTER_API_KEY')
-    const twitterApiSecret = Deno.env.get('TWITTER_API_SECRET')
+    // Twitter API configuration (bearer token only needed for mention tasks)
     const twitterBearerToken = Deno.env.get('TWITTER_BEARER_TOKEN')
 
-    if (!twitterApiKey || !twitterApiSecret || !twitterBearerToken) {
+    if (task_type === 'mention' && !twitterBearerToken) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Twitter API credentials not configured' 
+          error: 'Twitter Bearer Token not configured (required for mention verification)' 
         }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
+    }
+
+    // Normalize task_data: frontend sends { target: "value" } but edge function
+    // expects task-specific fields (username, tweet_id, hashtag).
+    // Map 'target' to the correct field based on task_type.
+    const normalizedTaskData = { ...task_data };
+    if (task_data.target && !task_data.username && !task_data.tweet_id && !task_data.hashtag) {
+      switch (task_type) {
+        case 'follow':
+          normalizedTaskData.username = task_data.target.replace('@', '');
+          break;
+        case 'like':
+        case 'retweet':
+        case 'comment':
+          normalizedTaskData.tweet_id = extractTweetIdFromUrl(task_data.target);
+          break;
+        case 'mention':
+          normalizedTaskData.hashtag = task_data.target;
+          break;
+      }
     }
 
     let verificationResult = false
@@ -107,7 +124,7 @@ serve(async (req) => {
         let likeUserId = socialAccount.platform_user_id;
         if (likeUserId === 'pending') {
           console.log('Account has pending user_id, fetching from access token');
-          likeUserId = await getUserIdFromAccessToken(access_token);
+          likeUserId = await getUserIdFromAccessToken(socialAccount.access_token);
           if (!likeUserId) {
             console.log('Unable to fetch user ID due to rate limiting, returning rate limit error');
             return new Response(
@@ -125,11 +142,11 @@ serve(async (req) => {
         }
         
         verificationResult = await verifyTwitterLike(
-          access_token,  // Use user's OAuth token instead of app token
+          socialAccount.access_token,  // Use user's OAuth token instead of app token
           likeUserId,
-          task_data.tweet_id!
+          normalizedTaskData.tweet_id!
         )
-        verificationDetails = { tweet_id: task_data.tweet_id }
+        verificationDetails = { tweet_id: normalizedTaskData.tweet_id }
         break
 
       case 'retweet':
@@ -137,7 +154,7 @@ serve(async (req) => {
         let retweetUserId = socialAccount.platform_user_id;
         if (retweetUserId === 'pending') {
           console.log('Account has pending user_id, fetching from access token');
-          retweetUserId = await getUserIdFromAccessToken(access_token);
+          retweetUserId = await getUserIdFromAccessToken(socialAccount.access_token);
           if (!retweetUserId) {
             console.log('Unable to fetch user ID due to rate limiting, returning rate limit error');
             return new Response(
@@ -155,11 +172,11 @@ serve(async (req) => {
         }
         
         verificationResult = await verifyTwitterRetweet(
-          access_token,  // Use user's OAuth token instead of app token
+          socialAccount.access_token,  // Use user's OAuth token instead of app token
           retweetUserId,
-          task_data.tweet_id!
+          normalizedTaskData.tweet_id!
         )
-        verificationDetails = { tweet_id: task_data.tweet_id }
+        verificationDetails = { tweet_id: normalizedTaskData.tweet_id }
         break
 
       case 'follow':
@@ -167,7 +184,7 @@ serve(async (req) => {
         let userId = socialAccount.platform_user_id;
         if (userId === 'pending') {
           console.log('Account has pending user_id, fetching from access token');
-          userId = await getUserIdFromAccessToken(access_token);
+          userId = await getUserIdFromAccessToken(socialAccount.access_token);
           if (!userId) {
             console.log('Unable to fetch user ID due to rate limiting, returning rate limit error');
             return new Response(
@@ -185,11 +202,11 @@ serve(async (req) => {
         }
         
         verificationResult = await verifyTwitterFollow(
-          access_token,  // Use user's OAuth token instead of app token
+          socialAccount.access_token,  // Use user's OAuth token instead of app token
           userId,
-          task_data.username!
+          normalizedTaskData.username!
         )
-        verificationDetails = { username: task_data.username }
+        verificationDetails = { username: normalizedTaskData.username }
         break
 
       case 'comment':
@@ -197,7 +214,7 @@ serve(async (req) => {
         let commentUserId = socialAccount.platform_user_id;
         if (commentUserId === 'pending') {
           console.log('Account has pending user_id, fetching from access token');
-          commentUserId = await getUserIdFromAccessToken(access_token);
+          commentUserId = await getUserIdFromAccessToken(socialAccount.access_token);
           if (!commentUserId) {
             console.log('Unable to fetch user ID due to rate limiting, returning rate limit error');
             return new Response(
@@ -215,20 +232,20 @@ serve(async (req) => {
         }
         
         verificationResult = await verifyTwitterComment(
-          access_token,  // Use user's OAuth token instead of app token
+          socialAccount.access_token,  // Use user's OAuth token instead of app token
           commentUserId,
-          task_data.tweet_id!
+          normalizedTaskData.tweet_id!
         )
-        verificationDetails = { tweet_id: task_data.tweet_id }
+        verificationDetails = { tweet_id: normalizedTaskData.tweet_id }
         break
 
       case 'mention':
         verificationResult = await verifyTwitterMention(
-          twitterBearerToken,
+          twitterBearerToken!,
           socialAccount.platform_username,
-          task_data.hashtag!
+          normalizedTaskData.hashtag!
         )
-        verificationDetails = { hashtag: task_data.hashtag }
+        verificationDetails = { hashtag: normalizedTaskData.hashtag }
         break
 
       default:
@@ -271,6 +288,16 @@ serve(async (req) => {
     )
   }
 })
+
+// Extract tweet ID from a Twitter/X URL or return raw value if already an ID
+function extractTweetIdFromUrl(input: string): string {
+  if (!input) return input;
+  // If it's already a numeric ID, return as-is
+  if (/^\d+$/.test(input)) return input;
+  // Try to extract from URL: https://twitter.com/user/status/123456 or https://x.com/user/status/123456
+  const match = input.match(/(?:twitter\.com|x\.com)\/[^\/]+\/status\/(\d+)/);
+  return match ? match[1] : input;
+}
 
 // Helper functions for Twitter API verification
 async function verifyTwitterLike(bearerToken: string, userId: string, tweetId: string): Promise<boolean> {
@@ -365,18 +392,21 @@ async function getUserIdFromAccessToken(accessToken: string): Promise<string | n
   return null;
 }
 
-async function verifyTwitterFollow(bearerToken: string, userId: string, targetUsername: string): Promise<boolean> {
+async function verifyTwitterFollow(accessToken: string, userId: string, targetUsername: string): Promise<boolean> {
   try {
-    // First get the target user's ID
+    console.log(`Verifying follow: user ${userId} -> @${targetUsername}`);
+
+    // Step 1: Resolve target username to user ID
     const userResponse = await fetch(`https://api.twitter.com/2/users/by/username/${targetUsername}`, {
       headers: {
-        'Authorization': `Bearer ${bearerToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     })
 
     if (!userResponse.ok) {
-      console.error('Twitter API error getting user:', await userResponse.text())
+      const errorText = await userResponse.text();
+      console.error(`Twitter API error resolving username @${targetUsername}:`, userResponse.status, errorText);
       return false
     }
 
@@ -384,18 +414,60 @@ async function verifyTwitterFollow(bearerToken: string, userId: string, targetUs
     const targetUserId = userData.data?.id
 
     if (!targetUserId) {
+      console.error(`Could not resolve user ID for @${targetUsername}`);
       return false
     }
 
-    // Check if user is following the target
-    const followResponse = await fetch(`https://api.twitter.com/2/users/${userId}/following/${targetUserId}`, {
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    console.log(`Resolved @${targetUsername} to user ID ${targetUserId}`);
 
-    return followResponse.ok
+    // Step 2: Check following list using GET /2/users/{id}/following with pagination
+    // The endpoint GET /2/users/{id}/following/{target_id} does NOT exist in Twitter API v2.
+    // We must paginate through the following list.
+    let paginationToken: string | undefined = undefined;
+    const maxPages = 5; // Safety limit: check up to 5000 followings
+
+    for (let page = 0; page < maxPages; page++) {
+      const params = new URLSearchParams({
+        'max_results': '1000',
+        'user.fields': 'id'
+      });
+      if (paginationToken) {
+        params.set('pagination_token', paginationToken);
+      }
+
+      const followingResponse = await fetch(
+        `https://api.twitter.com/2/users/${userId}/following?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!followingResponse.ok) {
+        const errorText = await followingResponse.text();
+        console.error(`Twitter API error checking following list (page ${page + 1}):`, followingResponse.status, errorText);
+        return false;
+      }
+
+      const followingData = await followingResponse.json();
+
+      // Check if target user is in this page
+      if (followingData.data?.some((user: any) => user.id === targetUserId)) {
+        console.log(`Follow verified: user ${userId} follows @${targetUsername}`);
+        return true;
+      }
+
+      // Check for more pages
+      paginationToken = followingData.meta?.next_token;
+      if (!paginationToken) {
+        break; // No more pages
+      }
+    }
+
+    console.log(`Follow NOT verified: user ${userId} does not follow @${targetUsername}`);
+    return false;
   } catch (error) {
     console.error('Error verifying Twitter follow:', error)
     return false

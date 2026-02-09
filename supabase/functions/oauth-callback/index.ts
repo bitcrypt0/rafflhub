@@ -1,11 +1,30 @@
+// DEPRECATED: This generic oauth-callback function is replaced by platform-specific functions:
+//   - oauth-twitter
+//   - oauth-discord
+//   - oauth-telegram
+// This file can be safely deleted once all deployments are confirmed working.
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+  return new Response(
+    JSON.stringify({ 
+      success: false, 
+      error: 'This endpoint is deprecated. Use platform-specific OAuth endpoints instead.' 
+    }),
+    { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+})
+
+// Original interface kept for reference only
 interface OAuthCallbackRequest {
   platform: 'twitter' | 'discord' | 'telegram';
   code?: string;

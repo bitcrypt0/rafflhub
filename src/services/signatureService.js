@@ -10,13 +10,18 @@ import { supabase, EDGE_FUNCTIONS } from '../config/supabase.js';
  * @param {string} userAddress - User's wallet address
  * @param {string} raffleId - Raffle ID or address
  * @param {number} slotCount - Number of slots to purchase
+ * @param {number} chainId - Chain ID for multi-network support
  * @param {Object} additionalData - Additional data for signature (optional)
  * @returns {Promise<Object>} Signature data and metadata
  */
-export const generatePurchaseSignature = async (userAddress, raffleId, slotCount = 1, additionalData = {}) => {
+export const generatePurchaseSignature = async (userAddress, raffleId, slotCount = 1, chainId, additionalData = {}) => {
   try {
     if (!userAddress || !raffleId) {
       throw new Error('User address and raffle ID are required');
+    }
+
+    if (chainId === undefined || chainId === null) {
+      throw new Error('Chain ID is required for signature generation');
     }
 
     // Validate user address format (basic Ethereum address validation)
@@ -29,6 +34,7 @@ export const generatePurchaseSignature = async (userAddress, raffleId, slotCount
       raffle_id: raffleId,
       raffle_address: raffleId, // Pool address
       slot_count: slotCount,
+      chain_id: chainId,
       ...additionalData
     };
 
@@ -42,16 +48,7 @@ export const generatePurchaseSignature = async (userAddress, raffleId, slotCount
       throw new Error(`Failed to generate signature: ${error.message}`);
     }
 
-    // Store signature record in database for tracking
-    await storePurchaseSignature({
-      userAddress: signatureData.user_address,
-      raffleId: signatureData.raffle_id,
-      slotCount: signatureData.slot_count,
-      signature: data.signature,
-      deadline: data.deadline,
-      signatureData: JSON.stringify(signatureData),
-      expiresAt: new Date(Date.now() + (15 * 60 * 1000)) // 15 minutes expiry
-    });
+    // Edge function already stores the signature record — no duplicate insert needed
 
     return {
       success: true,

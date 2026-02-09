@@ -165,11 +165,27 @@ async function handleInitiate(walletAddress: string, clientId: string, redirectU
     const codeVerifier = generateRandomString(128)
     const codeChallenge = await generateCodeChallenge(codeVerifier)
     
-    // Store code verifier temporarily (in production, use a secure session store)
-    const state = btoa(JSON.stringify({
+    // Generate a random state key for server-side lookup
+    const stateKey = generateRandomString(32)
+    
+    // Store code verifier server-side (never exposed in URL)
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+    
+    await supabaseClient.from('oauth_states').insert({
+      state_key: stateKey,
       wallet_address: walletAddress,
       code_verifier: codeVerifier,
-      timestamp: Date.now()
+      platform: 'twitter',
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
+    })
+
+    // State only contains wallet_address and lookup key (no secrets)
+    const state = btoa(JSON.stringify({
+      wallet_address: walletAddress,
+      state_key: stateKey
     }))
 
     // Build Twitter OAuth URL
@@ -240,11 +256,10 @@ async function handleCallback(
       )
     }
 
-    // Decode state to get code verifier
+    // Decode state to get state_key for server-side lookup
     let stateData;
     try {
       stateData = JSON.parse(atob(state));
-      console.log('State decoded successfully:', { ...stateData, code_verifier: '***' });
     } catch (e) {
       console.error('Failed to decode state:', e);
       return new Response(
@@ -259,18 +274,44 @@ async function handleCallback(
       )
     }
     
-    const codeVerifier = stateData.code_verifier
-    if (!codeVerifier) {
-      console.error('Missing code_verifier in state');
+    // Retrieve code_verifier from server-side storage
+    let codeVerifier: string;
+    if (stateData.state_key) {
+      // New secure flow: lookup from oauth_states table
+      const { data: oauthState, error: stateError } = await supabaseClient
+        .from('oauth_states')
+        .select('code_verifier, expires_at')
+        .eq('state_key', stateData.state_key)
+        .eq('platform', 'twitter')
+        .single()
+      
+      if (stateError || !oauthState) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid or expired OAuth state' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      // Check expiry
+      if (new Date(oauthState.expires_at) < new Date()) {
+        await supabaseClient.from('oauth_states').delete().eq('state_key', stateData.state_key)
+        return new Response(
+          JSON.stringify({ success: false, error: 'OAuth state expired. Please try again.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      codeVerifier = oauthState.code_verifier
+      
+      // Clean up used state
+      await supabaseClient.from('oauth_states').delete().eq('state_key', stateData.state_key)
+    } else if (stateData.code_verifier) {
+      // Legacy fallback: code_verifier in state (for in-flight requests during migration)
+      codeVerifier = stateData.code_verifier
+    } else {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Missing code verifier in state' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: false, error: 'Missing code verifier' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

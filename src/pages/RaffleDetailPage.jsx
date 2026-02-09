@@ -25,6 +25,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/toolti
 import SocialMediaVerification from '../components/SocialMediaVerification';
 import PoolMetadataDisplay from '../components/PoolMetadataDisplay';
 import signatureService from '../services/signatureService';
+import verificationService from '../services/verificationService';
+import purchaseAuthService from '../services/purchaseAuthService';
 import supabaseService from '../services/supabaseService';
 import { useRealtimePool } from '../hooks/useRealtimePool';
 import { parseContractError, logContractError, formatErrorForDisplay } from '../utils/contractErrorHandler';
@@ -2331,30 +2333,39 @@ const RaffleDetailPage = () => {
   }, [stableRaffleAddress, getContractInstance, stableConnected, stableAddress, isInitialized, isReconnecting, refreshTrigger]);
 
   // Function to check user's social engagement completion status
+  // Checks BOTH on-chain flag (set after first purchase) AND Supabase verification (set after task completion).
+  // On-chain hasCompletedSocialEngagement is only true after the user's first successful slot purchase,
+  // so first-time purchasers rely on Supabase verification to unlock the purchase button.
   const checkSocialEngagementStatus = useCallback(async () => {
-    if (!connected || !address || !raffle?.address || !getContractInstance) {
+    if (!connected || !address || !raffle?.address) {
       setHasCompletedSocialEngagement(false);
       return;
     }
 
     try {
-      // Get the pool contract instance
-      const poolContract = getContractInstance(raffle.address, 'pool');
-      if (!poolContract) {
-        setHasCompletedSocialEngagement(false);
-        return;
+      let onChainCompleted = false;
+      let supabaseCompleted = false;
+
+      // 1. Check on-chain flag (for returning users who already purchased)
+      try {
+        const poolContract = getContractInstance?.(raffle.address, 'pool');
+        if (poolContract && typeof poolContract.hasCompletedSocialEngagement === 'function') {
+          onChainCompleted = !!(await poolContract.hasCompletedSocialEngagement(address));
+        }
+      } catch (blockchainError) {
+        console.error('Error checking on-chain social engagement:', blockchainError);
       }
 
-      // Verify the method exists before calling it
-      if (typeof poolContract.hasCompletedSocialEngagement !== 'function') {
-        console.warn('hasCompletedSocialEngagement method not found on pool contract');
-        setHasCompletedSocialEngagement(false);
-        return;
+      // 2. Check Supabase verification (for first-time purchasers who completed all tasks)
+      try {
+        const supabaseResult = await verificationService.checkAllTasksVerified(address, raffle.address);
+        supabaseCompleted = !!supabaseResult?.success;
+      } catch (supabaseError) {
+        console.error('Error checking Supabase verification status:', supabaseError);
       }
 
-      // Query the Pool contract to check if user has completed social engagement
-      const isCompleted = await poolContract.hasCompletedSocialEngagement(address);
-      setHasCompletedSocialEngagement(!!isCompleted);
+      // Either source is sufficient to enable slot purchases
+      setHasCompletedSocialEngagement(onChainCompleted || supabaseCompleted);
     } catch (error) {
       console.error('Error checking social engagement status:', error);
       setHasCompletedSocialEngagement(false);
@@ -2705,7 +2716,8 @@ const RaffleDetailPage = () => {
         const signatureResult = await signatureService.generatePurchaseSignature(
           address, 
           raffle.address, 
-          quantity
+          quantity,
+          raffle.chainId
         );
         
         if (signatureResult.success) {
@@ -2725,8 +2737,27 @@ const RaffleDetailPage = () => {
           throw new Error('Failed to generate signature. Please try again.');
         }
       }
+    } else {
+      // Non-social pools: server-signed purchase authorization (anti-bot)
+      // Every purchase needs a fresh PurchaseAuthorizer signature
+      try {
+        const authResult = await purchaseAuthService.generatePurchaseAuthorization(
+          address,
+          raffle.address,
+          raffle.chainId
+        );
+
+        if (authResult.success) {
+          deadline = authResult.deadline;
+          signatureToUse = authResult.signature;
+        } else {
+          throw new Error(authResult.error || 'Failed to generate purchase authorization');
+        }
+      } catch (authError) {
+        console.error('Purchase authorization failed:', authError);
+        throw new Error('Failed to authorize purchase. Please try again.');
+      }
     }
-    // For pools without social engagement requirements, signatureToUse remains '0x'
 
     // Call purchaseSlots with deadline, signature, and selected token IDs
     // Convert token IDs to numbers for contract (contract expects uint256[])
