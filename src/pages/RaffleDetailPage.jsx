@@ -920,6 +920,11 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 />
               )}
               
+              {!connected && (
+                <p className="text-center text-sm font-medium text-muted-foreground">
+                  Connect Wallet
+                </p>
+              )}
               <Button
                 onClick={() => handlePurchase(quantity, selectedTokenIds)}
                 disabled={loading || !connected || !canPurchaseTickets() || maxPurchasable <= 0 || quantity > maxPurchasable || (socialEngagementRequired && !hasCompletedSocialEngagement) || !isTokenSelectionValid()}
@@ -930,27 +935,20 @@ const TicketPurchaseSection = React.memo(({ raffle, onPurchase, timeRemaining, w
                 {loading ? 'Processing...' : `Purchase ${quantity} Slot${quantity > 1 ? 's' : ''}`}
               </Button>
               {socialEngagementRequired && !hasCompletedSocialEngagement && address?.toLowerCase() !== raffle.creator?.toLowerCase() && (
-                <div className="text-center py-2">
+                <div className="text-center pt-1.5">
                   <p className="text-muted-foreground text-sm">
                     Complete social media verification to enable slot purchase.
                   </p>
                 </div>
               )}
               {address?.toLowerCase() === raffle.creator?.toLowerCase() && (
-                <div className="text-center py-2">
+                <div className="text-center pt-1.5">
                   <p className="text-muted-foreground text-sm">
                     You cannot purchase slots from your own pool.
                   </p>
                 </div>
               )}
             </>
-            )}
-            {!connected && (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">
-                  Please connect your wallet to purchase slots.
-                </p>
-              </div>
             )}
           </div>
         )}
