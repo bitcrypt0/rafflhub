@@ -7,6 +7,7 @@ import { supabaseService } from '../services/supabaseService';
 import { SUPPORTED_NETWORKS } from '../networks';
 import NetworkSelector from './ui/network-selector';
 import Logo from './ui/Logo';
+import { isAppSubdomain, getAppRootUrl, isExternalUrl } from '../utils/subdomainUtils';
 import { useMobileBreakpoints } from '../hooks/useMobileBreakpoints';
 import MobileHeader from './mobile/MobileHeader';
 import MobileErrorBoundary from './mobile/MobileErrorBoundary';
@@ -23,7 +24,9 @@ const Header = () => {
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const [showSearch, setShowSearch] = useState(false);
   const location = useLocation();
-  const isHomepage = location.pathname === '/';
+  const isHomepage = !isAppSubdomain() && location.pathname === '/';
+  const appRootUrl = getAppRootUrl();
+  const appRootIsExternal = isExternalUrl(appRootUrl);
 
   // Show loading state while detecting device type to prevent flash (moved below hooks to preserve hook order)
 
@@ -204,9 +207,15 @@ const Header = () => {
                     <Logo size="md" />
                   </span>
                 ) : connected ? (
-                  <Link to="/app" className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
-                    <Logo size="md" className="hover:opacity-80" />
-                  </Link>
+                  appRootIsExternal ? (
+                    <a href={appRootUrl} className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+                      <Logo size="md" className="hover:opacity-80" />
+                    </a>
+                  ) : (
+                    <Link to={appRootUrl} className="flex items-center gap-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+                      <Logo size="md" className="hover:opacity-80" />
+                    </Link>
+                  )
                 ) : (
                   <span className="flex items-center gap-3 cursor-default select-none">
                     <Logo size="md" />

@@ -29,6 +29,7 @@ import {
   AccordionTrigger,
 } from '../ui/accordion';
 import { cn } from '../../lib/utils';
+import { getAppRootUrl, getAppHref, isExternalUrl, isAppSubdomain } from '../../utils/subdomainUtils';
 
 const FooterModern = () => {
   const [email, setEmail] = useState('');
@@ -37,15 +38,15 @@ const FooterModern = () => {
   const location = useLocation();
 
   const currentYear = new Date().getFullYear();
-  const isHomepage = location.pathname === '/';
+  const isHomepage = !isAppSubdomain() && location.pathname === '/';
 
   // Footer sections
   const footerSections = [
     {
       title: 'Product',
       items: [
-        { label: 'Explore Raffles', href: '/app', icon: Globe },
-        { label: 'Create Raffle', href: '/create-raffle', icon: Zap },
+        { label: 'Explore Raffles', href: getAppRootUrl(), icon: Globe },
+        { label: 'Create Raffle', href: getAppHref('/create-raffle'), icon: Zap },
       ]
     },
     {
@@ -271,6 +272,16 @@ const FooterModern = () => {
                             {item.label}
                           </span>
                         </div>
+                      ) : isExternalUrl(item.href) ? (
+                        <a
+                          href={item.href}
+                          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+                        >
+                          <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                          <span className="group-hover:translate-x-1 transition-transform duration-200">
+                            {item.label}
+                          </span>
+                        </a>
                       ) : (
                         <Link
                           to={item.href}
@@ -305,6 +316,14 @@ const FooterModern = () => {
                                 <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                                 <span>{item.label}</span>
                               </div>
+                            ) : isExternalUrl(item.href) ? (
+                              <a
+                                href={item.href}
+                                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+                              >
+                                <item.icon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                <span>{item.label}</span>
+                              </a>
                             ) : (
                               <Link
                                 to={item.href}

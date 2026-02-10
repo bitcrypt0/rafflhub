@@ -26,6 +26,7 @@ import { contractABIs } from '../../contracts/contractABIs';
 import { SUPPORTED_NETWORKS } from '../../networks';
 import NetworkSelector from '../ui/network-selector';
 import Logo from '../ui/Logo';
+import { isAppSubdomain, isLocalDev, getAppRootUrl, isExternalUrl } from '../../utils/subdomainUtils';
 import { useMobileBreakpoints } from '../../hooks/useMobileBreakpoints';
 import { Button } from '../ui/button';
 import {
@@ -82,8 +83,10 @@ const HeaderModern = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const isHomepage = location.pathname === '/';
-  const isApp = location.pathname === '/app';
+  const isHomepage = !isAppSubdomain() && location.pathname === '/';
+  const isApp = isAppSubdomain() ? location.pathname === '/' : location.pathname === '/app';
+  const appRootUrl = getAppRootUrl();
+  const appRootIsExternal = isExternalUrl(appRootUrl);
 
   // Handle scroll for header transparency
   useEffect(() => {
@@ -170,9 +173,15 @@ const HeaderModern = () => {
             {isHomepage ? (
               <Logo size="sm" />
             ) : connected ? (
-              <Link to="/app">
-                <Logo size="sm" className="hover:opacity-80 transition-opacity" />
-              </Link>
+              appRootIsExternal ? (
+                <a href={appRootUrl}>
+                  <Logo size="sm" className="hover:opacity-80 transition-opacity" />
+                </a>
+              ) : (
+                <Link to={appRootUrl}>
+                  <Logo size="sm" className="hover:opacity-80 transition-opacity" />
+                </Link>
+              )
             ) : (
               <Logo size="sm" />
             )}
@@ -308,9 +317,15 @@ const HeaderModern = () => {
                 <Logo size="md" />
               </div>
             ) : connected ? (
-              <Link to="/app" className="flex items-center gap-3 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <Logo size="md" className="hover:opacity-80 transition-opacity" />
-              </Link>
+              appRootIsExternal ? (
+                <a href={appRootUrl} className="flex items-center gap-3 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <Logo size="md" className="hover:opacity-80 transition-opacity" />
+                </a>
+              ) : (
+                <Link to={appRootUrl} className="flex items-center gap-3 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <Logo size="md" className="hover:opacity-80 transition-opacity" />
+                </Link>
+              )
             ) : (
               <div className="flex items-center gap-3 cursor-default select-none">
                 <Logo size="md" />

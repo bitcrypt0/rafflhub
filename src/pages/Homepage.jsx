@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { getAppRootUrl, getAppHref, isExternalUrl } from '../utils/subdomainUtils';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
@@ -459,22 +460,22 @@ export default function Homepage() {
 
               {/* CTA Buttons */}
               <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link
-                  to="/app"
+                <a
+                  href={getAppRootUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="pulse-btn group inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors transition-shadow transition-transform duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/25 font-semibold text-sm sm:text-[length:var(--text-lg)]"
                 >
                   Launch Dapp
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link
-                  to="/docs"
+                </a>
+                <a
+                  href={getAppHref('/docs')}
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 rounded-full bg-card border border-border text-foreground hover:border-primary hover:bg-card/80 transition-colors transition-shadow duration-300 font-semibold text-sm sm:text-[length:var(--text-base)]"
                 >
                   <BookOpen className="h-5 w-5" />
                   Read Documentation
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -910,22 +911,22 @@ export default function Homepage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              to="/create-raffle"
+            <a
+              href={getAppHref('/create-raffle')}
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-8 sm:py-4 lg:px-10 lg:py-5 rounded-full bg-white text-brand-600 hover:bg-white/90 transition-colors transition-shadow transition-transform duration-300 shadow-lg hover:shadow-2xl hover:shadow-white/20 font-bold text-sm sm:text-lg lg:text-xl hover:-translate-y-0.5"
             >
               Launch Your Event Now
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              to="/docs"
+            </a>
+            <a
+              href={getAppHref('/docs')}
               className="inline-flex items-center justify-center px-5 py-2.5 sm:px-8 sm:py-4 lg:px-10 lg:py-5 rounded-full border-2 border-white/80 text-white hover:bg-white hover:text-brand-600 transition-colors transition-shadow transition-transform duration-300 font-bold text-sm sm:text-lg lg:text-xl hover:-translate-y-0.5"
             >
               <BookOpen className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
               Read Documentation
-            </Link>
+            </a>
           </div>
           
           <div className="mt-10 flex flex-wrap justify-center items-center gap-6 sm:gap-8 lg:gap-12 text-sm">

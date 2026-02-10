@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose 
 import NetworkSelector from '../ui/network-selector';
 import Logo from '../ui/Logo';
 import { SUPPORTED_NETWORKS } from '../../networks';
+import { getAppRootUrl, isExternalUrl } from '../../utils/subdomainUtils';
 
 
 const MobileHeader = () => {
@@ -163,9 +164,15 @@ const MobileHeader = () => {
         <div className="flex items-center justify-between h-14 px-4">
           {/* Logo */}
           {/* On non-home pages we keep the original link to / */}
-          <Link to="/app" className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
-            <Logo size="xs" className="active:opacity-70" />
-          </Link>
+          {isExternalUrl(getAppRootUrl()) ? (
+            <a href={getAppRootUrl()} className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+              <Logo size="xs" className="active:opacity-70" />
+            </a>
+          ) : (
+            <Link to={getAppRootUrl()} className="flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0">
+              <Logo size="xs" className="active:opacity-70" />
+            </Link>
+          )}
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">

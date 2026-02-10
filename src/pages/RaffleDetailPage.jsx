@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { resolveChainIdFromSlug } from '../utils/urlNetworks';
+import { getAppRootUrl } from '../utils/subdomainUtils';
 import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info, ChevronDown, Twitter, MessageCircle, Send, Coins, Gift, Sparkles, Star } from 'lucide-react';
 import { getPoolMetadata, hasAnyMetadata, formatSocialLink } from '../utils/poolMetadataService';
 import { SUPPORTED_NETWORKS, DEFAULT_CHAIN_ID } from '../networks';
@@ -3381,7 +3382,7 @@ const RaffleDetailPage = () => {
     <PageContainer variant="wide" className="max-w-[85rem] pt-8 pb-4">
       <div className="mb-8">
         <Button
-          onClick={() => navigate('/app')}
+          onClick={() => navigate(getAppRootUrl())}
           variant="tertiary"
           size="md"
           className="flex items-center gap-2 mb-4"

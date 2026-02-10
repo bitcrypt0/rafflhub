@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { isAppSubdomain, isLocalDev } from './utils/subdomainUtils';
 import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -32,8 +33,23 @@ import SupabaseIntegrationTest from './components/SupabaseIntegrationTest';
 
 import './App.css';
 
+// Redirect non-root paths on www to app subdomain (server-side redirect in vercel.json
+// handles most cases; this is a client-side fallback)
+const RedirectToApp = () => {
+  useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    const baseDomain = window.location.hostname.replace(/^www\./, '');
+    window.location.replace(
+      `${window.location.protocol}//app.${baseDomain}${pathname}${search}${hash}`
+    );
+  }, []);
+  return null;
+};
+
 // App content component to use hooks inside providers
 const AppContent = () => {
+  const _isApp = isAppSubdomain();
+  const _isDev = isLocalDev();
   const { isMobile, isInitialized } = useMobileBreakpoints();
   const { component: performanceMonitor } = usePerformanceMonitor();
 
@@ -69,22 +85,33 @@ const AppContent = () => {
       <HeaderModern />
       <main className="flex-1 min-h-0 pt-20 pb-8">
         <Routes>
-          {/* Marketing Homepage at root; dapp at /app */}
-          <Route path="/" element={<Homepage />} />
-          <Route path="/app" element={<LandingPage />} />
-          <Route path="/docs" element={<DocumentationPage />} />
-          {/* Primary routes */}
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/create-raffle" element={<CreateRafflePageV2 />} />
-          <Route path="/deploy-collection" element={<DeployCollectionPageV2 />} />
-          <Route path="/pool/:raffleAddress" element={<RaffleDetailPage />} />
-          <Route path="/:chainSlug/pool/:raffleAddress" element={<RaffleDetailPage />} />
+          {/* --- Homepage: www.dropr.fun (and localhost for dev) --- */}
+          {(_isDev || !_isApp) && (
+            <Route path="/" element={<Homepage />} />
+          )}
+
+          {/* --- Dapp landing: app.dropr.fun/ (or localhost/app for dev) --- */}
+          {_isDev && <Route path="/app" element={<LandingPage />} />}
+          {_isApp && <Route path="/" element={<LandingPage />} />}
+
+          {/* --- App routes: only on app subdomain and localhost --- */}
+          {(_isDev || _isApp) && <Route path="/docs" element={<DocumentationPage />} />}
+          {(_isDev || _isApp) && <Route path="/profile" element={<ProfilePage />} />}
+          {(_isDev || _isApp) && <Route path="/create-raffle" element={<CreateRafflePageV2 />} />}
+          {(_isDev || _isApp) && <Route path="/deploy-collection" element={<DeployCollectionPageV2 />} />}
+          {(_isDev || _isApp) && <Route path="/pool/:raffleAddress" element={<RaffleDetailPage />} />}
+          {(_isDev || _isApp) && <Route path="/:chainSlug/pool/:raffleAddress" element={<RaffleDetailPage />} />}
           {/* OAuth Callback Routes */}
-          <Route path="/auth/callback/twitter" element={<AuthCallback />} />
-          <Route path="/auth/callback/discord" element={<AuthCallback />} />
-          <Route path="/auth/callback/telegram" element={<AuthCallback />} />
+          {(_isDev || _isApp) && <Route path="/auth/callback/twitter" element={<AuthCallback />} />}
+          {(_isDev || _isApp) && <Route path="/auth/callback/discord" element={<AuthCallback />} />}
+          {(_isDev || _isApp) && <Route path="/auth/callback/telegram" element={<AuthCallback />} />}
           {/* Supabase Integration Test (Development) */}
-          <Route path="/test-supabase" element={<SupabaseIntegrationTest />} />
+          {(_isDev || _isApp) && <Route path="/test-supabase" element={<SupabaseIntegrationTest />} />}
+
+          {/* --- www catch-all: redirect to app subdomain --- */}
+          {!_isDev && !_isApp && (
+            <Route path="*" element={<RedirectToApp />} />
+          )}
         </Routes>
       </main>
       <FooterModern />

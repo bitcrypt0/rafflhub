@@ -1,5 +1,19 @@
 {
+  "redirects": [
+    {
+      "source": "/app",
+      "has": [{ "type": "host", "value": "www.dropr.fun" }],
+      "destination": "https://app.dropr.fun",
+      "permanent": true
+    },
+    {
+      "source": "/app/:path(.*)",
+      "has": [{ "type": "host", "value": "www.dropr.fun" }],
+      "destination": "https://app.dropr.fun/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
-} 
+}

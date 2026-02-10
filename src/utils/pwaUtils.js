@@ -193,7 +193,6 @@ export const cacheUtils = {
         const cache = await caches.open(cacheUtils.CACHE_NAME);
         const urlsToCache = [
           '/',
-          '/app',
           '/manifest.json',
           '/icons/icon-192x192.png',
           '/icons/icon-512x512.png'
